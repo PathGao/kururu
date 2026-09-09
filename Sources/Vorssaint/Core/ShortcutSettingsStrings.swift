@@ -4,9 +4,9 @@
 import Foundation
 
 struct ShortcutSettingsStrings {
-    let active: String
-    let inactive: String
-    let superKeyAlternativeFormat: String
+    var active: String = "Active"
+    var inactive: String = "Inactive"
+    var superKeyAlternativeFormat: String = "or %@"
 }
 
 extension FeatureStrings {
@@ -30,11 +30,7 @@ extension FeatureStrings {
 }
 
 extension ShortcutSettingsStrings {
-    static let enUS = ShortcutSettingsStrings(
-        active: "Active",
-        inactive: "Inactive",
-        superKeyAlternativeFormat: "or %@"
-    )
+    static let enUS = ShortcutSettingsStrings()
 
     static let ptBR = ShortcutSettingsStrings(
         active: "Ativo",

@@ -4,35 +4,35 @@
 import Foundation
 
 struct FeedbackStrings {
-    let sectionTitle: String
-    let sectionCaption: String
-    let openButton: String
-    let windowTitle: String
-    let bugTitle: String
-    let featureTitle: String
-    let messageLabel: String
-    let bugPlaceholder: String
-    let featurePlaceholder: String
-    let charactersFormat: String
-    let includeDiagnostics: String
-    let includeDiagnosticsCaption: String
-    let whatSentTitle: String
-    let whatSentBasic: String
-    let whatSentDiagnostics: String
-    let privacyNote: String
-    let retentionNote: String
-    let sendButton: String
-    let sending: String
-    let sentTitle: String
-    let sentCaption: String
-    let unavailableError: String
-    let rateLimitError: String
-    let genericError: String
-    let done: String
-    let commandBug: String
-    let commandFeature: String
-    let commandSubtitle: String
-    let diagnosticsChannelLabel: String
+    var sectionTitle: String = "Feedback"
+    var sectionCaption: String = "Send a bug report or feature idea directly to the person who maintains Vorssaint."
+    var openButton: String = "Send feedback"
+    var windowTitle: String = "Send feedback"
+    var bugTitle: String = "Bug"
+    var featureTitle: String = "Feature idea"
+    var messageLabel: String = "What would you like to share?"
+    var bugPlaceholder: String = "Tell me what happened and what you expected."
+    var featurePlaceholder: String = "Describe the idea and how it would help."
+    var charactersFormat: String = "%d of 2000 characters"
+    var includeDiagnostics: String = "Include technical details"
+    var includeDiagnosticsCaption: String = "Adds only the technical details shown below. It does not include logs."
+    var whatSentTitle: String = "What will be sent"
+    var whatSentBasic: String = "Your chosen category and the text above."
+    var whatSentDiagnostics: String = "The technical details listed below."
+    var privacyNote: String = "No name, account, email, device identifier, logs, screenshots, files or clipboard content are included. Your public IP is temporarily processed for abuse protection and is not attached to the feedback."
+    var retentionNote: String = "After delivery, the text remains in private support channels until the service owner deletes it. An undelivered copy is permanently deleted after 7 days."
+    var sendButton: String = "Send feedback"
+    var sending: String = "Sending…"
+    var sentTitle: String = "Feedback sent"
+    var sentCaption: String = "Thank you. No contact information was sent, so you will not receive a direct reply."
+    var unavailableError: String = "Could not connect. Check your internet connection and try again."
+    var rateLimitError: String = "Too many submissions from this network. Please try again later."
+    var genericError: String = "Could not send the feedback right now."
+    var done: String = "Done"
+    var commandBug: String = "Report a bug"
+    var commandFeature: String = "Suggest a feature"
+    var commandSubtitle: String = "Send feedback"
+    var diagnosticsChannelLabel: String = "Update channel"
 }
 
 extension FeatureStrings {
@@ -56,37 +56,7 @@ extension FeatureStrings {
 }
 
 extension FeedbackStrings {
-    static let enUS = FeedbackStrings(
-        sectionTitle: "Feedback",
-        sectionCaption: "Send a bug report or feature idea directly to the person who maintains Vorssaint.",
-        openButton: "Send feedback",
-        windowTitle: "Send feedback",
-        bugTitle: "Bug",
-        featureTitle: "Feature idea",
-        messageLabel: "What would you like to share?",
-        bugPlaceholder: "Tell me what happened and what you expected.",
-        featurePlaceholder: "Describe the idea and how it would help.",
-        charactersFormat: "%d of 2000 characters",
-        includeDiagnostics: "Include technical details",
-        includeDiagnosticsCaption: "Adds only the technical details shown below. It does not include logs.",
-        whatSentTitle: "What will be sent",
-        whatSentBasic: "Your chosen category and the text above.",
-        whatSentDiagnostics: "The technical details listed below.",
-        privacyNote: "No name, account, email, device identifier, logs, screenshots, files or clipboard content are included. Your public IP is temporarily processed for abuse protection and is not attached to the feedback.",
-        retentionNote: "After delivery, the text remains in private support channels until the service owner deletes it. An undelivered copy is permanently deleted after 7 days.",
-        sendButton: "Send feedback",
-        sending: "Sending…",
-        sentTitle: "Feedback sent",
-        sentCaption: "Thank you. No contact information was sent, so you will not receive a direct reply.",
-        unavailableError: "Could not connect. Check your internet connection and try again.",
-        rateLimitError: "Too many submissions from this network. Please try again later.",
-        genericError: "Could not send the feedback right now.",
-        done: "Done",
-        commandBug: "Report a bug",
-        commandFeature: "Suggest a feature",
-        commandSubtitle: "Send feedback",
-        diagnosticsChannelLabel: "Update channel"
-    )
+    static let enUS = FeedbackStrings()
 
     static let ptBR = FeedbackStrings(
         sectionTitle: "Feedback",

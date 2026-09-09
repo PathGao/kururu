@@ -4,36 +4,36 @@
 import Foundation
 
 struct WhatsAppOrganizerStrings {
-    let title: String
-    let experimental: String
-    let description: String
-    let enabled: String
-    let enabledCaption: String
-    let destination: String
-    let chooseFolder: String
-    let useDefault: String
-    let invalidDestination: String
-    let organization: String
-    let flat: String
-    let byType: String
-    let byMonth: String
-    let delay: String
-    let minutesFormat: String
-    let duplicateAction: String
-    let trashDuplicate: String
-    let keepBoth: String
-    let replaceExisting: String
-    let duplicateCaption: String
-    let organizeNow: String
-    let undo: String
-    let waiting: String
-    let working: String
-    let resultFormat: String
-    let lastRunFormat: String
-    let neverRun: String
-    let notificationTitle: String
-    let notificationFormat: String
-    let privacyNote: String
+    var title: String = "Automatic organization"
+    var experimental: String = "Experimental"
+    var description: String = "Moves stable WhatsApp downloads to a dedicated folder and detects exact repeat downloads."
+    var enabled: String = "Organize automatically"
+    var enabledCaption: String = "WhatsApp may download a moved file again. Vorssaint cannot prevent the network download, but it can detect and discard an identical extra copy."
+    var destination: String = "Destination folder"
+    var chooseFolder: String = "Choose…"
+    var useDefault: String = "Use Downloads/WhatsApp"
+    var invalidDestination: String = "Choose a folder other than Downloads itself."
+    var organization: String = "Folder structure"
+    var flat: String = "No subfolders"
+    var byType: String = "By file type"
+    var byMonth: String = "By year and month"
+    var delay: String = "Wait before moving"
+    var minutesFormat: String = "%d minutes"
+    var duplicateAction: String = "When the same file is downloaded again"
+    var trashDuplicate: String = "Move the new copy to Trash"
+    var keepBoth: String = "Keep both copies"
+    var replaceExisting: String = "Replace the organized copy"
+    var duplicateCaption: String = "Duplicates are confirmed with a private SHA-256 digest. The organized copy is rechecked before another copy is discarded."
+    var organizeNow: String = "Organize eligible files now"
+    var undo: String = "Undo last organization"
+    var waiting: String = "Watching Downloads"
+    var working: String = "Organizing WhatsApp files…"
+    var resultFormat: String = "%1$d moved · %2$d duplicates · %3$d failed"
+    var lastRunFormat: String = "Last organization %@: %d moved · %d duplicates · %d failed"
+    var neverRun: String = "No organization has run yet."
+    var notificationTitle: String = "WhatsApp organization"
+    var notificationFormat: String = "%1$d files organized. %2$d duplicate downloads handled. %3$d failed."
+    var privacyNote: String = "To identify exact duplicates, file bytes are read locally only while calculating a cryptographic digest. Contents and chats are never stored or uploaded."
 
     static func localized(_ language: AppLanguage) -> WhatsAppOrganizerStrings {
         switch language {
@@ -55,38 +55,7 @@ struct WhatsAppOrganizerStrings {
 }
 
 extension WhatsAppOrganizerStrings {
-    static let enUS = WhatsAppOrganizerStrings(
-        title: "Automatic organization",
-        experimental: "Experimental",
-        description: "Moves stable WhatsApp downloads to a dedicated folder and detects exact repeat downloads.",
-        enabled: "Organize automatically",
-        enabledCaption: "WhatsApp may download a moved file again. Vorssaint cannot prevent the network download, but it can detect and discard an identical extra copy.",
-        destination: "Destination folder",
-        chooseFolder: "Choose…",
-        useDefault: "Use Downloads/WhatsApp",
-        invalidDestination: "Choose a folder other than Downloads itself.",
-        organization: "Folder structure",
-        flat: "No subfolders",
-        byType: "By file type",
-        byMonth: "By year and month",
-        delay: "Wait before moving",
-        minutesFormat: "%d minutes",
-        duplicateAction: "When the same file is downloaded again",
-        trashDuplicate: "Move the new copy to Trash",
-        keepBoth: "Keep both copies",
-        replaceExisting: "Replace the organized copy",
-        duplicateCaption: "Duplicates are confirmed with a private SHA-256 digest. The organized copy is rechecked before another copy is discarded.",
-        organizeNow: "Organize eligible files now",
-        undo: "Undo last organization",
-        waiting: "Watching Downloads",
-        working: "Organizing WhatsApp files…",
-        resultFormat: "%1$d moved · %2$d duplicates · %3$d failed",
-        lastRunFormat: "Last organization %@: %d moved · %d duplicates · %d failed",
-        neverRun: "No organization has run yet.",
-        notificationTitle: "WhatsApp organization",
-        notificationFormat: "%1$d files organized. %2$d duplicate downloads handled. %3$d failed.",
-        privacyNote: "To identify exact duplicates, file bytes are read locally only while calculating a cryptographic digest. Contents and chats are never stored or uploaded."
-    )
+    static let enUS = WhatsAppOrganizerStrings()
 
     static let es = WhatsAppOrganizerStrings(
         title: "Organización automática",

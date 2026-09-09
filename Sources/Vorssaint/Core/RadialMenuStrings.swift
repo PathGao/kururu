@@ -4,102 +4,102 @@
 import Foundation
 
 struct RadialMenuFeatureStrings {
-    let pageTitle: String
-    let hubDescription: String
-    let enableLabel: String
-    let enableCaption: String
-    let positionLabel: String
-    let positionPointer: String
-    let positionCenter: String
-    let tryButton: String
-    let actionsHeader: String
-    let addButton: String
-    let limitCaption: String
-    let emptyCaption: String
-    let backButton: String
-    let editActionsButton: String
-    let nameLabel: String
-    let automaticLabel: String
-    let iconLabel: String
-    let actionLabel: String
-    let kindApp: String
-    let kindFile: String
-    let kindURL: String
-    let kindShortcut: String
-    let kindTool: String
-    let kindSystemAction: String
-    let kindMedia: String
-    let kindSubmenu: String
-    let chooseButton: String
-    let urlPlaceholder: String
-    let urlInvalid: String
-    let toolLabel: String
-    let mediaLabel: String
-    let mediaPlayPause: String
-    let mediaPrevious: String
-    let mediaNext: String
-    let mediaNowPlaying: String
-    let mediaNothingPlaying: String
-    let mediaOpenAppFormat: String
-    let submenuCaption: String
-    let saveButton: String
-    let deleteButton: String
-    let permissionCaption: String
-    let manageButton: String
-    let panelCaption: String
-    let mouseTriggerLabel: String
-    let mouseTriggerOff: String
-    let mouseTriggerBack: String
-    let mouseTriggerForward: String
-    let mouseTriggerWarning: String
-    let buttonTestLabel: String
-    let buttonTestWaiting: String
-    let buttonTestSeen: String
-    let buttonTestOther: String
-    let buttonTestBlind: String
-    let buttonTestHint: String
-    let activationModeLabel: String
-    let activationModePressOrHold: String
-    let activationModePress: String
-    let activationModeHold: String
-    let activationModeCaption: String
-    let profilesHeader: String
-    let profilePickerLabel: String
-    let addProfileButton: String
-    let duplicateProfileButton: String
-    let deleteProfileButton: String
-    let profileNameLabel: String
-    let profileColorLabel: String
-    let profileShortcutLabel: String
-    let profileMouseTriggerLabel: String
-    let presetGeneral: String
-    let presetMedia: String
-    let presetTools: String
-    let presetBlank: String
-    let colorAccent: String
-    let colorBlue: String
-    let colorPurple: String
-    let colorPink: String
-    let colorRed: String
-    let colorOrange: String
-    let colorYellow: String
-    let colorGreen: String
-    let colorMint: String
-    let colorCyan: String
-    let colorIndigo: String
-    let colorGraphite: String
-    let fetchFaviconButton: String
-    let fetchFaviconDisclaimer: String
-    let fetchFaviconLoading: String
-    let fetchFaviconSuccess: String
-    let fetchFaviconError: String
-    let mouseTriggerRequirement: String
-    let canvasHint: String
-    let resetActionsButton: String
-    let resetActionsConfirm: String
-    let resetActionsConfirmMessage: String
-    let showListButton: String
-    let hideListButton: String
+    var pageTitle: String = "Radial menu"
+    var hubDescription: String = "Opens a wheel of your favorite actions around the pointer"
+    var enableLabel: String = "Use the radial menu"
+    var enableCaption: String = "Hold the shortcut, point at an action and release. A quick press keeps the wheel open."
+    var positionLabel: String = "Opens"
+    var positionPointer: String = "At the pointer"
+    var positionCenter: String = "At the screen center"
+    var tryButton: String = "Try it"
+    var actionsHeader: String = "Actions"
+    var addButton: String = "Add action"
+    var limitCaption: String = "A wheel holds up to 12 actions."
+    var emptyCaption: String = "No actions here yet."
+    var backButton: String = "Back"
+    var editActionsButton: String = "Edit actions"
+    var nameLabel: String = "Name"
+    var automaticLabel: String = "Automatic"
+    var iconLabel: String = "Icon"
+    var actionLabel: String = "Action"
+    var kindApp: String = "Open an app"
+    var kindFile: String = "Open a file or folder"
+    var kindURL: String = "Open a link"
+    var kindShortcut: String = "Press a shortcut"
+    var kindTool: String = "Vorssaint tool"
+    var kindSystemAction: String = "Quick toggles"
+    var kindMedia: String = "Media control"
+    var kindSubmenu: String = "Submenu"
+    var chooseButton: String = "Choose…"
+    var urlPlaceholder: String = "example.com"
+    var urlInvalid: String = "Enter a valid link."
+    var toolLabel: String = "Tool"
+    var mediaLabel: String = "Control"
+    var mediaPlayPause: String = "Play or pause"
+    var mediaPrevious: String = "Previous track"
+    var mediaNext: String = "Next track"
+    var mediaNowPlaying: String = "Now Playing"
+    var mediaNothingPlaying: String = "Nothing playing"
+    var mediaOpenAppFormat: String = "Open %@"
+    var submenuCaption: String = "Opens a second wheel with its own actions."
+    var saveButton: String = "Save"
+    var deleteButton: String = "Remove"
+    var permissionCaption: String = "Key actions and the side mouse button trigger need the Accessibility permission."
+    var manageButton: String = "Manage the menu"
+    var panelCaption: String = "Your favorite actions on a wheel"
+    var mouseTriggerLabel: String = "Mouse button"
+    var mouseTriggerOff: String = "Off"
+    var mouseTriggerBack: String = "Back side button"
+    var mouseTriggerForward: String = "Forward side button"
+    var mouseTriggerWarning: String = "While this is on, that button no longer goes back or forward in apps. If you navigate with it, leave this off."
+    var buttonTestLabel: String = "Button test"
+    var buttonTestWaiting: String = "Press the button now"
+    var buttonTestSeen: String = "Vorssaint sees this button"
+    var buttonTestOther: String = "That was a different button"
+    var buttonTestBlind: String = "Vorssaint cannot watch the mouse right now"
+    var buttonTestHint: String = "If nothing lights up, macOS is not sending that button to apps. Mice that come with their own software often turn the side buttons into something else. Change it back there, or give the button a key combination and use that combination above."
+    var activationModeLabel: String = "Opening behavior"
+    var activationModePressOrHold: String = "Press or hold"
+    var activationModePress: String = "Press to open"
+    var activationModeHold: String = "Hold to select"
+    var activationModeCaption: String = "Press or hold keeps the current adaptive gesture. Press stays open; hold runs the highlighted action on release."
+    var profilesHeader: String = "Profiles"
+    var profilePickerLabel: String = "Profile"
+    var addProfileButton: String = "Add profile"
+    var duplicateProfileButton: String = "Duplicate profile"
+    var deleteProfileButton: String = "Delete profile"
+    var profileNameLabel: String = "Profile name"
+    var profileColorLabel: String = "Color"
+    var profileShortcutLabel: String = "Shortcut"
+    var profileMouseTriggerLabel: String = "Mouse button"
+    var presetGeneral: String = "General"
+    var presetMedia: String = "Media"
+    var presetTools: String = "Tools"
+    var presetBlank: String = "Blank"
+    var colorAccent: String = "Accent"
+    var colorBlue: String = "Blue"
+    var colorPurple: String = "Purple"
+    var colorPink: String = "Pink"
+    var colorRed: String = "Red"
+    var colorOrange: String = "Orange"
+    var colorYellow: String = "Yellow"
+    var colorGreen: String = "Green"
+    var colorMint: String = "Mint"
+    var colorCyan: String = "Cyan"
+    var colorIndigo: String = "Indigo"
+    var colorGraphite: String = "Graphite"
+    var fetchFaviconButton: String = "Fetch Website Icon"
+    var fetchFaviconDisclaimer: String = "Connects to the website once to download its icon. Saved locally."
+    var fetchFaviconLoading: String = "Fetching icon…"
+    var fetchFaviconSuccess: String = "Icon downloaded"
+    var fetchFaviconError: String = "Could not find a website icon"
+    var mouseTriggerRequirement: String = "Only extra mouse buttons work here. With a trackpad or a mouse without extra buttons, use the keyboard shortcut above."
+    var canvasHint: String = "Click a button to choose what it starts, or to remove it. Drag a button to move it."
+    var resetActionsButton: String = "Reset"
+    var resetActionsConfirm: String = "Reset actions"
+    var resetActionsConfirmMessage: String = "Restore the default actions for this profile? Custom actions will be replaced."
+    var showListButton: String = "Show as list"
+    var hideListButton: String = "Hide list"
 }
 
 extension FeatureStrings {
@@ -123,104 +123,7 @@ extension FeatureStrings {
 }
 
 extension RadialMenuFeatureStrings {
-    static let enUS = RadialMenuFeatureStrings(
-        pageTitle: "Radial menu",
-        hubDescription: "Opens a wheel of your favorite actions around the pointer",
-        enableLabel: "Use the radial menu",
-        enableCaption: "Hold the shortcut, point at an action and release. A quick press keeps the wheel open.",
-        positionLabel: "Opens",
-        positionPointer: "At the pointer",
-        positionCenter: "At the screen center",
-        tryButton: "Try it",
-        actionsHeader: "Actions",
-        addButton: "Add action",
-        limitCaption: "A wheel holds up to 12 actions.",
-        emptyCaption: "No actions here yet.",
-        backButton: "Back",
-        editActionsButton: "Edit actions",
-        nameLabel: "Name",
-        automaticLabel: "Automatic",
-        iconLabel: "Icon",
-        actionLabel: "Action",
-        kindApp: "Open an app",
-        kindFile: "Open a file or folder",
-        kindURL: "Open a link",
-        kindShortcut: "Press a shortcut",
-        kindTool: "Vorssaint tool",
-        kindSystemAction: "Quick toggles",
-        kindMedia: "Media control",
-        kindSubmenu: "Submenu",
-        chooseButton: "Choose…",
-        urlPlaceholder: "example.com",
-        urlInvalid: "Enter a valid link.",
-        toolLabel: "Tool",
-        mediaLabel: "Control",
-        mediaPlayPause: "Play or pause",
-        mediaPrevious: "Previous track",
-        mediaNext: "Next track",
-        mediaNowPlaying: "Now Playing",
-        mediaNothingPlaying: "Nothing playing",
-        mediaOpenAppFormat: "Open %@",
-        submenuCaption: "Opens a second wheel with its own actions.",
-        saveButton: "Save",
-        deleteButton: "Remove",
-        permissionCaption: "Key actions and the side mouse button trigger need the Accessibility permission.",
-        manageButton: "Manage the menu",
-        panelCaption: "Your favorite actions on a wheel",
-        mouseTriggerLabel: "Mouse button",
-        mouseTriggerOff: "Off",
-        mouseTriggerBack: "Back side button",
-        mouseTriggerForward: "Forward side button",
-        mouseTriggerWarning: "While this is on, that button no longer goes back or forward in apps. If you navigate with it, leave this off.",
-        buttonTestLabel: "Button test",
-        buttonTestWaiting: "Press the button now",
-        buttonTestSeen: "Vorssaint sees this button",
-        buttonTestOther: "That was a different button",
-        buttonTestBlind: "Vorssaint cannot watch the mouse right now",
-        buttonTestHint: "If nothing lights up, macOS is not sending that button to apps. Mice that come with their own software often turn the side buttons into something else. Change it back there, or give the button a key combination and use that combination above.",
-        activationModeLabel: "Opening behavior",
-        activationModePressOrHold: "Press or hold",
-        activationModePress: "Press to open",
-        activationModeHold: "Hold to select",
-        activationModeCaption: "Press or hold keeps the current adaptive gesture. Press stays open; hold runs the highlighted action on release.",
-        profilesHeader: "Profiles",
-        profilePickerLabel: "Profile",
-        addProfileButton: "Add profile",
-        duplicateProfileButton: "Duplicate profile",
-        deleteProfileButton: "Delete profile",
-        profileNameLabel: "Profile name",
-        profileColorLabel: "Color",
-        profileShortcutLabel: "Shortcut",
-        profileMouseTriggerLabel: "Mouse button",
-        presetGeneral: "General",
-        presetMedia: "Media",
-        presetTools: "Tools",
-        presetBlank: "Blank",
-        colorAccent: "Accent",
-        colorBlue: "Blue",
-        colorPurple: "Purple",
-        colorPink: "Pink",
-        colorRed: "Red",
-        colorOrange: "Orange",
-        colorYellow: "Yellow",
-        colorGreen: "Green",
-        colorMint: "Mint",
-        colorCyan: "Cyan",
-        colorIndigo: "Indigo",
-        colorGraphite: "Graphite",
-        fetchFaviconButton: "Fetch Website Icon",
-        fetchFaviconDisclaimer: "Connects to the website once to download its icon. Saved locally.",
-        fetchFaviconLoading: "Fetching icon…",
-        fetchFaviconSuccess: "Icon downloaded",
-        fetchFaviconError: "Could not find a website icon",
-        mouseTriggerRequirement: "Only extra mouse buttons work here. With a trackpad or a mouse without extra buttons, use the keyboard shortcut above.",
-        canvasHint: "Click a button to choose what it starts, or to remove it. Drag a button to move it.",
-        resetActionsButton: "Reset",
-        resetActionsConfirm: "Reset actions",
-        resetActionsConfirmMessage: "Restore the default actions for this profile? Custom actions will be replaced.",
-        showListButton: "Show as list",
-        hideListButton: "Hide list"
-    )
+    static let enUS = RadialMenuFeatureStrings()
 
     static let ptBR = RadialMenuFeatureStrings(
         pageTitle: "Menu radial",

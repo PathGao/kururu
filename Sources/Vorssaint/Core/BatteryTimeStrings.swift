@@ -4,9 +4,9 @@
 import Foundation
 
 struct BatteryTimeFeatureStrings {
-    let title: String
-    let systemEstimate: String
-    let calculating: String
+    var title: String = "Battery time remaining"
+    var systemEstimate: String = "System estimate"
+    var calculating: String = "Calculating…"
 }
 
 extension FeatureStrings {
@@ -30,11 +30,7 @@ extension FeatureStrings {
 }
 
 extension BatteryTimeFeatureStrings {
-    static let enUS = BatteryTimeFeatureStrings(
-        title: "Battery time remaining",
-        systemEstimate: "System estimate",
-        calculating: "Calculating…"
-    )
+    static let enUS = BatteryTimeFeatureStrings()
 
     static let ptBR = BatteryTimeFeatureStrings(
         title: "Tempo restante da bateria",

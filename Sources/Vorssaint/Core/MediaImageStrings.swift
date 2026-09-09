@@ -4,62 +4,62 @@
 import Foundation
 
 struct MediaImageConverterStrings {
-    let filesSelectedFormat: String
-    let profile: String
-    let noProfile: String
-    let profileName: String
-    let saveAsNew: String
-    let updateProfile: String
-    let deleteProfile: String
-    let profileModified: String
-    let profileDefaultNameFormat: String
-    let presetWeb: String
-    let presetSocial: String
-    let presetDocs: String
-    let resize: String
-    let resizeNone: String
-    let resizeMax: String
-    let resizeWidth: String
-    let resizeHeight: String
-    let resizeExact: String
-    let exactStretch: String
-    let exactFit: String
-    let exactFill: String
-    let height: String
-    let watermark: String
-    let watermarkOff: String
-    let watermarkText: String
-    let watermarkLogo: String
-    let watermarkBoth: String
-    let watermarkTextPlaceholder: String
-    let noLogo: String
-    let chooseLogo: String
-    let position: String
-    let topLeft: String
-    let topRight: String
-    let center: String
-    let bottomLeft: String
-    let bottomRight: String
-    let opacity: String
-    let margin: String
-    let scale: String
-    let rename: String
-    let preview: String
-    let outputName: String
-    let background: String
-    let backgroundTransparent: String
-    let backgroundWhite: String
-    let backgroundBlack: String
-    let preserveDate: String
-    let moreOptions: String
-    let tooLarge: String
-    let copySummary: String
-    let savedBytesFormat: String
-    let grewBytesFormat: String
-    let batchSavedFormat: String
-    let batchPartialFormat: String
-    let batchSummaryHeaderFormat: String
-    let batchSummaryItemFormat: String
+    var filesSelectedFormat: String = "%d files selected"
+    var profile: String = "Profile"
+    var noProfile: String = "No profile"
+    var profileName: String = "Profile name"
+    var saveAsNew: String = "Save new"
+    var updateProfile: String = "Update"
+    var deleteProfile: String = "Delete profile"
+    var profileModified: String = "Modified"
+    var profileDefaultNameFormat: String = "Profile %d"
+    var presetWeb: String = "Web"
+    var presetSocial: String = "Social"
+    var presetDocs: String = "Docs"
+    var resize: String = "Resize"
+    var resizeNone: String = "No change"
+    var resizeMax: String = "Max side"
+    var resizeWidth: String = "Width"
+    var resizeHeight: String = "Height"
+    var resizeExact: String = "Custom"
+    var exactStretch: String = "Stretch"
+    var exactFit: String = "Fit"
+    var exactFill: String = "Fill"
+    var height: String = "Height"
+    var watermark: String = "Watermark"
+    var watermarkOff: String = "Off"
+    var watermarkText: String = "Text"
+    var watermarkLogo: String = "Logo"
+    var watermarkBoth: String = "Text + logo"
+    var watermarkTextPlaceholder: String = "Watermark text"
+    var noLogo: String = "No logo"
+    var chooseLogo: String = "Choose logo"
+    var position: String = "Position"
+    var topLeft: String = "Top left"
+    var topRight: String = "Top right"
+    var center: String = "Center"
+    var bottomLeft: String = "Bottom left"
+    var bottomRight: String = "Bottom right"
+    var opacity: String = "Opacity"
+    var margin: String = "Margin"
+    var scale: String = "Scale"
+    var rename: String = "Rename"
+    var preview: String = "Preview"
+    var outputName: String = "Output"
+    var background: String = "Background"
+    var backgroundTransparent: String = "Transparent"
+    var backgroundWhite: String = "White"
+    var backgroundBlack: String = "Black"
+    var preserveDate: String = "Keep original modified date"
+    var moreOptions: String = "More options"
+    var tooLarge: String = "These dimensions are too large to process safely. Choose a smaller size."
+    var copySummary: String = "Copy summary"
+    var savedBytesFormat: String = "%@ saved"
+    var grewBytesFormat: String = "%@ larger"
+    var batchSavedFormat: String = "%d images saved"
+    var batchPartialFormat: String = "%d saved, %d failed"
+    var batchSummaryHeaderFormat: String = "%d saved, %d failed"
+    var batchSummaryItemFormat: String = "%@ -> %@"
 
     static func localized(_ language: AppLanguage) -> MediaImageConverterStrings {
         switch language {
@@ -81,64 +81,7 @@ struct MediaImageConverterStrings {
 }
 
 extension MediaImageConverterStrings {
-    static let enUS = MediaImageConverterStrings(
-        filesSelectedFormat: "%d files selected",
-        profile: "Profile",
-        noProfile: "No profile",
-        profileName: "Profile name",
-        saveAsNew: "Save new",
-        updateProfile: "Update",
-        deleteProfile: "Delete profile",
-        profileModified: "Modified",
-        profileDefaultNameFormat: "Profile %d",
-        presetWeb: "Web",
-        presetSocial: "Social",
-        presetDocs: "Docs",
-        resize: "Resize",
-        resizeNone: "No change",
-        resizeMax: "Max side",
-        resizeWidth: "Width",
-        resizeHeight: "Height",
-        resizeExact: "Custom",
-        exactStretch: "Stretch",
-        exactFit: "Fit",
-        exactFill: "Fill",
-        height: "Height",
-        watermark: "Watermark",
-        watermarkOff: "Off",
-        watermarkText: "Text",
-        watermarkLogo: "Logo",
-        watermarkBoth: "Text + logo",
-        watermarkTextPlaceholder: "Watermark text",
-        noLogo: "No logo",
-        chooseLogo: "Choose logo",
-        position: "Position",
-        topLeft: "Top left",
-        topRight: "Top right",
-        center: "Center",
-        bottomLeft: "Bottom left",
-        bottomRight: "Bottom right",
-        opacity: "Opacity",
-        margin: "Margin",
-        scale: "Scale",
-        rename: "Rename",
-        preview: "Preview",
-        outputName: "Output",
-        background: "Background",
-        backgroundTransparent: "Transparent",
-        backgroundWhite: "White",
-        backgroundBlack: "Black",
-        preserveDate: "Keep original modified date",
-        moreOptions: "More options",
-        tooLarge: "These dimensions are too large to process safely. Choose a smaller size.",
-        copySummary: "Copy summary",
-        savedBytesFormat: "%@ saved",
-        grewBytesFormat: "%@ larger",
-        batchSavedFormat: "%d images saved",
-        batchPartialFormat: "%d saved, %d failed",
-        batchSummaryHeaderFormat: "%d saved, %d failed",
-        batchSummaryItemFormat: "%@ -> %@"
-    )
+    static let enUS = MediaImageConverterStrings()
 
     static let ptBR = MediaImageConverterStrings(
         filesSelectedFormat: "%d arquivos selecionados",

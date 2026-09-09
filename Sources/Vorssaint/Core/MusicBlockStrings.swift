@@ -5,13 +5,13 @@ import Foundation
 
 /// Localized strings for the Music launch blocker.
 struct MusicBlockFeatureStrings {
-    let pageTitle: String
-    let section: String
-    let title: String
-    let caption: String
-    let replacementLabel: String
-    let replacementNone: String
-    let chooseApp: String
+    var pageTitle: String = "Music app blocker"
+    var section: String = "Media keys"
+    var title: String = "Stop Music from opening on its own"
+    var caption: String = "The Music app no longer opens when you press the media keys. You can still open it yourself."
+    var replacementLabel: String = "Open instead"
+    var replacementNone: String = "None"
+    var chooseApp: String = "Choose app…"
 }
 
 extension FeatureStrings {
@@ -35,15 +35,7 @@ extension FeatureStrings {
 }
 
 extension MusicBlockFeatureStrings {
-    static let enUS = MusicBlockFeatureStrings(
-        pageTitle: "Music app blocker",
-        section: "Media keys",
-        title: "Stop Music from opening on its own",
-        caption: "The Music app no longer opens when you press the media keys. You can still open it yourself.",
-        replacementLabel: "Open instead",
-        replacementNone: "None",
-        chooseApp: "Choose app…"
-    )
+    static let enUS = MusicBlockFeatureStrings()
 
     static let ptBR = MusicBlockFeatureStrings(
         pageTitle: "Bloqueio do app Música",

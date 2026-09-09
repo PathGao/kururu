@@ -7,27 +7,27 @@ import Foundation
 /// FeatureStrings structs: memberwise init in declaration order, one static
 /// per language, all in this file.
 struct BrightnessFeatureStrings {
-    let pageTitle: String
-    let hubDescription: String
-    let enable: String
-    let enableCaption: String
-    let externalCaption: String
-    let noDisplays: String
-    let displayOff: String
-    let turnOffDisplay: String
-    let turnOnDisplay: String
-    let lastDisplayCaption: String
-    let switchUnavailable: String
-    let switchFailed: String
-    let keysToggle: String
-    let keysCaption: String
-    let osdToggle: String
-    let osdCaption: String
-    let keyboardLight: String
-    let keyboardLightCaption: String
-    let keyboardBrightnessShortcuts: String
-    let keyboardBrightnessDecrease: String
-    let keyboardBrightnessIncrease: String
+    var pageTitle: String = "Displays"
+    var hubDescription: String = "Brightness and power controls for every display"
+    var enable: String = "Control displays"
+    var enableCaption: String = "Brightness and on or off controls for the built-in screen and external monitors, here and in the menu bar panel."
+    var externalCaption: String = "External monitors are adjusted through the same protocol as their own buttons. When the connection cannot carry it, as with HDMI adapters, the slider dims the picture instead, so brightness control works either way."
+    var noDisplays: String = "No display found."
+    var displayOff: String = "Off"
+    var turnOffDisplay: String = "Turn off display"
+    var turnOnDisplay: String = "Turn on display"
+    var lastDisplayCaption: String = "At least one display must stay on."
+    var switchUnavailable: String = "Display switching is unavailable on this Mac."
+    var switchFailed: String = "Could not change this display."
+    var keysToggle: String = "Brightness keys follow the pointer"
+    var keysCaption: String = "The keyboard brightness keys change the display under the pointer."
+    var osdToggle: String = "Show brightness when adjusting"
+    var osdCaption: String = "Shows the brightness percentage when you use the brightness keys or sliders."
+    var keyboardLight: String = "Keyboard light"
+    var keyboardLightCaption: String = "Turns the keyboard backlight on or off."
+    var keyboardBrightnessShortcuts: String = "Use keyboard brightness shortcuts"
+    var keyboardBrightnessDecrease: String = "Decrease keyboard brightness"
+    var keyboardBrightnessIncrease: String = "Increase keyboard brightness"
 }
 
 extension FeatureStrings {
@@ -51,29 +51,7 @@ extension FeatureStrings {
 }
 
 extension BrightnessFeatureStrings {
-    static let enUS = BrightnessFeatureStrings(
-        pageTitle: "Displays",
-        hubDescription: "Brightness and power controls for every display",
-        enable: "Control displays",
-        enableCaption: "Brightness and on or off controls for the built-in screen and external monitors, here and in the menu bar panel.",
-        externalCaption: "External monitors are adjusted through the same protocol as their own buttons. When the connection cannot carry it, as with HDMI adapters, the slider dims the picture instead, so brightness control works either way.",
-        noDisplays: "No display found.",
-        displayOff: "Off",
-        turnOffDisplay: "Turn off display",
-        turnOnDisplay: "Turn on display",
-        lastDisplayCaption: "At least one display must stay on.",
-        switchUnavailable: "Display switching is unavailable on this Mac.",
-        switchFailed: "Could not change this display.",
-        keysToggle: "Brightness keys follow the pointer",
-        keysCaption: "The keyboard brightness keys change the display under the pointer.",
-        osdToggle: "Show brightness when adjusting",
-        osdCaption: "Shows the brightness percentage when you use the brightness keys or sliders.",
-        keyboardLight: "Keyboard light",
-        keyboardLightCaption: "Turns the keyboard backlight on or off.",
-        keyboardBrightnessShortcuts: "Use keyboard brightness shortcuts",
-        keyboardBrightnessDecrease: "Decrease keyboard brightness",
-        keyboardBrightnessIncrease: "Increase keyboard brightness"
-    )
+    static let enUS = BrightnessFeatureStrings()
 
     static let ptBR = BrightnessFeatureStrings(
         pageTitle: "Telas",

@@ -4,16 +4,16 @@
 import Foundation
 
 struct MenuBarAppearanceStrings {
-    let label: String
-    let values: String
-    let bars: String
-    let caption: String
-    let customize: String
-    let normalColor: String
-    let mediumColor: String
-    let highColor: String
-    let mediumFrom: String
-    let highFrom: String
+    var label: String = "Usage display"
+    var values: String = "Values"
+    var bars: String = "Bars"
+    var caption: String = "Bars apply to CPU, GPU, memory and disk usage. Other readings stay numeric."
+    var customize: String = "Bar colors and limits"
+    var normalColor: String = "Normal color"
+    var mediumColor: String = "Medium color"
+    var highColor: String = "High color"
+    var mediumFrom: String = "Medium from"
+    var highFrom: String = "High from"
 }
 
 extension FeatureStrings {
@@ -37,18 +37,7 @@ extension FeatureStrings {
 }
 
 extension MenuBarAppearanceStrings {
-    static let enUS = MenuBarAppearanceStrings(
-        label: "Usage display",
-        values: "Values",
-        bars: "Bars",
-        caption: "Bars apply to CPU, GPU, memory and disk usage. Other readings stay numeric.",
-        customize: "Bar colors and limits",
-        normalColor: "Normal color",
-        mediumColor: "Medium color",
-        highColor: "High color",
-        mediumFrom: "Medium from",
-        highFrom: "High from"
-    )
+    static let enUS = MenuBarAppearanceStrings()
 
     static let ptBR = MenuBarAppearanceStrings(
         label: "Exibição de uso",

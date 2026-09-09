@@ -39,6 +39,23 @@ struct MetricsTests {
             let actual = formatSpecifiers(in: format)
             if actual != expected { failures.append("\(label): got \(actual), expected \(expected)") }
         }
+        /// The stored properties of `struct Strings`, in declaration order.
+        /// Scoped to that struct: `AppLanguage` lives in the same file and has
+        /// computed properties that look the same one line at a time.
+        func stringsDeclarationFields(_ source: String) -> [String] {
+            let lines = source.components(separatedBy: "\n")
+            guard let start = lines.firstIndex(where: { $0.hasPrefix("struct Strings {") }) else { return [] }
+            var fields: [String] = []
+            for line in lines[(start + 1)...] {
+                if line == "}" { break }
+                guard line.hasPrefix("    var "), line.contains(": String = ") else { continue }
+                let trimmed = line.trimmingCharacters(in: .whitespaces)
+                guard let colon = trimmed.firstIndex(of: ":") else { continue }
+                fields.append(String(trimmed[trimmed.index(trimmed.startIndex, offsetBy: 4)..<colon]))
+            }
+            return fields
+        }
+
 
         // MARK: Byte / rate formatting
 
@@ -11884,6 +11901,29 @@ struct MetricsTests {
         expect(HomebrewPackageOrdering.updatesFirst(orderingPackages).map(\.name)
                == ["beta-tool", "gamma-tool", "alpha-tool", "delta-tool"],
                "Homebrew installed packages keep all pending updates first without reordering either group")
+        // MARK: English fallback
+
+        // Every field's English text is its default, so a literal that leaves
+        // one out reads as English instead of failing to compile. This is what
+        // lets a new feature ship with English and Simplified Chinese only.
+        let partialStrings = Strings(statusIdleTooltip: "probe")
+        expect(partialStrings.statusIdleTooltip == "probe",
+               "a language's own text wins over the English default")
+        expect(!Strings.enUS.menuQuit.isEmpty
+                && partialStrings.menuQuit == Strings.enUS.menuQuit,
+               "a field a language omits falls back to the English default")
+        expect(FeatureStrings.environment(.enUS).pageTitle
+                == EnvironmentFeatureStrings().pageTitle,
+               "the per-feature structs carry their English in the declaration too")
+
+        // English lives in the declaration, not in a literal of its own. A
+        // re-added `static let enUS = Strings(` would silently make every
+        // omission a compile error again for the next person.
+        let localizationSource = (try? String(contentsOfFile: "Sources/Vorssaint/Core/Localization.swift",
+                                              encoding: .utf8)) ?? ""
+        expect(localizationSource.contains("static let enUS = Strings()"),
+               "the English Strings takes every declared default")
+
         // MARK: Localization format contracts
 
         let localizedStrings: [(AppLanguage, Strings)] = [
@@ -25029,13 +25069,7 @@ struct MetricsTests {
                "feature names go through AppFeature.name (\(nameCases.count) cases parsed, found \(nameBypasses))")
         // Every Strings field has a reader; a field nobody reads is dead
         // translation work in 13 languages.
-        let localizedFields = codeLines("Sources/Vorssaint/Core/Localization.swift")
-            .components(separatedBy: "\n")
-            .compactMap { line -> String? in
-                let trimmed = line.trimmingCharacters(in: .whitespaces)
-                guard line.hasPrefix("    let "), let colon = trimmed.firstIndex(of: ":") else { return nil }
-                return String(trimmed[trimmed.index(trimmed.startIndex, offsetBy: 4)..<colon])
-            }
+        let localizedFields = stringsDeclarationFields(codeLines("Sources/Vorssaint/Core/Localization.swift"))
         let readerCode = ((FileManager.default.enumerator(atPath: "Sources/Vorssaint")?.allObjects as? [String]) ?? [])
             .filter { $0.hasSuffix(".swift") && !$0.contains("Core/Localization") }
             .map { (try? String(contentsOfFile: "Sources/Vorssaint/" + $0, encoding: .utf8)) ?? "" }

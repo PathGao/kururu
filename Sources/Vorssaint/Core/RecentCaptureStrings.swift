@@ -4,14 +4,14 @@
 import Foundation
 
 struct RecentCaptureStrings {
-    let title: String
-    let empty: String
-    let screenshot: String
-    let recording: String
-    let restore: String
-    let open: String
-    let remove: String
-    let clear: String
+    var title: String = "Recent captures"
+    var empty: String = "Take a screenshot or save a recording to find it here."
+    var screenshot: String = "Screenshot"
+    var recording: String = "Recording"
+    var restore: String = "Restore"
+    var open: String = "Open"
+    var remove: String = "Remove from history"
+    var clear: String = "Clear history"
 }
 
 extension FeatureStrings {
@@ -35,16 +35,7 @@ extension FeatureStrings {
 }
 
 extension RecentCaptureStrings {
-    static let enUS = RecentCaptureStrings(
-        title: "Recent captures",
-        empty: "Take a screenshot or save a recording to find it here.",
-        screenshot: "Screenshot",
-        recording: "Recording",
-        restore: "Restore",
-        open: "Open",
-        remove: "Remove from history",
-        clear: "Clear history"
-    )
+    static let enUS = RecentCaptureStrings()
 
     static let ptBR = RecentCaptureStrings(
         title: "Capturas recentes",

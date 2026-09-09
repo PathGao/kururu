@@ -4,12 +4,12 @@
 import Foundation
 
 struct DiskExclusionStrings {
-    let listTitle: String
-    let addButton: String
-    let otherDrive: String
-    let removeButton: String
-    let customPlaceholder: String
-    let caption: String
+    var listTitle: String = "Excluded drives"
+    var addButton: String = "Add drive…"
+    var otherDrive: String = "Other drive name…"
+    var removeButton: String = "Remove"
+    var customPlaceholder: String = "Drive or volume name"
+    var caption: String = "Drives in this list are never unmounted when using Eject all disks."
 }
 
 extension FeatureStrings {
@@ -33,14 +33,7 @@ extension FeatureStrings {
 }
 
 extension DiskExclusionStrings {
-    static let enUS = DiskExclusionStrings(
-        listTitle: "Excluded drives",
-        addButton: "Add drive…",
-        otherDrive: "Other drive name…",
-        removeButton: "Remove",
-        customPlaceholder: "Drive or volume name",
-        caption: "Drives in this list are never unmounted when using Eject all disks."
-    )
+    static let enUS = DiskExclusionStrings()
 
     static let ptBR = DiskExclusionStrings(
         listTitle: "Discos excluídos",

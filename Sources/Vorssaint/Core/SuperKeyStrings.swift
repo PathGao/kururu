@@ -4,26 +4,26 @@
 import Foundation
 
 struct SuperKeyStrings {
-    let pageTitle: String
-    let hubDescription: String
-    let enableToggle: String
-    let enableCaption: String
-    let modifierKeysNote: String
-    let sourceKey: String
-    let capsLockKey: String
-    let rightKeyFormat: String
-    let holdHint: String
-    let soloSection: String
-    let soloCaption: String
-    let soloNothing: String
-    let soloCapsLock: String
-    let soloEscape: String
-    let activeNow: String
-    let panelCaptionFormat: String
-    let manageButton: String
-    let soloInputSource: String
-    let mappingForeignMapping: String
-    let mappingSystemRefused: String
+    var pageTitle: String = "Super key"
+    var hubDescription: String = "Turns one key into the modifier combination you choose."
+    var enableToggle: String = "Use this key as the super key"
+    var enableCaption: String = "Hold it and press any key. Choose one or more modifiers below."
+    var modifierKeysNote: String = "Keep this key set to its default action in System Settings › Keyboard › Modifier Keys."
+    var sourceKey: String = "Key to hold"
+    var capsLockKey: String = "Caps Lock"
+    var rightKeyFormat: String = "Right %@"
+    var holdHint: String = "Hold"
+    var soloSection: String = "A tap on its own"
+    var soloCaption: String = "What a quick tap does when no other key is pressed."
+    var soloNothing: String = "Nothing"
+    var soloCapsLock: String = "Turn capitals on and off"
+    var soloEscape: String = "Press Escape"
+    var activeNow: String = "Working now"
+    var panelCaptionFormat: String = "%1$@ holds %2$@."
+    var manageButton: String = "Set up…"
+    var soloInputSource: String = "Switch input source; hold for Caps Lock"
+    var mappingForeignMapping: String = "Another app’s key mapping uses the selected key. Remove it in that app: quitting it is not enough."
+    var mappingSystemRefused: String = "macOS refused the key mapping. Reconnect the keyboard or restart the Mac, then switch this on again."
 
     /// What to show when the key mapping was refused. Every refusal names one
     /// thing to change; none of them is visible in the key itself.
@@ -61,28 +61,7 @@ extension SuperKeyStrings {
         return String(format: rightKeyFormat, symbol)
     }
 
-    static let enUS = SuperKeyStrings(
-        pageTitle: "Super key",
-        hubDescription: "Turns one key into the modifier combination you choose.",
-        enableToggle: "Use this key as the super key",
-        enableCaption: "Hold it and press any key. Choose one or more modifiers below.",
-        modifierKeysNote: "Keep this key set to its default action in System Settings › Keyboard › Modifier Keys.",
-        sourceKey: "Key to hold",
-        capsLockKey: "Caps Lock",
-        rightKeyFormat: "Right %@",
-        holdHint: "Hold",
-        soloSection: "A tap on its own",
-        soloCaption: "What a quick tap does when no other key is pressed.",
-        soloNothing: "Nothing",
-        soloCapsLock: "Turn capitals on and off",
-        soloEscape: "Press Escape",
-        activeNow: "Working now",
-        panelCaptionFormat: "%1$@ holds %2$@.",
-        manageButton: "Set up…",
-        soloInputSource: "Switch input source; hold for Caps Lock",
-        mappingForeignMapping: "Another app’s key mapping uses the selected key. Remove it in that app: quitting it is not enough.",
-        mappingSystemRefused: "macOS refused the key mapping. Reconnect the keyboard or restart the Mac, then switch this on again."
-    )
+    static let enUS = SuperKeyStrings()
 
     static let ptBR = SuperKeyStrings(
         pageTitle: "Tecla super",

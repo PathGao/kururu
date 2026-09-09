@@ -107,860 +107,868 @@ final class L10n: ObservableObject {
 
 /// Flat, compiler-checked catalog of UI strings. Adding a field here forces
 /// both translations to be provided.
+/// Every field carries its English text as the default, so a language passes
+/// only what it has translated and whatever it omits reads as English. Adding
+/// a field means writing English here and nothing else; the twelve other
+/// literals keep compiling untouched.
+///
+/// English is the only language that has to be complete, and it is complete by
+/// construction: it is these defaults. Every other language translates as much
+/// or as little as it wants.
 struct Strings {
     // MARK: Menu bar & context menu
-    let statusIdleTooltip: String
-    let statusActiveUntil: String      // + time
-    let statusActiveIndefinite: String
-    let menuEnableAwake: String
-    let menuDisableAwake: String
-    let menuActivateFor: String
-    let menuSettings: String
-    let menuAbout: String
-    let menuQuit: String
+    var statusIdleTooltip: String = "Vorssaint: normal sleep"
+    var statusActiveUntil: String = "Vorssaint: awake until"      // + time
+    var statusActiveIndefinite: String = "Vorssaint: awake indefinitely"
+    var menuEnableAwake: String = "Enable keep awake"
+    var menuDisableAwake: String = "Disable keep awake"
+    var menuActivateFor: String = "Activate for…"
+    var menuSettings: String = "Settings…"
+    var menuAbout: String = "About Vorssaint"
+    var menuQuit: String = "Quit Vorssaint"
     // Standard application menu bar (App / Edit / Window) shown while one of the
     // app's own windows is focused. Without it, an accessory app has no main menu
     // and the standard shortcuts (Cmd+H/M/W/Q, Cmd+C/V/X/A) do nothing.
-    let menuHide: String
-    let menuHideOthers: String
-    let menuShowAll: String
-    let menuEdit: String
-    let menuUndo: String
-    let menuRedo: String
+    var menuHide: String = "Hide Vorssaint"
+    var menuHideOthers: String = "Hide Others"
+    var menuShowAll: String = "Show All"
+    var menuEdit: String = "Edit"
+    var menuUndo: String = "Undo"
+    var menuRedo: String = "Redo"
     /// Named actions an icon-only control borrows so it can say what it
     /// does. No feature owns these, because half a dozen already share them.
-    let actionClear: String
-    let actionRemove: String
-    let actionBack: String
-    let actionSearch: String
-    let actionMute: String
-    let actionUnmute: String
-    let actionPlay: String
-    let actionPause: String
-    let menuCut: String
-    let menuCopy: String
-    let menuPaste: String
-    let menuSelectAll: String
-    let menuWindow: String
-    let menuMinimize: String
-    let menuZoom: String
-    let menuClose: String
+    var actionClear: String = "Clear"
+    var actionRemove: String = "Remove"
+    var actionBack: String = "Back"
+    var actionSearch: String = "Search"
+    var actionMute: String = "Mute"
+    var actionUnmute: String = "Unmute"
+    var actionPlay: String = "Play"
+    var actionPause: String = "Pause"
+    var menuCut: String = "Cut"
+    var menuCopy: String = "Copy"
+    var menuPaste: String = "Paste"
+    var menuSelectAll: String = "Select All"
+    var menuWindow: String = "Window"
+    var menuMinimize: String = "Minimize"
+    var menuZoom: String = "Zoom"
+    var menuClose: String = "Close"
 
     // MARK: Durations
-    let minutes15: String
-    let minutes30: String
-    let hour1: String
-    let hours2: String
-    let hours4: String
-    let hours8: String
-    let indefinitely: String
-    let indefinite: String
+    var minutes15: String = "15 minutes"
+    var minutes30: String = "30 minutes"
+    var hour1: String = "1 hour"
+    var hours2: String = "2 hours"
+    var hours4: String = "4 hours"
+    var hours8: String = "8 hours"
+    var indefinitely: String = "Indefinitely"
+    var indefinite: String = "Indefinite"
 
     // MARK: Panel — header & footer
-    let panelSettings: String
-    let panelQuit: String
+    var panelSettings: String = "Settings"
+    var panelQuit: String = "Quit"
 
     // MARK: Panel — keep awake card
-    let keepAwakeTitle: String
-    let keepAwakeEndsIn: String        // + remaining
-    let keepAwakeUntilDisabled: String
-    let keepAwakeNormalRules: String
-    let keepAwakeOptions: String
-    let keepAwakeMouseJiggle: String
-    let keepAwakeMouseJiggleCaption: String
-    let keepAwakeMouseJiggleInterval: String
-    let keepAwakeActiveIconLabel: String
-    let keepAwakeActiveIconVorssaint: String
-    let keepAwakeActiveIconCoffee: String
-    let keepAwakeActiveIconEye: String
-    let keepAwakeActiveIconMoon: String
-    let keepAwakeActiveIconLight: String
-    let keepAwakeIconTintLabel: String
-    let keepAwakeIconTintOrange: String
-    let keepAwakeIconTintGreen: String
-    let keepAwakeIconTintBlue: String
-    let keepAwakeIconTintPurple: String
-    let keepAwakeIconTintPink: String
-    let keepAwakeIconTintNone: String
-    let durationLabel: String
-    let clamshellTitle: String
-    let clamshellOnCaption: String
-    let clamshellNeedsSession: String
-    let clamshellReady: String
-    let clamshellNeedsPassword: String
+    var keepAwakeTitle: String = "Keep awake"
+    var keepAwakeEndsIn: String = "Ends in"        // + remaining
+    var keepAwakeUntilDisabled: String = "Active until you turn it off"
+    var keepAwakeNormalRules: String = "The Mac follows its normal energy rules"
+    var keepAwakeOptions: String = "Options"
+    var keepAwakeMouseJiggle: String = "Move pointer slightly"
+    var keepAwakeMouseJiggleCaption: String = "During a session, moves the pointer a little at the chosen interval."
+    var keepAwakeMouseJiggleInterval: String = "Interval"
+    var keepAwakeActiveIconLabel: String = "Active icon"
+    var keepAwakeActiveIconVorssaint: String = "Vorssaint"
+    var keepAwakeActiveIconCoffee: String = "Coffee"
+    var keepAwakeActiveIconEye: String = "Eye"
+    var keepAwakeActiveIconMoon: String = "Moon"
+    var keepAwakeActiveIconLight: String = "Lightbulb"
+    var keepAwakeIconTintLabel: String = "Active icon color"
+    var keepAwakeIconTintOrange: String = "Orange"
+    var keepAwakeIconTintGreen: String = "Green"
+    var keepAwakeIconTintBlue: String = "Blue"
+    var keepAwakeIconTintPurple: String = "Purple"
+    var keepAwakeIconTintPink: String = "Pink"
+    var keepAwakeIconTintNone: String = "No color"
+    var durationLabel: String = "Duration"
+    var clamshellTitle: String = "Keep going with the lid closed"
+    var clamshellOnCaption: String = "Sleep fully disabled. Mind the power"
+    var clamshellNeedsSession: String = "Applied whenever “Keep awake” is active"
+    var clamshellReady: String = "Ready. Toggles without a password"
+    var clamshellNeedsPassword: String = "Will ask for the administrator password once"
 
     // MARK: Panel — system monitor
-    let systemSection: String
-    let temperatures: String
-    let cpuLabel: String
-    let gpuLabel: String
-    let batteryLabel: String
-    let usageSection: String
-    let memorySection: String
-    let memoryPressure: String
-    let memorySwapUsed: String
-    let memoryCompressed: String
-    let memoryCachedFiles: String
-    let pressureNormal: String
-    let pressureWarning: String
-    let pressureCritical: String
-    let monitorUnavailable: String
-    let energyAppsTitle: String
-    let energyAppsIdle: String
+    var systemSection: String = "System"
+    var temperatures: String = "Temperatures"
+    var cpuLabel: String = "CPU"
+    var gpuLabel: String = "GPU"
+    var batteryLabel: String = "Battery"
+    var usageSection: String = "Hardware usage"
+    var memorySection: String = "Memory"
+    var memoryPressure: String = "Pressure"
+    var memorySwapUsed: String = "Swap used"
+    var memoryCompressed: String = "Compressed"
+    var memoryCachedFiles: String = "Cached files"
+    var pressureNormal: String = "Normal"
+    var pressureWarning: String = "Caution"
+    var pressureCritical: String = "Critical"
+    var monitorUnavailable: String = "Sensors unavailable on this Mac"
+    var energyAppsTitle: String = "Apps using significant energy"
+    var energyAppsIdle: String = "No significant energy use"
 
     // MARK: Notifications
-    let notifySessionEndedTitle: String
-    let notifySessionEndedBody: String
-    let notifyBatteryTitle: String
-    let notifyBatteryBody: String
+    var notifySessionEndedTitle: String = "Session ended"
+    var notifySessionEndedBody: String = "Time is up. The Mac will sleep normally again."
+    var notifyBatteryTitle: String = "Vorssaint disabled"
+    var notifyBatteryBody: String = "Low battery. Normal sleep was restored to protect the charge."
 
     // MARK: Administrator prompts (shown by macOS password dialogs)
-    let adminPromptClamshellOff: String
-    let adminPromptRecover: String
-    let adminPromptUpdate: String
-    let adminPromptSudoersInstall: String
-    let adminPromptSudoersRemove: String
+    var adminPromptClamshellOff: String = "Vorssaint needs your password to restore the Mac’s normal sleep."
+    var adminPromptRecover: String = "Vorssaint quit while the Mac’s sleep was disabled. Enter the password to restore normal sleep."
+    var adminPromptUpdate: String = "Vorssaint needs your password to install the update."
+    var adminPromptSudoersInstall: String = "Vorssaint will create a restricted rule (pmset disablesleep only) to toggle closed-lid mode without asking for a password. This is the only time the password is needed."
+    var adminPromptSudoersRemove: String = "Vorssaint will remove the password-free closed-lid rule."
 
     // MARK: Settings — window & tabs
-    let settingsTitle: String
-    let tabGeneral: String
-    let tabMouse: String
-    let tabDock: String
-    let tabWindowBehavior: String
-    let tabKeyboard: String
-    let tabTrackpad: String
-    let tabAdvanced: String
-    let tabAbout: String
-    let tabReleaseNotes: String
+    var settingsTitle: String = "Vorssaint Settings"
+    var tabGeneral: String = "General"
+    var tabMouse: String = "Mouse"
+    var tabDock: String = "Dock"
+    var tabWindowBehavior: String = "Window behaviour"
+    var tabKeyboard: String = "Keyboard"
+    var tabTrackpad: String = "Trackpad"
+    var tabAdvanced: String = "Advanced"
+    var tabAbout: String = "About"
+    var tabReleaseNotes: String = "What’s New"
 
     // MARK: Settings — advanced
-    let advancedResetSection: String
-    let advancedResetDescription: String
-    let advancedClearButton: String
-    let advancedCleared: String
-    let advancedClearConfirmTitle: String
-    let advancedClearConfirmBody: String
-    let advancedUninstallSection: String
-    let advancedUninstallDescription: String
-    let advancedUninstallButton: String
-    let advancedUninstallConfirmTitle: String
-    let advancedUninstallConfirmBody: String
-    let advancedUninstallFailedTitle: String
-    let advancedUninstallFailedBody: String
+    var advancedResetSection: String = "Permissions"
+    var advancedResetDescription: String = "Removes every permission you granted Vorssaint (Accessibility, Screen Recording, Full Disk Access and others), the login item and the closed-lid rule. Useful to start fresh or before uninstalling. The app stays installed."
+    var advancedClearButton: String = "Clear all permissions"
+    var advancedCleared: String = "Permissions cleared."
+    var advancedClearConfirmTitle: String = "Clear all permissions?"
+    var advancedClearConfirmBody: String = "Features that need permissions will stop working until you grant them again. Your settings are kept."
+    var advancedUninstallSection: String = "Uninstall"
+    var advancedUninstallDescription: String = "Does all of the above, then removes the preferences and moves Vorssaint to the Trash, leaving nothing behind. The app quits when done. You can reinstall anytime."
+    var advancedUninstallButton: String = "Uninstall Vorssaint completely"
+    var advancedUninstallConfirmTitle: String = "Uninstall Vorssaint?"
+    var advancedUninstallConfirmBody: String = "Vorssaint will clear its permissions, remove its preferences and move to the Trash, then quit. This can’t be undone from the app, but it stays in the Trash until you empty it."
+    var advancedUninstallFailedTitle: String = "Uninstall stopped"
+    var advancedUninstallFailedBody: String = "Vorssaint could not put back a system setting it changed: sleep, fan speed or mouse acceleration. Nothing was removed. Try again and allow the password request if it appears."
 
     // MARK: Settings — general
-    let launchAtLogin: String
-    let languageLabel: String
-    let showCountdown: String
-    let hotkeyToggle: String
-    let hotkeyCaption: String
+    var launchAtLogin: String = "Launch at login"
+    var languageLabel: String = "Language"
+    var showCountdown: String = "Show remaining time next to the icon"
+    var hotkeyToggle: String = "Enable shortcut for “Keep awake”"
+    var hotkeyCaption: String = "Works in any app, no extra permissions."
 
     // MARK: Settings — energy
-    let sessionSection: String
-    let defaultDurationLabel: String
-    let keepAwakeAutoStart: String
-    let keepAwakeAutoStartCaption: String
-    let batteryProtectionSection: String
-    let batteryDisableBelow: String
-    let batteryNever: String
-    let batteryProtectionCaption: String
-    let clamshellSection: String
-    let configuring: String
-    let sudoersFailed: String
-    let clamshellExplanation: String
+    var sessionSection: String = "Session"
+    var defaultDurationLabel: String = "Default duration"
+    var keepAwakeAutoStart: String = "Keep Awake when Vorssaint opens"
+    var keepAwakeAutoStartCaption: String = "Starts a session with the default duration."
+    var batteryProtectionSection: String = "Battery protection"
+    var batteryDisableBelow: String = "Disable when battery drops below"
+    var batteryNever: String = "Never"
+    var batteryProtectionCaption: String = "Keeps a forgotten session from draining the MacBook battery."
+    var clamshellSection: String = "Closed lid"
+    var configuring: String = "Configuring…"
+    var sudoersFailed: String = "Couldn’t turn on closed-lid mode. Try again."
+    var clamshellExplanation: String = "“Keep going with the lid closed” fully disables sleep while “Keep awake” is active and is reverted automatically when the session ends or the app quits. Prefer using it plugged in."
 
     // MARK: Settings — mouse
-    let scrollSection: String
-    let invertMouseScroll: String
-    let invertMouseScrollCaption: String
-    let scrollTrackpadNote: String
-    let scrollActiveNow: String
-    let mouseNavigationActiveNow: String
-    let smoothScrollName: String
-    let smoothScrollCaption: String
-    let smoothScrollStepLabel: String
-    let mouseNavigationSection: String
-    let mouseNavigationEnable: String
-    let mouseNavigationCaption: String
-    let middleClickSection: String
-    let middleClickEnable: String
-    let middleClickEnableCaption: String
-    let middleClickDragConflict: String
-    let middleClickTapPicker: String
-    let middleClickTapOff: String
-    let middleClickTapThreeFingers: String
-    let middleClickTapFourFingers: String
-    let middleClickTapCaption: String
-    let quickToolShortcutToggle: String
-    let ocrName: String
-    let ocrCaption: String
-    let ocrCopied: String
-    let ocrNoText: String
-    let colorPickerName: String
-    let colorPickerCaption: String
-    let colorPickerFormatLabel: String
-    let colorPickerBareHexToggle: String
-    let colorPickerPickNow: String
-    let pastePlainName: String
-    let pastePlainCaption: String
+    var scrollSection: String = "Scrolling"
+    var invertMouseScroll: String = "Invert mouse scrolling"
+    var invertMouseScrollCaption: String = "Reverses the mouse wheel direction."
+    var scrollTrackpadNote: String = "The trackpad is untouched: it keeps macOS natural scrolling."
+    var scrollActiveNow: String = "Inverting mouse scrolling right now"
+    var mouseNavigationActiveNow: String = "Side buttons active right now"
+    var smoothScrollName: String = "Smooth scrolling"
+    var smoothScrollCaption: String = "Turns each mouse wheel step into a short, gentle glide. The trackpad is not affected."
+    var smoothScrollStepLabel: String = "Scrolling speed"
+    var mouseNavigationSection: String = "Navigation"
+    var mouseNavigationEnable: String = "Use side buttons for Back and Forward"
+    var mouseNavigationCaption: String = "Turns the mouse Back and Forward buttons into navigation commands in Finder, browsers and compatible apps."
+    var middleClickSection: String = "Middle click"
+    var middleClickEnable: String = "Three-finger click acts as middle click"
+    var middleClickEnableCaption: String = "Pressing the trackpad with three fingers works like a mouse wheel click: open links in a new tab, close tabs and everything else the middle button does."
+    var middleClickDragConflict: String = "macOS three-finger drag is turned on and uses this same gesture. Turn it off in System Settings under Accessibility, Pointer Control, Trackpad Options, and the middle click will work."
+    var middleClickTapPicker: String = "A light tap also clicks"
+    var middleClickTapOff: String = "Off"
+    var middleClickTapThreeFingers: String = "3 fingers"
+    var middleClickTapFourFingers: String = "4 fingers"
+    var middleClickTapCaption: String = "A light tap with that many fingers, without pressing, also fires the middle click. Sliding never counts. If the macOS three-finger tap is assigned to Look Up, turn it off so both do not fire together."
+    var quickToolShortcutToggle: String = "Global shortcut"
+    var ocrName: String = "Copy text from screen"
+    var ocrCaption: String = "Select an area of the screen and the recognized text is copied, ready to paste."
+    var ocrCopied: String = "Text copied"
+    var ocrNoText: String = "No text found"
+    var colorPickerName: String = "Color picker"
+    var colorPickerCaption: String = "Grab the color of any pixel on screen and copy it in your favorite format."
+    var colorPickerFormatLabel: String = "Copied format"
+    var colorPickerBareHexToggle: String = "Copy without the # prefix"
+    var colorPickerPickNow: String = "Pick color"
+    var pastePlainName: String = "Paste as plain text"
+    var pastePlainCaption: String = "Pastes what you copied without colors, fonts or formatting. The original stays on the clipboard."
 
     // MARK: Settings — switcher
-    let switcherSection: String
-    let switcherEnable: String
-    let switcherEnableCaption: String
-    let switcherNoWindows: String
-    let switcherIconRowMode: String
-    let switcherIconRowModeCaption: String
-    let switcherSimpleMode: String
-    let switcherSimpleModeCaption: String
-    let switcherShortcutHintApps: String
-    let switcherShortcutHintWindows: String
-    let switcherWindowShortcutCaption: String
-    let switcherTakeOverSystemShortcuts: String
-    let switcherTakeOverSystemShortcutsCaption: String
-    let switcherAppearanceDelay: String
-    let switcherAppearanceDelayCaption: String
-    let switcherMergeTabs: String
-    let switcherMergeTabsCaption: String
-    let switcherWindowlessApps: String
-    let switcherWindowlessAppsCaption: String
-    let switcherWindowlessAppsOff: String
-    let switcherWindowlessAppsFinder: String
-    let switcherWindowlessAppsAll: String
-    let switcherNoOpenWindow: String
-    let switcherOtherDesktop: String
+    var switcherSection: String = "App switcher"
+    var switcherEnable: String = "Use the Vorssaint switcher"
+    var switcherEnableCaption: String = "Switch between apps and windows, including minimized windows and multiple windows from the same app."
+    var switcherNoWindows: String = "No open windows"
+    var switcherIconRowMode: String = "Show %@ with large icons"
+    var switcherIconRowModeCaption: String = "Shows one icon per app with that app’s window previews above it."
+    var switcherSimpleMode: String = "Simple app switcher"
+    var switcherSimpleModeCaption: String = "Shows app icons and window titles, without previews or screen capture by the switcher."
+    var switcherShortcutHintApps: String = "Apps"
+    var switcherShortcutHintWindows: String = "Windows"
+    var switcherWindowShortcutCaption: String = "Opens a switcher for the frontmost app’s windows. While the Apps switcher is open, jumps between the selected app’s windows."
+    var switcherTakeOverSystemShortcuts: String = "Replace macOS ⌘Tab and ⌘`"
+    var switcherTakeOverSystemShortcutsCaption: String = "Disables the matching macOS app and window shortcuts only while Vorssaint’s switcher is active. All running apps stay reachable."
+    var switcherAppearanceDelay: String = "Appearance delay"
+    var switcherAppearanceDelayCaption: String = "How long the shortcut must be held before the switcher appears."
+    var switcherMergeTabs: String = "Show one entry per app"
+    var switcherMergeTabsCaption: String = "Collapses all of an app’s windows into one entry in the switcher, instead of one entry per window."
+    var switcherWindowlessApps: String = "Apps with no open window"
+    var switcherWindowlessAppsCaption: String = "Chooses which running apps with no window at all show up in the switcher."
+    var switcherWindowlessAppsOff: String = "Do not show"
+    var switcherWindowlessAppsFinder: String = "Finder only"
+    var switcherWindowlessAppsAll: String = "All apps"
+    var switcherNoOpenWindow: String = "No open window"
+    var switcherOtherDesktop: String = "Other desktop"
 
     // MARK: Feature — cut & paste in Finder
-    let cutPasteName: String
-    let cutPasteEnable: String
-    let cutPasteEnableCaption: String
-    let cutPasteShowHUD: String
-    let cutPasteShowHUDCaption: String
-    let cutPasteHowTitle: String
-    let cutPasteStep1: String
-    let cutPasteStep2: String
-    let cutPasteTextNote: String
-    let cutPasteActiveNow: String
-    let cutPasteAutomationNote: String
-    let cutReadyTitle: String
-    let cutReadyHint: String
-    let cutCancel: String
-    let cutDoneTitle: String
-    let cutMovedSingular: String
-    let cutMovedPluralFormat: String      // + count
-    let cutSomeFailed: String
-    let cutMovingTitle: String
-    let cutMovingCountFormat: String      // + position, total
+    var cutPasteName: String = "Cut & paste"
+    var cutPasteEnable: String = "Cut & paste files in Finder"
+    var cutPasteEnableCaption: String = "Use ⌘X to cut and ⌘V to move files and folders in Finder."
+    var cutPasteShowHUD: String = "Show floating panel"
+    var cutPasteShowHUDCaption: String = "Display a floating indicator with the cut files while Finder is active."
+    var cutPasteHowTitle: String = "How to use"
+    var cutPasteStep1: String = "Select items in Finder and press ⌘X to cut them."
+    var cutPasteStep2: String = "Open the destination folder and press ⌘V to move them there."
+    var cutPasteTextNote: String = "In text fields (like when renaming), ⌘X and ⌘V keep working as usual."
+    var cutPasteActiveNow: String = "Ready to cut in Finder"
+    var cutPasteAutomationNote: String = "The first time, macOS asks for permission to control Finder."
+    var cutReadyTitle: String = "Cut"
+    var cutReadyHint: String = "in the destination folder to move"
+    var cutCancel: String = "Cancel cut"
+    var cutDoneTitle: String = "Moved!"
+    var cutMovedSingular: String = "1 item moved"
+    var cutMovedPluralFormat: String = "%d items moved"      // + count
+    var cutSomeFailed: String = "Some items couldn’t be moved"
+    var cutMovingTitle: String = "Moving…"
+    var cutMovingCountFormat: String = "%d of %d"      // + position, total
 
     // MARK: Feature — quit on last window close
-    let autoQuitName: String
-    let autoQuitEnable: String
-    let autoQuitEnableCaption: String
-    let autoQuitActiveNow: String
-    let autoQuitHowTitle: String
-    let autoQuitStep1: String
-    let autoQuitStep2: String
-    let autoQuitPredictableNote: String
-    let autoQuitExceptionsTitle: String
-    let autoQuitExceptionsCaption: String
-    let autoQuitExceptionsEmpty: String
-    let autoQuitAddApp: String
+    var autoQuitName: String = "Quit on close"
+    var autoQuitEnable: String = "Quit an app when its last window closes"
+    var autoQuitEnableCaption: String = "Closing an app’s last window also quits it."
+    var autoQuitActiveNow: String = "Active now"
+    var autoQuitHowTitle: String = "How it works"
+    var autoQuitStep1: String = "Close an app’s last window (⌘W or the red button)."
+    var autoQuitStep2: String = "The app quits on its own. “Save changes?” dialogs still appear."
+    var autoQuitPredictableNote: String = "Apps that normally run without a window are never quit."
+    var autoQuitExceptionsTitle: String = "Exceptions"
+    var autoQuitExceptionsCaption: String = "Apps on this list stay open even with no windows."
+    var autoQuitExceptionsEmpty: String = "No exceptions"
+    var autoQuitAddApp: String = "Add app…"
 
     // MARK: Feature — complete app uninstaller
-    let uninstallerName: String
-    let uninstallerEnableCaption: String
-    let uninstallerMenuItem: String
-    let uninstallerDropTitle: String
-    let uninstallerDropSubtitle: String
-    let uninstallerChoose: String
-    let uninstallerPickerTitle: String
-    let uninstallerPickerSearch: String
-    let uninstallerPickerEmpty: String
-    let uninstallerEmptyNote: String
-    let uninstallerFDANote: String
-    let uninstallerFDAGrant: String
-    let uninstallerFDAHint: String
-    let uninstallerFDARelaunch: String
-    let uninstallerScanning: String
-    let uninstallerRemoving: String
-    let uninstallerFoundTitle: String
-    let uninstallerSelectedFormat: String   // + selected, total
-    let uninstallerRemove: String
-    let uninstallerCancel: String
-    let uninstallerDoneTitle: String
-    let uninstallerFreedFormat: String      // + size string
-    let uninstallerSomeFailed: String
-    let uninstallerFailedNeedsFDA: String
-    let uninstallerFailedMoreFormat: String
-    let uninstallerAnother: String
-    let uninstallerCatApp: String
-    let uninstallerCatSupport: String
-    let uninstallerCatCaches: String
-    let uninstallerCatPreferences: String
-    let uninstallerCatContainers: String
-    let uninstallerCatLogs: String
-    let uninstallerCatState: String
-    let uninstallerCatOther: String
+    var uninstallerName: String = "Uninstaller"
+    var uninstallerEnableCaption: String = "Removes an app together with the caches, preferences, logs and leftovers it leaves behind."
+    var uninstallerMenuItem: String = "Uninstall an app…"
+    var uninstallerDropTitle: String = "Drag an app here"
+    var uninstallerDropSubtitle: String = "or choose one to scan"
+    var uninstallerChoose: String = "Choose app…"
+    var uninstallerPickerTitle: String = "Choose app"
+    var uninstallerPickerSearch: String = "Search apps"
+    var uninstallerPickerEmpty: String = "No apps found"
+    var uninstallerEmptyNote: String = "Nothing is removed without your confirmation."
+    var uninstallerFDANote: String = "Grant Full Disk Access for a more thorough scan."
+    var uninstallerFDAGrant: String = "Grant access…"
+    var uninstallerFDAHint: String = "Turn Vorssaint on in the list. If it isn’t there, click + and pick Vorssaint from Applications. Access only applies after you reopen the app."
+    var uninstallerFDARelaunch: String = "Relaunch now"
+    var uninstallerScanning: String = "Scanning files…"
+    var uninstallerRemoving: String = "Moving to the Trash…"
+    var uninstallerFoundTitle: String = "found"
+    var uninstallerSelectedFormat: String = "%d of %d selected"   // + selected, total
+    var uninstallerRemove: String = "Move to Trash"
+    var uninstallerCancel: String = "Cancel"
+    var uninstallerDoneTitle: String = "Done!"
+    var uninstallerFreedFormat: String = "%@ recovered"      // + size string
+    var uninstallerSomeFailed: String = "Some items couldn’t be moved to the Trash."
+    var uninstallerFailedNeedsFDA: String = "Sandboxed app data can only be moved with Full Disk Access. The administrator password does not stand in for it."
+    var uninstallerFailedMoreFormat: String = "and %d more"
+    var uninstallerAnother: String = "Uninstall another"
+    var uninstallerCatApp: String = "Application"
+    var uninstallerCatSupport: String = "Support"
+    var uninstallerCatCaches: String = "Caches"
+    var uninstallerCatPreferences: String = "Preferences"
+    var uninstallerCatContainers: String = "Containers"
+    var uninstallerCatLogs: String = "Logs"
+    var uninstallerCatState: String = "Saved state"
+    var uninstallerCatOther: String = "Other"
 
     // MARK: Feature — URL cleaner
-    let urlCleanerName: String
-    let urlCleanerEnable: String
-    let urlCleanerEnableCaption: String
-    let urlCleanerActiveNow: String
-    let urlCleanerManualTitle: String
-    let urlCleanerInputPlaceholder: String
-    let urlCleanerOutputPlaceholder: String
-    let urlCleanerCleanButton: String
-    let urlCleanerPasteButton: String
-    let urlCleanerCopyButton: String
-    let urlCleanerClearButton: String
-    let urlCleanerNoURL: String
-    let urlCleanerNoChange: String
-    let urlCleanerCleaned: String
-    let urlCleanerCopied: String
-    let urlCleanerLocalNote: String
+    var urlCleanerName: String = "Clean URL"
+    var urlCleanerEnable: String = "Clean URLs as you copy them"
+    var urlCleanerEnableCaption: String = "Removes tracking parameters from a link the moment it reaches the clipboard."
+    var urlCleanerActiveNow: String = "Active now"
+    var urlCleanerManualTitle: String = "Clean now"
+    var urlCleanerInputPlaceholder: String = "Paste a URL"
+    var urlCleanerOutputPlaceholder: String = "The clean URL appears here"
+    var urlCleanerCleanButton: String = "Clean"
+    var urlCleanerPasteButton: String = "Paste"
+    var urlCleanerCopyButton: String = "Copy"
+    var urlCleanerClearButton: String = "Clear field"
+    var urlCleanerNoURL: String = "Paste a valid URL."
+    var urlCleanerNoChange: String = "Nothing to clean."
+    var urlCleanerCleaned: String = "URL cleaned."
+    var urlCleanerCopied: String = "Copied."
+    var urlCleanerLocalNote: String = "Local. No network."
 
     // MARK: Feature — Homebrew manager
-    let homebrewName: String
-    let homebrewMissingTitle: String
-    let homebrewMissingBody: String
-    let homebrewRefresh: String
-    let homebrewRequested: String
-    let homebrewDependencies: String
-    let homebrewDependenciesNote: String
-    let homebrewMasApps: String
-    let homebrewCopyName: String
-    let homebrewTrustTitle: String
-    let homebrewTrustCaption: String
-    let homebrewTrustButton: String
-    let homebrewNoPackages: String
-    let homebrewUninstall: String
-    let homebrewUpgrade: String
-    let homebrewUpdateHomebrew: String
-    let homebrewAllPackages: String
-    let homebrewOpenTerminal: String
-    let homebrewCancelOperation: String
-    let homebrewClearLog: String
-    let homebrewHomepage: String
-    let homebrewUpdateAvailableBadge: String
-    let homebrewConfirmUninstallTitle: String
-    let homebrewConfirmUninstallBodyFormat: String
-    let homebrewConfirmUpgradeTitle: String
-    let homebrewConfirmUpgradeBodyFormat: String
-    let homebrewConfirmUpdateHomebrewTitle: String
-    let homebrewConfirmUpdateHomebrewBody: String
-    let homebrewTerminalFallback: String
-    let homebrewLoading: String
-    let homebrewOperationUninstallFormat: String
-    let homebrewOperationUpgradeFormat: String
-    let homebrewOperationUpdateHomebrew: String
-    let homebrewOperationUninstalledFormat: String
-    let homebrewOperationUpgradedFormat: String
-    let homebrewOperationUpdatedHomebrew: String
-    let homebrewOperationFailedFormat: String
-    let homebrewOperationCancelled: String
-    let homebrewOperationPreparing: String
-    let homebrewOperationDownloading: String
-    let homebrewOperationUninstalling: String
-    let homebrewOperationUpgrading: String
-    let homebrewOperationFinalizing: String
-    let homebrewOperationRefreshing: String
-    let homebrewOperationTerminal: String
-    let homebrewOperationElapsedFormat: String
-    let homebrewOperationShowDetails: String
-    let homebrewOperationHideDetails: String
-    let homebrewOperationTechnicalLog: String
-    let homebrewOperationProgressUnknown: String
+    var homebrewName: String = "Homebrew"
+    var homebrewMissingTitle: String = "Homebrew not found"
+    var homebrewMissingBody: String = "Homebrew is not installed. Once it is, the packages it manages show up here."
+    var homebrewRefresh: String = "Refresh"
+    var homebrewRequested: String = "Installed by you"
+    var homebrewDependencies: String = "Pulled in as dependencies"
+    var homebrewDependenciesNote: String = "These came with the packages above and upgrade together with them."
+    var homebrewMasApps: String = "App Store"
+    var homebrewCopyName: String = "Copy name"
+    var homebrewTrustTitle: String = "Tap not trusted yet"
+    var homebrewTrustCaption: String = "Homebrew now asks for your confirmation before using third party taps. Trust %@ to continue."
+    var homebrewTrustButton: String = "Trust and continue"
+    var homebrewNoPackages: String = "No packages found"
+    var homebrewUninstall: String = "Uninstall"
+    var homebrewUpgrade: String = "Update"
+    var homebrewUpdateHomebrew: String = "Update Homebrew"
+    var homebrewAllPackages: String = "packages"
+    var homebrewOpenTerminal: String = "Open Terminal"
+    var homebrewCancelOperation: String = "Cancel"
+    var homebrewClearLog: String = "Clear log"
+    var homebrewHomepage: String = "Open website"
+    var homebrewUpdateAvailableBadge: String = "Update available"
+    var homebrewConfirmUninstallTitle: String = "Uninstall with Homebrew?"
+    var homebrewConfirmUninstallBodyFormat: String = "Homebrew will uninstall %@. Configuration files may remain on the system."
+    var homebrewConfirmUpgradeTitle: String = "Update with Homebrew?"
+    var homebrewConfirmUpgradeBodyFormat: String = "Homebrew will download and apply the latest version of %@. Dependencies may also be updated."
+    var homebrewConfirmUpdateHomebrewTitle: String = "Update Homebrew?"
+    var homebrewConfirmUpdateHomebrewBody: String = "Homebrew will fetch the latest information and then reload your packages."
+    var homebrewTerminalFallback: String = "This operation needs Terminal to ask for the administrator password. Vorssaint does not capture passwords."
+    var homebrewLoading: String = "Loading…"
+    var homebrewOperationUninstallFormat: String = "Uninstalling %@"
+    var homebrewOperationUpgradeFormat: String = "Updating %@"
+    var homebrewOperationUpdateHomebrew: String = "Updating Homebrew"
+    var homebrewOperationUninstalledFormat: String = "%@ uninstalled."
+    var homebrewOperationUpgradedFormat: String = "%@ updated."
+    var homebrewOperationUpdatedHomebrew: String = "Homebrew updated."
+    var homebrewOperationFailedFormat: String = "Could not finish %@."
+    var homebrewOperationCancelled: String = "Operation cancelled."
+    var homebrewOperationPreparing: String = "Preparing…"
+    var homebrewOperationDownloading: String = "Downloading files…"
+    var homebrewOperationUninstalling: String = "Removing files…"
+    var homebrewOperationUpgrading: String = "Updating files…"
+    var homebrewOperationFinalizing: String = "Finishing…"
+    var homebrewOperationRefreshing: String = "Refreshing list…"
+    var homebrewOperationTerminal: String = "Continue in Terminal."
+    var homebrewOperationElapsedFormat: String = "%@ elapsed"
+    var homebrewOperationShowDetails: String = "Show details"
+    var homebrewOperationHideDetails: String = "Hide details"
+    var homebrewOperationTechnicalLog: String = "Technical details"
+    var homebrewOperationProgressUnknown: String = "Homebrew has not reported a percentage yet."
 
     // MARK: Feature — local media tools
-    let mediaName: String
-    let mediaEnableCaption: String
-    let mediaLocalNote: String
-    let mediaToolVideo: String
-    let mediaToolGIF: String
-    let mediaToolImage: String
-    let mediaToolText: String
-    let mediaSelectFile: String
-    let mediaDropHint: String
-    let mediaOutput: String
-    let mediaOutputAutomatic: String
-    let mediaChooseOutput: String
-    let mediaStartVideo: String
-    let mediaStartGIF: String
-    let mediaStartImage: String
-    let mediaStartConvertPDF: String
-    let mediaStartText: String
-    let mediaCancel: String
-    let mediaStartTime: String
-    let mediaEndTime: String
-    let mediaQuality: String
-    let mediaCompressionLow: String
-    let mediaCompressionMedium: String
-    let mediaCompressionHigh: String
-    let mediaMaxSize: String
-    let mediaSizingResolution: String
-    let mediaSizingFileSize: String
-    let mediaTargetSize: String
-    let mediaTargetSizeHint: String
-    let mediaErrorTargetTooSmall: String
-    let mediaMegabytesSuffix: String
-    let mediaWidth: String
-    let mediaFPS: String
-    let mediaFormat: String
-    let mediaStripMetadata: String
-    let mediaLoopGIF: String
-    let mediaOCRMode: String
-    let mediaOCRAccurate: String
-    let mediaOCRFast: String
-    let mediaRunning: String
-    let mediaCompleted: String
-    let mediaCancelled: String
-    let mediaOpenInFinder: String
-    let mediaCopyText: String
-    let mediaRunAgain: String
-    let mediaEmptyText: String
-    let mediaResultSavedFormat: String
-    let mediaResultSizeFormat: String
-    let mediaResultGrewCaption: String
-    let mediaErrorNoFile: String
-    let mediaErrorNoVideo: String
-    let mediaErrorSameOutput: String
-    let mediaErrorUnsupported: String
+    var mediaName: String = "Media"
+    var mediaEnableCaption: String = "Compress videos, convert and process images, make GIFs and extract text locally."
+    var mediaLocalNote: String = "Local. No network."
+    var mediaToolVideo: String = "Video"
+    var mediaToolGIF: String = "GIF"
+    var mediaToolImage: String = "Image"
+    var mediaToolText: String = "Text"
+    var mediaSelectFile: String = "Choose file"
+    var mediaDropHint: String = "Drop a file here or click to choose one."
+    var mediaOutput: String = "Output"
+    var mediaOutputAutomatic: String = "Automatic"
+    var mediaChooseOutput: String = "Destination"
+    var mediaStartVideo: String = "Compress video"
+    var mediaStartGIF: String = "Make GIF"
+    var mediaStartImage: String = "Process image"
+    var mediaStartConvertPDF: String = "Convert to PDF"
+    var mediaStartText: String = "Extract text"
+    var mediaCancel: String = "Cancel"
+    var mediaStartTime: String = "Start"
+    var mediaEndTime: String = "End"
+    var mediaQuality: String = "Compression"
+    var mediaCompressionLow: String = "Low"
+    var mediaCompressionMedium: String = "Medium"
+    var mediaCompressionHigh: String = "High"
+    var mediaMaxSize: String = "Size"
+    var mediaSizingResolution: String = "Resolution"
+    var mediaSizingFileSize: String = "File size"
+    var mediaTargetSize: String = "Target size"
+    var mediaTargetSizeHint: String = "Resolution adapts to stay under the limit."
+    var mediaErrorTargetTooSmall: String = "Target size too small for this clip. Trim it or raise the limit."
+    var mediaMegabytesSuffix: String = " MB"
+    var mediaWidth: String = "Width"
+    var mediaFPS: String = "FPS"
+    var mediaFormat: String = "Format"
+    var mediaStripMetadata: String = "Remove metadata"
+    var mediaLoopGIF: String = "Loop GIF"
+    var mediaOCRMode: String = "OCR"
+    var mediaOCRAccurate: String = "Accurate"
+    var mediaOCRFast: String = "Fast"
+    var mediaRunning: String = "Processing"
+    var mediaCompleted: String = "Done"
+    var mediaCancelled: String = "Cancelled."
+    var mediaOpenInFinder: String = "Show"
+    var mediaCopyText: String = "Copy text"
+    var mediaRunAgain: String = "Run again"
+    var mediaEmptyText: String = "No text found."
+    var mediaResultSavedFormat: String = "Saved as %@"
+    var mediaResultSizeFormat: String = "%@ to %@"
+    var mediaResultGrewCaption: String = "The converted file came out larger than the original."
+    var mediaErrorNoFile: String = "Choose a file first."
+    var mediaErrorNoVideo: String = "This file has no video track."
+    var mediaErrorSameOutput: String = "Choose a destination different from the original file."
+    var mediaErrorUnsupported: String = "Format not supported by macOS."
 
     // MARK: Feature — temporary shelf
-    let shelfName: String
-    let shelfEnable: String
-    let shelfEnableCaption: String
-    let shelfHowTitle: String
-    let shelfStep1: String
-    let shelfStep2: String
-    let shelfStep3: String
-    let shelfShakeToggle: String
-    let shelfShakeCaption: String
-    let shelfDropZoneToggle: String
-    let shelfDropZoneCaption: String
-    let shelfCollapse: String
-    let shelfBehaviorTitle: String
-    let shelfCloseAfterDrop: String
-    let shelfCloseAfterDropCaption: String
-    let shelfRemoveAfterDrop: String
-    let shelfRemoveAfterDropCaption: String
-    let shelfExclusionsTitle: String
-    let shelfExclusionsEmpty: String
-    let shelfExclusionsCaption: String
-    let shelfPin: String
-    let shelfUnpin: String
-    let shelfHotkeyLabel: String
-    let shelfOpenNow: String
-    let shelfNoPermission: String
-    let shelfMenuItem: String
-    let shelfTitle: String
-    let shelfEmpty: String
-    let shelfClearAll: String
-    let shelfRemoveSelected: String
-    let shelfSelectedFormat: String      // + count
-    let shelfHint: String
-    let shelfItemImage: String
+    var shelfName: String = "Shelf"
+    var shelfEnable: String = "Temporary area for dragging files"
+    var shelfEnableCaption: String = "A floating spot to gather files, images and text, then drag them anywhere later."
+    var shelfHowTitle: String = "How to use"
+    var shelfStep1: String = "Open it with the shortcut, or by shaking the mouse during a drag."
+    var shelfStep2: String = "Drop files, images, links or text onto it to hold them."
+    var shelfStep3: String = "Drag each item back out to any app when you need it."
+    var shelfShakeToggle: String = "Open by shaking the mouse while dragging"
+    var shelfShakeCaption: String = "Shake the pointer quickly while holding an item to summon it near the cursor."
+    var shelfDropZoneToggle: String = "Keep dragged files in the menu bar"
+    var shelfDropZoneCaption: String = "While you drag a file, the shelf appears below the menu bar icon. Whatever you drop is kept right there, in a button you shrink and open with a click that goes away once the shelf is empty."
+    var shelfCollapse: String = "Collapse"
+    var shelfBehaviorTitle: String = "After use"
+    var shelfCloseAfterDrop: String = "Close after dropping into another app"
+    var shelfCloseAfterDropCaption: String = "Closes the shelf when the destination accepts the items. The pin in the panel keeps it open."
+    var shelfRemoveAfterDrop: String = "Remove items after dropping"
+    var shelfRemoveAfterDropCaption: String = "Items accepted by another app leave the shelf. Turn this off to keep a copy there."
+    var shelfExclusionsTitle: String = "Automatic exceptions"
+    var shelfExclusionsEmpty: String = "No apps added."
+    var shelfExclusionsCaption: String = "Shake and the menu bar drop zone stay off for drags started in these apps. The shortcut and Open now still work."
+    var shelfPin: String = "Keep open"
+    var shelfUnpin: String = "Allow closing after use"
+    var shelfHotkeyLabel: String = "Shortcut"
+    var shelfOpenNow: String = "Open now"
+    var shelfNoPermission: String = "Requires no permissions."
+    var shelfMenuItem: String = "Open shelf"
+    var shelfTitle: String = "Shelf"
+    var shelfEmpty: String = "Drag items here"
+    var shelfClearAll: String = "Clear all"
+    var shelfRemoveSelected: String = "Remove selected"
+    var shelfSelectedFormat: String = "%d selected"      // + count
+    var shelfHint: String = "Click to select. Drag out to use or right-click for more actions."
+    var shelfItemImage: String = "Image"
     // Three forms, not two: Russian agrees a noun with the number in front of
     // it as one, as two through four, and as five or more. Every other
     // language here needs only the first and the last, and repeats the last
     // in the middle slot. A pile always holds two or more, so the items count
     // has no singular of its own.
-    let shelfTooltipItemsFormat: String      // + count, five or more
-    let shelfTooltipItemsFew: String         // + count, two through four
-    let shelfTooltipImageSingular: String    // + count == 1
-    let shelfTooltipImageFew: String         // + count, two through four
-    let shelfTooltipImagePlural: String      // + count
-    let shelfTooltipFileSingular: String     // + count == 1
-    let shelfTooltipFileFew: String          // + count, two through four
-    let shelfTooltipFilePlural: String       // + count
-    let shelfTooltipNoteSingular: String     // + count == 1
-    let shelfTooltipNoteFew: String          // + count, two through four
-    let shelfTooltipNotePlural: String       // + count
-    let shelfTooltipLinkSingular: String     // + count == 1
-    let shelfTooltipLinkFew: String          // + count, two through four
-    let shelfTooltipLinkPlural: String       // + count
-    let shelfActionOpen: String
-    let shelfActionOpenWith: String
-    let shelfActionShare: String
+    var shelfTooltipItemsFormat: String = "%d items"      // + count, five or more
+    var shelfTooltipItemsFew: String = "%d items"         // + count, two through four
+    var shelfTooltipImageSingular: String = "%d image"    // + count == 1
+    var shelfTooltipImageFew: String = "%d images"         // + count, two through four
+    var shelfTooltipImagePlural: String = "%d images"      // + count
+    var shelfTooltipFileSingular: String = "%d file"     // + count == 1
+    var shelfTooltipFileFew: String = "%d files"          // + count, two through four
+    var shelfTooltipFilePlural: String = "%d files"       // + count
+    var shelfTooltipNoteSingular: String = "%d note"     // + count == 1
+    var shelfTooltipNoteFew: String = "%d notes"          // + count, two through four
+    var shelfTooltipNotePlural: String = "%d notes"       // + count
+    var shelfTooltipLinkSingular: String = "%d link"     // + count == 1
+    var shelfTooltipLinkFew: String = "%d links"          // + count, two through four
+    var shelfTooltipLinkPlural: String = "%d links"       // + count
+    var shelfActionOpen: String = "Open"
+    var shelfActionOpenWith: String = "Open With"
+    var shelfActionShare: String = "Share"
 
     // MARK: Panel — per-app breakdown
-    let breakdownMeasuring: String
+    var breakdownMeasuring: String = "Measuring…"
 
     // MARK: Panel — volume mixer
-    let preciseVolumeRollerEnable: String
-    let preciseVolumeRollerCaption: String
-    let preciseVolumeRollerTapFailed: String
+    var preciseVolumeRollerEnable: String = "Use finer volume steps"
+    var preciseVolumeRollerCaption: String = "Turns volume wheels and keys into smaller system volume steps."
+    var preciseVolumeRollerTapFailed: String = "Could not listen for volume keys."
 
     // MARK: Settings — updates
-    let updatesSection: String
-    let autoCheckToggle: String
-    let includeBetaUpdatesToggle: String
-    let includeBetaUpdatesCaption: String
-    let betaBadgeLabel: String
-    let checkNowButton: String
-    let updateChecking: String
-    let updateUpToDate: String
-    let updateAvailablePrefix: String  // + version
-    let updateInstallButton: String
-    let updateDownloading: String
-    let updateInstalling: String
-    let updateFailedPrefix: String
-    let updateLastChecked: String
-    let updateNotifyTitle: String
-    let updateInstallFailedBody: String
-    let updateNeedsApplicationsTitle: String
-    let updateNeedsApplicationsBody: String
-    let menuCheckUpdates: String
+    var updatesSection: String = "Updates"
+    var autoCheckToggle: String = "Check for updates automatically"
+    var includeBetaUpdatesToggle: String = "Receive beta updates"
+    var includeBetaUpdatesCaption: String = "Beta versions include features in development and may contain bugs or incomplete behavior."
+    var betaBadgeLabel: String = "Beta"
+    var checkNowButton: String = "Check now"
+    var updateChecking: String = "Checking…"
+    var updateUpToDate: String = "You’re on the latest version."
+    var updateAvailablePrefix: String = "Update available:"  // + version
+    var updateInstallButton: String = "Download and install"
+    var updateDownloading: String = "Downloading update…"
+    var updateInstalling: String = "Installing and restarting…"
+    var updateFailedPrefix: String = "Couldn’t check:"
+    var updateLastChecked: String = "Last checked:"
+    var updateNotifyTitle: String = "Vorssaint update"
+    var updateInstallFailedBody: String = "The update was downloaded but could not be applied. Download the latest version from the GitHub releases page and drag the app over the current one."
+    var updateNeedsApplicationsTitle: String = "Move Vorssaint to Applications"
+    var updateNeedsApplicationsBody: String = "The app is running from a place that cannot be updated, such as the disk image or a temporary system location. Drag Vorssaint to the Applications folder, open it from there and try again."
+    var menuCheckUpdates: String = "Check for updates…"
 
     // MARK: Permissions (shared by Settings & onboarding)
-    let permissionRequired: String
-    let permissionAccessibility: String
-    let permissionScreenRecording: String
-    let permissionGranted: String
-    let permissionMissing: String
-    let permissionOpenSettings: String
-    let permissionRequest: String
-    let permissionRestartNote: String
+    var permissionRequired: String = "Permission required"
+    var permissionAccessibility: String = "Accessibility"
+    var permissionScreenRecording: String = "Screen Recording"
+    var permissionGranted: String = "Granted"
+    var permissionMissing: String = "Not granted"
+    var permissionOpenSettings: String = "Open System Settings…"
+    var permissionRequest: String = "Grant access"
+    var permissionRestartNote: String = "macOS may ask to reopen the app after granting."
 
     // MARK: About
-    let aboutDescription: String
-    let versionPrefix: String
-    let reviewIntro: String
-    let reviewHighlights: String
-    let viewOnGitHub: String
+    var aboutDescription: String = "A utility hub for your Mac.\nEnergy, system monitor, scrolling and a window switcher, right in the menu bar."
+    var versionPrefix: String = "Version"
+    var reviewIntro: String = "Review introduction"
+    var reviewHighlights: String = "Review highlights"
+    var viewOnGitHub: String = "View on GitHub"
 
     // MARK: Onboarding
-    let obContinue: String
-    let obBack: String
-    let obStart: String
-    let obStepWelcomeTitle: String
-    let obStepWelcomeBody: String
-    let obWelcomeBullet1Title: String
-    let obWelcomeBullet1Body: String
-    let obWelcomeBullet2Title: String
-    let obWelcomeBullet2Body: String
-    let obWelcomeBullet3Title: String
-    let obWelcomeBullet3Body: String
-    let obLanguageLabel: String
-    let obStepDoneTitle: String
-    let obStepDoneBody: String
-    let obDoneHint: String
-    let obWhatsNewTitle: String
-    let obWhatsNewFallback: String
-    let obPurposeTitle: String
-    let obPurposeBody: String
-    let obPurposeSkip: String
+    var obContinue: String = "Continue"
+    var obBack: String = "Back"
+    var obStart: String = "Open Vorssaint"
+    var obStepWelcomeTitle: String = "Welcome to Vorssaint"
+    var obStepWelcomeBody: String = "A discreet menu bar utility that makes everyday macOS more practical."
+    var obWelcomeBullet1Title: String = "Energy under control"
+    var obWelcomeBullet1Body: String = "Keep the Mac awake for as long as you want, even with the lid closed."
+    var obWelcomeBullet2Title: String = "A clear view of the system"
+    var obWelcomeBullet2Body: String = "CPU, GPU and battery temperatures, hardware usage and memory pressure in real time."
+    var obWelcomeBullet3Title: String = "Mouse and windows, your way"
+    var obWelcomeBullet3Body: String = "Reversed mouse scrolling and a window switcher with thumbnails."
+    var obLanguageLabel: String = "Language"
+    var obStepDoneTitle: String = "All set!"
+    var obStepDoneBody: String = "Vorssaint is already looking after your Mac."
+    var obDoneHint: String = "Look for the black hole in the menu bar, at the top right of the screen."
+    var obWhatsNewTitle: String = "What’s new in this version"
+    var obWhatsNewFallback: String = "This update includes the latest fixes and improvements."
+    var obPurposeTitle: String = "What brought you here?"
+    var obPurposeBody: String = "Choose a ready setup or select exactly what you want to use."
+    var obPurposeSkip: String = "You can add or remove features later in Settings."
 
     // MARK: Settings — monitor / menu bar metrics
-    let tabMonitor: String
-    let tabMenuBarIcon: String
-    let tabMenuBarPanel: String
-    let monitorMenuBarSection: String
-    let monitorMenuBarCaption: String
-    let monitorCombineTemperatures: String
-    let monitorCombineTemperaturesCaption: String
-    let monitorSeparateMenuBarMetrics: String
-    let monitorSeparateMenuBarMetricsCaption: String
-    let monitorNetworkUploadFirst: String
-    let monitorShowCPU: String
-    let monitorShowMemory: String
-    let monitorShowNetwork: String
-    let monitorShowPowerLabel: String
-    let monitorIntervalLabel: String
-    let monitorInterval1: String
-    let monitorInterval2: String
-    let monitorInterval5: String
-    let monitorPanelSection: String
-    let betaBadge: String
-    let betaFeatureWarning: String
+    var tabMonitor: String = "Monitor"
+    var tabMenuBarIcon: String = "Menu bar icon"
+    var tabMenuBarPanel: String = "Menu bar panel"
+    var monitorMenuBarSection: String = "In the menu bar"
+    var monitorMenuBarCaption: String = "Choose what appears next to the icon in the menu bar."
+    var monitorCombineTemperatures: String = "Combine usage and temperature"
+    var monitorCombineTemperaturesCaption: String = "When usage and temperature for the same item are enabled, show them in one block."
+    var monitorSeparateMenuBarMetrics: String = "Separate metrics into their own items"
+    var monitorSeparateMenuBarMetricsCaption: String = "Separates active blocks in the menu bar and keeps usage and temperature together when combine is on."
+    var monitorNetworkUploadFirst: String = "Upload above download"
+    var monitorShowCPU: String = "CPU"
+    var monitorShowMemory: String = "Memory"
+    var monitorShowNetwork: String = "Network"
+    var monitorShowPowerLabel: String = "Power"
+    var monitorIntervalLabel: String = "Update every"
+    var monitorInterval1: String = "1 second"
+    var monitorInterval2: String = "2 seconds"
+    var monitorInterval5: String = "5 seconds"
+    var monitorPanelSection: String = "In the panel"
+    var betaBadge: String = "BETA"
+    var betaFeatureWarning: String = "Beta. You may run into some bugs."
 
     // MARK: Panel — network
-    let networkSection: String
-    let networkDownload: String
-    let networkUpload: String
-    let networkThisSession: String
-    let networkMeasuring: String
-    let networkApps: String
-    let networkAppsIdle: String
+    var networkSection: String = "Network"
+    var networkDownload: String = "Download"
+    var networkUpload: String = "Upload"
+    var networkThisSession: String = "This session"
+    var networkMeasuring: String = "Measuring…"
+    var networkApps: String = "Apps using network"
+    var networkAppsIdle: String = "No apps using network now"
 
     // MARK: Panel — disk
-    let diskSection: String
-    let diskUsed: String
-    let diskAvailable: String
-    let diskPurgeable: String
-    let diskInternal: String
-    let diskExternal: String
-    let diskSelect: String
-    let diskRead: String
-    let diskWrite: String
-    let diskSMARTStatus: String
-    let diskSMARTUnavailable: String
-    let diskTotalRead: String
-    let diskTotalWritten: String
-    let diskTemperature: String
-    let diskHealth: String
-    let diskPowerCycles: String
-    let diskPowerOnHours: String
-    let diskEject: String
-    let diskEjectAll: String
-    let diskEjecting: String
-    let diskReadyToRemove: String
-    let diskEjectFailed: String
-    let diskProtectionCaption: String
-    let diskNoExternal: String
-    let diskOpenInFinder: String
-    let diskStorageSettings: String
-    let diskNoDisks: String
+    var diskSection: String = "Disks"
+    var diskUsed: String = "used"
+    var diskAvailable: String = "available"
+    var diskPurgeable: String = "purgeable"
+    var diskInternal: String = "Internal"
+    var diskExternal: String = "External"
+    var diskSelect: String = "Select disk"
+    var diskRead: String = "Read"
+    var diskWrite: String = "Write"
+    var diskSMARTStatus: String = "Status"
+    var diskSMARTUnavailable: String = "SMART unavailable for this disk"
+    var diskTotalRead: String = "Total read"
+    var diskTotalWritten: String = "Total written"
+    var diskTemperature: String = "Temperature"
+    var diskHealth: String = "Health"
+    var diskPowerCycles: String = "Power cycles"
+    var diskPowerOnHours: String = "Power on hours"
+    var diskEject: String = "Eject"
+    var diskEjectAll: String = "Eject all"
+    var diskEjecting: String = "Ejecting…"
+    var diskReadyToRemove: String = "Ready to remove"
+    var diskEjectFailed: String = "Could not eject"
+    var diskProtectionCaption: String = "Eject before unplugging."
+    var diskNoExternal: String = "No external disk ready to eject."
+    var diskOpenInFinder: String = "Open"
+    var diskStorageSettings: String = "Storage"
+    var diskNoDisks: String = "No mounted disks found."
 
     // MARK: Panel — power
-    let powerSection: String
-    let powerSystem: String
-    let powerAdapter: String
-    let powerBattery: String
-    let powerCharging: String
-    let powerOnBattery: String
-    let powerPluggedIn: String
-    let powerUnavailable: String
-    let powerAdapterMaxFormat: String   // + rated watts, e.g. "30 W max"
-    let monitorShowGPU: String
-    let monitorShowCPUTemperature: String
-    let monitorShowGPUTemperature: String
-    let monitorShowBatteryTemperature: String
-    let monitorShowPeripheralBattery: String
-    let peripheralBatteryNoDevices: String
-    let monitorGraphsSection: String
-    let monitorGraphsCaption: String
+    var powerSection: String = "Power"
+    var powerSystem: String = "System"
+    var powerAdapter: String = "Adapter"
+    var powerBattery: String = "Battery"
+    var powerCharging: String = "Charging"
+    var powerOnBattery: String = "On battery"
+    var powerPluggedIn: String = "Plugged in"
+    var powerUnavailable: String = "Power metrics unavailable on this Mac"
+    var powerAdapterMaxFormat: String = "%@ max"   // + rated watts, e.g. "30 W max"
+    var monitorShowGPU: String = "GPU"
+    var monitorShowCPUTemperature: String = "CPU temperature"
+    var monitorShowGPUTemperature: String = "GPU temperature"
+    var monitorShowBatteryTemperature: String = "Battery temperature"
+    var monitorShowPeripheralBattery: String = "Peripheral battery"
+    var peripheralBatteryNoDevices: String = "No devices found"
+    var monitorGraphsSection: String = "Graphs"
+    var monitorGraphsCaption: String = "Choose which metrics show a graph over time."
 
     // MARK: Update notification + onboarding menu bar setup
-    let updateBannerTitle: String
-    let updateBannerAction: String
-    let menuBarSpacingLabel: String
-    let menuBarSpacingStandard: String
-    let menuBarSpacingCompact: String
-    let menuBarHideIconToggle: String
-    let menuBarHideIconCaption: String
-    let monitorMemoryPressureDot: String
+    var updateBannerTitle: String = "Update available"
+    var updateBannerAction: String = "Update"
+    var menuBarSpacingLabel: String = "Menu bar spacing"
+    var menuBarSpacingStandard: String = "Standard"
+    var menuBarSpacingCompact: String = "Compact"
+    var menuBarHideIconToggle: String = "Hide the app icon while metrics are shown"
+    var menuBarHideIconCaption: String = "The icon returns by itself when metrics leave the bar and when there is something to signal (an update ready or the microphone muted)."
+    var monitorMemoryPressureDot: String = "Pressure dot"
     // MARK: System uptime, battery health, speed test
-    let systemUptime: String
-    let batteryCharge: String
-    let powerHealth: String
-    let powerCycles: String
-    let speedTestRun: String
-    let speedTestAgain: String
-    let speedTestLatency: String
-    let speedTestTesting: String
-    let speedTestFailed: String
+    var systemUptime: String = "Up for"
+    var batteryCharge: String = "Charge"
+    var powerHealth: String = "Battery health"
+    var powerCycles: String = "Cycles"
+    var speedTestRun: String = "Speed test"
+    var speedTestAgain: String = "Test again"
+    var speedTestLatency: String = "Latency"
+    var speedTestTesting: String = "Testing…"
+    var speedTestFailed: String = "Test failed"
 
     // MARK: Per-item panel config (Settings + onboarding)
-    let monitorShowInPanel: String
-    let disclosureExpanded: String
-    let disclosureCollapsed: String
-    let panelHideItem: String
-    let panelShowItem: String
-    let panelHiddenItem: String
-    let monitorItemUptime: String
-    let monitorItemNetSpeed: String
-    let monitorItemNetTotals: String
-    let monitorItemNetTest: String
-    let monitorItemDiskUsage: String
-    let monitorItemDiskActivity: String
-    let monitorItemDiskSMART: String
-    let monitorItemDiskProtection: String
-    let monitorItemDiskTools: String
-    let monitorPanelConfigHint: String
-    let monitorOrderSection: String
-    let monitorOrderHint: String
+    var monitorShowInPanel: String = "Show in panel"
+    var disclosureExpanded: String = "Expanded"
+    var disclosureCollapsed: String = "Collapsed"
+    var panelHideItem: String = "Hide from panel"
+    var panelShowItem: String = "Show in panel"
+    var panelHiddenItem: String = "Hidden"
+    var monitorItemUptime: String = "Uptime"
+    var monitorItemNetSpeed: String = "Live speed"
+    var monitorItemNetTotals: String = "Session totals"
+    var monitorItemNetTest: String = "Speed test"
+    var monitorItemDiskUsage: String = "Disk usage"
+    var monitorItemDiskActivity: String = "Live activity"
+    var monitorItemDiskSMART: String = "SMART"
+    var monitorItemDiskProtection: String = "External protection"
+    var monitorItemDiskTools: String = "Tools"
+    var monitorPanelConfigHint: String = "Open a block to choose what it shows."
+    var monitorOrderSection: String = "Section order"
+    var monitorOrderHint: String = "Drag to reorder the panel sections and use the eye to show or hide each one."
 
     // MARK: Cleaning mode
-    let cleaningMenuItem: String
-    let utilitiesSection: String
-    let quickControlsSection: String
-    let panelCategoryWindows: String
-    let panelCategoryInput: String
-    let panelCategoryFiles: String
-    let windowMaximizeName: String
-    let windowMaximizeCaption: String
-    let keyDebounceName: String
-    let keyDebounceEnable: String
-    let keyDebounceCaption: String
-    let keyDebounceActiveNow: String
-    let keyDebounceGlobalWindow: String
-    let keyDebouncePerKeySection: String
-    let keyDebouncePerKeyCaption: String
-    let keyDebounceKeyLabel: String
-    let keyDebounceAddKey: String
-    let keyDebounceNoOverrides: String
-    let keyDebounceRemoveKey: String
-    let cleaningPanelCaption: String
-    let cleaningOverlayTitle: String
-    let cleaningOverlaySubtitle: String
-    let cleaningOverlayUnlock: String
-    let cleaningOverlayMouseHint: String
-    let cleaningKeepScreenVisibleToggle: String
-    let cleaningKeepScreenVisibleCaption: String
-    let cleaningStartNow: String
-    let cleaningNeedsAxTitle: String
-    let cleaningNeedsAxBody: String
+    var cleaningMenuItem: String = "Cleaning Mode"
+    var utilitiesSection: String = "Utilities"
+    var quickControlsSection: String = "Controls"
+    var panelCategoryWindows: String = "Windows"
+    var panelCategoryInput: String = "Mouse and keyboard"
+    var panelCategoryFiles: String = "Files"
+    var windowMaximizeName: String = "Maximize windows"
+    var windowMaximizeCaption: String = "The green button maximizes without creating another Space."
+    var keyDebounceName: String = "Debounce"
+    var keyDebounceEnable: String = "Filter duplicate keys"
+    var keyDebounceCaption: String = "Filters very fast duplicate key presses."
+    var keyDebounceActiveNow: String = "Filter active"
+    var keyDebounceGlobalWindow: String = "Global window"
+    var keyDebouncePerKeySection: String = "Specific keys"
+    var keyDebouncePerKeyCaption: String = "Per-key values override the global window. Use 0 ms to stop filtering a key."
+    var keyDebounceKeyLabel: String = "Key"
+    var keyDebounceAddKey: String = "Add key"
+    var keyDebounceNoOverrides: String = "No specific keys configured."
+    var keyDebounceRemoveKey: String = "Remove key"
+    var cleaningPanelCaption: String = "Locks the keyboard so you can clean safely."
+    var cleaningOverlayTitle: String = "Keyboard locked for cleaning"
+    var cleaningOverlaySubtitle: String = "Press Escape 5 times to unlock"
+    var cleaningOverlayUnlock: String = "Unlock"
+    var cleaningOverlayMouseHint: String = "Your mouse and trackpad still work"
+    var cleaningKeepScreenVisibleToggle: String = "Keep screen visible"
+    var cleaningKeepScreenVisibleCaption: String = "Shows a discreet indicator in the corner of the screen instead of blacking out content."
+    var cleaningStartNow: String = "Lock keyboard now"
+    var cleaningNeedsAxTitle: String = "Accessibility needed"
+    var cleaningNeedsAxBody: String = "To lock the keyboard safely, Vorssaint needs Accessibility permission. Grant it in System Settings and try again."
 
     // MARK: Support / donate
-    let tabSupport: String
-    let shortcutsPageCaption: String
-    let shortcutsPageTitle: String
-    let settingsSearchPlaceholder: String
-    let donateHeading: String
-    let donateMessage: String
-    let donateButton: String
-    let donateThanks: String
-    let supportIntroTitle: String
-    let supportIntroMessage: String
-    let supportIntroStarButton: String
-    let supportIntroStarMessage: String
-    let supportIntroCoffeeButton: String
-    let supportIntroLaterButton: String
-    let supportIntroDoneButton: String
-    let discordIntroTitle: String
-    let discordIntroMessage: String
-    let discordIntroJoinButton: String
-    let communityIntroTitle: String
-    let communityIntroMessage: String
-    let communityIntroFollowButton: String
-    let updateShowcaseTitle: String
-    let updateShowcaseMessage: String
-    let updateShowcaseUnavailable: String
-    let updateShowcaseRestart: String
-    let showMenuBarIcon: String
-    let showMenuBarIconCaption: String
-    let menuBarIconStillHiddenTitle: String
-    let menuBarIconStillHiddenBody: String
-    let menuBarIconManagerHintFormat: String  // + manager name (twice)
+    var tabSupport: String = "Support"
+    var shortcutsPageCaption: String = "Edit every global shortcut from the features installed on this Mac. Inactive shortcuts stay saved but do not run."
+    var shortcutsPageTitle: String = "Keyboard shortcuts"
+    var settingsSearchPlaceholder: String = "Search settings"
+    var donateHeading: String = "Help Vorssaint keep growing"
+    var donateMessage: String = "Vorssaint is free, independent and built in my spare time. If you would like to contribute financially, Buy Me a Coffee directly helps me keep development moving forward."
+    var donateButton: String = "Support on Buy Me a Coffee"
+    var donateThanks: String = "Thank you for being here. 🖤"
+    var supportIntroTitle: String = "Help Vorssaint keep growing"
+    var supportIntroMessage: String = "If you would like to support development financially, Buy Me a Coffee is the one place to do it."
+    var supportIntroStarButton: String = "Star Vorssaint on GitHub"
+    var supportIntroStarMessage: String = "Financial support is never expected. A star on GitHub helps more people discover Vorssaint and makes a real difference to its development."
+    var supportIntroCoffeeButton: String = "Support on Buy Me a Coffee"
+    var supportIntroLaterButton: String = "Not now"
+    var supportIntroDoneButton: String = "Done"
+    var discordIntroTitle: String = "The Vorssaint Discord community is just getting started"
+    var discordIntroMessage: String = "The Vorssaint community is new and still being built. Join early to meet other users and help build a welcoming space around the app."
+    var discordIntroJoinButton: String = "Join the Discord community"
+    var communityIntroTitle: String = "See it before everyone else"
+    var communityIntroMessage: String = "People who already followed me on X saw several changes in this update before anyone else. I post previews of what is coming and show how it works, so you already know the basics before the update ships. Follow along and see what comes next!"
+    var communityIntroFollowButton: String = "Follow @vorssaint on X"
+    var updateShowcaseTitle: String = "What’s new in 3.1.4"
+    var updateShowcaseMessage: String = "Take a quick look at the main improvements in this update."
+    var updateShowcaseUnavailable: String = "The video could not load right now. You can still continue."
+    var updateShowcaseRestart: String = "Restart"
+    var showMenuBarIcon: String = "Show menu bar icon"
+    var showMenuBarIconCaption: String = "If Vorssaint’s icon disappears (macOS can hide menu bar icons when the bar runs out of room, common on Macs with a notch), reopen Vorssaint from Applications or Spotlight: that rebuilds the icon and, if it’s still hidden, opens this window."
+    var menuBarIconStillHiddenTitle: String = "The icon is still hidden"
+    var menuBarIconStillHiddenBody: String = "The icon was rebuilt, but macOS did not give it a visible spot. The menu bar is probably out of room: remove some menu bar icons (or close apps with long menus) and try again."
+    var menuBarIconManagerHintFormat: String = "%@ is open and may be keeping the icon in its hidden section. Look for Vorssaint there, or set %@ to always show Vorssaint."  // + manager name (twice)
 
     // MARK: Configurable shortcuts
-    let shortcutRecording: String
-    let shortcutReset: String
-    let shortcutNone: String
-    let shortcutClear: String
-    let shortcutInvalid: String
-    let shortcutPressKeys: String
-    let shortcutEscapeHint: String
-    let shortcutDeleteHint: String
-    let shortcutNotCaptured: String
-    let shortcutConflictFormat: String
-    let shortcutUnavailable: String
-    let shelfShortcutToggle: String
-    let switcherUsageHintFormat: String
+    var shortcutRecording: String = "Press the new shortcut"
+    var shortcutReset: String = "Reset"
+    var shortcutNone: String = "None"
+    var shortcutClear: String = "Remove shortcut"
+    var shortcutInvalid: String = "Use at least Control, Option or Command with a key."
+    var shortcutPressKeys: String = "Press keys"
+    var shortcutEscapeHint: String = "Escape cancels."
+    var shortcutDeleteHint: String = "Delete clears."
+    var shortcutNotCaptured: String = "Nothing was captured. macOS or another app already uses that combination. Try another one."
+    var shortcutConflictFormat: String = "This shortcut is already used by %@."
+    var shortcutUnavailable: String = "macOS rejected this shortcut. Choose another one."
+    var shelfShortcutToggle: String = "Shelf shortcut"
+    var switcherUsageHintFormat: String = "Hold %@ to navigate; release to activate the window. Shift or ← goes back; W closes the window; Q quits the app; Esc cancels."
 
     // MARK: Cleaner
-    let cleanerName: String
-    let cleanerIntroTitle: String
-    let cleanerIntroCaption: String
-    let cleanerScan: String
-    let cleanerScanning: String
-    let cleanerCleaning: String
-    let cleanerCatLeftovers: String
-    let cleanerCatLoginItems: String
-    let cleanerCatCaches: String
-    let cleanerCatLogs: String
-    let cleanerCatDeveloper: String
-    let cleanerCatTrash: String
-    let cleanerLeftoversNote: String
-    let cleanerLoginItemsNote: String
-    let cleanerTrashNote: String
-    let cleanerCatDeviceBackups: String
-    let cleanerDeviceBackupsCaption: String
-    let cleanerNothingFound: String
-    let cleanerDoneNote: String
-    let cleanerAgain: String
-    let cleanerRevealInFinder: String
-    let cleanerPanelCaption: String
-    let cleanerSafeSection: String
-    let cleanerOptionalSection: String
-    let cleanerCatOtherCaches: String
-    let cleanerCachesCaption: String
-    let cleanerLogsCaption: String
-    let cleanerDeveloperCaption: String
-    let cleanerLoginItemsCaption: String
-    let cleanerLeftoversCaption: String
-    let cleanerOtherCachesCaption: String
-    let cleanerCleanSizeFormat: String      // + size string
-    let cleanerScheduleTitle: String
-    let cleanerScheduleOff: String
-    let cleanerScheduleDaily: String
-    let cleanerScheduleWeekly: String
-    let cleanerScheduleCaption: String
-    let cleanerScheduleLastFormat: String   // + size string
-    let cleanerAutoNotificationFormat: String  // + size string
-    let cleanerScheduleNextFormat: String   // + relative date and time
-    let cleanerScheduleRanFormat: String    // + relative date and time
-    let cleanerScheduleNotifyToggle: String
-    let cleanerNotifDenied: String
-    let cleanerNotifOpenSettings: String
-    let launchAtLoginNeedsApplications: String
-    let launchAtLoginNeedsApproval: String
-    let ocrRemoveLineBreaksToggle: String
-    let ocrRemoveLineBreaksCaption: String
-    let ocrQRToggle: String
-    let ocrQRCaption: String
-    let ocrQRCopied: String
-    let qrResultTitle: String
-    let qrResultCopy: String
-    let qrResultOpen: String
-    let highlightsTitle: String
-    let highlightsTitleQuitProtection: String
-    let highlightsTitleRecorderBlur: String
-    let highlightsCaptionQuitProtection: String
-    let highlightsCaptionRecorderBlur: String
-    let highlightsConfigure: String
-    let highlightsSeeAll: String
-    let switcherCurrentSpaceOnly: String
-    let switcherCurrentSpaceOnlyCaption: String
-    let shelfFileMissing: String
-    let monitorOpenActivityMonitor: String
-    let monitorMemoryMetricLabel: String
-    let memoryMetricUsed: String
-    let memoryMetricApp: String
-    let keepAwakeRightClickToggle: String
-    let keepAwakeRightClickToggleCaption: String
-    let urlCleanerRulesTitle: String
-    let urlCleanerRulesCaption: String
-    let urlCleanerRulesCoverageCaption: String
-    let urlCleanerRulesAllSites: String
-    let urlCleanerRulesCountSingular: String
-    let urlCleanerRulesCountPluralFormat: String   // + count
-    let urlCleanerRulesAddSite: String
-    let urlCleanerRulesParameterPlaceholder: String
-    let urlCleanerRulesMatchCaption: String
-    let urlCleanerRulesAddButton: String
-    let urlCleanerRulesRemoveButton: String
-    let urlCleanerRulesRemoveSiteButton: String
-    let urlCleanerRemovedFormat: String            // + comma separated names
-    let switcherSearchPin: String
-    let switcherSearchPinCaption: String
-    let invertVerticalScroll: String
-    let invertHorizontalScroll: String
-    let switcherShowShortcutHints: String
-    let switcherShowShortcutHintsCaption: String
-    let uninstallerHomebrewPackageFormat: String
-    let shelfEdgeToggle: String
-    let shelfEdgeCaption: String
-    let focusFollowsMouseName: String
-    let focusFollowsMouseCaption: String
-    let focusFollowsMouseDelay: String
-    let switcherMinimizedPlacementLabel: String
-    let switcherMinimizedPlacementNormal: String
-    let switcherMinimizedPlacementEnd: String
-    let switcherMinimizedPlacementHidden: String
-    let switcherShowFullscreenWindows: String
-    let switcherScreenPlacementLabel: String
-    let switcherScreenPlacementPointer: String
-    let switcherScreenPlacementMenuBar: String
-    let switcherScreenPlacementActiveWindow: String
-    let switcherScreenPlacementCaption: String
-    let smoothScrollResponseLabel: String
-    let mouseAccelerationName: String
-    let mouseAccelerationCaption: String
-    let shelfClearOnClose: String
-    let shelfClearOnCloseCaption: String
+    var cleanerName: String = "Cleaner"
+    var cleanerIntroTitle: String = "Clean up your Mac"
+    var cleanerIntroCaption: String = "Scans for leftovers from uninstalled apps, caches, logs and the Trash. You review everything first and removed items go to the Trash."
+    var cleanerScan: String = "Scan"
+    var cleanerScanning: String = "Scanning…"
+    var cleanerCleaning: String = "Cleaning…"
+    var cleanerCatLeftovers: String = "Leftovers from uninstalled apps"
+    var cleanerCatLoginItems: String = "Orphaned startup items"
+    var cleanerCatCaches: String = "Caches"
+    var cleanerCatLogs: String = "Logs"
+    var cleanerCatDeveloper: String = "Developer junk"
+    var cleanerCatTrash: String = "Trash"
+    var cleanerLeftoversNote: String = "Found by analysis and left unchecked. Check the path before ticking."
+    var cleanerLoginItemsNote: String = "The entry under Login Items disappears after restarting the Mac."
+    var cleanerTrashNote: String = "Emptying the Trash is permanent."
+    var cleanerCatDeviceBackups: String = "iPhone backups"
+    var cleanerDeviceBackupsCaption: String = "Old iPhone and iPad backups take a big slice of the storage macOS calls Other. Remove only the ones you no longer need; a new backup is made when you plug the device in again."
+    var cleanerNothingFound: String = "Nothing to clean. Your Mac is tidy."
+    var cleanerDoneNote: String = "Items went to the Trash and can be recovered from there."
+    var cleanerAgain: String = "Scan again"
+    var cleanerRevealInFinder: String = "Reveal in Finder"
+    var cleanerPanelCaption: String = "App leftovers, caches and logs"
+    var cleanerSafeSection: String = "Safe cleanup"
+    var cleanerOptionalSection: String = "Optional, review first"
+    var cleanerCatOtherCaches: String = "Other caches"
+    var cleanerCachesCaption: String = "Temporary files apps rebuild on their own."
+    var cleanerLogsCaption: String = "Old diagnostic logs."
+    var cleanerDeveloperCaption: String = "Xcode build and simulator leftovers."
+    var cleanerLoginItemsCaption: String = "Startup entries left by apps that no longer exist."
+    var cleanerLeftoversCaption: String = "Files left behind by apps you uninstalled."
+    var cleanerOtherCachesCaption: String = "Safe to remove, nothing breaks. Apps may open slower once and downloaded content, like offline music, downloads again."
+    var cleanerCleanSizeFormat: String = "Clean %@"      // + size string
+    var cleanerScheduleTitle: String = "Automatic cleanup"
+    var cleanerScheduleOff: String = "Off"
+    var cleanerScheduleDaily: String = "Daily"
+    var cleanerScheduleWeekly: String = "Weekly"
+    var cleanerScheduleCaption: String = "Cleans only the safe part on its own at the chosen time and sends everything to the Trash."
+    var cleanerScheduleLastFormat: String = "The last automatic cleanup freed %@."   // + size string
+    var cleanerAutoNotificationFormat: String = "%@ freed and sent to the Trash."  // + size string
+    var cleanerScheduleNextFormat: String = "Next cleanup %@."   // + relative date and time
+    var cleanerScheduleRanFormat: String = "Last automatic cleanup %@."    // + relative date and time
+    var cleanerScheduleNotifyToggle: String = "Notify when done"
+    var cleanerNotifDenied: String = "Vorssaint notifications are turned off in the system."
+    var cleanerNotifOpenSettings: String = "Open Notification Settings…"
+    var launchAtLoginNeedsApplications: String = "The app is running from a place that cannot open at login. Drag Vorssaint to the Applications folder, open it from there and turn this on again."
+    var launchAtLoginNeedsApproval: String = "The login item is registered but still switched off in System Settings. Open System Settings › General › Login Items & Extensions and turn Vorssaint on under Open at Login."
+    var ocrRemoveLineBreaksToggle: String = "Remove line breaks"
+    var ocrRemoveLineBreaksCaption: String = "Removes line breaks so copied text pastes as one paragraph."
+    var ocrQRToggle: String = "Read QR codes"
+    var ocrQRCaption: String = "If the area has a QR code, its content is shown to copy or open."
+    var ocrQRCopied: String = "QR code copied"
+    var qrResultTitle: String = "QR code"
+    var qrResultCopy: String = "Copy"
+    var qrResultOpen: String = "Open link"
+    var highlightsTitle: String = "New in this update"
+    var highlightsTitleQuitProtection: String = "Quit and close protection"
+    var highlightsTitleRecorderBlur: String = "Recording privacy blur"
+    var highlightsCaptionQuitProtection: String = "Avoid quitting apps or closing windows by accident with a hold, a double press or an extra modifier, customizable per app."
+    var highlightsCaptionRecorderBlur: String = "Hide private details, passwords and sensitive areas anywhere across your recorded video before sharing or exporting."
+    var highlightsConfigure: String = "Set up"
+    var highlightsSeeAll: String = "See all changes"
+    var switcherCurrentSpaceOnly: String = "Show only the current desktop"
+    var switcherCurrentSpaceOnlyCaption: String = "Lists only windows from the desktop you are on. Picking a window never moves you to another desktop."
+    var shelfFileMissing: String = "The file no longer exists"
+    var monitorOpenActivityMonitor: String = "Open Activity Monitor"
+    var monitorMemoryMetricLabel: String = "Measure memory as"
+    var memoryMetricUsed: String = "Memory Used"
+    var memoryMetricApp: String = "App Memory"
+    var keepAwakeRightClickToggle: String = "Right-click the menu bar icon to toggle Keep Awake"
+    var keepAwakeRightClickToggleCaption: String = "Replaces the right-click context menu."
+    var urlCleanerRulesTitle: String = "Cleaning rules"
+    var urlCleanerRulesCaption: String = "A site attaches these parameters to its own share links to track where the link came from. Switched on, a name is removed when a link is cleaned; switched off, it stays. Names you add can be deleted."
+    var urlCleanerRulesCoverageCaption: String = "The list covers a site’s different share paths (the web page, the app, a live room), which is why it is long; a real link usually carries only two to four of them."
+    var urlCleanerRulesAllSites: String = "All sites"
+    var urlCleanerRulesCountSingular: String = "1 parameter"
+    var urlCleanerRulesCountPluralFormat: String = "%d parameters"   // + count
+    var urlCleanerRulesAddSite: String = "Add a site"
+    var urlCleanerRulesParameterPlaceholder: String = "Parameter name"
+    var urlCleanerRulesMatchCaption: String = "Write the name to the left of the = , like utm_source. A name that matches takes that one parameter out of the link and leaves the rest as it was."
+    var urlCleanerRulesAddButton: String = "Add"
+    var urlCleanerRulesRemoveButton: String = "Delete name"
+    var urlCleanerRulesRemoveSiteButton: String = "Turn off every rule for this site"
+    var urlCleanerRemovedFormat: String = "Removed %@"            // + comma separated names
+    var switcherSearchPin: String = "Pin search with S"
+    var switcherSearchPinCaption: String = "S starts a search and pins the switcher open, so typing no longer produces special characters when your shortcut uses ⌥, and a search starting with Q or W no longer closes the window or quits the app by mistake."
+    var invertVerticalScroll: String = "Invert vertical scrolling"
+    var invertHorizontalScroll: String = "Invert horizontal scrolling"
+    var switcherShowShortcutHints: String = "Show shortcut hints"
+    var switcherShowShortcutHintsCaption: String = "Shows the app and window shortcuts below the icons."
+    var uninstallerHomebrewPackageFormat: String = "%@ will also be removed from Homebrew."
+    var shelfEdgeToggle: String = "Open near a screen edge"
+    var shelfEdgeCaption: String = "Drag a file toward the screen edge to peek the shelf in. Drop it there, or pull back and it retreats."
+    var focusFollowsMouseName: String = "Focus follows mouse"
+    var focusFollowsMouseCaption: String = "Focuses and raises the window under the pointer after a short pause."
+    var focusFollowsMouseDelay: String = "Hover delay"
+    var switcherMinimizedPlacementLabel: String = "Minimized windows"
+    var switcherMinimizedPlacementNormal: String = "Normal ordering"
+    var switcherMinimizedPlacementEnd: String = "Place at end"
+    var switcherMinimizedPlacementHidden: String = "Hide"
+    var switcherShowFullscreenWindows: String = "Show fullscreen windows"
+    var switcherScreenPlacementLabel: String = "Show on"
+    var switcherScreenPlacementPointer: String = "Screen with the pointer"
+    var switcherScreenPlacementMenuBar: String = "Screen with the menu bar"
+    var switcherScreenPlacementActiveWindow: String = "Screen with the active window"
+    var switcherScreenPlacementCaption: String = "Which display the switcher opens on when more than one is connected."
+    var smoothScrollResponseLabel: String = "Response"
+    var mouseAccelerationName: String = "Disable mouse acceleration"
+    var mouseAccelerationCaption: String = "Removes pointer acceleration for connected mice. Your previous setting returns when this is turned off or Vorssaint quits."
+    var shelfClearOnClose: String = "Clear when closed"
+    var shelfClearOnCloseCaption: String = "Empties the shelf only when you click its close button. Automatic hiding and collapsing keep the items."
 }
 
 // MARK: - Português (Brasil)
@@ -1775,808 +1783,5 @@ extension Strings {
 // MARK: - English (US)
 
 extension Strings {
-    static let enUS = Strings(
-        statusIdleTooltip: "Vorssaint: normal sleep",
-        statusActiveUntil: "Vorssaint: awake until",
-        statusActiveIndefinite: "Vorssaint: awake indefinitely",
-        menuEnableAwake: "Enable keep awake",
-        menuDisableAwake: "Disable keep awake",
-        menuActivateFor: "Activate for…",
-        menuSettings: "Settings…",
-        menuAbout: "About Vorssaint",
-        menuQuit: "Quit Vorssaint",
-        menuHide: "Hide Vorssaint",
-        menuHideOthers: "Hide Others",
-        menuShowAll: "Show All",
-        menuEdit: "Edit",
-        menuUndo: "Undo",
-        menuRedo: "Redo",
-        actionClear: "Clear",
-        actionRemove: "Remove",
-        actionBack: "Back",
-        actionSearch: "Search",
-        actionMute: "Mute",
-        actionUnmute: "Unmute",
-        actionPlay: "Play",
-        actionPause: "Pause",
-        menuCut: "Cut",
-        menuCopy: "Copy",
-        menuPaste: "Paste",
-        menuSelectAll: "Select All",
-        menuWindow: "Window",
-        menuMinimize: "Minimize",
-        menuZoom: "Zoom",
-        menuClose: "Close",
-
-        minutes15: "15 minutes",
-        minutes30: "30 minutes",
-        hour1: "1 hour",
-        hours2: "2 hours",
-        hours4: "4 hours",
-        hours8: "8 hours",
-        indefinitely: "Indefinitely",
-        indefinite: "Indefinite",
-
-        panelSettings: "Settings",
-        panelQuit: "Quit",
-
-        keepAwakeTitle: "Keep awake",
-        keepAwakeEndsIn: "Ends in",
-        keepAwakeUntilDisabled: "Active until you turn it off",
-        keepAwakeNormalRules: "The Mac follows its normal energy rules",
-        keepAwakeOptions: "Options",
-        keepAwakeMouseJiggle: "Move pointer slightly",
-        keepAwakeMouseJiggleCaption: "During a session, moves the pointer a little at the chosen interval.",
-        keepAwakeMouseJiggleInterval: "Interval",
-        keepAwakeActiveIconLabel: "Active icon",
-        keepAwakeActiveIconVorssaint: "Vorssaint",
-        keepAwakeActiveIconCoffee: "Coffee",
-        keepAwakeActiveIconEye: "Eye",
-        keepAwakeActiveIconMoon: "Moon",
-        keepAwakeActiveIconLight: "Lightbulb",
-        keepAwakeIconTintLabel: "Active icon color",
-        keepAwakeIconTintOrange: "Orange",
-        keepAwakeIconTintGreen: "Green",
-        keepAwakeIconTintBlue: "Blue",
-        keepAwakeIconTintPurple: "Purple",
-        keepAwakeIconTintPink: "Pink",
-        keepAwakeIconTintNone: "No color",
-        durationLabel: "Duration",
-        clamshellTitle: "Keep going with the lid closed",
-        clamshellOnCaption: "Sleep fully disabled. Mind the power",
-        clamshellNeedsSession: "Applied whenever “Keep awake” is active",
-        clamshellReady: "Ready. Toggles without a password",
-        clamshellNeedsPassword: "Will ask for the administrator password once",
-
-        systemSection: "System",
-        temperatures: "Temperatures",
-        cpuLabel: "CPU",
-        gpuLabel: "GPU",
-        batteryLabel: "Battery",
-        usageSection: "Hardware usage",
-        memorySection: "Memory",
-        memoryPressure: "Pressure",
-        memorySwapUsed: "Swap used",
-        memoryCompressed: "Compressed",
-        memoryCachedFiles: "Cached files",
-        pressureNormal: "Normal",
-        pressureWarning: "Caution",
-        pressureCritical: "Critical",
-        monitorUnavailable: "Sensors unavailable on this Mac",
-        energyAppsTitle: "Apps using significant energy",
-        energyAppsIdle: "No significant energy use",
-
-        notifySessionEndedTitle: "Session ended",
-        notifySessionEndedBody: "Time is up. The Mac will sleep normally again.",
-        notifyBatteryTitle: "Vorssaint disabled",
-        notifyBatteryBody: "Low battery. Normal sleep was restored to protect the charge.",
-        adminPromptClamshellOff: "Vorssaint needs your password to restore the Mac’s normal sleep.",
-        adminPromptRecover: "Vorssaint quit while the Mac’s sleep was disabled. Enter the password to restore normal sleep.",
-        adminPromptUpdate: "Vorssaint needs your password to install the update.",
-        adminPromptSudoersInstall: "Vorssaint will create a restricted rule (pmset disablesleep only) to toggle closed-lid mode without asking for a password. This is the only time the password is needed.",
-        adminPromptSudoersRemove: "Vorssaint will remove the password-free closed-lid rule.",
-
-        settingsTitle: "Vorssaint Settings",
-        tabGeneral: "General",
-        tabMouse: "Mouse",
-        tabDock: "Dock",
-        tabWindowBehavior: "Window behaviour",
-        tabKeyboard: "Keyboard",
-        tabTrackpad: "Trackpad",
-        tabAdvanced: "Advanced",
-        tabAbout: "About",
-        tabReleaseNotes: "What’s New",
-        advancedResetSection: "Permissions",
-        advancedResetDescription: "Removes every permission you granted Vorssaint (Accessibility, Screen Recording, Full Disk Access and others), the login item and the closed-lid rule. Useful to start fresh or before uninstalling. The app stays installed.",
-        advancedClearButton: "Clear all permissions",
-        advancedCleared: "Permissions cleared.",
-        advancedClearConfirmTitle: "Clear all permissions?",
-        advancedClearConfirmBody: "Features that need permissions will stop working until you grant them again. Your settings are kept.",
-        advancedUninstallSection: "Uninstall",
-        advancedUninstallDescription: "Does all of the above, then removes the preferences and moves Vorssaint to the Trash, leaving nothing behind. The app quits when done. You can reinstall anytime.",
-        advancedUninstallButton: "Uninstall Vorssaint completely",
-        advancedUninstallConfirmTitle: "Uninstall Vorssaint?",
-        advancedUninstallConfirmBody: "Vorssaint will clear its permissions, remove its preferences and move to the Trash, then quit. This can’t be undone from the app, but it stays in the Trash until you empty it.",
-        advancedUninstallFailedTitle: "Uninstall stopped",
-        advancedUninstallFailedBody: "Vorssaint could not put back a system setting it changed: sleep, fan speed or mouse acceleration. Nothing was removed. Try again and allow the password request if it appears.",
-
-        launchAtLogin: "Launch at login",
-        languageLabel: "Language",
-        showCountdown: "Show remaining time next to the icon",
-        hotkeyToggle: "Enable shortcut for “Keep awake”",
-        hotkeyCaption: "Works in any app, no extra permissions.",
-
-        sessionSection: "Session",
-        defaultDurationLabel: "Default duration",
-        keepAwakeAutoStart: "Keep Awake when Vorssaint opens",
-        keepAwakeAutoStartCaption: "Starts a session with the default duration.",
-        batteryProtectionSection: "Battery protection",
-        batteryDisableBelow: "Disable when battery drops below",
-        batteryNever: "Never",
-        batteryProtectionCaption: "Keeps a forgotten session from draining the MacBook battery.",
-        clamshellSection: "Closed lid",
-        configuring: "Configuring…",
-        sudoersFailed: "Couldn’t turn on closed-lid mode. Try again.",
-        clamshellExplanation: "“Keep going with the lid closed” fully disables sleep while “Keep awake” is active and is reverted automatically when the session ends or the app quits. Prefer using it plugged in.",
-
-        scrollSection: "Scrolling",
-        invertMouseScroll: "Invert mouse scrolling",
-        invertMouseScrollCaption: "Reverses the mouse wheel direction.",
-        scrollTrackpadNote: "The trackpad is untouched: it keeps macOS natural scrolling.",
-        scrollActiveNow: "Inverting mouse scrolling right now",
-        mouseNavigationActiveNow: "Side buttons active right now",
-        smoothScrollName: "Smooth scrolling",
-        smoothScrollCaption: "Turns each mouse wheel step into a short, gentle glide. The trackpad is not affected.",
-        smoothScrollStepLabel: "Scrolling speed",
-        mouseNavigationSection: "Navigation",
-        mouseNavigationEnable: "Use side buttons for Back and Forward",
-        mouseNavigationCaption: "Turns the mouse Back and Forward buttons into navigation commands in Finder, browsers and compatible apps.",
-        middleClickSection: "Middle click",
-        middleClickEnable: "Three-finger click acts as middle click",
-        middleClickEnableCaption: "Pressing the trackpad with three fingers works like a mouse wheel click: open links in a new tab, close tabs and everything else the middle button does.",
-        middleClickDragConflict: "macOS three-finger drag is turned on and uses this same gesture. Turn it off in System Settings under Accessibility, Pointer Control, Trackpad Options, and the middle click will work.",
-        middleClickTapPicker: "A light tap also clicks",
-        middleClickTapOff: "Off",
-        middleClickTapThreeFingers: "3 fingers",
-        middleClickTapFourFingers: "4 fingers",
-        middleClickTapCaption: "A light tap with that many fingers, without pressing, also fires the middle click. Sliding never counts. If the macOS three-finger tap is assigned to Look Up, turn it off so both do not fire together.",
-        quickToolShortcutToggle: "Global shortcut",
-        ocrName: "Copy text from screen",
-        ocrCaption: "Select an area of the screen and the recognized text is copied, ready to paste.",
-        ocrCopied: "Text copied",
-        ocrNoText: "No text found",
-        colorPickerName: "Color picker",
-        colorPickerCaption: "Grab the color of any pixel on screen and copy it in your favorite format.",
-        colorPickerFormatLabel: "Copied format",
-        colorPickerBareHexToggle: "Copy without the # prefix",
-        colorPickerPickNow: "Pick color",
-        pastePlainName: "Paste as plain text",
-        pastePlainCaption: "Pastes what you copied without colors, fonts or formatting. The original stays on the clipboard.",
-
-        switcherSection: "App switcher",
-        switcherEnable: "Use the Vorssaint switcher",
-        switcherEnableCaption: "Switch between apps and windows, including minimized windows and multiple windows from the same app.",
-        switcherNoWindows: "No open windows",
-        switcherIconRowMode: "Show %@ with large icons",
-        switcherIconRowModeCaption: "Shows one icon per app with that app’s window previews above it.",
-        switcherSimpleMode: "Simple app switcher",
-        switcherSimpleModeCaption: "Shows app icons and window titles, without previews or screen capture by the switcher.",
-        switcherShortcutHintApps: "Apps",
-        switcherShortcutHintWindows: "Windows",
-        switcherWindowShortcutCaption: "Opens a switcher for the frontmost app’s windows. While the Apps switcher is open, jumps between the selected app’s windows.",
-        switcherTakeOverSystemShortcuts: "Replace macOS ⌘Tab and ⌘`",
-        switcherTakeOverSystemShortcutsCaption: "Disables the matching macOS app and window shortcuts only while Vorssaint’s switcher is active. All running apps stay reachable.",
-        switcherAppearanceDelay: "Appearance delay",
-        switcherAppearanceDelayCaption: "How long the shortcut must be held before the switcher appears.",
-        switcherMergeTabs: "Show one entry per app",
-        switcherMergeTabsCaption: "Collapses all of an app’s windows into one entry in the switcher, instead of one entry per window.",
-        switcherWindowlessApps: "Apps with no open window",
-        switcherWindowlessAppsCaption: "Chooses which running apps with no window at all show up in the switcher.",
-        switcherWindowlessAppsOff: "Do not show",
-        switcherWindowlessAppsFinder: "Finder only",
-        switcherWindowlessAppsAll: "All apps",
-        switcherNoOpenWindow: "No open window",
-        switcherOtherDesktop: "Other desktop",
-
-        cutPasteName: "Cut & paste",
-        cutPasteEnable: "Cut & paste files in Finder",
-        cutPasteEnableCaption: "Use ⌘X to cut and ⌘V to move files and folders in Finder.",
-        cutPasteShowHUD: "Show floating panel",
-        cutPasteShowHUDCaption: "Display a floating indicator with the cut files while Finder is active.",
-        cutPasteHowTitle: "How to use",
-        cutPasteStep1: "Select items in Finder and press ⌘X to cut them.",
-        cutPasteStep2: "Open the destination folder and press ⌘V to move them there.",
-        cutPasteTextNote: "In text fields (like when renaming), ⌘X and ⌘V keep working as usual.",
-        cutPasteActiveNow: "Ready to cut in Finder",
-        cutPasteAutomationNote: "The first time, macOS asks for permission to control Finder.",
-        cutReadyTitle: "Cut",
-        cutReadyHint: "in the destination folder to move",
-        cutCancel: "Cancel cut",
-        cutDoneTitle: "Moved!",
-        cutMovedSingular: "1 item moved",
-        cutMovedPluralFormat: "%d items moved",
-        cutSomeFailed: "Some items couldn’t be moved",
-        cutMovingTitle: "Moving…",
-        cutMovingCountFormat: "%d of %d",
-
-        autoQuitName: "Quit on close",
-        autoQuitEnable: "Quit an app when its last window closes",
-        autoQuitEnableCaption: "Closing an app’s last window also quits it.",
-        autoQuitActiveNow: "Active now",
-        autoQuitHowTitle: "How it works",
-        autoQuitStep1: "Close an app’s last window (⌘W or the red button).",
-        autoQuitStep2: "The app quits on its own. “Save changes?” dialogs still appear.",
-        autoQuitPredictableNote: "Apps that normally run without a window are never quit.",
-        autoQuitExceptionsTitle: "Exceptions",
-        autoQuitExceptionsCaption: "Apps on this list stay open even with no windows.",
-        autoQuitExceptionsEmpty: "No exceptions",
-        autoQuitAddApp: "Add app…",
-
-        uninstallerName: "Uninstaller",
-        uninstallerEnableCaption: "Removes an app together with the caches, preferences, logs and leftovers it leaves behind.",
-        uninstallerMenuItem: "Uninstall an app…",
-        uninstallerDropTitle: "Drag an app here",
-        uninstallerDropSubtitle: "or choose one to scan",
-        uninstallerChoose: "Choose app…",
-        uninstallerPickerTitle: "Choose app",
-        uninstallerPickerSearch: "Search apps",
-        uninstallerPickerEmpty: "No apps found",
-        uninstallerEmptyNote: "Nothing is removed without your confirmation.",
-        uninstallerFDANote: "Grant Full Disk Access for a more thorough scan.",
-        uninstallerFDAGrant: "Grant access…",
-        uninstallerFDAHint: "Turn Vorssaint on in the list. If it isn’t there, click + and pick Vorssaint from Applications. Access only applies after you reopen the app.",
-        uninstallerFDARelaunch: "Relaunch now",
-        uninstallerScanning: "Scanning files…",
-        uninstallerRemoving: "Moving to the Trash…",
-        uninstallerFoundTitle: "found",
-        uninstallerSelectedFormat: "%d of %d selected",
-        uninstallerRemove: "Move to Trash",
-        uninstallerCancel: "Cancel",
-        uninstallerDoneTitle: "Done!",
-        uninstallerFreedFormat: "%@ recovered",
-        uninstallerSomeFailed: "Some items couldn’t be moved to the Trash.",
-        uninstallerFailedNeedsFDA: "Sandboxed app data can only be moved with Full Disk Access. The administrator password does not stand in for it.",
-        uninstallerFailedMoreFormat: "and %d more",
-        uninstallerAnother: "Uninstall another",
-        uninstallerCatApp: "Application",
-        uninstallerCatSupport: "Support",
-        uninstallerCatCaches: "Caches",
-        uninstallerCatPreferences: "Preferences",
-        uninstallerCatContainers: "Containers",
-        uninstallerCatLogs: "Logs",
-        uninstallerCatState: "Saved state",
-        uninstallerCatOther: "Other",
-
-        urlCleanerName: "Clean URL",
-        urlCleanerEnable: "Clean URLs as you copy them",
-        urlCleanerEnableCaption: "Removes tracking parameters from a link the moment it reaches the clipboard.",
-        urlCleanerActiveNow: "Active now",
-        urlCleanerManualTitle: "Clean now",
-        urlCleanerInputPlaceholder: "Paste a URL",
-        urlCleanerOutputPlaceholder: "The clean URL appears here",
-        urlCleanerCleanButton: "Clean",
-        urlCleanerPasteButton: "Paste",
-        urlCleanerCopyButton: "Copy",
-        urlCleanerClearButton: "Clear field",
-        urlCleanerNoURL: "Paste a valid URL.",
-        urlCleanerNoChange: "Nothing to clean.",
-        urlCleanerCleaned: "URL cleaned.",
-        urlCleanerCopied: "Copied.",
-        urlCleanerLocalNote: "Local. No network.",
-
-        homebrewName: "Homebrew",
-        homebrewMissingTitle: "Homebrew not found",
-        homebrewMissingBody: "Homebrew is not installed. Once it is, the packages it manages show up here.",
-        homebrewRefresh: "Refresh",
-        homebrewRequested: "Installed by you",
-        homebrewDependencies: "Pulled in as dependencies",
-        homebrewDependenciesNote: "These came with the packages above and upgrade together with them.",
-        homebrewMasApps: "App Store",
-        homebrewCopyName: "Copy name",
-        homebrewTrustTitle: "Tap not trusted yet",
-        homebrewTrustCaption: "Homebrew now asks for your confirmation before using third party taps. Trust %@ to continue.",
-        homebrewTrustButton: "Trust and continue",
-        homebrewNoPackages: "No packages found",
-        homebrewUninstall: "Uninstall",
-        homebrewUpgrade: "Update",
-        homebrewUpdateHomebrew: "Update Homebrew",
-        homebrewAllPackages: "packages",
-        homebrewOpenTerminal: "Open Terminal",
-        homebrewCancelOperation: "Cancel",
-        homebrewClearLog: "Clear log",
-        homebrewHomepage: "Open website",
-        homebrewUpdateAvailableBadge: "Update available",
-        homebrewConfirmUninstallTitle: "Uninstall with Homebrew?",
-        homebrewConfirmUninstallBodyFormat: "Homebrew will uninstall %@. Configuration files may remain on the system.",
-        homebrewConfirmUpgradeTitle: "Update with Homebrew?",
-        homebrewConfirmUpgradeBodyFormat: "Homebrew will download and apply the latest version of %@. Dependencies may also be updated.",
-        homebrewConfirmUpdateHomebrewTitle: "Update Homebrew?",
-        homebrewConfirmUpdateHomebrewBody: "Homebrew will fetch the latest information and then reload your packages.",
-        homebrewTerminalFallback: "This operation needs Terminal to ask for the administrator password. Vorssaint does not capture passwords.",
-        homebrewLoading: "Loading…",
-        homebrewOperationUninstallFormat: "Uninstalling %@",
-        homebrewOperationUpgradeFormat: "Updating %@",
-        homebrewOperationUpdateHomebrew: "Updating Homebrew",
-        homebrewOperationUninstalledFormat: "%@ uninstalled.",
-        homebrewOperationUpgradedFormat: "%@ updated.",
-        homebrewOperationUpdatedHomebrew: "Homebrew updated.",
-        homebrewOperationFailedFormat: "Could not finish %@.",
-        homebrewOperationCancelled: "Operation cancelled.",
-        homebrewOperationPreparing: "Preparing…",
-        homebrewOperationDownloading: "Downloading files…",
-        homebrewOperationUninstalling: "Removing files…",
-        homebrewOperationUpgrading: "Updating files…",
-        homebrewOperationFinalizing: "Finishing…",
-        homebrewOperationRefreshing: "Refreshing list…",
-        homebrewOperationTerminal: "Continue in Terminal.",
-        homebrewOperationElapsedFormat: "%@ elapsed",
-        homebrewOperationShowDetails: "Show details",
-        homebrewOperationHideDetails: "Hide details",
-        homebrewOperationTechnicalLog: "Technical details",
-        homebrewOperationProgressUnknown: "Homebrew has not reported a percentage yet.",
-
-        mediaName: "Media",
-        mediaEnableCaption: "Compress videos, convert and process images, make GIFs and extract text locally.",
-        mediaLocalNote: "Local. No network.",
-        mediaToolVideo: "Video",
-        mediaToolGIF: "GIF",
-        mediaToolImage: "Image",
-        mediaToolText: "Text",
-        mediaSelectFile: "Choose file",
-        mediaDropHint: "Drop a file here or click to choose one.",
-        mediaOutput: "Output",
-        mediaOutputAutomatic: "Automatic",
-        mediaChooseOutput: "Destination",
-        mediaStartVideo: "Compress video",
-        mediaStartGIF: "Make GIF",
-        mediaStartImage: "Process image",
-        mediaStartConvertPDF: "Convert to PDF",
-        mediaStartText: "Extract text",
-        mediaCancel: "Cancel",
-        mediaStartTime: "Start",
-        mediaEndTime: "End",
-        mediaQuality: "Compression",
-        mediaCompressionLow: "Low",
-        mediaCompressionMedium: "Medium",
-        mediaCompressionHigh: "High",
-        mediaMaxSize: "Size",
-        mediaSizingResolution: "Resolution",
-        mediaSizingFileSize: "File size",
-        mediaTargetSize: "Target size",
-        mediaTargetSizeHint: "Resolution adapts to stay under the limit.",
-        mediaErrorTargetTooSmall: "Target size too small for this clip. Trim it or raise the limit.",
-        mediaMegabytesSuffix: " MB",
-        mediaWidth: "Width",
-        mediaFPS: "FPS",
-        mediaFormat: "Format",
-        mediaStripMetadata: "Remove metadata",
-        mediaLoopGIF: "Loop GIF",
-        mediaOCRMode: "OCR",
-        mediaOCRAccurate: "Accurate",
-        mediaOCRFast: "Fast",
-        mediaRunning: "Processing",
-        mediaCompleted: "Done",
-        mediaCancelled: "Cancelled.",
-        mediaOpenInFinder: "Show",
-        mediaCopyText: "Copy text",
-        mediaRunAgain: "Run again",
-        mediaEmptyText: "No text found.",
-        mediaResultSavedFormat: "Saved as %@",
-        mediaResultSizeFormat: "%@ to %@",
-        mediaResultGrewCaption: "The converted file came out larger than the original.",
-        mediaErrorNoFile: "Choose a file first.",
-        mediaErrorNoVideo: "This file has no video track.",
-        mediaErrorSameOutput: "Choose a destination different from the original file.",
-        mediaErrorUnsupported: "Format not supported by macOS.",
-
-        shelfName: "Shelf",
-        shelfEnable: "Temporary area for dragging files",
-        shelfEnableCaption: "A floating spot to gather files, images and text, then drag them anywhere later.",
-        shelfHowTitle: "How to use",
-        shelfStep1: "Open it with the shortcut, or by shaking the mouse during a drag.",
-        shelfStep2: "Drop files, images, links or text onto it to hold them.",
-        shelfStep3: "Drag each item back out to any app when you need it.",
-        shelfShakeToggle: "Open by shaking the mouse while dragging",
-        shelfShakeCaption: "Shake the pointer quickly while holding an item to summon it near the cursor.",
-        shelfDropZoneToggle: "Keep dragged files in the menu bar",
-        shelfDropZoneCaption: "While you drag a file, the shelf appears below the menu bar icon. Whatever you drop is kept right there, in a button you shrink and open with a click that goes away once the shelf is empty.",
-        shelfCollapse: "Collapse",
-        shelfBehaviorTitle: "After use",
-        shelfCloseAfterDrop: "Close after dropping into another app",
-        shelfCloseAfterDropCaption: "Closes the shelf when the destination accepts the items. The pin in the panel keeps it open.",
-        shelfRemoveAfterDrop: "Remove items after dropping",
-        shelfRemoveAfterDropCaption: "Items accepted by another app leave the shelf. Turn this off to keep a copy there.",
-        shelfExclusionsTitle: "Automatic exceptions",
-        shelfExclusionsEmpty: "No apps added.",
-        shelfExclusionsCaption: "Shake and the menu bar drop zone stay off for drags started in these apps. The shortcut and Open now still work.",
-        shelfPin: "Keep open",
-        shelfUnpin: "Allow closing after use",
-        shelfHotkeyLabel: "Shortcut",
-        shelfOpenNow: "Open now",
-        shelfNoPermission: "Requires no permissions.",
-        shelfMenuItem: "Open shelf",
-        shelfTitle: "Shelf",
-        shelfEmpty: "Drag items here",
-        shelfClearAll: "Clear all",
-        shelfRemoveSelected: "Remove selected",
-        shelfSelectedFormat: "%d selected",
-        shelfHint: "Click to select. Drag out to use or right-click for more actions.",
-        shelfItemImage: "Image",
-        shelfTooltipItemsFormat: "%d items",
-        shelfTooltipItemsFew: "%d items",
-        shelfTooltipImageSingular: "%d image",
-        shelfTooltipImageFew: "%d images",
-        shelfTooltipImagePlural: "%d images",
-        shelfTooltipFileSingular: "%d file",
-        shelfTooltipFileFew: "%d files",
-        shelfTooltipFilePlural: "%d files",
-        shelfTooltipNoteSingular: "%d note",
-        shelfTooltipNoteFew: "%d notes",
-        shelfTooltipNotePlural: "%d notes",
-        shelfTooltipLinkSingular: "%d link",
-        shelfTooltipLinkFew: "%d links",
-        shelfTooltipLinkPlural: "%d links",
-        shelfActionOpen: "Open",
-        shelfActionOpenWith: "Open With",
-        shelfActionShare: "Share",
-
-        breakdownMeasuring: "Measuring…",
-
-        preciseVolumeRollerEnable: "Use finer volume steps",
-        preciseVolumeRollerCaption: "Turns volume wheels and keys into smaller system volume steps.",
-        preciseVolumeRollerTapFailed: "Could not listen for volume keys.",
-
-        updatesSection: "Updates",
-        autoCheckToggle: "Check for updates automatically",
-        includeBetaUpdatesToggle: "Receive beta updates",
-        includeBetaUpdatesCaption: "Beta versions include features in development and may contain bugs or incomplete behavior.",
-        betaBadgeLabel: "Beta",
-        checkNowButton: "Check now",
-        updateChecking: "Checking…",
-        updateUpToDate: "You’re on the latest version.",
-        updateAvailablePrefix: "Update available:",
-        updateInstallButton: "Download and install",
-        updateDownloading: "Downloading update…",
-        updateInstalling: "Installing and restarting…",
-        updateFailedPrefix: "Couldn’t check:",
-        updateLastChecked: "Last checked:",
-        updateNotifyTitle: "Vorssaint update",
-        updateInstallFailedBody: "The update was downloaded but could not be applied. Download the latest version from the GitHub releases page and drag the app over the current one.",
-        updateNeedsApplicationsTitle: "Move Vorssaint to Applications",
-        updateNeedsApplicationsBody: "The app is running from a place that cannot be updated, such as the disk image or a temporary system location. Drag Vorssaint to the Applications folder, open it from there and try again.",
-        menuCheckUpdates: "Check for updates…",
-
-        permissionRequired: "Permission required",
-        permissionAccessibility: "Accessibility",
-        permissionScreenRecording: "Screen Recording",
-        permissionGranted: "Granted",
-        permissionMissing: "Not granted",
-        permissionOpenSettings: "Open System Settings…",
-        permissionRequest: "Grant access",
-        permissionRestartNote: "macOS may ask to reopen the app after granting.",
-
-        aboutDescription: "A utility hub for your Mac.\nEnergy, system monitor, scrolling and a window switcher, right in the menu bar.",
-        versionPrefix: "Version",
-        reviewIntro: "Review introduction",
-        reviewHighlights: "Review highlights",
-        viewOnGitHub: "View on GitHub",
-
-        obContinue: "Continue",
-        obBack: "Back",
-        obStart: "Open Vorssaint",
-        obStepWelcomeTitle: "Welcome to Vorssaint",
-        obStepWelcomeBody: "A discreet menu bar utility that makes everyday macOS more practical.",
-        obWelcomeBullet1Title: "Energy under control",
-        obWelcomeBullet1Body: "Keep the Mac awake for as long as you want, even with the lid closed.",
-        obWelcomeBullet2Title: "A clear view of the system",
-        obWelcomeBullet2Body: "CPU, GPU and battery temperatures, hardware usage and memory pressure in real time.",
-        obWelcomeBullet3Title: "Mouse and windows, your way",
-        obWelcomeBullet3Body: "Reversed mouse scrolling and a window switcher with thumbnails.",
-        obLanguageLabel: "Language",
-        obStepDoneTitle: "All set!",
-        obStepDoneBody: "Vorssaint is already looking after your Mac.",
-        obDoneHint: "Look for the black hole in the menu bar, at the top right of the screen.",
-        obWhatsNewTitle: "What’s new in this version",
-        obWhatsNewFallback: "This update includes the latest fixes and improvements.",
-        obPurposeTitle: "What brought you here?",
-        obPurposeBody: "Choose a ready setup or select exactly what you want to use.",
-        obPurposeSkip: "You can add or remove features later in Settings.",
-
-        tabMonitor: "Monitor",
-        tabMenuBarIcon: "Menu bar icon",
-        tabMenuBarPanel: "Menu bar panel",
-        monitorMenuBarSection: "In the menu bar",
-        monitorMenuBarCaption: "Choose what appears next to the icon in the menu bar.",
-        monitorCombineTemperatures: "Combine usage and temperature",
-        monitorCombineTemperaturesCaption: "When usage and temperature for the same item are enabled, show them in one block.",
-        monitorSeparateMenuBarMetrics: "Separate metrics into their own items",
-        monitorSeparateMenuBarMetricsCaption: "Separates active blocks in the menu bar and keeps usage and temperature together when combine is on.",
-        monitorNetworkUploadFirst: "Upload above download",
-        monitorShowCPU: "CPU",
-        monitorShowMemory: "Memory",
-        monitorShowNetwork: "Network",
-        monitorShowPowerLabel: "Power",
-        monitorIntervalLabel: "Update every",
-        monitorInterval1: "1 second",
-        monitorInterval2: "2 seconds",
-        monitorInterval5: "5 seconds",
-        monitorPanelSection: "In the panel",
-        betaBadge: "BETA",
-        betaFeatureWarning: "Beta. You may run into some bugs.",
-
-        networkSection: "Network",
-        networkDownload: "Download",
-        networkUpload: "Upload",
-        networkThisSession: "This session",
-        networkMeasuring: "Measuring…",
-        networkApps: "Apps using network",
-        networkAppsIdle: "No apps using network now",
-
-        diskSection: "Disks",
-        diskUsed: "used",
-        diskAvailable: "available",
-        diskPurgeable: "purgeable",
-        diskInternal: "Internal",
-        diskExternal: "External",
-        diskSelect: "Select disk",
-        diskRead: "Read",
-        diskWrite: "Write",
-        diskSMARTStatus: "Status",
-        diskSMARTUnavailable: "SMART unavailable for this disk",
-        diskTotalRead: "Total read",
-        diskTotalWritten: "Total written",
-        diskTemperature: "Temperature",
-        diskHealth: "Health",
-        diskPowerCycles: "Power cycles",
-        diskPowerOnHours: "Power on hours",
-        diskEject: "Eject",
-        diskEjectAll: "Eject all",
-        diskEjecting: "Ejecting…",
-        diskReadyToRemove: "Ready to remove",
-        diskEjectFailed: "Could not eject",
-        diskProtectionCaption: "Eject before unplugging.",
-        diskNoExternal: "No external disk ready to eject.",
-        diskOpenInFinder: "Open",
-        diskStorageSettings: "Storage",
-        diskNoDisks: "No mounted disks found.",
-
-        powerSection: "Power",
-        powerSystem: "System",
-        powerAdapter: "Adapter",
-        powerBattery: "Battery",
-        powerCharging: "Charging",
-        powerOnBattery: "On battery",
-        powerPluggedIn: "Plugged in",
-        powerUnavailable: "Power metrics unavailable on this Mac",
-        powerAdapterMaxFormat: "%@ max",
-        monitorShowGPU: "GPU",
-        monitorShowCPUTemperature: "CPU temperature",
-        monitorShowGPUTemperature: "GPU temperature",
-        monitorShowBatteryTemperature: "Battery temperature",
-        monitorShowPeripheralBattery: "Peripheral battery",
-        peripheralBatteryNoDevices: "No devices found",
-        monitorGraphsSection: "Graphs",
-        monitorGraphsCaption: "Choose which metrics show a graph over time.",
-
-        updateBannerTitle: "Update available",
-        updateBannerAction: "Update",
-        menuBarSpacingLabel: "Menu bar spacing",
-        menuBarSpacingStandard: "Standard",
-        menuBarSpacingCompact: "Compact",
-        menuBarHideIconToggle: "Hide the app icon while metrics are shown",
-        menuBarHideIconCaption: "The icon returns by itself when metrics leave the bar and when there is something to signal (an update ready or the microphone muted).",
-        monitorMemoryPressureDot: "Pressure dot",
-        systemUptime: "Up for",
-        batteryCharge: "Charge",
-        powerHealth: "Battery health",
-        powerCycles: "Cycles",
-        speedTestRun: "Speed test",
-        speedTestAgain: "Test again",
-        speedTestLatency: "Latency",
-        speedTestTesting: "Testing…",
-        speedTestFailed: "Test failed",
-
-        monitorShowInPanel: "Show in panel",
-        disclosureExpanded: "Expanded",
-        disclosureCollapsed: "Collapsed",
-        panelHideItem: "Hide from panel",
-        panelShowItem: "Show in panel",
-        panelHiddenItem: "Hidden",
-        monitorItemUptime: "Uptime",
-        monitorItemNetSpeed: "Live speed",
-        monitorItemNetTotals: "Session totals",
-        monitorItemNetTest: "Speed test",
-        monitorItemDiskUsage: "Disk usage",
-        monitorItemDiskActivity: "Live activity",
-        monitorItemDiskSMART: "SMART",
-        monitorItemDiskProtection: "External protection",
-        monitorItemDiskTools: "Tools",
-        monitorPanelConfigHint: "Open a block to choose what it shows.",
-        monitorOrderSection: "Section order",
-        monitorOrderHint: "Drag to reorder the panel sections and use the eye to show or hide each one.",
-
-        cleaningMenuItem: "Cleaning Mode",
-        utilitiesSection: "Utilities",
-        quickControlsSection: "Controls",
-        panelCategoryWindows: "Windows",
-        panelCategoryInput: "Mouse and keyboard",
-        panelCategoryFiles: "Files",
-        windowMaximizeName: "Maximize windows",
-        windowMaximizeCaption: "The green button maximizes without creating another Space.",
-        keyDebounceName: "Debounce",
-        keyDebounceEnable: "Filter duplicate keys",
-        keyDebounceCaption: "Filters very fast duplicate key presses.",
-        keyDebounceActiveNow: "Filter active",
-        keyDebounceGlobalWindow: "Global window",
-        keyDebouncePerKeySection: "Specific keys",
-        keyDebouncePerKeyCaption: "Per-key values override the global window. Use 0 ms to stop filtering a key.",
-        keyDebounceKeyLabel: "Key",
-        keyDebounceAddKey: "Add key",
-        keyDebounceNoOverrides: "No specific keys configured.",
-        keyDebounceRemoveKey: "Remove key",
-        cleaningPanelCaption: "Locks the keyboard so you can clean safely.",
-        cleaningOverlayTitle: "Keyboard locked for cleaning",
-        cleaningOverlaySubtitle: "Press Escape 5 times to unlock",
-        cleaningOverlayUnlock: "Unlock",
-        cleaningOverlayMouseHint: "Your mouse and trackpad still work",
-        cleaningKeepScreenVisibleToggle: "Keep screen visible",
-        cleaningKeepScreenVisibleCaption: "Shows a discreet indicator in the corner of the screen instead of blacking out content.",
-        cleaningStartNow: "Lock keyboard now",
-        cleaningNeedsAxTitle: "Accessibility needed",
-        cleaningNeedsAxBody: "To lock the keyboard safely, Vorssaint needs Accessibility permission. Grant it in System Settings and try again.",
-
-        tabSupport: "Support",
-        shortcutsPageCaption: "Edit every global shortcut from the features installed on this Mac. Inactive shortcuts stay saved but do not run.",
-        shortcutsPageTitle: "Keyboard shortcuts",
-        settingsSearchPlaceholder: "Search settings",
-        donateHeading: "Help Vorssaint keep growing",
-        donateMessage: "Vorssaint is free, independent and built in my spare time. If you would like to contribute financially, Buy Me a Coffee directly helps me keep development moving forward.",
-        donateButton: "Support on Buy Me a Coffee",
-        donateThanks: "Thank you for being here. 🖤",
-        supportIntroTitle: "Help Vorssaint keep growing",
-        supportIntroMessage: "If you would like to support development financially, Buy Me a Coffee is the one place to do it.",
-        supportIntroStarButton: "Star Vorssaint on GitHub",
-        supportIntroStarMessage: "Financial support is never expected. A star on GitHub helps more people discover Vorssaint and makes a real difference to its development.",
-        supportIntroCoffeeButton: "Support on Buy Me a Coffee",
-        supportIntroLaterButton: "Not now",
-        supportIntroDoneButton: "Done",
-        discordIntroTitle: "The Vorssaint Discord community is just getting started",
-        discordIntroMessage: "The Vorssaint community is new and still being built. Join early to meet other users and help build a welcoming space around the app.",
-        discordIntroJoinButton: "Join the Discord community",
-        communityIntroTitle: "See it before everyone else",
-        communityIntroMessage: "People who already followed me on X saw several changes in this update before anyone else. I post previews of what is coming and show how it works, so you already know the basics before the update ships. Follow along and see what comes next!",
-        communityIntroFollowButton: "Follow @vorssaint on X",
-        updateShowcaseTitle: "What’s new in 3.1.4",
-        updateShowcaseMessage: "Take a quick look at the main improvements in this update.",
-        updateShowcaseUnavailable: "The video could not load right now. You can still continue.",
-        updateShowcaseRestart: "Restart",
-        showMenuBarIcon: "Show menu bar icon",
-        showMenuBarIconCaption: "If Vorssaint’s icon disappears (macOS can hide menu bar icons when the bar runs out of room, common on Macs with a notch), reopen Vorssaint from Applications or Spotlight: that rebuilds the icon and, if it’s still hidden, opens this window.",
-        menuBarIconStillHiddenTitle: "The icon is still hidden",
-        menuBarIconStillHiddenBody: "The icon was rebuilt, but macOS did not give it a visible spot. The menu bar is probably out of room: remove some menu bar icons (or close apps with long menus) and try again.",
-        menuBarIconManagerHintFormat: "%@ is open and may be keeping the icon in its hidden section. Look for Vorssaint there, or set %@ to always show Vorssaint.",
-        shortcutRecording: "Press the new shortcut",
-        shortcutReset: "Reset",
-        shortcutNone: "None",
-        shortcutClear: "Remove shortcut",
-        shortcutInvalid: "Use at least Control, Option or Command with a key.",
-        shortcutPressKeys: "Press keys",
-        shortcutEscapeHint: "Escape cancels.",
-        shortcutDeleteHint: "Delete clears.",
-        shortcutNotCaptured: "Nothing was captured. macOS or another app already uses that combination. Try another one.",
-        shortcutConflictFormat: "This shortcut is already used by %@.",
-        shortcutUnavailable: "macOS rejected this shortcut. Choose another one.",
-        shelfShortcutToggle: "Shelf shortcut",
-        switcherUsageHintFormat: "Hold %@ to navigate; release to activate the window. Shift or ← goes back; W closes the window; Q quits the app; Esc cancels.",
-        cleanerName: "Cleaner",
-        cleanerIntroTitle: "Clean up your Mac",
-        cleanerIntroCaption: "Scans for leftovers from uninstalled apps, caches, logs and the Trash. You review everything first and removed items go to the Trash.",
-        cleanerScan: "Scan",
-        cleanerScanning: "Scanning…",
-        cleanerCleaning: "Cleaning…",
-        cleanerCatLeftovers: "Leftovers from uninstalled apps",
-        cleanerCatLoginItems: "Orphaned startup items",
-        cleanerCatCaches: "Caches",
-        cleanerCatLogs: "Logs",
-        cleanerCatDeveloper: "Developer junk",
-        cleanerCatTrash: "Trash",
-        cleanerLeftoversNote: "Found by analysis and left unchecked. Check the path before ticking.",
-        cleanerLoginItemsNote: "The entry under Login Items disappears after restarting the Mac.",
-        cleanerTrashNote: "Emptying the Trash is permanent.",
-        cleanerCatDeviceBackups: "iPhone backups",
-        cleanerDeviceBackupsCaption: "Old iPhone and iPad backups take a big slice of the storage macOS calls Other. Remove only the ones you no longer need; a new backup is made when you plug the device in again.",
-        cleanerNothingFound: "Nothing to clean. Your Mac is tidy.",
-        cleanerDoneNote: "Items went to the Trash and can be recovered from there.",
-        cleanerAgain: "Scan again",
-        cleanerRevealInFinder: "Reveal in Finder",
-        cleanerPanelCaption: "App leftovers, caches and logs",
-        cleanerSafeSection: "Safe cleanup",
-        cleanerOptionalSection: "Optional, review first",
-        cleanerCatOtherCaches: "Other caches",
-        cleanerCachesCaption: "Temporary files apps rebuild on their own.",
-        cleanerLogsCaption: "Old diagnostic logs.",
-        cleanerDeveloperCaption: "Xcode build and simulator leftovers.",
-        cleanerLoginItemsCaption: "Startup entries left by apps that no longer exist.",
-        cleanerLeftoversCaption: "Files left behind by apps you uninstalled.",
-        cleanerOtherCachesCaption: "Safe to remove, nothing breaks. Apps may open slower once and downloaded content, like offline music, downloads again.",
-        cleanerCleanSizeFormat: "Clean %@",
-        cleanerScheduleTitle: "Automatic cleanup",
-        cleanerScheduleOff: "Off",
-        cleanerScheduleDaily: "Daily",
-        cleanerScheduleWeekly: "Weekly",
-        cleanerScheduleCaption: "Cleans only the safe part on its own at the chosen time and sends everything to the Trash.",
-        cleanerScheduleLastFormat: "The last automatic cleanup freed %@.",
-        cleanerAutoNotificationFormat: "%@ freed and sent to the Trash.",
-        cleanerScheduleNextFormat: "Next cleanup %@.",
-        cleanerScheduleRanFormat: "Last automatic cleanup %@.",
-        cleanerScheduleNotifyToggle: "Notify when done",
-        cleanerNotifDenied: "Vorssaint notifications are turned off in the system.",
-        cleanerNotifOpenSettings: "Open Notification Settings…",
-        launchAtLoginNeedsApplications: "The app is running from a place that cannot open at login. Drag Vorssaint to the Applications folder, open it from there and turn this on again.",
-        launchAtLoginNeedsApproval: "The login item is registered but still switched off in System Settings. Open System Settings › General › Login Items & Extensions and turn Vorssaint on under Open at Login.",
-        ocrRemoveLineBreaksToggle: "Remove line breaks",
-        ocrRemoveLineBreaksCaption: "Removes line breaks so copied text pastes as one paragraph.",
-        ocrQRToggle: "Read QR codes",
-        ocrQRCaption: "If the area has a QR code, its content is shown to copy or open.",
-        ocrQRCopied: "QR code copied",
-        qrResultTitle: "QR code",
-        qrResultCopy: "Copy",
-        qrResultOpen: "Open link",
-        highlightsTitle: "New in this update",
-        highlightsTitleQuitProtection: "Quit and close protection",
-        highlightsTitleRecorderBlur: "Recording privacy blur",
-        highlightsCaptionQuitProtection: "Avoid quitting apps or closing windows by accident with a hold, a double press or an extra modifier, customizable per app.",
-        highlightsCaptionRecorderBlur: "Hide private details, passwords and sensitive areas anywhere across your recorded video before sharing or exporting.",
-        highlightsConfigure: "Set up",
-        highlightsSeeAll: "See all changes",
-        switcherCurrentSpaceOnly: "Show only the current desktop",
-        switcherCurrentSpaceOnlyCaption: "Lists only windows from the desktop you are on. Picking a window never moves you to another desktop.",
-        shelfFileMissing: "The file no longer exists",
-        monitorOpenActivityMonitor: "Open Activity Monitor",
-        monitorMemoryMetricLabel: "Measure memory as",
-        memoryMetricUsed: "Memory Used",
-        memoryMetricApp: "App Memory",
-        keepAwakeRightClickToggle: "Right-click the menu bar icon to toggle Keep Awake",
-        keepAwakeRightClickToggleCaption: "Replaces the right-click context menu.",
-        urlCleanerRulesTitle: "Cleaning rules",
-        urlCleanerRulesCaption: "A site attaches these parameters to its own share links to track where the link came from. Switched on, a name is removed when a link is cleaned; switched off, it stays. Names you add can be deleted.",
-        urlCleanerRulesCoverageCaption: "The list covers a site’s different share paths (the web page, the app, a live room), which is why it is long; a real link usually carries only two to four of them.",
-        urlCleanerRulesAllSites: "All sites",
-        urlCleanerRulesCountSingular: "1 parameter",
-        urlCleanerRulesCountPluralFormat: "%d parameters",
-        urlCleanerRulesAddSite: "Add a site",
-        urlCleanerRulesParameterPlaceholder: "Parameter name",
-        urlCleanerRulesMatchCaption: "Write the name to the left of the = , like utm_source. A name that matches takes that one parameter out of the link and leaves the rest as it was.",
-        urlCleanerRulesAddButton: "Add",
-        urlCleanerRulesRemoveButton: "Delete name",
-        urlCleanerRulesRemoveSiteButton: "Turn off every rule for this site",
-        urlCleanerRemovedFormat: "Removed %@",
-        switcherSearchPin: "Pin search with S",
-        switcherSearchPinCaption: "S starts a search and pins the switcher open, so typing no longer produces special characters when your shortcut uses ⌥, and a search starting with Q or W no longer closes the window or quits the app by mistake.",
-        invertVerticalScroll: "Invert vertical scrolling",
-        invertHorizontalScroll: "Invert horizontal scrolling",
-        switcherShowShortcutHints: "Show shortcut hints",
-        switcherShowShortcutHintsCaption: "Shows the app and window shortcuts below the icons.",
-        uninstallerHomebrewPackageFormat: "%@ will also be removed from Homebrew.",
-        shelfEdgeToggle: "Open near a screen edge",
-        shelfEdgeCaption: "Drag a file toward the screen edge to peek the shelf in. Drop it there, or pull back and it retreats.",
-        focusFollowsMouseName: "Focus follows mouse",
-        focusFollowsMouseCaption: "Focuses and raises the window under the pointer after a short pause.",
-        focusFollowsMouseDelay: "Hover delay",
-        switcherMinimizedPlacementLabel: "Minimized windows",
-        switcherMinimizedPlacementNormal: "Normal ordering",
-        switcherMinimizedPlacementEnd: "Place at end",
-        switcherMinimizedPlacementHidden: "Hide",
-        switcherShowFullscreenWindows: "Show fullscreen windows",
-        switcherScreenPlacementLabel: "Show on",
-        switcherScreenPlacementPointer: "Screen with the pointer",
-        switcherScreenPlacementMenuBar: "Screen with the menu bar",
-        switcherScreenPlacementActiveWindow: "Screen with the active window",
-        switcherScreenPlacementCaption: "Which display the switcher opens on when more than one is connected.",
-        smoothScrollResponseLabel: "Response",
-        mouseAccelerationName: "Disable mouse acceleration",
-        mouseAccelerationCaption: "Removes pointer acceleration for connected mice. Your previous setting returns when this is turned off or Vorssaint quits.",
-        shelfClearOnClose: "Clear when closed",
-        shelfClearOnCloseCaption: "Empties the shelf only when you click its close button. Automatic hiding and collapsing keep the items."
-    )
+    static let enUS = Strings()
 }

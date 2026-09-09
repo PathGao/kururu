@@ -5,13 +5,13 @@ import Foundation
 
 /// Localized strings for Dock clicks.
 struct DockClickFeatureStrings {
-    let pageTitle: String
-    let minimize: String
-    let minimizeCaption: String
-    let hide: String
-    let hideCaption: String
-    let cycleWindows: String
-    let cycleWindowsCaption: String
+    var pageTitle: String = "Dock clicks"
+    var minimize: String = "Click the Dock icon to minimize"
+    var minimizeCaption: String = "The active app’s windows minimize when you click its Dock icon. Click again to bring them back."
+    var hide: String = "Click the Dock icon to hide the app"
+    var hideCaption: String = "The active app hides when you click its Dock icon. Click again to bring it back."
+    var cycleWindows: String = "Click the Dock icon to cycle windows"
+    var cycleWindowsCaption: String = "Click an active app’s Dock icon to rotate through its windows, like ⌘`."
 }
 
 extension FeatureStrings {
@@ -35,15 +35,7 @@ extension FeatureStrings {
 }
 
 extension DockClickFeatureStrings {
-    static let enUS = DockClickFeatureStrings(
-        pageTitle: "Dock clicks",
-        minimize: "Click the Dock icon to minimize",
-        minimizeCaption: "The active app’s windows minimize when you click its Dock icon. Click again to bring them back.",
-        hide: "Click the Dock icon to hide the app",
-        hideCaption: "The active app hides when you click its Dock icon. Click again to bring it back.",
-        cycleWindows: "Click the Dock icon to cycle windows",
-        cycleWindowsCaption: "Click an active app’s Dock icon to rotate through its windows, like ⌘`."
-    )
+    static let enUS = DockClickFeatureStrings()
 
     static let ptBR = DockClickFeatureStrings(
         pageTitle: "Cliques no Dock",

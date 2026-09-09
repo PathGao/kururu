@@ -5,11 +5,11 @@ import Foundation
 
 /// Localized strings for the sound output switcher.
 struct SoundOutputSwitcherFeatureStrings {
-    let pageTitle: String
-    let enable: String
-    let caption: String
-    let devices: String
-    let noAvailableSelection: String
+    var pageTitle: String = "Output switcher"
+    var enable: String = "Switch outputs with shortcut"
+    var caption: String = "Choose outputs and use the shortcut to move to the next available one."
+    var devices: String = "Outputs in cycle"
+    var noAvailableSelection: String = "Select at least one available output."
 }
 
 extension FeatureStrings {
@@ -33,13 +33,7 @@ extension FeatureStrings {
 }
 
 extension SoundOutputSwitcherFeatureStrings {
-    static let enUS = SoundOutputSwitcherFeatureStrings(
-        pageTitle: "Output switcher",
-        enable: "Switch outputs with shortcut",
-        caption: "Choose outputs and use the shortcut to move to the next available one.",
-        devices: "Outputs in cycle",
-        noAvailableSelection: "Select at least one available output."
-    )
+    static let enUS = SoundOutputSwitcherFeatureStrings()
 
     static let ptBR = SoundOutputSwitcherFeatureStrings(
         pageTitle: "Alternador de saída",

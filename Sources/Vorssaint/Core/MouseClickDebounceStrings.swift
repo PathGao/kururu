@@ -4,11 +4,11 @@
 import Foundation
 
 struct MouseClickDebounceStrings {
-    let title: String
-    let caption: String
-    let moreOptions: String
-    let windowLabel: String
-    let windowCaption: String
+    var title: String = "Extra click filter"
+    var caption: String = "Ignores rapid extra clicks from worn mouse buttons without slowing normal clicks."
+    var moreOptions: String = "More options"
+    var windowLabel: String = "Filter window"
+    var windowCaption: String = "A repeated click inside this interval is treated as an accidental duplicate."
 }
 
 extension FeatureStrings {
@@ -32,13 +32,7 @@ extension FeatureStrings {
 }
 
 extension MouseClickDebounceStrings {
-    static let enUS = MouseClickDebounceStrings(
-        title: "Extra click filter",
-        caption: "Ignores rapid extra clicks from worn mouse buttons without slowing normal clicks.",
-        moreOptions: "More options",
-        windowLabel: "Filter window",
-        windowCaption: "A repeated click inside this interval is treated as an accidental duplicate."
-    )
+    static let enUS = MouseClickDebounceStrings()
 
     static let ptBR = MouseClickDebounceStrings(
         title: "Filtro de cliques extras",

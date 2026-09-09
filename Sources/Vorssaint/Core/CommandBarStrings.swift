@@ -7,163 +7,163 @@ import Foundation
 /// everything the app can do. Action rows reuse each feature's own strings;
 /// only the bar's chrome lives here.
 struct CommandBarFeatureStrings {
-    let pageTitle: String
-    let hubDescription: String
-    let panelCaption: String
-    let settingsCaption: String
-    let openButton: String
-    let searchPlaceholder: String
-    let suggestionsLabel: String
-    let noResultsTitle: String
-    let noResultsAction: String
-    let argumentRangeFormat: String
-    let argumentHint: String
-    let confirmHint: String
-    let kindApp: String
-    let kindClipboard: String
-    let kindSnippet: String
-    let soundOutputSubtitle: String
-    let soundOutputCurrent: String
-    let volumeTitle: String
-    let brightnessTitle: String
-    let keepAwakeForFormat: String
-    let needsSetupFormat: String
-    let needsPermissionHint: String
-    let actionCleanURL: String
-    let actionOpenSettings: String
-    let answerBatteryLabel: String
-    let answerBatteryCharging: String
-    let answerBatteryPlugged: String
-    let answerMemoryLabel: String
-    let answerMemoryFormat: String
-    let answerStorageLabel: String
-    let answerStorageFormat: String
-    let copyHint: String
-    let kindWindow: String
-    let quitFormat: String
-    let quitConfirmFormat: String
-    let kindMenu: String
-    let actionsTitle: String
-    let actionsHint: String
-    let actionPin: String
-    let actionUnpin: String
-    let actionName: String
-    let actionRename: String
-    let actionHide: String
-    let actionForget: String
-    let aliasPlaceholder: String
-    let aliasTakenFormat: String
-    let sourcesTitle: String
-    let sourcesCaption: String
-    let sourceActions: String
-    let sourceApps: String
-    let sourceMenus: String
-    let sourceWindows: String
-    let sourceQuitApps: String
-    let sourceSettingsPages: String
-    let sourceSnippets: String
-    let sourceClipboard: String
-    let sourceEmoji: String
-    let sourceFolders: String
-    let sourceAnswers: String
-    let sourceCalculator: String
-    let namedTitle: String
-    let namedEmpty: String
-    let pinnedTitle: String
-    let pinnedEmpty: String
-    let hiddenTitle: String
-    let hiddenEmpty: String
-    let forgetAllButton: String
-    let tryTheseLabel: String
-    let stillLooking: String
-    let removeButton: String
-    let confirmButton: String
-    let soundMute: String
-    let soundUnmute: String
-    let stateOn: String
-    let powerSleep: String
-    let powerRestart: String
-    let powerRestartConfirm: String
-    let powerShutDown: String
-    let powerShutDownConfirm: String
-    let powerLogOut: String
-    let powerLogOutConfirm: String
-    let wifiOn: String
-    let wifiOff: String
-    let kindEmoji: String
-    let kindFolder: String
-    let answerDateLabel: String
-    let answerTimeLabel: String
-    let kindAnswer: String
-    let kindSelection: String
-    let selectedTitle: String
-    let selectionCopy: String
-    let selectionSearch: String
-    let selectionUpper: String
-    let selectionLower: String
-    let selectionTitleCase: String
-    let selectionShelf: String
-    let selectionCount: String
-    let selectionCountFormat: String
-    let sourceSelection: String
-    let kindLink: String
-    let linkSearchHint: String
-    let linksTitle: String
-    let linksEmpty: String
-    let linkDestinationLabel: String
-    let linkKindLink: String
-    let linkKindPlace: String
-    let linkPlaceholdersHint: String
-    let placeholderQuery: String
-    let placeholderClipboard: String
-    let placeholderSelection: String
-    let placeholderDate: String
-    let privacyNote: String
-    let actionShortcut: String
-    let actionShortcutChange: String
-    let actionShortcutRemove: String
-    let shortcutCaptureHint: String
-    let rowShortcutsTitle: String
-    let rowShortcutsEmpty: String
-    let appCenterTitle: String
-    let appCenterCaption: String
-    let appAliasLabel: String
-    let appShortcutLabel: String
-    let appShortcutsFilter: String
-    let appShortcutRecord: String
-    let rowShortcutsLimitFormat: String
-    let turnOnFormat: String
-    let turnOffFormat: String
-    let everythingTitle: String
-    let categoryAll: String
-    let restartAppFormat: String
-    let forceQuitAppFormat: String
-    let forceQuitAppConfirmFormat: String
-    let uninstallAppFormat: String
-    let openInBrowser: String
-    let linkKindScript: String
-    let scriptHint: String
-    let scriptRunsWithoutArgument: String
-    let scriptRunFailed: String
-    let scriptSearchHint: String
-    let scriptBareSearchHint: String
-    let linkAddButton: String
-    let positionCaption: String
-    let resetPositionButton: String
-    let shortcutToggle: String
-    let dragHint: String
-    let actionRevealInFinder: String
-    let sourceMacSettings: String
-    let sourceFiles: String
-    let filesTitle: String
-    let filesCaption: String
-    let filesEmpty: String
-    let filesAddFolder: String
-    let filesIgnoreCaption: String
-    let filesIgnorePlaceholder: String
-    let filesIgnoreAdd: String
-    let compactModeToggle: String
-    let compactModeCaption: String
+    var pageTitle: String = "Command Bar"
+    var hubDescription: String = "One field that finds and runs everything the app does"
+    var panelCaption: String = "Type to find and run anything"
+    var settingsCaption: String = "One shortcut opens a field over whatever you are doing. Type a few letters, press Return and it happens. Nothing you type is saved."
+    var openButton: String = "Open the bar now"
+    var searchPlaceholder: String = "Type what you want to do"
+    var suggestionsLabel: String = "Suggestions"
+    var noResultsTitle: String = "Nothing here by that name."
+    var noResultsAction: String = "See suggestions"
+    var argumentRangeFormat: String = "%d to %d"
+    var argumentHint: String = "Return applies · Esc goes back"
+    var confirmHint: String = "Return confirms · Esc cancels"
+    var kindApp: String = "App"
+    var kindClipboard: String = "Paste from history"
+    var kindSnippet: String = "Insert snippet"
+    var soundOutputSubtitle: String = "Switch sound output"
+    var soundOutputCurrent: String = "Current output"
+    var volumeTitle: String = "Volume"
+    var brightnessTitle: String = "Screen brightness"
+    var keepAwakeForFormat: String = "Keep awake for %@"
+    var needsSetupFormat: String = "Turn on %@ in Settings"
+    var needsPermissionHint: String = "Needs permission · Return asks"
+    var actionCleanURL: String = "Clean the copied link"
+    var actionOpenSettings: String = "Open Settings"
+    var answerBatteryLabel: String = "Battery"
+    var answerBatteryCharging: String = "charging"
+    var answerBatteryPlugged: String = "on power"
+    var answerMemoryLabel: String = "Memory"
+    var answerMemoryFormat: String = "%@ of %@ in use"
+    var answerStorageLabel: String = "Storage"
+    var answerStorageFormat: String = "%@ available of %@"
+    var copyHint: String = "Return copies"
+    var kindWindow: String = "Window"
+    var quitFormat: String = "Quit %@"
+    var quitConfirmFormat: String = "Quit %@?"
+    var kindMenu: String = "Menu command"
+    var actionsTitle: String = "Actions"
+    var actionsHint: String = "Actions"
+    var actionPin: String = "Pin to the top"
+    var actionUnpin: String = "Unpin"
+    var actionName: String = "Give it your own name"
+    var actionRename: String = "Change the name it answers to"
+    var actionHide: String = "Never show this"
+    var actionForget: String = "Forget how often I use this"
+    var aliasPlaceholder: String = "The name you call it"
+    var aliasTakenFormat: String = "%@ already answers to that"
+    var sourcesTitle: String = "What the bar searches"
+    var sourcesCaption: String = "Turn off what you never want to see. Your own actions always stay."
+    var sourceActions: String = "Vorssaint actions"
+    var sourceApps: String = "Apps"
+    var sourceMenus: String = "Menu commands of the app in front"
+    var sourceWindows: String = "Open windows"
+    var sourceQuitApps: String = "Quit an app"
+    var sourceSettingsPages: String = "Settings pages"
+    var sourceSnippets: String = "Snippets"
+    var sourceClipboard: String = "Clipboard history"
+    var sourceEmoji: String = "Emoji"
+    var sourceFolders: String = "Folders"
+    var sourceAnswers: String = "Answers about this Mac"
+    var sourceCalculator: String = "Sums and conversions"
+    var namedTitle: String = "Names you gave"
+    var namedEmpty: String = "Nothing named yet. Open the bar, pick a row and press the actions key."
+    var pinnedTitle: String = "Pinned"
+    var pinnedEmpty: String = "Nothing pinned yet."
+    var hiddenTitle: String = "Never shown"
+    var hiddenEmpty: String = "Nothing hidden."
+    var forgetAllButton: String = "Forget what I use most"
+    var tryTheseLabel: String = "Try"
+    var stillLooking: String = "Still looking"
+    var removeButton: String = "Remove"
+    var confirmButton: String = "Confirm"
+    var soundMute: String = "Mute the sound"
+    var soundUnmute: String = "Turn the sound back on"
+    var stateOn: String = "on"
+    var powerSleep: String = "Sleep"
+    var powerRestart: String = "Restart"
+    var powerRestartConfirm: String = "Restart the Mac?"
+    var powerShutDown: String = "Shut down"
+    var powerShutDownConfirm: String = "Shut down the Mac?"
+    var powerLogOut: String = "Log out"
+    var powerLogOutConfirm: String = "Log out?"
+    var wifiOn: String = "Turn Wi-Fi on"
+    var wifiOff: String = "Turn Wi-Fi off"
+    var kindEmoji: String = "Emoji"
+    var kindFolder: String = "Folder"
+    var answerDateLabel: String = "Today"
+    var answerTimeLabel: String = "Time now"
+    var kindAnswer: String = "Answer"
+    var kindSelection: String = "Selection"
+    var selectedTitle: String = "Selected"
+    var selectionCopy: String = "Copy it"
+    var selectionSearch: String = "Use it in the search"
+    var selectionUpper: String = "UPPERCASE"
+    var selectionLower: String = "lowercase"
+    var selectionTitleCase: String = "Title Case"
+    var selectionShelf: String = "Keep it on the shelf"
+    var selectionCount: String = "Count it"
+    var selectionCountFormat: String = "Words: %d, characters: %d"
+    var sourceSelection: String = "What is selected"
+    var kindLink: String = "Your shortcut"
+    var linkSearchHint: String = "Type what to look for after the name"
+    var linksTitle: String = "Your shortcuts"
+    var linksEmpty: String = "Nothing saved yet. Add a site, folder, search or script you use every day."
+    var linkDestinationLabel: String = "Where it goes"
+    var linkKindLink: String = "Site or link"
+    var linkKindPlace: String = "Folder or file"
+    var linkPlaceholdersHint: String = "Drop one of these in and it gets filled in when it opens"
+    var placeholderQuery: String = "what you type"
+    var placeholderClipboard: String = "what you copied"
+    var placeholderSelection: String = "what is selected"
+    var placeholderDate: String = "today"
+    var privacyNote: String = "Everything happens on this Mac: no account, no cloud, nothing sent anywhere."
+    var actionShortcut: String = "Give it a shortcut"
+    var actionShortcutChange: String = "Change the shortcut"
+    var actionShortcutRemove: String = "Take the shortcut off"
+    var shortcutCaptureHint: String = "Press the keys you want · Delete clears it · Esc goes back"
+    var rowShortcutsTitle: String = "Rows with their own shortcut"
+    var rowShortcutsEmpty: String = "No row has its own shortcut yet. Open the actions on any row to give it one."
+    var appCenterTitle: String = "App shortcuts"
+    var appCenterCaption: String = "Open apps with their own shortcuts, even when the bar is closed. Set search names and pin favorites here."
+    var appAliasLabel: String = "Alias"
+    var appShortcutLabel: String = "Shortcut"
+    var appShortcutsFilter: String = "With shortcuts"
+    var appShortcutRecord: String = "Record…"
+    var rowShortcutsLimitFormat: String = "You can assign up to %d shortcuts. Remove one to add another."
+    var turnOnFormat: String = "Turn on %@"
+    var turnOffFormat: String = "Turn off %@"
+    var everythingTitle: String = "Everything it can do"
+    var categoryAll: String = "All"
+    var restartAppFormat: String = "Restart %@"
+    var forceQuitAppFormat: String = "Force Quit %@…"
+    var forceQuitAppConfirmFormat: String = "Force quit %@? Unsaved changes will be lost."
+    var uninstallAppFormat: String = "Uninstall %@…"
+    var openInBrowser: String = "Open in browser"
+    var linkKindScript: String = "Script"
+    var scriptHint: String = "Choose an executable file. Type its name followed by what you want to send. It runs when you pause and shows the result here."
+    var scriptRunsWithoutArgument: String = "Also run when its name is typed on its own"
+    var scriptRunFailed: String = "Couldn’t run this file"
+    var scriptSearchHint: String = "Type what to send after the name"
+    var scriptBareSearchHint: String = "Runs on its own, or type what to send"
+    var linkAddButton: String = "Add shortcut"
+    var positionCaption: String = "Drag the mark at the left of the field to put the bar anywhere on the screen; double-click the mark to recenter it."
+    var resetPositionButton: String = "Recenter the bar"
+    var shortcutToggle: String = "Global shortcut to open the bar"
+    var dragHint: String = "Drag to move · Double-click to recenter"
+    var actionRevealInFinder: String = "Show in Finder"
+    var sourceMacSettings: String = "System Settings panes"
+    var sourceFiles: String = "Files"
+    var filesTitle: String = "Search your files"
+    var filesCaption: String = "Name the folders to look in and the bar finds files by name as you type. Nothing is indexed and no permission is asked for: it uses the Mac’s own search and offers only what you can already see in Finder."
+    var filesEmpty: String = "No folders yet, so the bar looks for no files."
+    var filesAddFolder: String = "Add a folder"
+    var filesIgnoreCaption: String = "Names never worth showing: a whole folder or file name, or an extension written as *.log."
+    var filesIgnorePlaceholder: String = "A folder or file name"
+    var filesIgnoreAdd: String = "Add"
+    var compactModeToggle: String = "Compact mode"
+    var compactModeCaption: String = "Bar opens without suggestions. Results appear as you type."
 }
 
 extension FeatureStrings {
@@ -187,164 +187,7 @@ extension FeatureStrings {
 }
 
 extension CommandBarFeatureStrings {
-    static let enUS = CommandBarFeatureStrings(
-        pageTitle: "Command Bar",
-        hubDescription: "One field that finds and runs everything the app does",
-        panelCaption: "Type to find and run anything",
-        settingsCaption: "One shortcut opens a field over whatever you are doing. Type a few letters, press Return and it happens. Nothing you type is saved.",
-        openButton: "Open the bar now",
-        searchPlaceholder: "Type what you want to do",
-        suggestionsLabel: "Suggestions",
-        noResultsTitle: "Nothing here by that name.",
-        noResultsAction: "See suggestions",
-        argumentRangeFormat: "%d to %d",
-        argumentHint: "Return applies · Esc goes back",
-        confirmHint: "Return confirms · Esc cancels",
-        kindApp: "App",
-        kindClipboard: "Paste from history",
-        kindSnippet: "Insert snippet",
-        soundOutputSubtitle: "Switch sound output",
-        soundOutputCurrent: "Current output",
-        volumeTitle: "Volume",
-        brightnessTitle: "Screen brightness",
-        keepAwakeForFormat: "Keep awake for %@",
-        needsSetupFormat: "Turn on %@ in Settings",
-        needsPermissionHint: "Needs permission · Return asks",
-        actionCleanURL: "Clean the copied link",
-        actionOpenSettings: "Open Settings",
-        answerBatteryLabel: "Battery",
-        answerBatteryCharging: "charging",
-        answerBatteryPlugged: "on power",
-        answerMemoryLabel: "Memory",
-        answerMemoryFormat: "%@ of %@ in use",
-        answerStorageLabel: "Storage",
-        answerStorageFormat: "%@ available of %@",
-        copyHint: "Return copies",
-        kindWindow: "Window",
-        quitFormat: "Quit %@",
-        quitConfirmFormat: "Quit %@?",
-        kindMenu: "Menu command",
-        actionsTitle: "Actions",
-        actionsHint: "Actions",
-        actionPin: "Pin to the top",
-        actionUnpin: "Unpin",
-        actionName: "Give it your own name",
-        actionRename: "Change the name it answers to",
-        actionHide: "Never show this",
-        actionForget: "Forget how often I use this",
-        aliasPlaceholder: "The name you call it",
-        aliasTakenFormat: "%@ already answers to that",
-        sourcesTitle: "What the bar searches",
-        sourcesCaption: "Turn off what you never want to see. Your own actions always stay.",
-        sourceActions: "Vorssaint actions",
-        sourceApps: "Apps",
-        sourceMenus: "Menu commands of the app in front",
-        sourceWindows: "Open windows",
-        sourceQuitApps: "Quit an app",
-        sourceSettingsPages: "Settings pages",
-        sourceSnippets: "Snippets",
-        sourceClipboard: "Clipboard history",
-        sourceEmoji: "Emoji",
-        sourceFolders: "Folders",
-        sourceAnswers: "Answers about this Mac",
-        sourceCalculator: "Sums and conversions",
-        namedTitle: "Names you gave",
-        namedEmpty: "Nothing named yet. Open the bar, pick a row and press the actions key.",
-        pinnedTitle: "Pinned",
-        pinnedEmpty: "Nothing pinned yet.",
-        hiddenTitle: "Never shown",
-        hiddenEmpty: "Nothing hidden.",
-        forgetAllButton: "Forget what I use most",
-        tryTheseLabel: "Try",
-        stillLooking: "Still looking",
-        removeButton: "Remove",
-        confirmButton: "Confirm",
-        soundMute: "Mute the sound",
-        soundUnmute: "Turn the sound back on",
-        stateOn: "on",
-        powerSleep: "Sleep",
-        powerRestart: "Restart",
-        powerRestartConfirm: "Restart the Mac?",
-        powerShutDown: "Shut down",
-        powerShutDownConfirm: "Shut down the Mac?",
-        powerLogOut: "Log out",
-        powerLogOutConfirm: "Log out?",
-        wifiOn: "Turn Wi-Fi on",
-        wifiOff: "Turn Wi-Fi off",
-        kindEmoji: "Emoji",
-        kindFolder: "Folder",
-        answerDateLabel: "Today",
-        answerTimeLabel: "Time now",
-        kindAnswer: "Answer",
-        kindSelection: "Selection",
-        selectedTitle: "Selected",
-        selectionCopy: "Copy it",
-        selectionSearch: "Use it in the search",
-        selectionUpper: "UPPERCASE",
-        selectionLower: "lowercase",
-        selectionTitleCase: "Title Case",
-        selectionShelf: "Keep it on the shelf",
-        selectionCount: "Count it",
-        selectionCountFormat: "Words: %d, characters: %d",
-        sourceSelection: "What is selected",
-        kindLink: "Your shortcut",
-        linkSearchHint: "Type what to look for after the name",
-        linksTitle: "Your shortcuts",
-        linksEmpty: "Nothing saved yet. Add a site, folder, search or script you use every day.",
-        linkDestinationLabel: "Where it goes",
-        linkKindLink: "Site or link",
-        linkKindPlace: "Folder or file",
-        linkPlaceholdersHint: "Drop one of these in and it gets filled in when it opens",
-        placeholderQuery: "what you type",
-        placeholderClipboard: "what you copied",
-        placeholderSelection: "what is selected",
-        placeholderDate: "today",
-        privacyNote: "Everything happens on this Mac: no account, no cloud, nothing sent anywhere.",
-        actionShortcut: "Give it a shortcut",
-        actionShortcutChange: "Change the shortcut",
-        actionShortcutRemove: "Take the shortcut off",
-        shortcutCaptureHint: "Press the keys you want · Delete clears it · Esc goes back",
-        rowShortcutsTitle: "Rows with their own shortcut",
-        rowShortcutsEmpty: "No row has its own shortcut yet. Open the actions on any row to give it one.",
-        appCenterTitle: "App shortcuts",
-        appCenterCaption: "Open apps with their own shortcuts, even when the bar is closed. Set search names and pin favorites here.",
-        appAliasLabel: "Alias",
-        appShortcutLabel: "Shortcut",
-        appShortcutsFilter: "With shortcuts",
-        appShortcutRecord: "Record…",
-        rowShortcutsLimitFormat: "You can assign up to %d shortcuts. Remove one to add another.",
-        turnOnFormat: "Turn on %@",
-        turnOffFormat: "Turn off %@",
-        everythingTitle: "Everything it can do",
-        categoryAll: "All",
-        restartAppFormat: "Restart %@",
-        forceQuitAppFormat: "Force Quit %@…",
-        forceQuitAppConfirmFormat: "Force quit %@? Unsaved changes will be lost.",
-        uninstallAppFormat: "Uninstall %@…",
-        openInBrowser: "Open in browser",
-        linkKindScript: "Script",
-        scriptHint: "Choose an executable file. Type its name followed by what you want to send. It runs when you pause and shows the result here.",
-        scriptRunsWithoutArgument: "Also run when its name is typed on its own",
-        scriptRunFailed: "Couldn’t run this file",
-        scriptSearchHint: "Type what to send after the name",
-        scriptBareSearchHint: "Runs on its own, or type what to send",
-        linkAddButton: "Add shortcut",
-        positionCaption: "Drag the mark at the left of the field to put the bar anywhere on the screen; double-click the mark to recenter it.",
-        resetPositionButton: "Recenter the bar",
-        shortcutToggle: "Global shortcut to open the bar",
-        dragHint: "Drag to move · Double-click to recenter",
-        actionRevealInFinder: "Show in Finder",
-        sourceMacSettings: "System Settings panes",
-        sourceFiles: "Files",
-        filesTitle: "Search your files",
-        filesCaption: "Name the folders to look in and the bar finds files by name as you type. Nothing is indexed and no permission is asked for: it uses the Mac’s own search and offers only what you can already see in Finder.",
-        filesEmpty: "No folders yet, so the bar looks for no files.",
-        filesAddFolder: "Add a folder",
-        filesIgnoreCaption: "Names never worth showing: a whole folder or file name, or an extension written as *.log.",
-        filesIgnorePlaceholder: "A folder or file name",
-        filesIgnoreAdd: "Add",
-        compactModeToggle: "Compact mode",
-        compactModeCaption: "Bar opens without suggestions. Results appear as you type.")
+    static let enUS = CommandBarFeatureStrings()
 
     static let ptBR = CommandBarFeatureStrings(
         pageTitle: "Barra de comando",

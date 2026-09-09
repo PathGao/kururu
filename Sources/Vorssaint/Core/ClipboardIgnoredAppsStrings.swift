@@ -4,10 +4,10 @@
 import Foundation
 
 struct ClipboardIgnoredAppsStrings {
-    let listTitle: String
-    let addButton: String
-    let removeButton: String
-    let caption: String
+    var listTitle: String = "Apps to skip"
+    var addButton: String = "Add an app…"
+    var removeButton: String = "Remove"
+    var caption: String = "Nothing you copy in these apps is saved to the history."
 }
 
 extension FeatureStrings {
@@ -31,12 +31,7 @@ extension FeatureStrings {
 }
 
 extension ClipboardIgnoredAppsStrings {
-    static let enUS = ClipboardIgnoredAppsStrings(
-        listTitle: "Apps to skip",
-        addButton: "Add an app…",
-        removeButton: "Remove",
-        caption: "Nothing you copy in these apps is saved to the history."
-    )
+    static let enUS = ClipboardIgnoredAppsStrings()
 
     static let ptBR = ClipboardIgnoredAppsStrings(
         listTitle: "Apps para pular",

@@ -7,27 +7,27 @@ import Foundation
 /// FeatureStrings structs: memberwise init with labeled arguments in
 /// declaration order, one static per language, all in this file.
 struct EnvironmentFeatureStrings {
-    let pageTitle: String
-    let hubDescription: String
-    let commandsTitle: String
-    let commandsNote: String
-    let shimBadge: String
-    let shimFormat: String
-    let shadowedFormat: String
-    let notFound: String
-    let pathTitle: String
-    let pathNote: String
-    let pathTerminal: String
-    let pathGui: String
-    let pathTerminalOnly: String
-    let pathNoDifference: String
-    let shellUnavailable: String
-    let cachesTitle: String
-    let cachesNote: String
-    let cachesEmpty: String
-    let copyPath: String
-    let copyReport: String
-    let refresh: String
+    var pageTitle: String = "Global environment"
+    var hubDescription: String = "Shows which node, python or npx a command actually runs, and why an app started from Finder cannot find them."
+    var commandsTitle: String = "Where commands resolve"
+    var commandsNote: String = "The first match in PATH wins. A command found in more than one place still runs only the first."
+    var shimBadge: String = "Shim"
+    var shimFormat: String = "actually runs %@"
+    var shadowedFormat: String = "%d more copy shadowed by this one"
+    var notFound: String = "Not found"
+    var pathTitle: String = "Terminal PATH vs app PATH"
+    var pathNote: String = "An app opened from Finder or the Dock never sees the directories below, so write the absolute path in its configuration."
+    var pathTerminal: String = "Terminal"
+    var pathGui: String = "Apps"
+    var pathTerminalOnly: String = "In the terminal only"
+    var pathNoDifference: String = "No difference."
+    var shellUnavailable: String = "The login shell did not answer, so this is only the system half of PATH."
+    var cachesTitle: String = "Caches"
+    var cachesNote: String = "Size only. Removing them is the cleaner’s job."
+    var cachesEmpty: String = "No cache folders."
+    var copyPath: String = "Copy path"
+    var copyReport: String = "Copy diagnostic report"
+    var refresh: String = "Check again"
 }
 
 extension FeatureStrings {
@@ -51,29 +51,7 @@ extension FeatureStrings {
 }
 
 extension EnvironmentFeatureStrings {
-    static let enUS = EnvironmentFeatureStrings(
-        pageTitle: "Global environment",
-        hubDescription: "Shows which node, python or npx a command actually runs, and why an app started from Finder cannot find them.",
-        commandsTitle: "Where commands resolve",
-        commandsNote: "The first match in PATH wins. A command found in more than one place still runs only the first.",
-        shimBadge: "Shim",
-        shimFormat: "actually runs %@",
-        shadowedFormat: "%d more copy shadowed by this one",
-        notFound: "Not found",
-        pathTitle: "Terminal PATH vs app PATH",
-        pathNote: "An app opened from Finder or the Dock never sees the directories below, so write the absolute path in its configuration.",
-        pathTerminal: "Terminal",
-        pathGui: "Apps",
-        pathTerminalOnly: "In the terminal only",
-        pathNoDifference: "No difference.",
-        shellUnavailable: "The login shell did not answer, so this is only the system half of PATH.",
-        cachesTitle: "Caches",
-        cachesNote: "Size only. Removing them is the cleaner’s job.",
-        cachesEmpty: "No cache folders.",
-        copyPath: "Copy path",
-        copyReport: "Copy diagnostic report",
-        refresh: "Check again"
-    )
+    static let enUS = EnvironmentFeatureStrings()
 
     static let ptBR = EnvironmentFeatureStrings(
         pageTitle: "Ambiente global",

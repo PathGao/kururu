@@ -4,14 +4,14 @@
 import Foundation
 
 struct SwitcherAppRulesStrings {
-    let listTitle: String
-    let addButton: String
-    let removeButton: String
-    let behaviorLabel: String
-    let showWithoutWindows: String
-    let windowsOnly: String
-    let hidden: String
-    let caption: String
+    var listTitle: String = "Rules by app"
+    var addButton: String = "Add an app…"
+    var removeButton: String = "Remove"
+    var behaviorLabel: String = "Switcher behavior"
+    var showWithoutWindows: String = "Show without windows"
+    var windowsOnly: String = "Windows only"
+    var hidden: String = "Never show"
+    var caption: String = "Choose how each app appears. Apps without a rule use the choice above."
 }
 
 extension FeatureStrings {
@@ -35,16 +35,7 @@ extension FeatureStrings {
 }
 
 extension SwitcherAppRulesStrings {
-    static let enUS = SwitcherAppRulesStrings(
-        listTitle: "Rules by app",
-        addButton: "Add an app…",
-        removeButton: "Remove",
-        behaviorLabel: "Switcher behavior",
-        showWithoutWindows: "Show without windows",
-        windowsOnly: "Windows only",
-        hidden: "Never show",
-        caption: "Choose how each app appears. Apps without a rule use the choice above."
-    )
+    static let enUS = SwitcherAppRulesStrings()
 
     static let ptBR = SwitcherAppRulesStrings(
         listTitle: "Regras por app",

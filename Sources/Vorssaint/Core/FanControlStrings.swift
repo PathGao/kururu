@@ -4,48 +4,48 @@
 import Foundation
 
 struct FanControlFeatureStrings {
-    let title: String
-    let hubDescription: String
-    let showInPanel: String
-    let settingsCaption: String
-    let fanNameFormat: String
-    let rpmFormat: String
-    let allowControl: String
-    let approvalCaption: String
-    let openSettings: String
-    let noFans: String
-    let unsupported: String
-    let alreadyControlled: String
-    let failed: String
-    let safetyCaption: String
-    let safetyStopped: String
-    let menuBarTitle: String
-    let systemControl: String
-    let manualControl: String
-    let customCurve: String
-    let mode: String
-    let coolingIntensity: String
-    let currentRPMFormat: String
-    let targetRPMFormat: String
-    let applyManual: String
-    let applyCurve: String
-    let returnToSystem: String
-    let temperatureUnavailable: String
-    let curveUnavailable: String
-    let sensor: String
-    let temperature: String
-    let fanSpeed: String
-    let addPoint: String
-    let addSensor: String
-    let removePoint: String
-    let removeSensor: String
-    let curveGraph: String
-    let averageSoC: String
-    let hottestSoC: String
-    let averageCPU: String
-    let hottestCPU: String
-    let hottestGPU: String
-    let helperUnavailable: String
+    var title: String = "Fan Control"
+    var hubDescription: String = "Control fans manually or with temperature curves while seeing live and target RPM"
+    var showInPanel: String = "Show Fan Control in the panel"
+    var settingsCaption: String = "Adds manual fan speeds and temperature curves to the menu bar panel."
+    var fanNameFormat: String = "Fan %d"
+    var rpmFormat: String = "%d RPM"
+    var allowControl: String = "Allow fan control"
+    var approvalCaption: String = "Allow Vorssaint in Login Items to use the protected fan controller."
+    var openSettings: String = "Open System Settings"
+    var noFans: String = "This Mac has no controllable fan."
+    var unsupported: String = "Fan control is not available on this Mac."
+    var alreadyControlled: String = "Another process is controlling the fans. Return it to system control first."
+    var failed: String = "The fans returned to system control because the requested control could not be verified."
+    var safetyCaption: String = "Control stays active until you return to System. It returns automatically if the app disconnects, the Mac sleeps, sensor readings fail or thermal pressure rises."
+    var safetyStopped: String = "Returned to system control because fan control was interrupted."
+    var menuBarTitle: String = "Fan speed"
+    var systemControl: String = "System"
+    var manualControl: String = "Manual"
+    var customCurve: String = "Curve"
+    var mode: String = "Control mode"
+    var coolingIntensity: String = "Fan speed"
+    var currentRPMFormat: String = "Current %d RPM"
+    var targetRPMFormat: String = "Target %d RPM"
+    var applyManual: String = "Apply manual control"
+    var applyCurve: String = "Apply fan curve"
+    var returnToSystem: String = "Use system control"
+    var temperatureUnavailable: String = "The selected temperature sensor stopped responding. Fan control returned to System."
+    var curveUnavailable: String = "A selected temperature sensor is not available on this Mac."
+    var sensor: String = "Temperature sensor"
+    var temperature: String = "Temperature"
+    var fanSpeed: String = "Fan speed"
+    var addPoint: String = "Add point"
+    var addSensor: String = "Add sensor"
+    var removePoint: String = "Remove point"
+    var removeSensor: String = "Remove sensor"
+    var curveGraph: String = "Temperature and fan speed curve"
+    var averageSoC: String = "Average SoC"
+    var hottestSoC: String = "Hottest SoC"
+    var averageCPU: String = "Average CPU"
+    var hottestCPU: String = "Hottest CPU"
+    var hottestGPU: String = "Hottest GPU"
+    var helperUnavailable: String = "The protected fan controller is unavailable. Allow Vorssaint in Login Items, then try again."
 }
 
 extension FeatureStrings {
@@ -69,50 +69,7 @@ extension FeatureStrings {
 }
 
 extension FanControlFeatureStrings {
-    static let enUS = FanControlFeatureStrings(
-        title: "Fan Control",
-        hubDescription: "Control fans manually or with temperature curves while seeing live and target RPM",
-        showInPanel: "Show Fan Control in the panel",
-        settingsCaption: "Adds manual fan speeds and temperature curves to the menu bar panel.",
-        fanNameFormat: "Fan %d",
-        rpmFormat: "%d RPM",
-        allowControl: "Allow fan control",
-        approvalCaption: "Allow Vorssaint in Login Items to use the protected fan controller.",
-        openSettings: "Open System Settings",
-        noFans: "This Mac has no controllable fan.",
-        unsupported: "Fan control is not available on this Mac.",
-        alreadyControlled: "Another process is controlling the fans. Return it to system control first.",
-        failed: "The fans returned to system control because the requested control could not be verified.",
-        safetyCaption: "Control stays active until you return to System. It returns automatically if the app disconnects, the Mac sleeps, sensor readings fail or thermal pressure rises.",
-        safetyStopped: "Returned to system control because fan control was interrupted.",
-        menuBarTitle: "Fan speed",
-        systemControl: "System",
-        manualControl: "Manual",
-        customCurve: "Curve",
-        mode: "Control mode",
-        coolingIntensity: "Fan speed",
-        currentRPMFormat: "Current %d RPM",
-        targetRPMFormat: "Target %d RPM",
-        applyManual: "Apply manual control",
-        applyCurve: "Apply fan curve",
-        returnToSystem: "Use system control",
-        temperatureUnavailable: "The selected temperature sensor stopped responding. Fan control returned to System.",
-        curveUnavailable: "A selected temperature sensor is not available on this Mac.",
-        sensor: "Temperature sensor",
-        temperature: "Temperature",
-        fanSpeed: "Fan speed",
-        addPoint: "Add point",
-        addSensor: "Add sensor",
-        removePoint: "Remove point",
-        removeSensor: "Remove sensor",
-        curveGraph: "Temperature and fan speed curve",
-        averageSoC: "Average SoC",
-        hottestSoC: "Hottest SoC",
-        averageCPU: "Average CPU",
-        hottestCPU: "Hottest CPU",
-        hottestGPU: "Hottest GPU",
-        helperUnavailable: "The protected fan controller is unavailable. Allow Vorssaint in Login Items, then try again."
-    )
+    static let enUS = FanControlFeatureStrings()
 
     static let ptBR = FanControlFeatureStrings(
         title: "Controle das ventoinhas",

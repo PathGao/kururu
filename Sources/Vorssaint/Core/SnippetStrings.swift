@@ -7,67 +7,67 @@ import Foundation
 /// FeatureStrings structs: memberwise init in declaration order, one static
 /// per language, all in this file.
 struct SnippetFeatureStrings {
-    let pageTitle: String
-    let hubDescription: String
-    let enable: String
-    let enableCaption: String
-    let addButton: String
-    let newTitle: String
-    let editTitle: String
-    let nameLabel: String
-    let namePlaceholder: String
-    let triggerLabel: String
-    let triggerPlaceholder: String
-    let replacementLabel: String
-    let replacementPlaceholder: String
-    let expansionLabel: String
-    let expansionImmediate: String
-    let expansionDelimiter: String
-    let variablesHint: String
-    let variablesCaption: String
-    let emptyList: String
-    let duplicateTrigger: String
-    let triggerTooShort: String
-    let deleteButton: String
-    let saveButton: String
-    let manageButton: String
-    let ignoreCaseLabel: String
-    let libraryTitle: String
-    let libraryToggle: String
-    let libraryCaption: String
-    let librarySearchPlaceholder: String
-    let libraryNoResults: String
-    let libraryEmpty: String
-    let libraryFooterHint: String
-    let folderLabel: String
-    let folderPlaceholder: String
-    let showInLibraryLabel: String
-    let variablesFormatCaption: String
-    let editorFormatCaption: String
-    let dateTimeInsertButton: String
-    let dateTimeEditButton: String
-    let dateTimeTypeLabel: String
-    let dateTimeKindDate: String
-    let dateTimeKindTime: String
-    let dateTimeKindDateTime: String
-    let dateTimeStyleLabel: String
-    let dateTimeStyleShort: String
-    let dateTimeStyleMedium: String
-    let dateTimeStyleLong: String
-    let dateTimeStyleFull: String
-    let dateTimeStyleISO8601: String
-    let dateTimeStyleCustom: String
-    let dateTimeStyleLocaleNote: String
-    let dateTimeTimezoneLabel: String
-    let dateTimeTimezoneDeviceDefault: String
-    let dateTimeTimezoneValid: String
-    let dateTimeTimezoneInvalid: String
-    let dateTimeTimezoneClear: String
-    let dateTimeTimezoneSearchPlaceholder: String
-    let dateTimePatternLabel: String
-    let dateTimePreviewLabel: String
-    let dateTimeConfirmInsert: String
-    let dateTimeConfirmUpdate: String
+    var pageTitle: String = "Text snippets"
+    var hubDescription: String = "Short triggers expand into full text"
+    var enable: String = "Expand snippets while typing"
+    var enableCaption: String = "Type a trigger anywhere and it becomes its text. Everything stays on this Mac."
+    var addButton: String = "Add snippet"
+    var newTitle: String = "New snippet"
+    var editTitle: String = "Edit snippet"
+    var nameLabel: String = "Name"
+    var namePlaceholder: String = "Personal email"
+    var triggerLabel: String = "Trigger"
+    var triggerPlaceholder: String = ";email"
+    var replacementLabel: String = "Text"
+    var replacementPlaceholder: String = "myemail@example.com"
+    var expansionLabel: String = "Expand"
+    var expansionImmediate: String = "Right away"
+    var expansionDelimiter: String = "After space, Tab or Return"
+    var variablesHint: String = "Variables: {{date}}, {{time}}, {{datetime}}, {{clipboard}}"
+    var variablesCaption: String = "They become the date, the time and the copied text at the moment of expansion."
+    var emptyList: String = "No snippets yet. Add the first one."
+    var duplicateTrigger: String = "Another snippet already uses this trigger."
+    var triggerTooShort: String = "The trigger needs at least 2 characters."
+    var deleteButton: String = "Delete"
+    var saveButton: String = "Save"
+    var manageButton: String = "Manage snippets"
+    var ignoreCaseLabel: String = "Ignore capitalization"
+    var libraryTitle: String = "Quick snippet menu"
+    var libraryToggle: String = "Open snippets from a menu"
+    var libraryCaption: String = "The shortcut opens a searchable menu. Picking a snippet types it right where your cursor is."
+    var librarySearchPlaceholder: String = "Search snippets"
+    var libraryNoResults: String = "No snippet matches the search."
+    var libraryEmpty: String = "Nothing to show yet. Add snippets, or turn on “Show in the quick menu” for the ones you use most."
+    var libraryFooterHint: String = "↩ inserts · esc closes"
+    var folderLabel: String = "Folder"
+    var folderPlaceholder: String = "Work"
+    var showInLibraryLabel: String = "Show in the quick menu"
+    var variablesFormatCaption: String = "A format after a colon picks how they look, like {{date:yyyy-MM-dd}}. A -tz(...) part sets the timezone, like {{date-tz(America/New_York):yyyy-MM-dd}}."
+    var editorFormatCaption: String = "A format after a colon picks how they look, like {{date:yyyy-MM-dd}}, or use the date/time button above. A -tz(...) part sets the timezone, like {{date-tz(America/New_York):yyyy-MM-dd}}."
+    var dateTimeInsertButton: String = "Insert date/time"
+    var dateTimeEditButton: String = "Edit date/time"
+    var dateTimeTypeLabel: String = "Type"
+    var dateTimeKindDate: String = "Date"
+    var dateTimeKindTime: String = "Time"
+    var dateTimeKindDateTime: String = "DateTime"
+    var dateTimeStyleLabel: String = "Style"
+    var dateTimeStyleShort: String = "Short"
+    var dateTimeStyleMedium: String = "Medium"
+    var dateTimeStyleLong: String = "Long"
+    var dateTimeStyleFull: String = "Full"
+    var dateTimeStyleISO8601: String = "ISO 8601"
+    var dateTimeStyleCustom: String = "Custom"
+    var dateTimeStyleLocaleNote: String = "A named style saves the format your Mac’s region uses right now."
+    var dateTimeTimezoneLabel: String = "Timezone"
+    var dateTimeTimezoneDeviceDefault: String = "Device default"
+    var dateTimeTimezoneValid: String = "Valid timezone"
+    var dateTimeTimezoneInvalid: String = "Unrecognized timezone"
+    var dateTimeTimezoneClear: String = "Clear timezone"
+    var dateTimeTimezoneSearchPlaceholder: String = "Search timezones"
+    var dateTimePatternLabel: String = "Pattern"
+    var dateTimePreviewLabel: String = "Preview"
+    var dateTimeConfirmInsert: String = "Insert"
+    var dateTimeConfirmUpdate: String = "Update"
 }
 
 extension FeatureStrings {
@@ -157,69 +157,7 @@ extension SnippetFeatureStrings {
 }
 
 extension SnippetFeatureStrings {
-    static let enUS = SnippetFeatureStrings(
-        pageTitle: "Text snippets",
-        hubDescription: "Short triggers expand into full text",
-        enable: "Expand snippets while typing",
-        enableCaption: "Type a trigger anywhere and it becomes its text. Everything stays on this Mac.",
-        addButton: "Add snippet",
-        newTitle: "New snippet",
-        editTitle: "Edit snippet",
-        nameLabel: "Name",
-        namePlaceholder: "Personal email",
-        triggerLabel: "Trigger",
-        triggerPlaceholder: ";email",
-        replacementLabel: "Text",
-        replacementPlaceholder: "myemail@example.com",
-        expansionLabel: "Expand",
-        expansionImmediate: "Right away",
-        expansionDelimiter: "After space, Tab or Return",
-        variablesHint: "Variables: {{date}}, {{time}}, {{datetime}}, {{clipboard}}",
-        variablesCaption: "They become the date, the time and the copied text at the moment of expansion.",
-        emptyList: "No snippets yet. Add the first one.",
-        duplicateTrigger: "Another snippet already uses this trigger.",
-        triggerTooShort: "The trigger needs at least 2 characters.",
-        deleteButton: "Delete",
-        saveButton: "Save",
-        manageButton: "Manage snippets",
-        ignoreCaseLabel: "Ignore capitalization",
-        libraryTitle: "Quick snippet menu",
-        libraryToggle: "Open snippets from a menu",
-        libraryCaption: "The shortcut opens a searchable menu. Picking a snippet types it right where your cursor is.",
-        librarySearchPlaceholder: "Search snippets",
-        libraryNoResults: "No snippet matches the search.",
-        libraryEmpty: "Nothing to show yet. Add snippets, or turn on “Show in the quick menu” for the ones you use most.",
-        libraryFooterHint: "↩ inserts · esc closes",
-        folderLabel: "Folder",
-        folderPlaceholder: "Work",
-        showInLibraryLabel: "Show in the quick menu",
-        variablesFormatCaption: "A format after a colon picks how they look, like {{date:yyyy-MM-dd}}. A -tz(...) part sets the timezone, like {{date-tz(America/New_York):yyyy-MM-dd}}.",
-        editorFormatCaption: "A format after a colon picks how they look, like {{date:yyyy-MM-dd}}, or use the date/time button above. A -tz(...) part sets the timezone, like {{date-tz(America/New_York):yyyy-MM-dd}}.",
-        dateTimeInsertButton: "Insert date/time",
-        dateTimeEditButton: "Edit date/time",
-        dateTimeTypeLabel: "Type",
-        dateTimeKindDate: "Date",
-        dateTimeKindTime: "Time",
-        dateTimeKindDateTime: "DateTime",
-        dateTimeStyleLabel: "Style",
-        dateTimeStyleShort: "Short",
-        dateTimeStyleMedium: "Medium",
-        dateTimeStyleLong: "Long",
-        dateTimeStyleFull: "Full",
-        dateTimeStyleISO8601: "ISO 8601",
-        dateTimeStyleCustom: "Custom",
-        dateTimeStyleLocaleNote: "A named style saves the format your Mac’s region uses right now.",
-        dateTimeTimezoneLabel: "Timezone",
-        dateTimeTimezoneDeviceDefault: "Device default",
-        dateTimeTimezoneValid: "Valid timezone",
-        dateTimeTimezoneInvalid: "Unrecognized timezone",
-        dateTimeTimezoneClear: "Clear timezone",
-        dateTimeTimezoneSearchPlaceholder: "Search timezones",
-        dateTimePatternLabel: "Pattern",
-        dateTimePreviewLabel: "Preview",
-        dateTimeConfirmInsert: "Insert",
-        dateTimeConfirmUpdate: "Update"
-    )
+    static let enUS = SnippetFeatureStrings()
 
     static let ptBR = SnippetFeatureStrings(
         pageTitle: "Snippets de texto",

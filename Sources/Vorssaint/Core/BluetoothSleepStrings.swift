@@ -7,13 +7,13 @@ import Foundation
 /// FeatureStrings structs: memberwise init with labeled arguments in
 /// declaration order, one static per language, all in this file.
 struct BluetoothSleepStrings {
-    let pageTitle: String
-    let hubDescription: String
-    let enable: String
-    let enableCaption: String
-    let restoreToggle: String
-    let restoreCaption: String
-    let unsupported: String
+    var pageTitle: String = "Bluetooth on sleep"
+    var hubDescription: String = "Switches Bluetooth off while the Mac sleeps, so headphones in a bag stop connecting to it."
+    var enable: String = "Turn Bluetooth off when the Mac sleeps"
+    var enableCaption: String = "Bluetooth already off before sleep is left alone and stays off on wake."
+    var restoreToggle: String = "Turn Bluetooth back on when the Mac wakes"
+    var restoreCaption: String = "Only when Vorssaint was the one that switched it off."
+    var unsupported: String = "This Mac has no Bluetooth controller."
 }
 
 extension FeatureStrings {
@@ -37,15 +37,7 @@ extension FeatureStrings {
 }
 
 extension BluetoothSleepStrings {
-    static let enUS = BluetoothSleepStrings(
-        pageTitle: "Bluetooth on sleep",
-        hubDescription: "Switches Bluetooth off while the Mac sleeps, so headphones in a bag stop connecting to it.",
-        enable: "Turn Bluetooth off when the Mac sleeps",
-        enableCaption: "Bluetooth already off before sleep is left alone and stays off on wake.",
-        restoreToggle: "Turn Bluetooth back on when the Mac wakes",
-        restoreCaption: "Only when Vorssaint was the one that switched it off.",
-        unsupported: "This Mac has no Bluetooth controller."
-    )
+    static let enUS = BluetoothSleepStrings()
 
     static let ptBR = BluetoothSleepStrings(
         pageTitle: "Bluetooth ao dormir",

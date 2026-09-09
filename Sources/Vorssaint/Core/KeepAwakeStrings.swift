@@ -4,22 +4,22 @@
 import Foundation
 
 struct KeepAwakeAutomationStrings {
-    let automationSection: String
-    let automationCaption: String
-    let automationOff: String
-    let externalDisplayToggle: String
-    let externalDisplayActive: String
-    let powerToggle: String
-    let powerActive: String
-    let runningAppsToggle: String
-    let runningAppsActive: String
-    let runningAppsListTitle: String
-    let runningAppsAddButton: String
-    let runningAppsRemoveButton: String
-    let runningAppsListCaption: String
-    let automationActive: String
-    let pauseWhenLockedToggle: String
-    let pauseWhenLockedCaption: String
+    var automationSection: String = "Automation"
+    var automationCaption: String = "Starts when any selected condition is active."
+    var automationOff: String = "Off"
+    var externalDisplayToggle: String = "External display"
+    var externalDisplayActive: String = "Active while an external display is connected"
+    var powerToggle: String = "Power"
+    var powerActive: String = "Active while connected to power"
+    var runningAppsToggle: String = "Applications"
+    var runningAppsActive: String = "Active while a selected app is running"
+    var runningAppsListTitle: String = "Selected apps"
+    var runningAppsAddButton: String = "Add an app…"
+    var runningAppsRemoveButton: String = "Remove"
+    var runningAppsListCaption: String = "Keep Awake starts while any of these apps is open, even in the background."
+    var automationActive: String = "Active because an automatic condition is met"
+    var pauseWhenLockedToggle: String = "Pause while the Mac is locked"
+    var pauseWhenLockedCaption: String = "Follows normal sleep rules while locked and resumes the remaining session after you unlock."
 
     func activeStatus(for conditions: Set<KeepAwakeAutomationCondition>) -> String {
         if conditions == [.externalDisplay] { return externalDisplayActive }
@@ -30,8 +30,8 @@ struct KeepAwakeAutomationStrings {
 }
 
 struct KeepAwakeDisplaySleepStrings {
-    let allowDisplaySleep: String
-    let allowDisplaySleepCaption: String
+    var allowDisplaySleep: String = "Allow the display to sleep"
+    var allowDisplaySleepCaption: String = "Keeps the Mac awake while the display follows its normal sleep timer."
 }
 
 extension FeatureStrings {
@@ -73,10 +73,7 @@ extension FeatureStrings {
 }
 
 extension KeepAwakeDisplaySleepStrings {
-    static let enUS = KeepAwakeDisplaySleepStrings(
-        allowDisplaySleep: "Allow the display to sleep",
-        allowDisplaySleepCaption: "Keeps the Mac awake while the display follows its normal sleep timer."
-    )
+    static let enUS = KeepAwakeDisplaySleepStrings()
 
     static let ptBR = KeepAwakeDisplaySleepStrings(
         allowDisplaySleep: "Permitir que a tela apague",
@@ -140,24 +137,7 @@ extension KeepAwakeDisplaySleepStrings {
 }
 
 extension KeepAwakeAutomationStrings {
-    static let enUS = KeepAwakeAutomationStrings(
-        automationSection: "Automation",
-        automationCaption: "Starts when any selected condition is active.",
-        automationOff: "Off",
-        externalDisplayToggle: "External display",
-        externalDisplayActive: "Active while an external display is connected",
-        powerToggle: "Power",
-        powerActive: "Active while connected to power",
-        runningAppsToggle: "Applications",
-        runningAppsActive: "Active while a selected app is running",
-        runningAppsListTitle: "Selected apps",
-        runningAppsAddButton: "Add an app…",
-        runningAppsRemoveButton: "Remove",
-        runningAppsListCaption: "Keep Awake starts while any of these apps is open, even in the background.",
-        automationActive: "Active because an automatic condition is met",
-        pauseWhenLockedToggle: "Pause while the Mac is locked",
-        pauseWhenLockedCaption: "Follows normal sleep rules while locked and resumes the remaining session after you unlock."
-    )
+    static let enUS = KeepAwakeAutomationStrings()
 
     static let ptBR = KeepAwakeAutomationStrings(
         automationSection: "Automação",

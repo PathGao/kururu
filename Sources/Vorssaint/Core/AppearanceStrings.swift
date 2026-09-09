@@ -4,11 +4,11 @@
 import Foundation
 
 struct AppearanceStrings {
-    let label: String
-    let system: String
-    let light: String
-    let dark: String
-    let liquidGlass: String
+    var label: String = "Appearance"
+    var system: String = "System"
+    var light: String = "Light"
+    var dark: String = "Dark"
+    var liquidGlass: String = "Liquid Glass"
 }
 
 extension FeatureStrings {
@@ -32,13 +32,7 @@ extension FeatureStrings {
 }
 
 extension AppearanceStrings {
-    static let enUS = AppearanceStrings(
-        label: "Appearance",
-        system: "System",
-        light: "Light",
-        dark: "Dark",
-        liquidGlass: "Liquid Glass"
-    )
+    static let enUS = AppearanceStrings()
 
     static let ptBR = AppearanceStrings(
         label: "Aparência",

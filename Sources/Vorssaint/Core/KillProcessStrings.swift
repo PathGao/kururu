@@ -8,19 +8,19 @@ import Foundation
 /// FeatureStrings structs: memberwise init in declaration order, one static
 /// per language, all in this file.
 struct KillProcessFeatureStrings {
-    let pageTitle: String
-    let browseSubtitle: String
-    let pidLabelFormat: String
-    let killButton: String
-    let forceKillButton: String
-    let killAllFormat: String
-    let killTreeButton: String
-    let restartButton: String
-    let confirmKillFormat: String
-    let confirmForceKillFormat: String
-    let confirmKillAllFormat: String
-    let confirmKillTreeFormat: String
-    let adminPromptFormat: String
+    var pageTitle: String = "Kill Process"
+    var browseSubtitle: String = "Browse & Kill"
+    var pidLabelFormat: String = "PID %d"
+    var killButton: String = "Kill"
+    var forceKillButton: String = "Force Kill"
+    var killAllFormat: String = "Kill All “%@”"
+    var killTreeButton: String = "Kill Process Tree"
+    var restartButton: String = "Restart"
+    var confirmKillFormat: String = "Kill %@?"
+    var confirmForceKillFormat: String = "Force Kill %@?"
+    var confirmKillAllFormat: String = "Kill all “%@” processes?"
+    var confirmKillTreeFormat: String = "Kill %@ and all its child processes?"
+    var adminPromptFormat: String = "Vorssaint needs administrator access to end “%@”."
 }
 
 extension FeatureStrings {
@@ -44,21 +44,7 @@ extension FeatureStrings {
 }
 
 extension KillProcessFeatureStrings {
-    static let enUS = KillProcessFeatureStrings(
-        pageTitle: "Kill Process",
-        browseSubtitle: "Browse & Kill",
-        pidLabelFormat: "PID %d",
-        killButton: "Kill",
-        forceKillButton: "Force Kill",
-        killAllFormat: "Kill All “%@”",
-        killTreeButton: "Kill Process Tree",
-        restartButton: "Restart",
-        confirmKillFormat: "Kill %@?",
-        confirmForceKillFormat: "Force Kill %@?",
-        confirmKillAllFormat: "Kill all “%@” processes?",
-        confirmKillTreeFormat: "Kill %@ and all its child processes?",
-        adminPromptFormat: "Vorssaint needs administrator access to end “%@”."
-    )
+    static let enUS = KillProcessFeatureStrings()
 
     static let ptBR = KillProcessFeatureStrings(
         pageTitle: "Encerrar Processo",

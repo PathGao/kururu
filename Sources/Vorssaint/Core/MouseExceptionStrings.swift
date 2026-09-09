@@ -4,17 +4,17 @@
 import Foundation
 
 struct MouseExceptionStrings {
-    let listTitle: String
-    let addButton: String
-    let removeButton: String
-    let captionSmoothScroll: String
-    let captionScrollDirection: String
-    let captionNavigation: String
-    let captionButtonShortcuts: String
-    let captionMiddleClick: String
-    let captionFocusFollowsMouse: String
-    let captionSuperKey: String
-    let pausedSuperKey: String
+    var listTitle: String = "Apps to leave alone"
+    var addButton: String = "Add an app…"
+    var removeButton: String = "Remove"
+    var captionSmoothScroll: String = "The wheel keeps its plain steps in these apps, for apps that read it their own way, like 3D and design tools."
+    var captionScrollDirection: String = "The wheel keeps the direction macOS gives it in these apps."
+    var captionNavigation: String = "The side buttons keep doing whatever these apps already do with them."
+    var captionButtonShortcuts: String = "Your extra mouse buttons stay quiet in these apps, and the press reaches them instead."
+    var captionMiddleClick: String = "A three finger click stays a normal click in these apps."
+    var captionFocusFollowsMouse: String = "Hovering does not change focus or raise a window in these apps."
+    var captionSuperKey: String = "While any of these apps is open, even in the background, Super Key pauses and the chosen key works normally."
+    var pausedSuperKey: String = "Paused while a selected app is open"
 
     func caption(for scope: MouseExceptionScope) -> String {
         switch scope {
@@ -50,19 +50,7 @@ extension FeatureStrings {
 }
 
 extension MouseExceptionStrings {
-    static let enUS = MouseExceptionStrings(
-        listTitle: "Apps to leave alone",
-        addButton: "Add an app…",
-        removeButton: "Remove",
-        captionSmoothScroll: "The wheel keeps its plain steps in these apps, for apps that read it their own way, like 3D and design tools.",
-        captionScrollDirection: "The wheel keeps the direction macOS gives it in these apps.",
-        captionNavigation: "The side buttons keep doing whatever these apps already do with them.",
-        captionButtonShortcuts: "Your extra mouse buttons stay quiet in these apps, and the press reaches them instead.",
-        captionMiddleClick: "A three finger click stays a normal click in these apps.",
-        captionFocusFollowsMouse: "Hovering does not change focus or raise a window in these apps.",
-        captionSuperKey: "While any of these apps is open, even in the background, Super Key pauses and the chosen key works normally.",
-        pausedSuperKey: "Paused while a selected app is open"
-    )
+    static let enUS = MouseExceptionStrings()
 
     static let ptBR = MouseExceptionStrings(
         listTitle: "Apps para não mexer",

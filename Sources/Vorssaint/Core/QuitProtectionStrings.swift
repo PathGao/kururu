@@ -4,35 +4,35 @@
 import Foundation
 
 struct QuitProtectionStrings {
-    let name: String
-    let description: String
-    let intro: String
-    let enabled: String
-    let enabledCaption: String
-    let mode: String
-    let hold: String
-    let doublePress: String
-    let extraModifier: String
-    let holdDuration: String
-    let doublePressInterval: String
-    let modifier: String
-    let appScope: String
-    let allApps: String
-    let selectedOnly: String
-    let allExceptSelected: String
-    let exceptions: String
-    let noExceptions: String
-    let addApp: String
-    let feedback: String
-    let accessibilityCaption: String
-    let holdHUDFormat: String
-    let doubleHUDFormat: String
-    let extraHUDFormat: String
-    let cancelHint: String
-    let releaseHint: String
-    let shiftKey: String
-    let optionKey: String
-    let controlKey: String
+    var name: String = "Quit & close protection"
+    var description: String = "Protects ⌘Q and ⌘W from accidental presses"
+    var intro: String = "Configure each shortcut independently. The original action passes only after the selected confirmation."
+    var enabled: String = "Protect this shortcut"
+    var enabledCaption: String = "Other Command shortcuts continue to work normally."
+    var mode: String = "Confirmation mode"
+    var hold: String = "Hold to confirm"
+    var doublePress: String = "Double press"
+    var extraModifier: String = "Require extra modifier"
+    var holdDuration: String = "Hold duration"
+    var doublePressInterval: String = "Double press interval"
+    var modifier: String = "Extra modifier"
+    var appScope: String = "Applications"
+    var allApps: String = "All applications"
+    var selectedOnly: String = "Selected applications only"
+    var allExceptSelected: String = "All except selected applications"
+    var exceptions: String = "Exceptions"
+    var noExceptions: String = "No applications selected"
+    var addApp: String = "Add application…"
+    var feedback: String = "Show visual feedback"
+    var accessibilityCaption: String = "Protection uses Accessibility to observe only ⌘Q and ⌘W globally."
+    var holdHUDFormat: String = "Hold %@ to quit/close"
+    var doubleHUDFormat: String = "Press %@ again to quit/close"
+    var extraHUDFormat: String = "Use %@ to quit/close"
+    var cancelHint: String = "Esc cancels"
+    var releaseHint: String = "Release to confirm"
+    var shiftKey: String = "Shift"
+    var optionKey: String = "Option"
+    var controlKey: String = "Control"
 
     static func make(_ language: AppLanguage) -> QuitProtectionStrings {
         FeatureStrings.quitProtection(language)
@@ -60,37 +60,7 @@ extension FeatureStrings {
 }
 
 extension QuitProtectionStrings {
-    static let enUS = QuitProtectionStrings(
-        name: "Quit & close protection",
-        description: "Protects ⌘Q and ⌘W from accidental presses",
-        intro: "Configure each shortcut independently. The original action passes only after the selected confirmation.",
-        enabled: "Protect this shortcut",
-        enabledCaption: "Other Command shortcuts continue to work normally.",
-        mode: "Confirmation mode",
-        hold: "Hold to confirm",
-        doublePress: "Double press",
-        extraModifier: "Require extra modifier",
-        holdDuration: "Hold duration",
-        doublePressInterval: "Double press interval",
-        modifier: "Extra modifier",
-        appScope: "Applications",
-        allApps: "All applications",
-        selectedOnly: "Selected applications only",
-        allExceptSelected: "All except selected applications",
-        exceptions: "Exceptions",
-        noExceptions: "No applications selected",
-        addApp: "Add application…",
-        feedback: "Show visual feedback",
-        accessibilityCaption: "Protection uses Accessibility to observe only ⌘Q and ⌘W globally.",
-        holdHUDFormat: "Hold %@ to quit/close",
-        doubleHUDFormat: "Press %@ again to quit/close",
-        extraHUDFormat: "Use %@ to quit/close",
-        cancelHint: "Esc cancels",
-        releaseHint: "Release to confirm",
-        shiftKey: "Shift",
-        optionKey: "Option",
-        controlKey: "Control"
-    )
+    static let enUS = QuitProtectionStrings()
 
     static let ptBR = QuitProtectionStrings(
         name: "Proteção de encerramento",

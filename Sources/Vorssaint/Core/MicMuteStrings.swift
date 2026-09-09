@@ -5,13 +5,13 @@ import Foundation
 
 /// Localized strings for the microphone mute toggle.
 struct MicMuteFeatureStrings {
-    let pageTitle: String
-    let unmuteName: String
-    let caption: String
-    let mutedHUD: String
-    let unmutedHUD: String
-    let menuBarToggle: String
-    let menuBarCaption: String
+    var pageTitle: String = "Mute microphone"
+    var unmuteName: String = "Unmute microphone"
+    var caption: String = "Cuts the Mac’s microphone with a click or shortcut, across every app."
+    var mutedHUD: String = "Microphone muted"
+    var unmutedHUD: String = "Microphone back on"
+    var menuBarToggle: String = "Show in the menu bar while muted"
+    var menuBarCaption: String = "A red crossed-out mic appears beside the app’s icon in the menu bar."
 }
 
 extension FeatureStrings {
@@ -35,15 +35,7 @@ extension FeatureStrings {
 }
 
 extension MicMuteFeatureStrings {
-    static let enUS = MicMuteFeatureStrings(
-        pageTitle: "Mute microphone",
-        unmuteName: "Unmute microphone",
-        caption: "Cuts the Mac’s microphone with a click or shortcut, across every app.",
-        mutedHUD: "Microphone muted",
-        unmutedHUD: "Microphone back on",
-        menuBarToggle: "Show in the menu bar while muted",
-        menuBarCaption: "A red crossed-out mic appears beside the app’s icon in the menu bar."
-    )
+    static let enUS = MicMuteFeatureStrings()
 
     static let ptBR = MicMuteFeatureStrings(
         pageTitle: "Silenciar microfone",

@@ -5,151 +5,151 @@ import Foundation
 
 /// Localized strings for the screenshot tool.
 struct ScreenshotFeatureStrings {
-    let pageTitle: String
-    let hubDescription: String
-    let captureButton: String
-    let panelCaption: String
-    let fileNamePrefix: String
-    let hintDrag: String
-    let hintClick: String
-    let hintFullScreen: String
-    let hintCancel: String
-    let hintRepeat: String
-    let freezeToggle: String
-    let freezeCaption: String
-    let folderLabel: String
-    let folderChoose: String
-    let subfolderLabel: String
-    let subfolderCaption: String
-    let fileNamePatternLabel: String
-    let fileNamePatternCaption: String
-    let fileNumberStartLabel: String
-    let fileNumberResetButton: String
-    let fileNumberNextFormat: String
-    let delayLabel: String
-    let delayOff: String
-    let delaySecondsFormat: String
-    let pointerToggle: String
-    let downscaleToggle: String
-    let downscaleCaption: String
-    let editorTitle: String
-    let toolShortcutsTitle: String
-    let toolShortcutsToggle: String
-    let toolShortcutsCaption: String
-    let toolSelect: String
-    let toolArrow: String
-    let toolLine: String
-    let toolRect: String
-    let toolEllipse: String
-    let toolFreehand: String
-    let toolHighlight: String
-    let toolText: String
-    let toolSticker: String
-    let toolCounter: String
-    let toolPixelate: String
-    let toolRedact: String
-    let toolCrop: String
-    let textPlaceholder: String
-    let cropApply: String
-    let cancel: String
-    let colorLabel: String
-    let strokeLabel: String
-    let shadowLabel: String
-    let backdropLabel: String
-    let backdropNone: String
-    let editButton: String
-    let copyButton: String
-    let saveButton: String
-    let saveAsButton: String
-    let pinButton: String
-    let copyTextButton: String
-    let discardTitle: String
-    let discardMessage: String
-    let discardConfirm: String
-    let copiedHUD: String
-    let savedHUDFormat: String
-    let savedAndCopiedHUDFormat: String
-    let defaultActionLabel: String
-    let defaultActionCaption: String
-    let defaultActionNone: String
-    let defaultActionSaveAndCopy: String
-    let captureFailed: String
-    let pinOpacity: String
-    let pinClickThrough: String
-    let pinCloseAll: String
-    let backdropPaddingLabel: String
-    let backdropWallpaperLabel: String
-    let backdropImageButton: String
-    let backdropSolidLabel: String
-    let backdropGradientLabel: String
-    let backdropCornersLabel: String
-    let backdropSavePreset: String
-    let backdropDeletePreset: String
-    let backdropCustomLabel: String
-    let openEditorToggle: String
-    let openEditorCaption: String
-    let autoCopyToggle: String
-    let autoCopyCaption: String
-    let hintLoupe: String
-    let lastRegionToggle: String
-    let backdropBlurLabel: String
-    let scrollingCaptureButton: String
-    let scrollingCaptureTitle: String
-    let scrollingCaptureProgressHUD: String
-    let scrollingCaptureHintOff: String
-    let scrollingCaptureHintOn: String
-    let scrollingCaptureTooLongHUD: String
-    let editLastCapture: String
-    let lastCaptureMissing: String
-    let fullScreenShortcutTitle: String
-    let bringForward: String
-    let sendBackward: String
-    let shareSectionTitle: String
-    let shareCaption: String
-    let shareButton: String
-    let shareOneHour: String
-    let shareSixHours: String
-    let shareTwentyFourHours: String
-    let sharingHUD: String
-    let sharedHUD: String
-    let shareFailedHUD: String
-    let sharedLinksTitle: String
-    let sharedLinksEmpty: String
-    let expiresLabel: String
-    let deleteLink: String
-    let linkDeletedHUD: String
-    let deleteFailedHUD: String
-    let openLink: String
-    let copyLink: String
-    let done: String
-    let sharePrivacyButton: String
-    let sharePrivacyTitle: String
-    let sharePrivacyData: String
-    let sharePrivacyStorage: String
-    let sharePrivacyAccess: String
-    let scrollingCaptureCaption: String
-    let scrollingCaptureSelectionHint: String
-    let scrollingCapturePartialHUD: String
-    let previewPositionLabel: String
-    let previewPositionAutomatic: String
-    let previewPositionTopLeft: String
-    let previewPositionTopRight: String
-    let previewPositionBottomLeft: String
-    let previewPositionBottomRight: String
-    let hideVorssaintWindowsToggle: String
-    let shareEnabledToggle: String
-    let editClipboardImage: String
-    let clipboardImageMissing: String
-    let showCaptureMenuOnShortcut: String
-    let screenCaptureTitle: String
-    let dragOutHandleLabel: String
-    let loupeStartsOnToggle: String
-    let loupeRememberZoomToggle: String
-    let loupeDefaultZoomLabel: String
-    let loupeWheelZoomLabel: String
-    let loupeZoomFast: String
-    let loupeZoomStepped: String
-    let loupeZoomOptionCaption: String
+    var pageTitle: String = "Screenshot"
+    var hubDescription: String = "Captures an area, window or screen and annotates it"
+    var captureButton: String = "Capture now"
+    var panelCaption: String = "Capture an area, window or the whole screen"
+    var fileNamePrefix: String = "Screenshot"
+    var hintDrag: String = "Drag to select an area"
+    var hintClick: String = "Click a window to capture it"
+    var hintFullScreen: String = "Return captures the whole screen"
+    var hintCancel: String = "Esc cancels"
+    var hintRepeat: String = "R repeats the last area"
+    var freezeToggle: String = "Freeze the screen while selecting"
+    var freezeCaption: String = "The picture stops while you choose the area, so nothing moves away or changes during the selection."
+    var folderLabel: String = "Save to"
+    var folderChoose: String = "Choose…"
+    var subfolderLabel: String = "Subfolder pattern"
+    var subfolderCaption: String = "Optional. Creates dated subfolders inside the folder above using %y, %year, %mo, %month, %d, %h, %mi and %s, for example %y-%mo for 24-03."
+    var fileNamePatternLabel: String = "File name"
+    var fileNamePatternCaption: String = "Optional. Overrides the default name using the same %y, %year, %mo, %month, %d, %h, %mi and %s tokens, plus %# for an auto-incrementing number (%## pads to 2 digits, %### to 3, and so on)."
+    var fileNumberStartLabel: String = "Starts at"
+    var fileNumberResetButton: String = "Reset"
+    var fileNumberNextFormat: String = "Next: %d"
+    var delayLabel: String = "Delay"
+    var delayOff: String = "Off"
+    var delaySecondsFormat: String = "%d s"
+    var pointerToggle: String = "Include the pointer"
+    var downscaleToggle: String = "Save at 1x size"
+    var downscaleCaption: String = "Retina captures are saved at half their pixel size, which makes smaller files."
+    var editorTitle: String = "Screenshot"
+    var toolShortcutsTitle: String = "Editor tools"
+    var toolShortcutsToggle: String = "Use number shortcuts"
+    var toolShortcutsCaption: String = "Use the arrows or choose a number. The first nine tools use 1 to 9. The others have no shortcut."
+    var toolSelect: String = "Select"
+    var toolArrow: String = "Arrow"
+    var toolLine: String = "Line"
+    var toolRect: String = "Rectangle"
+    var toolEllipse: String = "Ellipse"
+    var toolFreehand: String = "Pen"
+    var toolHighlight: String = "Highlighter"
+    var toolText: String = "Text"
+    var toolSticker: String = "Sticker"
+    var toolCounter: String = "Number"
+    var toolPixelate: String = "Pixelate"
+    var toolRedact: String = "Solid block"
+    var toolCrop: String = "Crop"
+    var textPlaceholder: String = "Text"
+    var cropApply: String = "Crop"
+    var cancel: String = "Cancel"
+    var colorLabel: String = "Color"
+    var strokeLabel: String = "Thickness"
+    var shadowLabel: String = "Shadows"
+    var backdropLabel: String = "Background"
+    var backdropNone: String = "None"
+    var editButton: String = "Edit"
+    var copyButton: String = "Copy"
+    var saveButton: String = "Save"
+    var saveAsButton: String = "Save As…"
+    var pinButton: String = "Pin to screen"
+    var copyTextButton: String = "Copy text"
+    var discardTitle: String = "Discard this screenshot?"
+    var discardMessage: String = "It was not copied or saved yet."
+    var discardConfirm: String = "Discard"
+    var copiedHUD: String = "Screenshot copied"
+    var savedHUDFormat: String = "Saved to %@"
+    var savedAndCopiedHUDFormat: String = "Saved to %@ and copied"
+    var defaultActionLabel: String = "Default action"
+    var defaultActionCaption: String = "Runs automatically right after capture. The confirmation still appears, so you can Edit or discard afterward."
+    var defaultActionNone: String = "Ask each time"
+    var defaultActionSaveAndCopy: String = "Save & Copy"
+    var captureFailed: String = "The screen could not be captured"
+    var pinOpacity: String = "Opacity"
+    var pinClickThrough: String = "Ignore clicks"
+    var pinCloseAll: String = "Close all pins"
+    var backdropPaddingLabel: String = "Margin"
+    var backdropWallpaperLabel: String = "Wallpaper"
+    var backdropImageButton: String = "Image…"
+    var backdropSolidLabel: String = "Solid"
+    var backdropGradientLabel: String = "Gradient"
+    var backdropCornersLabel: String = "Corners"
+    var backdropSavePreset: String = "Save background"
+    var backdropDeletePreset: String = "Remove"
+    var backdropCustomLabel: String = "Custom"
+    var openEditorToggle: String = "Open the editor right after capturing"
+    var openEditorCaption: String = "The capture skips the floating preview and opens ready to annotate."
+    var autoCopyToggle: String = "Copy to the clipboard automatically"
+    var autoCopyCaption: String = "Every capture goes to the clipboard as soon as it is taken, ready to paste. Saving a file stays a separate choice."
+    var hintLoupe: String = "Z toggles the loupe"
+    var lastRegionToggle: String = "Show the last capture outline"
+    var backdropBlurLabel: String = "Blur"
+    var scrollingCaptureButton: String = "Scrolling capture"
+    var scrollingCaptureTitle: String = "Scrolling screenshot"
+    var scrollingCaptureProgressHUD: String = "Scroll with your mouse or trackpad. Press Enter or choose Done."
+    var scrollingCaptureHintOff: String = "S toggles scrolling"
+    var scrollingCaptureHintOn: String = "Scrolling on"
+    var scrollingCaptureTooLongHUD: String = "Capture stopped at the safe limit"
+    var editLastCapture: String = "Edit latest screenshot"
+    var lastCaptureMissing: String = "Take a screenshot first"
+    var fullScreenShortcutTitle: String = "Capture the whole screen"
+    var bringForward: String = "Bring forward"
+    var sendBackward: String = "Send backward"
+    var shareSectionTitle: String = "Temporary links"
+    var shareCaption: String = "Choose 1, 6 or 24 hours when sharing. The image is deleted automatically."
+    var shareButton: String = "Share"
+    var shareOneHour: String = "For 1 hour"
+    var shareSixHours: String = "For 6 hours"
+    var shareTwentyFourHours: String = "For 24 hours"
+    var sharingHUD: String = "Creating link…"
+    var sharedHUD: String = "Link copied"
+    var shareFailedHUD: String = "The link could not be created"
+    var sharedLinksTitle: String = "Shared links"
+    var sharedLinksEmpty: String = "No active links"
+    var expiresLabel: String = "Expires"
+    var deleteLink: String = "Delete now"
+    var linkDeletedHUD: String = "Link deleted"
+    var deleteFailedHUD: String = "The link could not be deleted"
+    var openLink: String = "Open"
+    var copyLink: String = "Copy link"
+    var done: String = "Done"
+    var sharePrivacyButton: String = "Privacy"
+    var sharePrivacyTitle: String = "Privacy for temporary links"
+    var sharePrivacyData: String = "Vorssaint sends only the rendered image and the expiration you choose. It does not send your name, account, device identifier or MAC address. On this Mac, it keeps only the link, expiration and private deletion token while the link is active."
+    var sharePrivacyStorage: String = "Network providers and the service temporarily process your public IP to prevent abuse. The image and its link metadata are permanently deleted when you delete the link or its time ends. The service does not create screenshot backups."
+    var sharePrivacyAccess: String = "Anyone with the link can view, download, save or redistribute the image. Active links are available to the service operator for abuse moderation. Share only with people you trust."
+    var scrollingCaptureCaption: String = "Choose an area, scroll with your mouse or trackpad, then press Enter or Done to join it."
+    var scrollingCaptureSelectionHint: String = "Drag only the part of the page that moves."
+    var scrollingCapturePartialHUD: String = "The page changed. The completed part was kept."
+    var previewPositionLabel: String = "Preview position"
+    var previewPositionAutomatic: String = "Automatic"
+    var previewPositionTopLeft: String = "Top left"
+    var previewPositionTopRight: String = "Top right"
+    var previewPositionBottomLeft: String = "Bottom left"
+    var previewPositionBottomRight: String = "Bottom right"
+    var hideVorssaintWindowsToggle: String = "Hide Vorssaint windows"
+    var shareEnabledToggle: String = "Allow temporary links"
+    var editClipboardImage: String = "Edit clipboard image"
+    var clipboardImageMissing: String = "Copy an image first"
+    var showCaptureMenuOnShortcut: String = "Show capture menu when using keyboard shortcut"
+    var screenCaptureTitle: String = "Screen capture"
+    var dragOutHandleLabel: String = "Drag and drop"
+    var loupeStartsOnToggle: String = "Start selection with the magnifier on"
+    var loupeRememberZoomToggle: String = "Remember the magnifier’s last zoom"
+    var loupeDefaultZoomLabel: String = "Default magnifier zoom"
+    var loupeWheelZoomLabel: String = "Wheel zoom"
+    var loupeZoomFast: String = "Fast"
+    var loupeZoomStepped: String = "Step by step"
+    var loupeZoomOptionCaption: String = "Hold ⌥ to temporarily use the other mode."
 }
 
 extension FeatureStrings {
@@ -173,153 +173,7 @@ extension FeatureStrings {
 }
 
 extension ScreenshotFeatureStrings {
-    static let enUS = ScreenshotFeatureStrings(
-        pageTitle: "Screenshot",
-        hubDescription: "Captures an area, window or screen and annotates it",
-        captureButton: "Capture now",
-        panelCaption: "Capture an area, window or the whole screen",
-        fileNamePrefix: "Screenshot",
-        hintDrag: "Drag to select an area",
-        hintClick: "Click a window to capture it",
-        hintFullScreen: "Return captures the whole screen",
-        hintCancel: "Esc cancels",
-        hintRepeat: "R repeats the last area",
-        freezeToggle: "Freeze the screen while selecting",
-        freezeCaption: "The picture stops while you choose the area, so nothing moves away or changes during the selection.",
-        folderLabel: "Save to",
-        folderChoose: "Choose…",
-        subfolderLabel: "Subfolder pattern",
-        subfolderCaption: "Optional. Creates dated subfolders inside the folder above using %y, %year, %mo, %month, %d, %h, %mi and %s, for example %y-%mo for 24-03.",
-        fileNamePatternLabel: "File name",
-        fileNamePatternCaption: "Optional. Overrides the default name using the same %y, %year, %mo, %month, %d, %h, %mi and %s tokens, plus %# for an auto-incrementing number (%## pads to 2 digits, %### to 3, and so on).",
-        fileNumberStartLabel: "Starts at",
-        fileNumberResetButton: "Reset",
-        fileNumberNextFormat: "Next: %d",
-        delayLabel: "Delay",
-        delayOff: "Off",
-        delaySecondsFormat: "%d s",
-        pointerToggle: "Include the pointer",
-        downscaleToggle: "Save at 1x size",
-        downscaleCaption: "Retina captures are saved at half their pixel size, which makes smaller files.",
-        editorTitle: "Screenshot",
-        toolShortcutsTitle: "Editor tools",
-        toolShortcutsToggle: "Use number shortcuts",
-        toolShortcutsCaption: "Use the arrows or choose a number. The first nine tools use 1 to 9. The others have no shortcut.",
-        toolSelect: "Select",
-        toolArrow: "Arrow",
-        toolLine: "Line",
-        toolRect: "Rectangle",
-        toolEllipse: "Ellipse",
-        toolFreehand: "Pen",
-        toolHighlight: "Highlighter",
-        toolText: "Text",
-        toolSticker: "Sticker",
-        toolCounter: "Number",
-        toolPixelate: "Pixelate",
-        toolRedact: "Solid block",
-        toolCrop: "Crop",
-        textPlaceholder: "Text",
-        cropApply: "Crop",
-        cancel: "Cancel",
-        colorLabel: "Color",
-        strokeLabel: "Thickness",
-        shadowLabel: "Shadows",
-        backdropLabel: "Background",
-        backdropNone: "None",
-        editButton: "Edit",
-        copyButton: "Copy",
-        saveButton: "Save",
-        saveAsButton: "Save As…",
-        pinButton: "Pin to screen",
-        copyTextButton: "Copy text",
-        discardTitle: "Discard this screenshot?",
-        discardMessage: "It was not copied or saved yet.",
-        discardConfirm: "Discard",
-        copiedHUD: "Screenshot copied",
-        savedHUDFormat: "Saved to %@",
-        savedAndCopiedHUDFormat: "Saved to %@ and copied",
-        defaultActionLabel: "Default action",
-        defaultActionCaption: "Runs automatically right after capture. The confirmation still appears, so you can Edit or discard afterward.",
-        defaultActionNone: "Ask each time",
-        defaultActionSaveAndCopy: "Save & Copy",
-        captureFailed: "The screen could not be captured",
-        pinOpacity: "Opacity",
-        pinClickThrough: "Ignore clicks",
-        pinCloseAll: "Close all pins",
-        backdropPaddingLabel: "Margin",
-        backdropWallpaperLabel: "Wallpaper",
-        backdropImageButton: "Image…",
-        backdropSolidLabel: "Solid",
-        backdropGradientLabel: "Gradient",
-        backdropCornersLabel: "Corners",
-        backdropSavePreset: "Save background",
-        backdropDeletePreset: "Remove",
-        backdropCustomLabel: "Custom",
-        openEditorToggle: "Open the editor right after capturing",
-        openEditorCaption: "The capture skips the floating preview and opens ready to annotate.",
-        autoCopyToggle: "Copy to the clipboard automatically",
-        autoCopyCaption: "Every capture goes to the clipboard as soon as it is taken, ready to paste. Saving a file stays a separate choice.",
-        hintLoupe: "Z toggles the loupe",
-        lastRegionToggle: "Show the last capture outline",
-        backdropBlurLabel: "Blur",
-        scrollingCaptureButton: "Scrolling capture",
-        scrollingCaptureTitle: "Scrolling screenshot",
-        scrollingCaptureProgressHUD: "Scroll with your mouse or trackpad. Press Enter or choose Done.",
-        scrollingCaptureHintOff: "S toggles scrolling",
-        scrollingCaptureHintOn: "Scrolling on",
-        scrollingCaptureTooLongHUD: "Capture stopped at the safe limit",
-        editLastCapture: "Edit latest screenshot",
-        lastCaptureMissing: "Take a screenshot first",
-        fullScreenShortcutTitle: "Capture the whole screen",
-        bringForward: "Bring forward",
-        sendBackward: "Send backward",
-        shareSectionTitle: "Temporary links",
-        shareCaption: "Choose 1, 6 or 24 hours when sharing. The image is deleted automatically.",
-        shareButton: "Share",
-        shareOneHour: "For 1 hour",
-        shareSixHours: "For 6 hours",
-        shareTwentyFourHours: "For 24 hours",
-        sharingHUD: "Creating link…",
-        sharedHUD: "Link copied",
-        shareFailedHUD: "The link could not be created",
-        sharedLinksTitle: "Shared links",
-        sharedLinksEmpty: "No active links",
-        expiresLabel: "Expires",
-        deleteLink: "Delete now",
-        linkDeletedHUD: "Link deleted",
-        deleteFailedHUD: "The link could not be deleted",
-        openLink: "Open",
-        copyLink: "Copy link",
-        done: "Done",
-        sharePrivacyButton: "Privacy",
-        sharePrivacyTitle: "Privacy for temporary links",
-        sharePrivacyData: "Vorssaint sends only the rendered image and the expiration you choose. It does not send your name, account, device identifier or MAC address. On this Mac, it keeps only the link, expiration and private deletion token while the link is active.",
-        sharePrivacyStorage: "Network providers and the service temporarily process your public IP to prevent abuse. The image and its link metadata are permanently deleted when you delete the link or its time ends. The service does not create screenshot backups.",
-        sharePrivacyAccess: "Anyone with the link can view, download, save or redistribute the image. Active links are available to the service operator for abuse moderation. Share only with people you trust.",
-        scrollingCaptureCaption: "Choose an area, scroll with your mouse or trackpad, then press Enter or Done to join it.",
-        scrollingCaptureSelectionHint: "Drag only the part of the page that moves.",
-        scrollingCapturePartialHUD: "The page changed. The completed part was kept.",
-        previewPositionLabel: "Preview position",
-        previewPositionAutomatic: "Automatic",
-        previewPositionTopLeft: "Top left",
-        previewPositionTopRight: "Top right",
-        previewPositionBottomLeft: "Bottom left",
-        previewPositionBottomRight: "Bottom right",
-        hideVorssaintWindowsToggle: "Hide Vorssaint windows",
-        shareEnabledToggle: "Allow temporary links",
-        editClipboardImage: "Edit clipboard image",
-        clipboardImageMissing: "Copy an image first",
-        showCaptureMenuOnShortcut: "Show capture menu when using keyboard shortcut",
-        screenCaptureTitle: "Screen capture",
-        dragOutHandleLabel: "Drag and drop",
-        loupeStartsOnToggle: "Start selection with the magnifier on",
-        loupeRememberZoomToggle: "Remember the magnifier’s last zoom",
-        loupeDefaultZoomLabel: "Default magnifier zoom",
-        loupeWheelZoomLabel: "Wheel zoom",
-        loupeZoomFast: "Fast",
-        loupeZoomStepped: "Step by step",
-        loupeZoomOptionCaption: "Hold ⌥ to temporarily use the other mode."
-    )
+    static let enUS = ScreenshotFeatureStrings()
 
     static let ptBR = ScreenshotFeatureStrings(
         pageTitle: "Captura de tela",

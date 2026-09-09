@@ -142,117 +142,62 @@ extension MonitorAlertFeatureStrings {
 }
 
 struct ClipboardFeatureStrings {
-    let title: String
-    let enable: String
-    let caption: String
-    let localNote: String
-    let skipSensitive: String
-    let skipSensitiveCaption: String
-    let limit: String
-    let limitUnlimited: String
-    let showInPanel: String
-    let shortcut: String
-    let shortcutCaption: String
-    let shortcutHint: String
-    let clickRowShortcut: String
-    let commandClickShortcut: String
-    let pinned: String
-    let recent: String
-    let pin: String
-    let unpin: String
-    let clearRecent: String
-    let clearAll: String
-    let empty: String
-    let disabled: String
-    let search: String
-    let copy: String
-    let copied: String
-    let delete: String
-    let selectMultiple: String
-    let unselectMultiple: String
-    let selectShortcutAction: String
-    let pasteSelectedFormat: String
-    let copySelectedFormat: String
-    let clearSelection: String
-    let moveUp: String
-    let moveDown: String
-    let noResults: String
-    let newestFirst: String
-    let active: String
-    let includeImagesFiles: String
-    let includeImagesFilesCaption: String
-    let imageEntryLabel: String
-    let fileCountFormat: String
-    let pasteImageAsFile: String
-    let pasteImageAsFileCaption: String
-    let previewLabel: String
-    let edit: String
-    let cancel: String
-    let save: String
-    let autoClearEnable: String
-    let autoClearSecondsSuffix: String
-    let autoClearOnSleep: String
-    let autoClearOnDisplaySleep: String
-    let autoClearOnScreenLock: String
-    let autoClearCaption: String
-    let deleteSelectedFormat: String
+    var title: String = "Clipboard"
+    var enable: String = "Save clipboard history"
+    var caption: String = "Stores copied text so you can reuse it later. Everything stays local and can be cleared anytime."
+    var localNote: String = "Everything stays on this Mac. Very large items are ignored."
+    var skipSensitive: String = "Skip text that looks sensitive"
+    var skipSensitiveCaption: String = "Avoids saving short no-space strings that look like passwords, tokens or keys."
+    var limit: String = "Limit"
+    var limitUnlimited: String = "Unlimited"
+    var showInPanel: String = "Show in panel"
+    var shortcut: String = "History shortcut"
+    var shortcutCaption: String = "Opens a quick window with search, pinned items and ⌘1 to ⌘9 shortcuts for pasting into the previous app."
+    var shortcutHint: String = "Click a row to paste it into the previous app. ⌘-click selects several; ⌘C copies without pasting."
+    var clickRowShortcut: String = "Click row"
+    var commandClickShortcut: String = "⌘ Click"
+    var pinned: String = "Pinned"
+    var recent: String = "Recent"
+    var pin: String = "Pin"
+    var unpin: String = "Unpin"
+    var clearRecent: String = "Clear recent"
+    var clearAll: String = "Clear unpinned"
+    var empty: String = "No saved text"
+    var disabled: String = "Enable history to start saving copied text."
+    var search: String = "Search copied text"
+    var copy: String = "Copy"
+    var copied: String = "Copied"
+    var delete: String = "Delete item"
+    var selectMultiple: String = "Add to pile"
+    var unselectMultiple: String = "Remove from pile"
+    var selectShortcutAction: String = "Select"
+    var pasteSelectedFormat: String = "Paste %d"
+    var copySelectedFormat: String = "Copy %d"
+    var clearSelection: String = "Clear selection"
+    var moveUp: String = "Move up"
+    var moveDown: String = "Move down"
+    var noResults: String = "No results"
+    var newestFirst: String = "Newest first"
+    var active: String = "Saving new text"
+    var includeImagesFiles: String = "Also save copied images and files"
+    var includeImagesFilesCaption: String = "Images join the history and files are remembered as links to their location. Pin and paste them like any text item."
+    var imageEntryLabel: String = "Image"
+    var fileCountFormat: String = "%d files"
+    var pasteImageAsFile: String = "Paste copied images as files"
+    var pasteImageAsFileCaption: String = "When Finder is active, ⌘V saves a copied image as a PNG in the current folder."
+    var previewLabel: String = "Preview"
+    var edit: String = "Edit"
+    var cancel: String = "Cancel"
+    var save: String = "Save"
+    var autoClearEnable: String = "Auto clear clipboard with a delay of"
+    var autoClearSecondsSuffix: String = "seconds"
+    var autoClearOnSleep: String = "Clear clipboard on computer sleep"
+    var autoClearOnDisplaySleep: String = "Clear clipboard on display sleep"
+    var autoClearOnScreenLock: String = "Clear clipboard on screen lock"
+    var autoClearCaption: String = "Clears the system clipboard only. Items already saved stay in the history."
+    var deleteSelectedFormat: String = "Delete %d"
 
-    static let enUS = ClipboardFeatureStrings(
-        title: "Clipboard",
-        enable: "Save clipboard history",
-        caption: "Stores copied text so you can reuse it later. Everything stays local and can be cleared anytime.",
-        localNote: "Everything stays on this Mac. Very large items are ignored.",
-        skipSensitive: "Skip text that looks sensitive",
-        skipSensitiveCaption: "Avoids saving short no-space strings that look like passwords, tokens or keys.",
-        limit: "Limit",
-        limitUnlimited: "Unlimited",
-        showInPanel: "Show in panel",
-        shortcut: "History shortcut",
-        shortcutCaption: "Opens a quick window with search, pinned items and ⌘1 to ⌘9 shortcuts for pasting into the previous app.",
-        shortcutHint: "Click a row to paste it into the previous app. ⌘-click selects several; ⌘C copies without pasting.",
-        clickRowShortcut: "Click row",
-        commandClickShortcut: "⌘ Click",
-        pinned: "Pinned",
-        recent: "Recent",
-        pin: "Pin",
-        unpin: "Unpin",
-        clearRecent: "Clear recent",
-        clearAll: "Clear unpinned",
-        empty: "No saved text",
-        disabled: "Enable history to start saving copied text.",
-        search: "Search copied text",
-        copy: "Copy",
-        copied: "Copied",
-        delete: "Delete item",
-        selectMultiple: "Add to pile",
-        unselectMultiple: "Remove from pile",
-        selectShortcutAction: "Select",
-        pasteSelectedFormat: "Paste %d",
-        copySelectedFormat: "Copy %d",
-        clearSelection: "Clear selection",
-        moveUp: "Move up",
-        moveDown: "Move down",
-        noResults: "No results",
-        newestFirst: "Newest first",
-        active: "Saving new text",
-        includeImagesFiles: "Also save copied images and files",
-        includeImagesFilesCaption: "Images join the history and files are remembered as links to their location. Pin and paste them like any text item.",
-        imageEntryLabel: "Image",
-        fileCountFormat: "%d files",
-        pasteImageAsFile: "Paste copied images as files",
-        pasteImageAsFileCaption: "When Finder is active, ⌘V saves a copied image as a PNG in the current folder.",
-        previewLabel: "Preview",
-        edit: "Edit",
-        cancel: "Cancel",
-        save: "Save",
-        autoClearEnable: "Auto clear clipboard with a delay of",
-        autoClearSecondsSuffix: "seconds",
-        autoClearOnSleep: "Clear clipboard on computer sleep",
-        autoClearOnDisplaySleep: "Clear clipboard on display sleep",
-        autoClearOnScreenLock: "Clear clipboard on screen lock",
-        autoClearCaption: "Clears the system clipboard only. Items already saved stay in the history.",
-        deleteSelectedFormat: "Delete %d"
-    )
+    static let enUS = ClipboardFeatureStrings()
 
     static let ptBR = ClipboardFeatureStrings(
         title: "Clipboard",
@@ -883,73 +828,40 @@ struct ClipboardFeatureStrings {
 }
 
 struct MonitorAlertFeatureStrings {
-    let section: String
-    let caption: String
-    let notificationsDenied: String
-    let cpu: String
-    let cpuTemperature: String
-    let memory: String
-    let disk: String
-    let battery: String
-    let cpuThreshold: String
-    let cpuTemperatureThreshold: String
-    let diskThreshold: String
-    let batteryThreshold: String
-    let cooldown: String
-    let cooldown2: String
-    let cooldown5: String
-    let cooldown15: String
-    let cooldown30: String
-    let cooldown60: String
-    let cpuTitle: String
-    let cpuBodyFormat: String
-    let cpuTemperatureTitle: String
-    let cpuTemperatureBodyFormat: String
-    let memoryTitle: String
-    let memoryBody: String
-    let diskTitle: String
-    let diskBodyFormat: String
-    let batteryTitle: String
-    let batteryBodyFormat: String
-    let batteryTemperature: String
-    let batteryTemperatureThreshold: String
-    let batteryTemperatureTitle: String
-    let batteryTemperatureBodyFormat: String
+    var section: String = "Alerts"
+    var caption: String = "Alerts fire when their selected limits are reached. CPU use and temperature alerts ignore spikes shorter than about 12 seconds. The repeat setting only limits repeats of the same alert."
+    var notificationsDenied: String = "Notifications for Vorssaint are off in System Settings, so alerts cannot appear."
+    var cpu: String = "High CPU"
+    var cpuTemperature: String = "High CPU temperature"
+    var memory: String = "Critical memory pressure"
+    var disk: String = "Low disk space"
+    var battery: String = "Low battery"
+    var cpuThreshold: String = "CPU above"
+    var cpuTemperatureThreshold: String = "Temperature above"
+    var diskThreshold: String = "Free space below"
+    var batteryThreshold: String = "Battery below"
+    var cooldown: String = "Repeat the same alert after"
+    var cooldown2: String = "2 minutes"
+    var cooldown5: String = "5 minutes"
+    var cooldown15: String = "15 minutes"
+    var cooldown30: String = "30 minutes"
+    var cooldown60: String = "1 hour"
+    var cpuTitle: String = "High CPU"
+    var cpuBodyFormat: String = "CPU stayed above %d%% for a few seconds."
+    var cpuTemperatureTitle: String = "Hot CPU"
+    var cpuTemperatureBodyFormat: String = "CPU reached %d °C."
+    var memoryTitle: String = "Critical memory"
+    var memoryBody: String = "Memory pressure reached the critical level."
+    var diskTitle: String = "Low disk space"
+    var diskBodyFormat: String = "%@ has less than %d%% free."
+    var batteryTitle: String = "Low battery"
+    var batteryBodyFormat: String = "Battery is at %d%%."
+    var batteryTemperature: String = "High battery temperature"
+    var batteryTemperatureThreshold: String = "Temperature above"
+    var batteryTemperatureTitle: String = "Hot battery"
+    var batteryTemperatureBodyFormat: String = "Battery reached %d °C."
 
-    static let enUS = MonitorAlertFeatureStrings(
-        section: "Alerts",
-        caption: "Alerts fire when their selected limits are reached. CPU use and temperature alerts ignore spikes shorter than about 12 seconds. The repeat setting only limits repeats of the same alert.",
-        notificationsDenied: "Notifications for Vorssaint are off in System Settings, so alerts cannot appear.",
-        cpu: "High CPU",
-        cpuTemperature: "High CPU temperature",
-        memory: "Critical memory pressure",
-        disk: "Low disk space",
-        battery: "Low battery",
-        cpuThreshold: "CPU above",
-        cpuTemperatureThreshold: "Temperature above",
-        diskThreshold: "Free space below",
-        batteryThreshold: "Battery below",
-        cooldown: "Repeat the same alert after",
-        cooldown2: "2 minutes",
-        cooldown5: "5 minutes",
-        cooldown15: "15 minutes",
-        cooldown30: "30 minutes",
-        cooldown60: "1 hour",
-        cpuTitle: "High CPU",
-        cpuBodyFormat: "CPU stayed above %d%% for a few seconds.",
-        cpuTemperatureTitle: "Hot CPU",
-        cpuTemperatureBodyFormat: "CPU reached %d °C.",
-        memoryTitle: "Critical memory",
-        memoryBody: "Memory pressure reached the critical level.",
-        diskTitle: "Low disk space",
-        diskBodyFormat: "%@ has less than %d%% free.",
-        batteryTitle: "Low battery",
-        batteryBodyFormat: "Battery is at %d%%.",
-        batteryTemperature: "High battery temperature",
-        batteryTemperatureThreshold: "Temperature above",
-        batteryTemperatureTitle: "Hot battery",
-        batteryTemperatureBodyFormat: "Battery reached %d °C."
-    )
+    static let enUS = MonitorAlertFeatureStrings()
 
     static let ptBR = MonitorAlertFeatureStrings(
         section: "Alertas",

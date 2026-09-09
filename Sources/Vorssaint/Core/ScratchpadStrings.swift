@@ -5,38 +5,38 @@ import Foundation
 
 /// Localized strings for the scratchpad, the floating pad for short-lived text.
 struct ScratchpadFeatureStrings {
-    let pageTitle: String
-    let hubDescription: String
-    let panelCaption: String
-    let openButton: String
-    let placeholder: String
-    let copyAll: String
-    let copied: String
-    let exportAction: String
-    let exportFailed: String
-    let loadFailed: String
-    let clearAction: String
-    let retentionTitle: String
-    let retentionNever: String
-    let retentionDay: String
-    let retentionWeek: String
-    let retentionMonth: String
-    let retentionCaption: String
-    let closeOnClickOutside: String
-    let keepOpen: String
-    let backgroundOpacity: String
-    let backgroundTranslucent: String
-    let backgroundOpaque: String
-    let newPad: String
-    let padActions: String
-    let renamePad: String
-    let closePad: String
-    let saveName: String
-    let cancel: String
-    let deletePadMessageFormat: String
-    let padLimitFormat: String
-    let previewFormatting: String
-    let editText: String
+    var pageTitle: String = "Scratchpad"
+    var hubDescription: String = "Floating pads for short-lived notes"
+    var panelCaption: String = "Quick notes in separate tabs"
+    var openButton: String = "Open scratchpad"
+    var placeholder: String = "Type anything. It saves by itself."
+    var copyAll: String = "Copy all"
+    var copied: String = "Copied"
+    var exportAction: String = "Save as file"
+    var exportFailed: String = "The file could not be saved"
+    var loadFailed: String = "Your notes could not be opened. They were left unchanged."
+    var clearAction: String = "Clear"
+    var retentionTitle: String = "Clear on its own"
+    var retentionNever: String = "Never"
+    var retentionDay: String = "After a day unused"
+    var retentionWeek: String = "After a week unused"
+    var retentionMonth: String = "After a month unused"
+    var retentionCaption: String = "The pad empties itself once the text goes that long without edits."
+    var closeOnClickOutside: String = "Close when I click outside"
+    var keepOpen: String = "Keep open"
+    var backgroundOpacity: String = "Pad background"
+    var backgroundTranslucent: String = "Translucent"
+    var backgroundOpaque: String = "Opaque"
+    var newPad: String = "New scratchpad"
+    var padActions: String = "Scratchpad actions"
+    var renamePad: String = "Rename scratchpad"
+    var closePad: String = "Close scratchpad"
+    var saveName: String = "Save"
+    var cancel: String = "Cancel"
+    var deletePadMessageFormat: String = "Delete “%@” and everything in it?"
+    var padLimitFormat: String = "You can keep up to %d scratchpads"
+    var previewFormatting: String = "Show formatting"
+    var editText: String = "Edit text"
 }
 
 extension FeatureStrings {
@@ -60,40 +60,7 @@ extension FeatureStrings {
 }
 
 extension ScratchpadFeatureStrings {
-    static let enUS = ScratchpadFeatureStrings(
-        pageTitle: "Scratchpad",
-        hubDescription: "Floating pads for short-lived notes",
-        panelCaption: "Quick notes in separate tabs",
-        openButton: "Open scratchpad",
-        placeholder: "Type anything. It saves by itself.",
-        copyAll: "Copy all",
-        copied: "Copied",
-        exportAction: "Save as file",
-        exportFailed: "The file could not be saved",
-        loadFailed: "Your notes could not be opened. They were left unchanged.",
-        clearAction: "Clear",
-        retentionTitle: "Clear on its own",
-        retentionNever: "Never",
-        retentionDay: "After a day unused",
-        retentionWeek: "After a week unused",
-        retentionMonth: "After a month unused",
-        retentionCaption: "The pad empties itself once the text goes that long without edits.",
-        closeOnClickOutside: "Close when I click outside",
-        keepOpen: "Keep open",
-        backgroundOpacity: "Pad background",
-        backgroundTranslucent: "Translucent",
-        backgroundOpaque: "Opaque",
-        newPad: "New scratchpad",
-        padActions: "Scratchpad actions",
-        renamePad: "Rename scratchpad",
-        closePad: "Close scratchpad",
-        saveName: "Save",
-        cancel: "Cancel",
-        deletePadMessageFormat: "Delete “%@” and everything in it?",
-        padLimitFormat: "You can keep up to %d scratchpads",
-        previewFormatting: "Show formatting",
-        editText: "Edit text"
-    )
+    static let enUS = ScratchpadFeatureStrings()
 
     static let ptBR = ScratchpadFeatureStrings(
         pageTitle: "Rascunho",

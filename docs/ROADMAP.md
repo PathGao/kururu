@@ -84,7 +84,21 @@ Dock            保留英文，和 App 同一条规则
 
 **官方 6 种：英 / 简中 / 德 / 法 / 西 / 日。**
 
-先做**回落机制**，这比语言数量重要：现在 13 种硬编码，每种必须填满每个字段，加一个功能就要写 13 份文案。改成缺了走英文之后，加功能只写英文和简中，社区能交部分翻译。多出来的语言不删，降级成社区维护。
+**回落机制已完成**（`refactor(l10n)`，净 −2210 行）。做法是把英文搬进声明当默认值：
+
+```
+以前   struct Strings { let menuQuit: String }      13 份字面量，每份必须填满
+       static let enUS = Strings(menuQuit: "Quit Vorssaint", …)
+
+现在   struct Strings { var menuQuit: String = "Quit Vorssaint" }
+       static let enUS = Strings()                  英文就是声明本身
+       static let de   = Strings(menuQuit: "Vorssaint beenden", …)   缺的自动读英文
+```
+
+44 个字符串结构体、2261 个字段都是这样。**加一个字段现在只写英文一处**，另外 12 份字面量不用动也照样编译。
+调用点一个没改，编译时间没变（280 → 282 秒）。
+
+**只有英文是必填的**，而且它必填是因为它就是那些默认值，写不漏。其余 12 种随意，翻多少算多少。
 
 简体保留熟悉的英文原词（App、Dock）。唯一例外是「桌面与程序坞」——那是苹果系统设置面板的官方名字，用户要照着去点。
 

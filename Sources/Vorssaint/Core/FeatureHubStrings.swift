@@ -8,115 +8,115 @@ import Foundation
 /// in declaration order, one static per language, all in this file.
 struct FeatureHubStrings {
     // Page chrome
-    let pageTitle: String
-    let intro: String
-    let tabFeatures: String
-    let tabPermissions: String
-    let activeCountFormat: String      // "%1$d of %2$d features on"
-    let monitorAllOffNote: String
-    let titleMouseNavigation: String
+    var pageTitle: String = "Features"
+    var intro: String = "Install only what you use. Whatever you uninstall disappears from the whole app and stops loading."
+    var tabFeatures: String = "Features"
+    var tabPermissions: String = "Permissions"
+    var activeCountFormat: String = "%1$d of %2$d features installed"      // "%1$d of %2$d features on"
+    var monitorAllOffNote: String = "With everything off, the Monitor leaves the panel and the menu bar."
+    var titleMouseNavigation: String = "Side buttons"
     // Group headers
-    let groupMonitor: String
-    let groupWindowsDesktop: String
-    let groupInputDevices: String
-    let groupGlobalEntry: String
-    let groupClipboardFiles: String
-    let groupCapture: String
-    let groupSoundDevices: String
-    let groupFocusEnergy: String
-    let groupAppManagement: String
+    var groupMonitor: String = "System monitor"
+    var groupWindowsDesktop: String = "Windows and desktop"
+    var groupInputDevices: String = "Input devices"
+    var groupGlobalEntry: String = "Global entry points"
+    var groupClipboardFiles: String = "Clipboard and files"
+    var groupCapture: String = "Capture and content"
+    var groupSoundDevices: String = "Sound and devices"
+    var groupFocusEnergy: String = "Focus and energy"
+    var groupAppManagement: String = "App management"
     // Permissions portal
-    let permissionsIntro: String
-    let usedByFormat: String           // "Used by %@"
-    let usedByNone: String
-    let unusedBanner: String
-    let statusGranted: String
-    let statusMissing: String
-    let statusUnknown: String
-    let requestButton: String
-    let openSystemSettings: String
-    let permAccessibility: String
-    let permScreenRecording: String
-    let permFullDisk: String
-    let permFilesAndFolders: String
-    let permNotifications: String
-    let permAutomationFinder: String
-    let permAutomationTerminal: String
-    let permAudioCapture: String
-    let explainAccessibility: String
-    let explainScreenRecording: String
-    let explainFullDisk: String
-    let explainFilesAndFolders: String
-    let explainNotifications: String
-    let explainAutomationFinder: String
-    let explainAutomationTerminal: String
-    let explainAudioCapture: String
+    var permissionsIntro: String = "What each permission does and which features use it. Other access is requested only when you use it."
+    var usedByFormat: String = "Used by %@"           // "Used by %@"
+    var usedByNone: String = "Nothing that is on uses this permission right now."
+    var unusedBanner: String = "You granted this permission, but nothing that is on needs it. If you like, revoke it in System Settings."
+    var statusGranted: String = "Granted"
+    var statusMissing: String = "Not granted"
+    var statusUnknown: String = "The app can’t check this one"
+    var requestButton: String = "Request"
+    var openSystemSettings: String = "Open System Settings"
+    var permAccessibility: String = "Accessibility"
+    var permScreenRecording: String = "Screen Recording"
+    var permFullDisk: String = "Full Disk Access"
+    var permFilesAndFolders: String = "Files & Folders"
+    var permNotifications: String = "Notifications"
+    var permAutomationFinder: String = "Finder automation"
+    var permAutomationTerminal: String = "Terminal automation"
+    var permAudioCapture: String = "App audio"
+    var explainAccessibility: String = "Lets features react to clicks and keys, and move windows."
+    var explainScreenRecording: String = "Lets features show window thumbnails and read text on screen."
+    var explainFullDisk: String = "Lets the cleaner and the uninstaller find leftover files everywhere."
+    var explainFilesAndFolders: String = "Lets WhatsApp downloads cleanup and the experimental organizer inspect your Downloads folder."
+    var explainNotifications: String = "Lets the app notify you about alerts you turned on."
+    var explainAutomationFinder: String = "Lets the app ask Finder to move files for you."
+    var explainAutomationTerminal: String = "Lets Homebrew commands open in Terminal."
+    var explainAudioCapture: String = "Lets the mixer adjust each app’s volume and screen recordings include the Mac’s sound."
     // One-line feature descriptions
-    let descSwitcher: String
-    let descDockPreview: String
-    let descDockClick: String
-    let descWindowMaximizer: String
-    let descAutoQuit: String
-    let descScrollInverter: String
-    let descSmoothScroll: String
-    let descMouseNavigation: String
-    let descMiddleClick: String
-    let descKeyboardDebounce: String
-    let descClipboardHistory: String
-    let descPastePlain: String
-    let descFinderCutPaste: String
-    let descShelf: String
-    let descURLCleaner: String
-    let descMixer: String
-    let descSoundOutputSwitcher: String
-    let descMicMute: String
-    let descMusicBlock: String
-    let descKeepAwake: String
-    let descColorPicker: String
-    let descScreenOCR: String
-    let descCleaningMode: String
-    let descMediaTools: String
-    let descCleaner: String
-    let descUninstaller: String
-    let descHomebrew: String
-    let descMonitorCPU: String
-    let descMonitorGPU: String
-    let descMonitorMemory: String
-    let descMonitorNetwork: String
-    let descMonitorDisk: String
-    let descMonitorPower: String
+    var descSwitcher: String = "Switch apps and windows with previews"
+    var descDockPreview: String = "Window previews when hovering the Dock"
+    var descDockClick: String = "Click a Dock icon to minimize or cycle windows"
+    var descWindowMaximizer: String = "The green button maximizes instead of full screen"
+    var descAutoQuit: String = "Quit apps when their last window closes"
+    var descScrollInverter: String = "Invert the mouse wheel direction"
+    var descSmoothScroll: String = "Smooth, animated mouse scrolling"
+    var descMouseNavigation: String = "Side mouse buttons go back and forward"
+    var descMiddleClick: String = "Three finger click acts as a middle click"
+    var descKeyboardDebounce: String = "Ignore accidental double key presses"
+    var descClipboardHistory: String = "Keep a local history of what you copy"
+    var descPastePlain: String = "Paste text without formatting"
+    var descFinderCutPaste: String = "Cut and paste files in Finder"
+    var descShelf: String = "Drop files on the menu bar to hold them"
+    var descURLCleaner: String = "Copied links lose their tracking junk"
+    var descMixer: String = "A volume slider for each app"
+    var descSoundOutputSwitcher: String = "Cycle sound outputs with a shortcut"
+    var descMicMute: String = "Mute the microphone from anywhere"
+    var descMusicBlock: String = "Stop the Music app from launching itself"
+    var descKeepAwake: String = "Keep the Mac awake on demand"
+    var descColorPicker: String = "Pick any color on screen"
+    var descScreenOCR: String = "Copy text or QR codes from anything on screen"
+    var descCleaningMode: String = "Lock keyboard and screen for cleaning"
+    var descMediaTools: String = "Compress videos, images and GIFs"
+    var descCleaner: String = "Clear caches and junk files"
+    var descUninstaller: String = "Remove apps and their leftovers"
+    var descHomebrew: String = "Keep Homebrew packages up to date"
+    var descMonitorCPU: String = "Processor usage and temperature"
+    var descMonitorGPU: String = "Graphics usage and temperature"
+    var descMonitorMemory: String = "Memory use and pressure"
+    var descMonitorNetwork: String = "Network speed and usage"
+    var descMonitorDisk: String = "Disk space and activity"
+    var descMonitorPower: String = "Battery, power and charging"
     // Install metaphor and the restart-to-unload card
-    let installButton: String
-    let uninstallButton: String
-    let footerNote: String
-    let restartNote: String
-    let restartButton: String
-    let installAllButton: String
-    let uninstallAllButton: String
-    let presetsTitle: String
-    let presetsCaption: String
-    let presetEssentialName: String
-    let presetEssentialDesc: String
-    let presetWindowsName: String
-    let presetWindowsDesc: String
-    let presetBatteryName: String
-    let presetBatteryDesc: String
-    let presetApplyButton: String
-    let presetConfirmFormat: String
-    let presetConfirmApply: String
-    let presetConfirmCancel: String
-    let energyIdle: String
-    let energyMouse: String
-    let energyPointer: String
-    let energyKeyboard: String
-    let energyInputs: String
-    let energyPeriodic: String
-    let energyHelp: String
-    let explainAppManagement: String
-    let onboardingSelectedPermissionsTitle: String
-    let onboardingNoSelectedPermissions: String
-    let onboardingOtherPermissionsTitle: String
-    let onboardingOtherPermissionsCaption: String
+    var installButton: String = "Install"
+    var uninstallButton: String = "Uninstall"
+    var footerNote: String = "Uninstalling deletes nothing: the feature just leaves the app and stops loading. Install it again anytime and everything returns as it was."
+    var restartNote: String = "Features uninstalled in this session stay loaded until the app restarts. Restart to unload them from memory now."
+    var restartButton: String = "Restart now"
+    var installAllButton: String = "Install all"
+    var uninstallAllButton: String = "Uninstall all"
+    var presetsTitle: String = "Start with a bundle"
+    var presetsCaption: String = "One click sets the app up for how you use your Mac. Everything else stays one click away."
+    var presetEssentialName: String = "Essentials"
+    var presetEssentialDesc: String = "Volume mixer, system monitor and keep awake."
+    var presetWindowsName: String = "Windows"
+    var presetWindowsDesc: String = "App switcher, window layout and the Dock features."
+    var presetBatteryName: String = "Battery and quiet"
+    var presetBatteryDesc: String = "A lean monitor with battery, memory and processor. Nothing listens to input."
+    var presetApplyButton: String = "Apply"
+    var presetConfirmFormat: String = "Install the %1$@ bundle and uninstall the rest? Nothing is deleted, and everything comes back with one click."
+    var presetConfirmApply: String = "Apply bundle"
+    var presetConfirmCancel: String = "Cancel"
+    var energyIdle: String = "Nothing at rest"
+    var energyMouse: String = "Listens to the mouse"
+    var energyPointer: String = "Listens to pointer input"
+    var energyKeyboard: String = "Listens to the keyboard"
+    var energyInputs: String = "Listens to mouse and keyboard"
+    var energyPeriodic: String = "Checks on an interval"
+    var energyHelp: String = "What the feature keeps alive while it is on. Uninstalled features load nothing at all."
+    var explainAppManagement: String = "Lets updates replace or remove apps installed by the package manager."
+    var onboardingSelectedPermissionsTitle: String = "Permissions for your choices"
+    var onboardingNoSelectedPermissions: String = "You do not need to grant any permission to finish setup."
+    var onboardingOtherPermissionsTitle: String = "Other permissions"
+    var onboardingOtherPermissionsCaption: String = "Optional. Grant these now or later, when a feature needs them."
 }
 
 extension FeatureStrings {
@@ -250,113 +250,7 @@ extension FeatureHubStrings {
 }
 
 extension FeatureHubStrings {
-    static let enUS = FeatureHubStrings(
-        pageTitle: "Features",
-        intro: "Install only what you use. Whatever you uninstall disappears from the whole app and stops loading.",
-        tabFeatures: "Features",
-        tabPermissions: "Permissions",
-        activeCountFormat: "%1$d of %2$d features installed",
-        monitorAllOffNote: "With everything off, the Monitor leaves the panel and the menu bar.",
-        titleMouseNavigation: "Side buttons",
-        groupMonitor: "System monitor",
-        groupWindowsDesktop: "Windows and desktop",
-        groupInputDevices: "Input devices",
-        groupGlobalEntry: "Global entry points",
-        groupClipboardFiles: "Clipboard and files",
-        groupCapture: "Capture and content",
-        groupSoundDevices: "Sound and devices",
-        groupFocusEnergy: "Focus and energy",
-        groupAppManagement: "App management",
-        permissionsIntro: "What each permission does and which features use it. Other access is requested only when you use it.",
-        usedByFormat: "Used by %@",
-        usedByNone: "Nothing that is on uses this permission right now.",
-        unusedBanner: "You granted this permission, but nothing that is on needs it. If you like, revoke it in System Settings.",
-        statusGranted: "Granted",
-        statusMissing: "Not granted",
-        statusUnknown: "The app can’t check this one",
-        requestButton: "Request",
-        openSystemSettings: "Open System Settings",
-        permAccessibility: "Accessibility",
-        permScreenRecording: "Screen Recording",
-        permFullDisk: "Full Disk Access",
-        permFilesAndFolders: "Files & Folders",
-        permNotifications: "Notifications",
-        permAutomationFinder: "Finder automation",
-        permAutomationTerminal: "Terminal automation",
-        permAudioCapture: "App audio",
-        explainAccessibility: "Lets features react to clicks and keys, and move windows.",
-        explainScreenRecording: "Lets features show window thumbnails and read text on screen.",
-        explainFullDisk: "Lets the cleaner and the uninstaller find leftover files everywhere.",
-        explainFilesAndFolders: "Lets WhatsApp downloads cleanup and the experimental organizer inspect your Downloads folder.",
-        explainNotifications: "Lets the app notify you about alerts you turned on.",
-        explainAutomationFinder: "Lets the app ask Finder to move files for you.",
-        explainAutomationTerminal: "Lets Homebrew commands open in Terminal.",
-        explainAudioCapture: "Lets the mixer adjust each app’s volume and screen recordings include the Mac’s sound.",
-        descSwitcher: "Switch apps and windows with previews",
-        descDockPreview: "Window previews when hovering the Dock",
-        descDockClick: "Click a Dock icon to minimize or cycle windows",
-        descWindowMaximizer: "The green button maximizes instead of full screen",
-        descAutoQuit: "Quit apps when their last window closes",
-        descScrollInverter: "Invert the mouse wheel direction",
-        descSmoothScroll: "Smooth, animated mouse scrolling",
-        descMouseNavigation: "Side mouse buttons go back and forward",
-        descMiddleClick: "Three finger click acts as a middle click",
-        descKeyboardDebounce: "Ignore accidental double key presses",
-        descClipboardHistory: "Keep a local history of what you copy",
-        descPastePlain: "Paste text without formatting",
-        descFinderCutPaste: "Cut and paste files in Finder",
-        descShelf: "Drop files on the menu bar to hold them",
-        descURLCleaner: "Copied links lose their tracking junk",
-        descMixer: "A volume slider for each app",
-        descSoundOutputSwitcher: "Cycle sound outputs with a shortcut",
-        descMicMute: "Mute the microphone from anywhere",
-        descMusicBlock: "Stop the Music app from launching itself",
-        descKeepAwake: "Keep the Mac awake on demand",
-        descColorPicker: "Pick any color on screen",
-        descScreenOCR: "Copy text or QR codes from anything on screen",
-        descCleaningMode: "Lock keyboard and screen for cleaning",
-        descMediaTools: "Compress videos, images and GIFs",
-        descCleaner: "Clear caches and junk files",
-        descUninstaller: "Remove apps and their leftovers",
-        descHomebrew: "Keep Homebrew packages up to date",
-        descMonitorCPU: "Processor usage and temperature",
-        descMonitorGPU: "Graphics usage and temperature",
-        descMonitorMemory: "Memory use and pressure",
-        descMonitorNetwork: "Network speed and usage",
-        descMonitorDisk: "Disk space and activity",
-        descMonitorPower: "Battery, power and charging",
-        installButton: "Install",
-        uninstallButton: "Uninstall",
-        footerNote: "Uninstalling deletes nothing: the feature just leaves the app and stops loading. Install it again anytime and everything returns as it was.",
-        restartNote: "Features uninstalled in this session stay loaded until the app restarts. Restart to unload them from memory now.",
-        restartButton: "Restart now",
-        installAllButton: "Install all",
-        uninstallAllButton: "Uninstall all",
-        presetsTitle: "Start with a bundle",
-        presetsCaption: "One click sets the app up for how you use your Mac. Everything else stays one click away.",
-        presetEssentialName: "Essentials",
-        presetEssentialDesc: "Volume mixer, system monitor and keep awake.",
-        presetWindowsName: "Windows",
-        presetWindowsDesc: "App switcher, window layout and the Dock features.",
-        presetBatteryName: "Battery and quiet",
-        presetBatteryDesc: "A lean monitor with battery, memory and processor. Nothing listens to input.",
-        presetApplyButton: "Apply",
-        presetConfirmFormat: "Install the %1$@ bundle and uninstall the rest? Nothing is deleted, and everything comes back with one click.",
-        presetConfirmApply: "Apply bundle",
-        presetConfirmCancel: "Cancel",
-        energyIdle: "Nothing at rest",
-        energyMouse: "Listens to the mouse",
-        energyPointer: "Listens to pointer input",
-        energyKeyboard: "Listens to the keyboard",
-        energyInputs: "Listens to mouse and keyboard",
-        energyPeriodic: "Checks on an interval",
-        energyHelp: "What the feature keeps alive while it is on. Uninstalled features load nothing at all.",
-        explainAppManagement: "Lets updates replace or remove apps installed by the package manager.",
-        onboardingSelectedPermissionsTitle: "Permissions for your choices",
-        onboardingNoSelectedPermissions: "You do not need to grant any permission to finish setup.",
-        onboardingOtherPermissionsTitle: "Other permissions",
-        onboardingOtherPermissionsCaption: "Optional. Grant these now or later, when a feature needs them."
-    )
+    static let enUS = FeatureHubStrings()
 
     static let ptBR = FeatureHubStrings(
         pageTitle: "Recursos",

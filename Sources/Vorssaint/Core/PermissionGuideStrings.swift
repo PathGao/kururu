@@ -8,19 +8,19 @@ import Foundation
 /// contract as the other FeatureStrings structs: memberwise init in
 /// declaration order, one static per language, all in this file.
 struct PermissionGuideStrings {
-    let title: String
-    let stepOpen: String
-    let stepToggle: String
-    let stepReturn: String
-    let waiting: String
-    let granted: String
-    let closeHelp: String
+    var title: String = "One step left"
+    var stepOpen: String = "macOS opened System Settings on the right list."
+    var stepToggle: String = "Turn Vorssaint on in that list."
+    var stepReturn: String = "Come back. This card notices by itself."
+    var waiting: String = "Waiting for the permission…"
+    var granted: String = "Permission granted!"
+    var closeHelp: String = "Close"
     /// Shown once the wait has gone on a while: the usual cause is an entry
     /// left by an earlier copy of the app, which macOS shows as on but no
     /// longer honours.
-    let staleHint: String
-    let startOver: String
-    let relaunch: String
+    var staleHint: String = "Already on in that list? That entry belongs to an earlier copy of the app. Start over to replace it."
+    var startOver: String = "Start over"
+    var relaunch: String = "Relaunch to apply"
 }
 
 extension FeatureStrings {
@@ -59,18 +59,7 @@ extension PermissionGuideStrings {
 }
 
 extension PermissionGuideStrings {
-    static let enUS = PermissionGuideStrings(
-        title: "One step left",
-        stepOpen: "macOS opened System Settings on the right list.",
-        stepToggle: "Turn Vorssaint on in that list.",
-        stepReturn: "Come back. This card notices by itself.",
-        waiting: "Waiting for the permission…",
-        granted: "Permission granted!",
-        closeHelp: "Close",
-        staleHint: "Already on in that list? That entry belongs to an earlier copy of the app. Start over to replace it.",
-        startOver: "Start over",
-        relaunch: "Relaunch to apply"
-    )
+    static let enUS = PermissionGuideStrings()
 
     static let ptBR = PermissionGuideStrings(
         title: "Falta um passo",

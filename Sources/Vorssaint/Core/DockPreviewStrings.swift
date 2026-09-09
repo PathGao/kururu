@@ -5,28 +5,28 @@ import Foundation
 
 /// Localized strings for Dock Preview.
 struct DockPreviewFeatureStrings {
-    let pageTitle: String
-    let enable: String
-    let enableCaption: String
-    let backgroundOpacity: String
-    let backgroundOpacityCaption: String
-    let openDelay: String
-    let openDelayCaption: String
-    let quitAppOnClose: String
-    let quitAppOnCloseCaption: String
-    let activeNow: String
-    let dockUnavailable: String
-    let autohideBeta: String
-    let openWindow: String
-    let closeWindow: String
-    let minimizeWindow: String
-    let restoreWindow: String
-    let pinPanel: String
-    let unpinPanel: String
-    let pinned: String
-    let closePanel: String
-    let previousWindow: String
-    let nextWindow: String
+    var pageTitle: String = "Dock Preview"
+    var enable: String = "Preview windows from the Dock"
+    var enableCaption: String = "Hover over an open app in the Dock to see its windows, then click the one you want."
+    var backgroundOpacity: String = "Panel background"
+    var backgroundOpacityCaption: String = "Turn it down to see more of what sits behind the panel."
+    var openDelay: String = "Open delay"
+    var openDelayCaption: String = "How long the pointer has to rest on an icon before its panel opens."
+    var quitAppOnClose: String = "Quit the app with the × button"
+    var quitAppOnCloseCaption: String = "In Dock Preview, × quits the whole app instead of closing only that window."
+    var activeNow: String = "Active in the Dock"
+    var dockUnavailable: String = "Could not read Dock items."
+    var autohideBeta: String = "Beta. You may run into some bugs."
+    var openWindow: String = "Open window"
+    var closeWindow: String = "Close window"
+    var minimizeWindow: String = "Minimize window"
+    var restoreWindow: String = "Restore window"
+    var pinPanel: String = "Pin preview"
+    var unpinPanel: String = "Unpin preview"
+    var pinned: String = "Pinned"
+    var closePanel: String = "Close preview"
+    var previousWindow: String = "Previous window"
+    var nextWindow: String = "Next window"
 }
 
 extension FeatureStrings {
@@ -50,30 +50,7 @@ extension FeatureStrings {
 }
 
 extension DockPreviewFeatureStrings {
-    static let enUS = DockPreviewFeatureStrings(
-        pageTitle: "Dock Preview",
-        enable: "Preview windows from the Dock",
-        enableCaption: "Hover over an open app in the Dock to see its windows, then click the one you want.",
-        backgroundOpacity: "Panel background",
-        backgroundOpacityCaption: "Turn it down to see more of what sits behind the panel.",
-        openDelay: "Open delay",
-        openDelayCaption: "How long the pointer has to rest on an icon before its panel opens.",
-        quitAppOnClose: "Quit the app with the × button",
-        quitAppOnCloseCaption: "In Dock Preview, × quits the whole app instead of closing only that window.",
-        activeNow: "Active in the Dock",
-        dockUnavailable: "Could not read Dock items.",
-        autohideBeta: "Beta. You may run into some bugs.",
-        openWindow: "Open window",
-        closeWindow: "Close window",
-        minimizeWindow: "Minimize window",
-        restoreWindow: "Restore window",
-        pinPanel: "Pin preview",
-        unpinPanel: "Unpin preview",
-        pinned: "Pinned",
-        closePanel: "Close preview",
-        previousWindow: "Previous window",
-        nextWindow: "Next window"
-    )
+    static let enUS = DockPreviewFeatureStrings()
 
     static let ptBR = DockPreviewFeatureStrings(
         pageTitle: "Dock Preview",

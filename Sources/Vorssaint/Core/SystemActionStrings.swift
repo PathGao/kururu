@@ -7,18 +7,18 @@ import Foundation
 /// contract as the other FeatureStrings structs: memberwise init in
 /// declaration order, one static per language, all in this file.
 struct SystemActionStrings {
-    let darkModeToDark: String
-    let darkModeToLight: String
-    let emptyTrashTitle: String
-    let emptyTrashConfirmTitle: String
-    let ejectTitle: String
-    let hiddenFilesShow: String
-    let hiddenFilesHide: String
-    let desktopIconsHide: String
-    let desktopIconsShow: String
-    let lockScreenTitle: String
-    let displayOffTitle: String
-    let screenSaverTitle: String
+    var darkModeToDark: String = "Switch to dark mode"
+    var darkModeToLight: String = "Switch to light mode"
+    var emptyTrashTitle: String = "Empty the Trash"
+    var emptyTrashConfirmTitle: String = "Empty the Trash?"
+    var ejectTitle: String = "Eject all disks"
+    var hiddenFilesShow: String = "Show hidden files"
+    var hiddenFilesHide: String = "Hide hidden files"
+    var desktopIconsHide: String = "Hide desktop icons"
+    var desktopIconsShow: String = "Show desktop icons"
+    var lockScreenTitle: String = "Lock the screen"
+    var displayOffTitle: String = "Turn off the display"
+    var screenSaverTitle: String = "Start the screen saver"
 }
 
 extension FeatureStrings {
@@ -42,20 +42,7 @@ extension FeatureStrings {
 }
 
 extension SystemActionStrings {
-    static let enUS = SystemActionStrings(
-        darkModeToDark: "Switch to dark mode",
-        darkModeToLight: "Switch to light mode",
-        emptyTrashTitle: "Empty the Trash",
-        emptyTrashConfirmTitle: "Empty the Trash?",
-        ejectTitle: "Eject all disks",
-        hiddenFilesShow: "Show hidden files",
-        hiddenFilesHide: "Hide hidden files",
-        desktopIconsHide: "Hide desktop icons",
-        desktopIconsShow: "Show desktop icons",
-        lockScreenTitle: "Lock the screen",
-        displayOffTitle: "Turn off the display",
-        screenSaverTitle: "Start the screen saver"
-    )
+    static let enUS = SystemActionStrings()
 
     static let ptBR = SystemActionStrings(
         darkModeToDark: "Ativar o modo escuro",

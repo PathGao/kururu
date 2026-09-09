@@ -5,37 +5,37 @@ import Foundation
 
 /// Localized strings for the volume mixer.
 struct MixerFeatureStrings {
-    let pageTitle: String
-    let hideInactiveApps: String
-    let empty: String
-    let unavailable: String
-    let permissionBody: String
-    let resetTooltip: String
-    let outputDefault: String
-    let outputCurrent: String
-    let outputUnavailable: String
-    let outputFallback: String
-    let bypassedCaption: String
-    let outputTooltip: String
-    let systemOutputTitle: String
-    let systemOutputNoDevices: String
-    let systemOutputTooltip: String
-    let systemOutputErrorFormat: String
-    let soundEffectsOutputTitle: String
-    let soundEffectsOutputTooltip: String
-    let lowerOnHeadphonesDisconnect: String
-    let lowerOnHeadphonesDisconnectCaption: String
-    let headphonesDisconnectVolume: String
-    let inputTitle: String
-    let inputNoDevices: String
-    let inputUnavailable: String
-    let inputFallback: String
-    let inputTooltip: String
-    let inputErrorFormat: String
-    let visibleApps: String
-    let allShown: String
-    let hiddenCountLabel: String
-    let hideFromList: String
+    var pageTitle: String = "Volume mixer"
+    var hideInactiveApps: String = "Hide inactive apps"
+    var empty: String = "Apps that use audio show up here"
+    var unavailable: String = "Available on macOS 14.4 and later"
+    var permissionBody: String = "To adjust per-app volume, allow “Screen & System Audio Recording” in System Settings. Audio is never recorded."
+    var resetTooltip: String = "Reset to 100%"
+    var outputDefault: String = "Default"
+    var outputCurrent: String = "current"
+    var outputUnavailable: String = "Output unavailable"
+    var outputFallback: String = "Using default until this device returns."
+    var bypassedCaption: String = "This app manages its own audio."
+    var outputTooltip: String = "Choose output"
+    var systemOutputTitle: String = "Output"
+    var systemOutputNoDevices: String = "No outputs found"
+    var systemOutputTooltip: String = "Choose system output"
+    var systemOutputErrorFormat: String = "Could not switch: %@"
+    var soundEffectsOutputTitle: String = "System sounds"
+    var soundEffectsOutputTooltip: String = "Choose where alerts and sound effects play"
+    var lowerOnHeadphonesDisconnect: String = "Lower volume when headphones disconnect"
+    var lowerOnHeadphonesDisconnectCaption: String = "Adjusts output when wired or Bluetooth headphones disconnect."
+    var headphonesDisconnectVolume: String = "Volume after disconnect"
+    var inputTitle: String = "Microphone"
+    var inputNoDevices: String = "No microphones found"
+    var inputUnavailable: String = "Microphone unavailable"
+    var inputFallback: String = "Using default until this microphone returns."
+    var inputTooltip: String = "Choose microphone"
+    var inputErrorFormat: String = "Could not switch: %@"
+    var visibleApps: String = "Apps in the list"
+    var allShown: String = "All"
+    var hiddenCountLabel: String = "Hidden"
+    var hideFromList: String = "Hide from the list"
 }
 
 extension FeatureStrings {
@@ -59,39 +59,7 @@ extension FeatureStrings {
 }
 
 extension MixerFeatureStrings {
-    static let enUS = MixerFeatureStrings(
-        pageTitle: "Volume mixer",
-        hideInactiveApps: "Hide inactive apps",
-        empty: "Apps that use audio show up here",
-        unavailable: "Available on macOS 14.4 and later",
-        permissionBody: "To adjust per-app volume, allow “Screen & System Audio Recording” in System Settings. Audio is never recorded.",
-        resetTooltip: "Reset to 100%",
-        outputDefault: "Default",
-        outputCurrent: "current",
-        outputUnavailable: "Output unavailable",
-        outputFallback: "Using default until this device returns.",
-        bypassedCaption: "This app manages its own audio.",
-        outputTooltip: "Choose output",
-        systemOutputTitle: "Output",
-        systemOutputNoDevices: "No outputs found",
-        systemOutputTooltip: "Choose system output",
-        systemOutputErrorFormat: "Could not switch: %@",
-        soundEffectsOutputTitle: "System sounds",
-        soundEffectsOutputTooltip: "Choose where alerts and sound effects play",
-        lowerOnHeadphonesDisconnect: "Lower volume when headphones disconnect",
-        lowerOnHeadphonesDisconnectCaption: "Adjusts output when wired or Bluetooth headphones disconnect.",
-        headphonesDisconnectVolume: "Volume after disconnect",
-        inputTitle: "Microphone",
-        inputNoDevices: "No microphones found",
-        inputUnavailable: "Microphone unavailable",
-        inputFallback: "Using default until this microphone returns.",
-        inputTooltip: "Choose microphone",
-        inputErrorFormat: "Could not switch: %@",
-        visibleApps: "Apps in the list",
-        allShown: "All",
-        hiddenCountLabel: "Hidden",
-        hideFromList: "Hide from the list"
-    )
+    static let enUS = MixerFeatureStrings()
 
     static let ptBR = MixerFeatureStrings(
         pageTitle: "Mixer de volume",

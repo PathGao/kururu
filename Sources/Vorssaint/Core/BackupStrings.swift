@@ -7,15 +7,15 @@ import Foundation
 /// Same contract as the other FeatureStrings structs: memberwise init in
 /// declaration order, one static per language, all in this file.
 struct BackupFeatureStrings {
-    let title: String
-    let description: String
-    let exportButton: String
-    let importButton: String
-    let exported: String
-    let importConfirmTitle: String
-    let importConfirmBody: String
-    let importAction: String
-    let invalidFile: String
+    var title: String = "Backup"
+    var description: String = "Take your setup to another Mac: export every preference to a file and import it there. Your Scratchpad notes, clipboard history, Shelf items and system permissions never leave this Mac."
+    var exportButton: String = "Export settings…"
+    var importButton: String = "Import settings…"
+    var exported: String = "Backup saved"
+    var importConfirmTitle: String = "Import these settings?"
+    var importConfirmBody: String = "Your current settings are replaced by the file’s and the app restarts. Nothing else on this Mac is touched."
+    var importAction: String = "Import and restart"
+    var invalidFile: String = "This file is not a valid Vorssaint backup."
 }
 
 extension FeatureStrings {
@@ -53,17 +53,7 @@ extension BackupFeatureStrings {
 }
 
 extension BackupFeatureStrings {
-    static let enUS = BackupFeatureStrings(
-        title: "Backup",
-        description: "Take your setup to another Mac: export every preference to a file and import it there. Your Scratchpad notes, clipboard history, Shelf items and system permissions never leave this Mac.",
-        exportButton: "Export settings…",
-        importButton: "Import settings…",
-        exported: "Backup saved",
-        importConfirmTitle: "Import these settings?",
-        importConfirmBody: "Your current settings are replaced by the file’s and the app restarts. Nothing else on this Mac is touched.",
-        importAction: "Import and restart",
-        invalidFile: "This file is not a valid Vorssaint backup."
-    )
+    static let enUS = BackupFeatureStrings()
 
     static let ptBR = BackupFeatureStrings(
         title: "Backup",

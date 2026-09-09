@@ -4,16 +4,16 @@
 import Foundation
 
 struct WindowPreviewExclusionStrings {
-    let sectionTitle: String
-    let listTitle: String
-    let addButton: String
-    let removeButton: String
-    let caption: String
-    let previewSizeLabel: String
-    let previewSizeSmall: String
-    let previewSizeNormal: String
-    let previewSizeLarge: String
-    let previewSizeXLarge: String
+    var sectionTitle: String = "Window thumbnails"
+    var listTitle: String = "Pause in these apps"
+    var addButton: String = "Add an app…"
+    var removeButton: String = "Remove"
+    var caption: String = "Window thumbnails stop while one of these apps is in front."
+    var previewSizeLabel: String = "Preview size"
+    var previewSizeSmall: String = "Small"
+    var previewSizeNormal: String = "Normal"
+    var previewSizeLarge: String = "Large"
+    var previewSizeXLarge: String = "Extra large"
 }
 
 extension FeatureStrings {
@@ -37,18 +37,7 @@ extension FeatureStrings {
 }
 
 extension WindowPreviewExclusionStrings {
-    static let enUS = WindowPreviewExclusionStrings(
-        sectionTitle: "Window thumbnails",
-        listTitle: "Pause in these apps",
-        addButton: "Add an app…",
-        removeButton: "Remove",
-        caption: "Window thumbnails stop while one of these apps is in front.",
-        previewSizeLabel: "Preview size",
-        previewSizeSmall: "Small",
-        previewSizeNormal: "Normal",
-        previewSizeLarge: "Large",
-        previewSizeXLarge: "Extra large"
-    )
+    static let enUS = WindowPreviewExclusionStrings()
 
     static let ptBR = WindowPreviewExclusionStrings(
         sectionTitle: "Miniaturas das janelas",
