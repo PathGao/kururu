@@ -300,6 +300,8 @@ extension Strings {
         homebrewRequested: "你装的",
         homebrewDependencies: "依赖带进来的",
         homebrewDependenciesNote: "它们是上面的包装进来的，跟着上面一起升级。",
+        homebrewPulledInByFormat: "%@ 带进来的",
+        homebrewNoLongerNeeded: "已经没有包需要它了",
         homebrewMasApps: "App Store",
         homebrewCopyName: "复制名称",
         homebrewTrustTitle: "Tap 尚未受信任",

@@ -98,7 +98,9 @@ final class HomebrewManager: ObservableObject {
                     return
                 }
                 do {
-                    self.installed = try HomebrewParser.parseInfoCommandOutput(output).map(self.packageEnriched)
+                    let parsed = try HomebrewParser.parseInfoCommandOutput(output)
+                    self.installed = HomebrewDependencyGraph.attributingRoots(parsed)
+                        .map(self.packageEnriched)
                     self.installedCaskRecords = HomebrewParser.parseInstalledCaskRecords(output)
                     self.installedCaskRecordsFetchedAt = Date()
                     self.refreshOutdated(brewPath: brewPath)

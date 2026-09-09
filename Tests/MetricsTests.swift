@@ -11813,6 +11813,87 @@ struct MetricsTests {
         expect(masPackages.allSatisfy { $0.kind == .masApp && $0.installedOnRequest },
                "App Store apps are all the person's own")
 
+        // Who pulled a dependency in. brew records a runtime dependency list
+        // per installed keg, so the edges are read rather than guessed, and a
+        // package reachable from several roots names all of them.
+        let provenanceJSON = """
+        {
+          "formulae": [
+            {
+              "name": "ffmpeg",
+              "versions": { "stable": "8.0" },
+              "installed": [{ "version": "8.0", "installed_on_request": true,
+                              "runtime_dependencies": [{ "full_name": "openssl@3" },
+                                                       { "full_name": "lame" }] }]
+            },
+            {
+              "name": "wget",
+              "versions": { "stable": "1.25" },
+              "installed": [{ "version": "1.25", "installed_on_request": true,
+                              "runtime_dependencies": [{ "full_name": "openssl@3" }] }]
+            },
+            {
+              "name": "openssl@3",
+              "versions": { "stable": "3.6" },
+              "installed": [{ "version": "3.6", "installed_on_request": false,
+                              "runtime_dependencies": [{ "full_name": "ca-certificates" }] }]
+            },
+            {
+              "name": "ca-certificates",
+              "versions": { "stable": "2026" },
+              "installed": [{ "version": "2026", "installed_on_request": false }]
+            },
+            {
+              "name": "lame",
+              "versions": { "stable": "4.0" },
+              "installed": [{ "version": "4.0", "installed_on_request": false }]
+            },
+            {
+              "name": "leftover",
+              "versions": { "stable": "1.0" },
+              "installed": [{ "version": "1.0", "installed_on_request": false }]
+            },
+            {
+              "name": "vips",
+              "full_name": "example/tap/vips",
+              "versions": { "stable": "8.0" },
+              "installed": [{ "version": "8.0", "installed_on_request": false }]
+            }
+          ],
+          "casks": [
+            {
+              "token": "some-editor",
+              "name": ["Some Editor"],
+              "version": "1.0",
+              "installed": "1.0",
+              "depends_on": { "formula": ["vips"] }
+            }
+          ]
+        }
+        """
+        let attributed = HomebrewDependencyGraph.attributingRoots(
+            (try? HomebrewParser.parseInfoJSON(Data(provenanceJSON.utf8))) ?? []
+        )
+        func rootsOf(_ name: String) -> [String] {
+            attributed.first { $0.name == name }?.requiredBy ?? ["<missing>"]
+        }
+        expect(rootsOf("lame") == ["ffmpeg"],
+               "a dependency only one package reaches names that one")
+        expect(rootsOf("openssl@3") == ["ffmpeg", "wget"],
+               "a dependency two packages reach names both, in order")
+        expect(rootsOf("ca-certificates") == ["ffmpeg", "wget"],
+               "attribution follows the chain: what a dependency needs belongs to the same roots")
+        expect(rootsOf("leftover") == [],
+               "a dependency nothing installed reaches is left with no root, which is the leftover case")
+        expect(rootsOf("example/tap/vips") == ["Some Editor"],
+               "a cask that declares a formula is a root for it, by the name a person would recognise")
+        expect(attributed.first { $0.name == "ffmpeg" }?.requiredBy == [],
+               "a package the person asked for is never attributed to anything else")
+        expect(attributed.first { $0.name == "ffmpeg" }?.requires == ["openssl@3", "lame"],
+               "a formula's needs come from the runtime dependencies brew recorded for the installed keg")
+        expect(attributed.first { $0.name == "some-editor" }?.requires == ["vips"],
+               "a cask's needs come from the formulae it declares")
+
         let cleanCommandPackages = (try? HomebrewParser.parseInfoCommandOutput(homebrewJSON)) ?? []
         expect(cleanCommandPackages.count == 4,
                "Homebrew command output parser keeps clean JSON")

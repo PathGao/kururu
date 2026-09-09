@@ -213,6 +213,9 @@ struct HomebrewSettings: View {
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
+                if !package.installedOnRequest {
+                    provenance(package)
+                }
             }
             Spacer(minLength: 8)
             if let update = package.update {
@@ -244,6 +247,26 @@ struct HomebrewSettings: View {
             if let homepage = package.homepage, let url = URL(string: homepage) {
                 Button(l10n.s.homebrewHomepage) { NSWorkspace.shared.open(url) }
             }
+        }
+    }
+
+    /// Which of the packages the person asked for reaches this one. Nothing
+    /// reaching it is the interesting case, not an empty one: it means the
+    /// package that brought it in is gone and this is left behind.
+    @ViewBuilder
+    private func provenance(_ package: HomebrewPackage) -> some View {
+        if package.requiredBy.isEmpty {
+            Text(l10n.s.homebrewNoLongerNeeded)
+                .font(.caption)
+                .foregroundStyle(.orange)
+                .lineLimit(1)
+        } else {
+            Text(String(format: l10n.s.homebrewPulledInByFormat,
+                        package.requiredBy.joined(separator: ", ")))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .truncationMode(.middle)
         }
     }
 

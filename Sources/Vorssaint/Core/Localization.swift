@@ -436,6 +436,8 @@ struct Strings {
     var homebrewRequested: String = "Installed by you"
     var homebrewDependencies: String = "Pulled in as dependencies"
     var homebrewDependenciesNote: String = "These came with the packages above and upgrade together with them."
+    var homebrewPulledInByFormat: String = "Pulled in by %@"      // + one or more package names
+    var homebrewNoLongerNeeded: String = "Nothing installed needs it any more"
     var homebrewMasApps: String = "App Store"
     var homebrewCopyName: String = "Copy name"
     var homebrewTrustTitle: String = "Tap not trusted yet"

@@ -27,6 +27,15 @@ struct HomebrewPackage: Identifiable, Hashable {
     /// False for a formula something else pulled in. Casks and App Store apps
     /// have no dependency concept, so they are always requested.
     var installedOnRequest: Bool = true
+    /// What this package needs, by the name those packages carry here. For a
+    /// formula it is brew's own record of what the installed keg links against,
+    /// which is already the whole closure; for a cask it is the formulae it
+    /// declares, whose own needs are one hop further out.
+    var requires: [String] = []
+    /// Filled in by `HomebrewDependencyGraph`: the packages the person asked
+    /// for that reach this one. Empty on a dependency means nothing installed
+    /// needs it any more.
+    var requiredBy: [String] = []
 
     var id: String { "\(kind.rawValue):\(name)" }
     var isInstalled: Bool { installedVersion != nil }
@@ -102,6 +111,47 @@ enum HomebrewOwnershipSupport {
                         installedVersion: record.installedVersion,
                         stableVersion: nil,
                         homepage: nil)
+    }
+}
+
+/// Answers "who pulled this in". brew records a runtime dependency list per
+/// installed keg, so the edges are read, never guessed — and because a package
+/// can be reached from several roots at once, the answer is a list.
+enum HomebrewDependencyGraph {
+    /// Walks out from the packages the person asked for and marks everything
+    /// they reach. A dependency nothing reaches is left with no roots: that is
+    /// the leftover `brew autoremove` would take.
+    static func attributingRoots(_ packages: [HomebrewPackage]) -> [HomebrewPackage] {
+        var byName: [String: HomebrewPackage] = [:]
+        for package in packages where package.kind.isBrew {
+            byName[package.name] = package
+            // Dependency lists name a formula by its short token even when the
+            // package itself is known here by its full tapped name.
+            let short = (package.name as NSString).lastPathComponent
+            if byName[short] == nil { byName[short] = package }
+        }
+
+        var roots: [String: [String]] = [:]
+        for root in packages where root.kind.isBrew && root.installedOnRequest {
+            var seen: Set<String> = [root.name]
+            var queue = root.requires
+            while let next = queue.popLast() {
+                guard let reached = byName[next], seen.insert(reached.name).inserted else { continue }
+                if !reached.installedOnRequest {
+                    roots[reached.name, default: []].append(root.displayName)
+                }
+                queue += reached.requires
+            }
+        }
+
+        return packages.map { package in
+            guard package.kind.isBrew, !package.installedOnRequest else { return package }
+            var copy = package
+            copy.requiredBy = (roots[package.name] ?? []).sorted {
+                $0.localizedCaseInsensitiveCompare($1) == .orderedAscending
+            }
+            return copy
+        }
     }
 }
 
@@ -529,6 +579,13 @@ enum HomebrewParser {
         // asked for by name makes the package theirs; only when every version
         // arrived as someone else's dependency is it a dependency here.
         let onRequest = installed.contains { $0["installed_on_request"] as? Bool == true }
+        // brew records this per installed version, already transitive. Reading
+        // it beats walking `dependencies`, which describes the catalog today
+        // rather than what this keg was actually built against.
+        let requires = installed
+            .flatMap { $0["runtime_dependencies"] as? [[String: Any]] ?? [] }
+            .compactMap { $0["full_name"] as? String }
+            .filter(HomebrewCommandBuilder.isValidToken)
         return HomebrewPackage(kind: .formula,
                                name: identifier,
                                displayName: fullName ?? name,
@@ -536,7 +593,8 @@ enum HomebrewParser {
                                installedVersion: installedVersions.isEmpty ? nil : installedVersions.joined(separator: ", "),
                                stableVersion: stable,
                                homepage: item["homepage"] as? String,
-                               installedOnRequest: onRequest)
+                               installedOnRequest: onRequest,
+                               requires: dedupe(requires))
     }
 
     private static func parseCask(_ item: [String: Any]) -> HomebrewPackage? {
@@ -549,13 +607,22 @@ enum HomebrewParser {
             displayName = token
         }
         let installed = item["installed"] as? String
+        let dependsOn = item["depends_on"] as? [String: Any] ?? [:]
+        let requires = ((dependsOn["formula"] as? [String]) ?? [])
+            .filter(HomebrewCommandBuilder.isValidToken)
         return HomebrewPackage(kind: .cask,
                                name: token,
                                displayName: displayName,
                                desc: item["desc"] as? String,
                                installedVersion: installed?.isEmpty == false ? installed : nil,
                                stableVersion: item["version"] as? String,
-                               homepage: item["homepage"] as? String)
+                               homepage: item["homepage"] as? String,
+                               requires: dedupe(requires))
+    }
+
+    private static func dedupe(_ values: [String]) -> [String] {
+        var seen: Set<String> = []
+        return values.filter { seen.insert($0).inserted }
     }
 
     private static func parseOutdatedItem(_ item: [String: Any],
