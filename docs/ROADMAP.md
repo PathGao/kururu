@@ -90,9 +90,21 @@ Dock            保留英文，和 App 同一条规则
 | B2 | 剪贴板 | **Deck、Frest**，本轮新增方向，具体比较待做 |
 | B3 | Dock | **DockDoor**，保留为体验细节参考。按当前产品判断，大部分核心功能已具备，不把旧版差距整批重列为待办 |
 | B4 | 网络页端口管理 | **PortKiller**，沿用历史参考，仅涉及本地端口查询与占用进程操作 |
+| B5 | 系统监控 | **Stats、iStat Menus**，指标呈现与菜单栏排布 |
+| B6 | 命令栏 | **Raycast**，搜索与命令入口体验 |
+| B7 | 窗口切换 | **AltTab**，切换交互与响应 |
+| B8 | 截图 | **CleanShot X、Shottr**，截图预览、编辑与捕获体验；快捷 OCR 继续参考 **TextSniper、Shottr** |
+| B9 | 鼠标 | **Mac Mouse Fix、Mos、LinearMouse**，按键与滚动交互，具体差异待比较 |
+| B10 | 触控板 | **MiddleClick、Swish**，三指中键与手势体验 |
+| B11 | 声音 | **SoundSource、PairPods、Tutti**，音频路由、多设备输出与延迟设置 |
+| B12 | 菜单栏管理 | **Ice、Bartender、Thaw、iBar Pro**，隐藏、展开与排序体验 |
+| B13 | 显示器 | **BetterDisplay**，显示控制体验 |
+| B14 | 键盘 | **Hyperkey**，组合修饰键交互 |
+| B15 | 卸载与清理 | **AppCleaner、Pearcleaner**，卸载入口与残留扫描 |
+| B16 | 文件暂存与处理 | **Yoink、Dropzone、Clop、Fasa**，先比较各自适合借鉴的部分，与现有置物架及内容处理能力对照 |
 
 **Maccy、Superpower 不再作为当前对标。** 历史记录保留，避免之后再次列入。
-其他曾整理过的参考见 [历史对标索引](BENCHMARKS.md)，包括 Stats / iStat Menus、AltTab、Raycast、Shottr、SoundSource 等。它们不会因为出现在历史索引中就自动成为新增功能计划。
+以上参考已按本轮确认纳入 roadmap，后续逐模块比较。对标不等于照搬全部功能，也不恢复已明确放弃的功能范围。其余历史名称与出处见 [历史对标索引](BENCHMARKS.md)，仅存档的条目不自动进入计划。
 
 ### 语言
 
