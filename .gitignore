@@ -1,0 +1,29 @@
+# Build artifacts
+build/
+dist/
+.build/
+*.dmg
+
+# Signing material: never commit private keys or notary credentials
+*.p12
+*.pem
+*.cer
+*.p8
+*.key
+*.mobileprovision
+*.keychain-db
+
+# Local-only working notes
+AGENTS.md
+CLAUDE.md
+E2E/
+
+# macOS noise
+.DS_Store
+
+# Xcode / SwiftPM user state
+*.xcodeproj
+xcuserdata/
+.swiftpm/
+.cursor/
+.gemini/

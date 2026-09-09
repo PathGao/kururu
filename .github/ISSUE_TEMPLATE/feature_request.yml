@@ -1,0 +1,64 @@
+name: "✨ Feature Request"
+description: Suggest a new feature or improvement for Vorssaint
+labels:
+  - enhancement
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Someone may have asked already.** [Enhancement Summary](https://github.com/vorssaint/vorssaint-utils/issues/838)
+        indexes every open request, sorted into what already shipped, what is
+        worth doing, and what has been ruled out and why.
+
+        A comment and a 👍 on the existing request carries further than a
+        second issue for the same thing, since the votes stay in one place.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or Motivation
+      description: Is your feature request related to a problem?
+      placeholder: I'm frustrated when...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe the solution you'd like to see.
+      placeholder: It would be great if Vorssaint could...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: feature_area
+    attributes:
+      label: Feature Area
+      description: The same groups you see in Settings.
+      options:
+        - Windows and Dock
+        - Mouse and keyboard
+        - Clipboard and files
+        - Sound
+        - Energy and display
+        - Tools
+        - System monitor
+        - Menu bar
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: existing_apps
+    attributes:
+      label: Does another app already do this?
+      description: "A name or a screenshot is the most useful thing you can add. A request pointing at something concrete gets answered against that thing rather than against a guess at what you meant. [Related Apps](https://github.com/vorssaint/vorssaint-utils/issues/880) already tracks the apps people cite most often and where Vorssaint stands on each — worth a look before and after you write this, and say which behaviour of it you mean rather than only the name."
+      placeholder: "Rectangle, Raycast, macOS itself..."
+
+  - type: textarea
+    id: mockups
+    attributes:
+      label: Mockups / References
+      description: Attach sketches, screenshots, or references.

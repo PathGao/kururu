@@ -1,0 +1,66 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Vorssaint
+
+import Foundation
+
+enum KeepAwakeAutomationCondition: String, CaseIterable, Hashable {
+    case externalDisplay
+    case power
+    case runningApps
+}
+
+enum KeepAwakeAutomationAction: Equatable {
+    case none
+    case activate
+    case deactivate
+}
+
+enum KeepAwakeAutomationSupport {
+    private static let screenLockedKey = "CGSSessionScreenIsLocked"
+
+    static func hasExternalDisplay(builtInFlags: [Bool]) -> Bool {
+        builtInFlags.contains(false)
+    }
+
+    static func isScreenLocked(sessionDictionary: [String: Any]?) -> Bool {
+        guard let value = sessionDictionary?[screenLockedKey] else { return false }
+        if let locked = value as? Bool { return locked }
+        return (value as? NSNumber)?.boolValue ?? false
+    }
+
+    static func selectedAppsAreRunning(selectedBundleIDs: [String],
+                                       runningBundleIDs: [String]) -> Bool {
+        guard !selectedBundleIDs.isEmpty else { return false }
+        let selected = Set(selectedBundleIDs)
+        return runningBundleIDs.contains(where: selected.contains)
+    }
+
+    static func matchingConditions(externalDisplayEnabled: Bool,
+                                   externalDisplayConnected: Bool,
+                                   powerEnabled: Bool,
+                                   connectedToPower: Bool,
+                                   runningAppsEnabled: Bool,
+                                   selectedAppsRunning: Bool) -> Set<KeepAwakeAutomationCondition> {
+        var matches = Set<KeepAwakeAutomationCondition>()
+        if externalDisplayEnabled, externalDisplayConnected {
+            matches.insert(.externalDisplay)
+        }
+        if powerEnabled, connectedToPower {
+            matches.insert(.power)
+        }
+        if runningAppsEnabled, selectedAppsRunning {
+            matches.insert(.runningApps)
+        }
+        return matches
+    }
+
+    static func action(featureAvailable: Bool,
+                       matchingConditions: Set<KeepAwakeAutomationCondition>,
+                       sessionActive: Bool,
+                       automaticSessionActive: Bool) -> KeepAwakeAutomationAction {
+        guard featureAvailable, !matchingConditions.isEmpty else {
+            return automaticSessionActive ? .deactivate : .none
+        }
+        return sessionActive ? .none : .activate
+    }
+}
