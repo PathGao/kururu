@@ -13,6 +13,10 @@ struct HomebrewSettings: View {
     @ObservedObject private var homebrew = HomebrewManager.shared
     @State private var pendingAction: HomebrewPendingAction?
     @State private var showOperationDetails = false
+    /// Ids of the packages whose dependencies are open. Collapsed by default:
+    /// the list is about what the person chose, and the dependencies are the
+    /// answer to a question they have to ask.
+    @State private var expanded: Set<String> = []
 
     var body: some View {
         VStack(spacing: 0) {
@@ -98,10 +102,13 @@ struct HomebrewSettings: View {
             packageSection(title: l10n.s.homebrewRequested,
                            packages: HomebrewPackageOrdering.updatesFirst(homebrew.requestedPackages),
                            loading: homebrew.isLoadingInstalled)
-            packageSection(title: l10n.s.homebrewDependencies,
-                           note: l10n.s.homebrewDependenciesNote,
-                           packages: homebrew.dependencyPackages,
-                           loading: homebrew.isLoadingInstalled)
+            let orphans = homebrew.orphanedPackages
+            if !orphans.isEmpty {
+                packageSection(title: l10n.s.homebrewOrphans,
+                               note: l10n.s.homebrewOrphansNote,
+                               packages: orphans,
+                               loading: homebrew.isLoadingInstalled)
+            }
         }
         if homebrew.masPath != nil {
             packageSection(title: l10n.s.homebrewMasApps,
@@ -176,6 +183,11 @@ struct HomebrewSettings: View {
                 LazyVStack(alignment: .leading, spacing: 2) {
                     ForEach(packages) { package in
                         packageRow(package)
+                        if expanded.contains(package.id) {
+                            ForEach(homebrew.dependencies(of: package)) { dependency in
+                                dependencyRow(dependency, under: package)
+                            }
+                        }
                     }
                 }
             }
@@ -194,7 +206,9 @@ struct HomebrewSettings: View {
     }
 
     private func packageRow(_ package: HomebrewPackage) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
+        let dependencies = homebrew.dependencies(of: package)
+        return HStack(alignment: .firstTextBaseline, spacing: 8) {
+            disclosure(for: package, count: dependencies.count)
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
                     Text(package.displayName)
@@ -212,9 +226,6 @@ struct HomebrewSettings: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
-                }
-                if !package.installedOnRequest {
-                    provenance(package)
                 }
             }
             Spacer(minLength: 8)
@@ -250,24 +261,74 @@ struct HomebrewSettings: View {
         }
     }
 
-    /// Which of the packages the person asked for reaches this one. Nothing
-    /// reaching it is the interesting case, not an empty one: it means the
-    /// package that brought it in is gone and this is left behind.
+    /// The triangle that opens a package's dependencies. A package that pulled
+    /// nothing in keeps the same indent and no control, so the names stay in
+    /// one column.
     @ViewBuilder
-    private func provenance(_ package: HomebrewPackage) -> some View {
-        if package.requiredBy.isEmpty {
-            Text(l10n.s.homebrewNoLongerNeeded)
-                .font(.caption)
-                .foregroundStyle(.orange)
-                .lineLimit(1)
-        } else {
-            Text(String(format: l10n.s.homebrewPulledInByFormat,
-                        package.requiredBy.joined(separator: ", ")))
-                .font(.caption)
+    private func disclosure(for package: HomebrewPackage, count: Int) -> some View {
+        if count > 0 {
+            Button {
+                if expanded.contains(package.id) {
+                    expanded.remove(package.id)
+                } else {
+                    expanded.insert(package.id)
+                }
+            } label: {
+                HStack(spacing: 3) {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 9, weight: .semibold))
+                        .rotationEffect(.degrees(expanded.contains(package.id) ? 90 : 0))
+                    Text("\(count)")
+                        .font(.system(size: 9, weight: .semibold, design: .rounded))
+                        .monospacedDigit()
+                }
                 .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .truncationMode(.middle)
+                .frame(width: 26, alignment: .leading)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        } else {
+            Color.clear.frame(width: 26, height: 1)
         }
+    }
+
+    /// One dependency, indented under the package that pulled it in. Only a
+    /// dependency shared with another package says anything: that is the one
+    /// a person would otherwise read as belonging to this package alone.
+    private func dependencyRow(_ dependency: HomebrewPackage,
+                               under root: HomebrewPackage) -> some View {
+        let shared = homebrew.sharedRoots(of: dependency, besides: root)
+        return VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 6) {
+                Text(dependency.displayName)
+                    .font(.system(size: 11))
+                    .lineLimit(1)
+                if let version = dependency.versionText {
+                    Text(version)
+                        .font(.system(size: 10, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+                Spacer(minLength: 0)
+            }
+            if !shared.isEmpty {
+                HStack(spacing: 4) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 9))
+                        .foregroundStyle(.yellow)
+                    Text(String(format: l10n.s.homebrewSharedWithFormat,
+                                shared.joined(separator: ", ")))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                }
+            }
+        }
+        .padding(.leading, 34)
+        .padding(.trailing, 8)
+        .padding(.vertical, 3)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // MARK: - Confirmation

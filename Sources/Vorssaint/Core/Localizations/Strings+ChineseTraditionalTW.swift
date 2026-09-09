@@ -299,8 +299,6 @@ extension Strings {
         homebrewMissingBody: "沒有安裝 Homebrew。裝好之後，它管理的套件會出現在這裡。",
         homebrewRefresh: "重新整理",
         homebrewRequested: "你裝的",
-        homebrewDependencies: "相依套件帶進來的",
-        homebrewDependenciesNote: "它們是上面的套件裝進來的，會跟著上面一起升級。",
         homebrewMasApps: "App Store",
         homebrewCopyName: "複製名稱",
         homebrewTrustTitle: "Tap 尚未受信任",

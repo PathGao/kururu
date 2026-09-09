@@ -47,8 +47,21 @@ final class HomebrewManager: ObservableObject {
         installed.filter(\.installedOnRequest)
     }
 
-    var dependencyPackages: [HomebrewPackage] {
-        installed.filter { !$0.installedOnRequest }
+    /// Dependencies that nothing installed-on-request reaches any more. The
+    /// packages that brought them in are gone, so these are the only rows on
+    /// the page a person can act on without breaking something else.
+    var orphanedPackages: [HomebrewPackage] {
+        installed.filter { !$0.installedOnRequest && $0.requiredBy.isEmpty }
+    }
+
+    /// What this package pulled in, in the order the list already has.
+    func dependencies(of root: HomebrewPackage) -> [HomebrewPackage] {
+        installed.filter { !$0.installedOnRequest && $0.requiredBy.contains(root.id) }
+    }
+
+    /// The other packages a dependency is shared with, named for display.
+    func sharedRoots(of dependency: HomebrewPackage, besides root: HomebrewPackage) -> [String] {
+        HomebrewDependencyGraph.sharedRoots(of: dependency, besides: root, in: installed)
     }
 
     var outdatedCount: Int {

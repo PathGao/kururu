@@ -32,9 +32,10 @@ struct HomebrewPackage: Identifiable, Hashable {
     /// which is already the whole closure; for a cask it is the formulae it
     /// declares, whose own needs are one hop further out.
     var requires: [String] = []
-    /// Filled in by `HomebrewDependencyGraph`: the packages the person asked
-    /// for that reach this one. Empty on a dependency means nothing installed
-    /// needs it any more.
+    /// Filled in by `HomebrewDependencyGraph`: the ids of the packages the
+    /// person asked for that reach this one. Two or more means removing any
+    /// one of them leaves this behind for the others. Empty on a dependency
+    /// means nothing installed needs it any more.
     var requiredBy: [String] = []
 
     var id: String { "\(kind.rawValue):\(name)" }
@@ -118,9 +119,23 @@ enum HomebrewOwnershipSupport {
 /// installed keg, so the edges are read, never guessed — and because a package
 /// can be reached from several roots at once, the answer is a list.
 enum HomebrewDependencyGraph {
+    /// The other packages a dependency is shared with, excluding the one it is
+    /// being listed under. Empty means it belongs to that package alone, which
+    /// is the case the page says nothing about.
+    static func sharedRoots(of dependency: HomebrewPackage,
+                            besides root: HomebrewPackage,
+                            in packages: [HomebrewPackage]) -> [String] {
+        dependency.requiredBy
+            .filter { $0 != root.id }
+            .compactMap { id in packages.first { $0.id == id }?.displayName }
+            .sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
+    }
+
     /// Walks out from the packages the person asked for and marks everything
     /// they reach. A dependency nothing reaches is left with no roots: that is
-    /// the leftover `brew autoremove` would take.
+    /// the leftover `brew autoremove` would take. A dependency several roots
+    /// reach lists them all, because that is the one a person must not read as
+    /// belonging to whichever package they happen to be looking at.
     static func attributingRoots(_ packages: [HomebrewPackage]) -> [HomebrewPackage] {
         var byName: [String: HomebrewPackage] = [:]
         for package in packages where package.kind.isBrew {
@@ -138,7 +153,7 @@ enum HomebrewDependencyGraph {
             while let next = queue.popLast() {
                 guard let reached = byName[next], seen.insert(reached.name).inserted else { continue }
                 if !reached.installedOnRequest {
-                    roots[reached.name, default: []].append(root.displayName)
+                    roots[reached.name, default: []].append(root.id)
                 }
                 queue += reached.requires
             }
@@ -147,9 +162,7 @@ enum HomebrewDependencyGraph {
         return packages.map { package in
             guard package.kind.isBrew, !package.installedOnRequest else { return package }
             var copy = package
-            copy.requiredBy = (roots[package.name] ?? []).sorted {
-                $0.localizedCaseInsensitiveCompare($1) == .orderedAscending
-            }
+            copy.requiredBy = (roots[package.name] ?? []).sorted()
             return copy
         }
     }

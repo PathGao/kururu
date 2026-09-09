@@ -434,10 +434,9 @@ struct Strings {
     var homebrewMissingBody: String = "Homebrew is not installed. Once it is, the packages it manages show up here."
     var homebrewRefresh: String = "Refresh"
     var homebrewRequested: String = "Installed by you"
-    var homebrewDependencies: String = "Pulled in as dependencies"
-    var homebrewDependenciesNote: String = "These came with the packages above and upgrade together with them."
-    var homebrewPulledInByFormat: String = "Pulled in by %@"      // + one or more package names
-    var homebrewNoLongerNeeded: String = "Nothing installed needs it any more"
+    var homebrewSharedWithFormat: String = "Shared with %@"      // + one or more package names
+    var homebrewOrphans: String = "Left behind"
+    var homebrewOrphansNote: String = "Whatever pulled these in is gone, so removing them breaks nothing."
     var homebrewMasApps: String = "App Store"
     var homebrewCopyName: String = "Copy name"
     var homebrewTrustTitle: String = "Tap not trusted yet"
@@ -1270,8 +1269,6 @@ extension Strings {
         homebrewMissingBody: "O Homebrew não está instalado. Quando estiver, os pacotes que ele gerencia aparecem aqui.",
         homebrewRefresh: "Atualizar",
         homebrewRequested: "Instalados por você",
-        homebrewDependencies: "Trazidos como dependências",
-        homebrewDependenciesNote: "Vieram junto com os pacotes acima e são atualizados com eles.",
         homebrewMasApps: "App Store",
         homebrewCopyName: "Copiar nome",
         homebrewTrustTitle: "Tap ainda não confiável",

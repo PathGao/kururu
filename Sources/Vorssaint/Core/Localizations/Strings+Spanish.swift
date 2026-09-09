@@ -298,8 +298,6 @@ extension Strings {
         homebrewMissingBody: "Homebrew no está instalado. Cuando lo esté, los paquetes que gestiona aparecerán aquí.",
         homebrewRefresh: "Actualizar",
         homebrewRequested: "Instalados por ti",
-        homebrewDependencies: "Traídos como dependencias",
-        homebrewDependenciesNote: "Llegaron con los paquetes de arriba y se actualizan junto con ellos.",
         homebrewMasApps: "App Store",
         homebrewCopyName: "Copiar nombre",
         homebrewTrustTitle: "Tap aún no es de confianza",

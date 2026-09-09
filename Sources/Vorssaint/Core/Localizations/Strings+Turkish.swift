@@ -298,8 +298,6 @@ extension Strings {
         homebrewMissingBody: "Homebrew kurulu degil. Kurulunca yonettigi paketler burada listelenir.",
         homebrewRefresh: "Yenile",
         homebrewRequested: "Senin kurduklarin",
-        homebrewDependencies: "Bagimlilik olarak gelenler",
-        homebrewDependenciesNote: "Yukaridaki paketlerle birlikte geldiler ve onlarla birlikte guncellenirler.",
         homebrewMasApps: "App Store",
         homebrewCopyName: "Adi kopyala",
         homebrewTrustTitle: "Tap henüz güvenilir değil",

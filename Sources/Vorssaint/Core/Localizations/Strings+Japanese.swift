@@ -298,8 +298,6 @@ extension Strings {
         homebrewMissingBody: "Homebrew がインストールされていません。入れると、管理下のパッケージがここに並びます。",
         homebrewRefresh: "更新",
         homebrewRequested: "自分で入れたもの",
-        homebrewDependencies: "依存関係で入ったもの",
-        homebrewDependenciesNote: "上のパッケージが連れてきたもので、上と一緒に更新されます。",
         homebrewMasApps: "App Store",
         homebrewCopyName: "名前をコピー",
         homebrewTrustTitle: "まだ信頼されていないTap",

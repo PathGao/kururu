@@ -299,8 +299,6 @@ extension Strings {
         homebrewMissingBody: "Homebrew가 설치되어 있지 않습니다. 설치하면 관리 중인 패키지가 여기 표시됩니다.",
         homebrewRefresh: "새로 고침",
         homebrewRequested: "직접 설치한 항목",
-        homebrewDependencies: "의존성으로 딸려 온 항목",
-        homebrewDependenciesNote: "위 패키지가 함께 가져온 것으로, 위 항목과 같이 업그레이드됩니다.",
         homebrewMasApps: "App Store",
         homebrewCopyName: "이름 복사",
         homebrewTrustTitle: "아직 신뢰하지 않은 Tap",

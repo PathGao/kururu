@@ -299,8 +299,6 @@ extension Strings {
         homebrewMissingBody: "Homebrew не установлен. После установки здесь появятся пакеты, которыми он управляет.",
         homebrewRefresh: "Обновить",
         homebrewRequested: "Установлены вами",
-        homebrewDependencies: "Пришли как зависимости",
-        homebrewDependenciesNote: "Они пришли вместе с пакетами выше и обновляются вместе с ними.",
         homebrewMasApps: "App Store",
         homebrewCopyName: "Скопировать имя",
         homebrewTrustTitle: "Tap ещё не доверенный",

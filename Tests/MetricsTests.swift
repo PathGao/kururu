@@ -11877,16 +11877,35 @@ struct MetricsTests {
         func rootsOf(_ name: String) -> [String] {
             attributed.first { $0.name == name }?.requiredBy ?? ["<missing>"]
         }
-        expect(rootsOf("lame") == ["ffmpeg"],
+        expect(rootsOf("lame") == ["formula:ffmpeg"],
                "a dependency only one package reaches names that one")
-        expect(rootsOf("openssl@3") == ["ffmpeg", "wget"],
-               "a dependency two packages reach names both, in order")
-        expect(rootsOf("ca-certificates") == ["ffmpeg", "wget"],
+        expect(rootsOf("openssl@3") == ["formula:ffmpeg", "formula:wget"],
+               "a dependency two packages reach names both")
+        expect(rootsOf("ca-certificates") == ["formula:ffmpeg", "formula:wget"],
                "attribution follows the chain: what a dependency needs belongs to the same roots")
         expect(rootsOf("leftover") == [],
                "a dependency nothing installed reaches is left with no root, which is the leftover case")
-        expect(rootsOf("example/tap/vips") == ["Some Editor"],
-               "a cask that declares a formula is a root for it, by the name a person would recognise")
+        expect(rootsOf("example/tap/vips") == ["cask:some-editor"],
+               "a cask that declares a formula is a root for it")
+
+        // Under a package, only the OTHER holders are named: a dependency is
+        // listed beneath the one being expanded, so repeating it there would
+        // read as if it were shared with itself.
+        func package(_ name: String) -> HomebrewPackage {
+            attributed.first { $0.name == name }!
+        }
+        expect(HomebrewDependencyGraph.sharedRoots(of: package("openssl@3"),
+                                                   besides: package("ffmpeg"),
+                                                   in: attributed) == ["wget"],
+               "a shared dependency names the other holder, not the one it sits under")
+        expect(HomebrewDependencyGraph.sharedRoots(of: package("lame"),
+                                                   besides: package("ffmpeg"),
+                                                   in: attributed).isEmpty,
+               "a dependency only this package reaches says nothing")
+        expect(HomebrewDependencyGraph.sharedRoots(of: package("example/tap/vips"),
+                                                   besides: package("ffmpeg"),
+                                                   in: attributed) == ["Some Editor"],
+               "the other holders are named the way a person would recognise them")
         expect(attributed.first { $0.name == "ffmpeg" }?.requiredBy == [],
                "a package the person asked for is never attributed to anything else")
         expect(attributed.first { $0.name == "ffmpeg" }?.requires == ["openssl@3", "lame"],
