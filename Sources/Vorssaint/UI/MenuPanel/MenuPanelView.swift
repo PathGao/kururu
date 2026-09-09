@@ -494,7 +494,7 @@ private enum UtilityPanelItem: String, PanelOrderItem, Identifiable {
     // Case order IS the default panel order (PanelLayout.itemOrder falls back
     // to allCases). Screenshot leads in 3.1.13; existing orders that predate it
     // are migrated once without disturbing the rest of the user's layout.
-    case screenshot, micMute, cleaner, homebrew, media, clipboard,
+    case screenshot, micMute, cleaner, media, clipboard,
          uninstaller, cleanURL, cleaning, screenOCR, colorPicker, scratchpad,
          commandBar, screenRecorder
 
@@ -506,7 +506,6 @@ private enum UtilityPanelItem: String, PanelOrderItem, Identifiable {
         switch self {
         case .micMute: return .micMute
         case .cleaner: return .cleaner
-        case .homebrew: return .homebrew
         case .media: return .mediaTools
         case .clipboard: return .clipboardHistory
         case .uninstaller: return .uninstaller
@@ -529,7 +528,6 @@ struct UtilitiesSection: View {
     @State private var showUninstaller = false
     @State private var showCleanerPanel = false
     @State private var showURLCleaner = false
-    @State private var showHomebrewPanel = false
     @State private var showMediaPanel = false
     @State private var showClipboardPanel = false
     @State private var showRecentCapturesPanel = false
@@ -537,7 +535,6 @@ struct UtilitiesSection: View {
     @AppStorage(DefaultsKey.panelUtilityURLCleaner) private var showCleanURL = true
     @AppStorage(DefaultsKey.panelUtilityUninstaller) private var showUninstallerAction = true
     @AppStorage(DefaultsKey.panelUtilityCleaner) private var showCleanerAction = true
-    @AppStorage(DefaultsKey.panelUtilityHomebrew) private var showHomebrew = true
     @AppStorage(DefaultsKey.panelUtilityMedia) private var showMedia = true
     @AppStorage(DefaultsKey.panelUtilityClipboard) private var showClipboard = true
     @AppStorage(DefaultsKey.panelUtilityScreenOCR) private var showScreenOCR = true
@@ -571,10 +568,6 @@ struct UtilitiesSection: View {
             } else if showURLCleaner {
                 PanelURLCleanerView {
                     showURLCleaner = false
-                }
-            } else if showHomebrewPanel {
-                PanelHomebrewView {
-                    showHomebrewPanel = false
                 }
             } else if showMediaPanel {
                 PanelMediaView {
@@ -626,7 +619,6 @@ struct UtilitiesSection: View {
         if showUninstaller { return .uninstaller }
         if showCleanerPanel { return .cleaner }
         if showURLCleaner { return .clipboard }
-        if showHomebrewPanel { return .homebrew }
         if showMediaPanel { return .media }
         if showClipboardPanel { return .clipboard }
         if showRecentCapturesPanel { return .screenshot }
@@ -637,14 +629,14 @@ struct UtilitiesSection: View {
     /// list. A hosted tool turns the panel into a work surface, so clicks
     /// elsewhere in the app must not dismiss it.
     private var isHostingUtility: Bool {
-        showUninstaller || showCleanerPanel || showURLCleaner || showHomebrewPanel
+        showUninstaller || showCleanerPanel || showURLCleaner
             || showMediaPanel || showClipboardPanel || showRecentCapturesPanel
     }
 
-    /// Homebrew browsing behaves like an ordinary popover. Other hosted tools
-    /// intentionally span interaction with apps and windows outside the panel.
+    /// Every hosted tool intentionally spans interaction with apps and windows
+    /// outside the panel, so none of them let a click elsewhere close it.
     private var hostedUtilityKeepsPopoverOpen: Bool {
-        isHostingUtility && !showHomebrewPanel
+        isHostingUtility
     }
 
     private var cleaningNeedsAccessibility: Bool {
@@ -676,7 +668,6 @@ struct UtilitiesSection: View {
 
     private func isVisible(_ item: UtilityPanelItem) -> Bool {
         switch item {
-        case .homebrew: return showHomebrew
         case .media: return showMedia
         case .clipboard: return showClipboard
         case .uninstaller: return showUninstallerAction
@@ -696,16 +687,6 @@ struct UtilitiesSection: View {
     @ViewBuilder
     private func itemView(_ item: UtilityPanelItem, editing: Bool) -> some View {
         switch item {
-        case .homebrew:
-            UtilityActionButton(title: AppFeature.homebrew.name(l10n.s, language: l10n.language),
-                                caption: l10n.s.homebrewEnableCaption,
-                                systemImage: "shippingbox",
-                                isEditing: editing,
-                                showsDragHandle: true,
-                                visibility: $showHomebrew,
-                                action: {
-                                    showHomebrewPanel = true
-                                })
         case .media:
             UtilityActionButton(title: AppFeature.mediaTools.name(l10n.s, language: l10n.language),
                                 caption: l10n.s.mediaEnableCaption,
@@ -938,7 +919,6 @@ struct UtilitiesSection: View {
     private func resetPanelDefaults() {
         PanelLayout.resetItemOrder(key: DefaultsKey.panelUtilityOrder)
         utilityOrderRaw = ""
-        showHomebrew = true
         showMedia = true
         showClipboard = true
         showUninstallerAction = true

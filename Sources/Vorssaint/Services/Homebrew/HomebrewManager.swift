@@ -9,14 +9,13 @@ final class HomebrewManager: ObservableObject {
     static let shared = HomebrewManager()
 
     @Published private(set) var brewPath: String?
+    @Published private(set) var masPath: String?
     @Published private(set) var installed: [HomebrewPackage] = []
-    @Published private(set) var searchResults: [HomebrewPackage] = []
-    @Published private(set) var selectedPackage: HomebrewPackage?
+    /// App Store apps, read separately from `mas` and kept apart because no
+    /// brew command applies to them.
+    @Published private(set) var masApps: [HomebrewPackage] = []
     @Published private(set) var isLoadingInstalled = false
     @Published private(set) var isLoadingOutdated = false
-    @Published private(set) var isSearching = false
-    @Published private(set) var isLoadingPopularity = false
-    @Published private(set) var isLoadingDetails = false
     @Published private(set) var operation: HomebrewOperation?
     @Published private(set) var operationStatus: HomebrewOperationStatus?
     @Published private(set) var log = ""
@@ -27,34 +26,29 @@ final class HomebrewManager: ObservableObject {
     @Published private(set) var untrustedTap: String?
     @Published private(set) var isTrustingTap = false
     private var untrustedTapRetry: (() -> Void)?
-    @Published private(set) var didOpenInstaller = false
-    @Published private(set) var isShellConfigured = true
-    @Published private(set) var shellConfigProfilePath: String?
-    @Published private(set) var didOpenShellConfig = false
     @Published private(set) var outdatedPackagesByID: [String: HomebrewPackageUpdate] = [:]
 
     private let workQueue = DispatchQueue(label: "com.vorssaint.homebrew", qos: .userInitiated)
-    private var searchGeneration = 0
-    private var detailsGeneration = 0
     private var outdatedGeneration = 0
-    private var currentSearchKind: HomebrewPackageKind?
-    private var popularityCache: [HomebrewPackageKind: PopularityCacheEntry] = [:]
-    private var popularityLoads: Set<HomebrewPackageKind> = []
     private var activeProcess: Process?
     private var cancelRequested = false
     private var installedCaskRecords: [HomebrewCaskRecord] = []
     private var installedCaskRecordsFetchedAt: Date?
     private var ownershipLoads: [String: [(HomebrewPackage?) -> Void]] = [:]
     private var completedOperationCleanup: DispatchWorkItem?
-    private lazy var analyticsSession: URLSession = {
-        let configuration = URLSessionConfiguration.ephemeral
-        configuration.timeoutIntervalForRequest = 6
-        configuration.timeoutIntervalForResource = 8
-        return URLSession(configuration: configuration)
-    }()
 
     var isBusy: Bool {
-        isLoadingInstalled || isSearching || isLoadingDetails || operation != nil
+        isLoadingInstalled || operation != nil
+    }
+
+    /// Formulae the person asked for by name, plus every cask. What is left
+    /// arrived as somebody else's dependency.
+    var requestedPackages: [HomebrewPackage] {
+        installed.filter(\.installedOnRequest)
+    }
+
+    var dependencyPackages: [HomebrewPackage] {
+        installed.filter { !$0.installedOnRequest }
     }
 
     var outdatedCount: Int {
@@ -63,6 +57,7 @@ final class HomebrewManager: ObservableObject {
 
     private init() {
         brewPath = detectBrewPath()
+        masPath = detectMasPath()
     }
 
     /// - Parameter clearingError: pass `false` when refreshing straight after a
@@ -74,19 +69,15 @@ final class HomebrewManager: ObservableObject {
             installed = []
             installedCaskRecords = []
             installedCaskRecordsFetchedAt = nil
-            searchResults = []
-            selectedPackage = nil
             outdatedGeneration += 1
             outdatedPackagesByID = [:]
             isLoadingOutdated = false
             if clearingError { errorMessage = nil }
-            isShellConfigured = true
-            shellConfigProfilePath = nil
-            didOpenShellConfig = false
+            refreshMasApps()
             return
         }
         self.brewPath = brewPath
-        updateShellConfigStatus(brewPath: brewPath)
+        refreshMasApps()
         isLoadingInstalled = true
         if clearingError { errorMessage = nil }
         clearUntrustedTap()
@@ -110,10 +101,6 @@ final class HomebrewManager: ObservableObject {
                     self.installed = try HomebrewParser.parseInfoCommandOutput(output).map(self.packageEnriched)
                     self.installedCaskRecords = HomebrewParser.parseInstalledCaskRecords(output)
                     self.installedCaskRecordsFetchedAt = Date()
-                    self.didOpenInstaller = false
-                    if let selected = self.selectedPackage {
-                        self.selectedPackage = self.packageEnriched(self.installed.first { $0.id == selected.id } ?? selected)
-                    }
                     self.refreshOutdated(brewPath: brewPath)
                 } catch {
                     self.errorMessage = error.localizedDescription
@@ -123,87 +110,6 @@ final class HomebrewManager: ObservableObject {
                 }
             }
         }
-    }
-
-    func search(query: String, kind: HomebrewPackageKind) {
-        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else {
-            searchResults = []
-            return
-        }
-        guard let brewPath = brewPath ?? detectBrewPath() else {
-            self.brewPath = nil
-            searchResults = []
-            return
-        }
-        self.brewPath = brewPath
-        searchGeneration += 1
-        let generation = searchGeneration
-        currentSearchKind = kind
-        isSearching = true
-        errorMessage = nil
-        let command = HomebrewCommandBuilder.search(brewPath: brewPath, kind: kind, query: trimmed)
-        run(command) { [weak self] status, output in
-            DispatchQueue.main.async {
-                guard let self, generation == self.searchGeneration else { return }
-                self.isSearching = false
-                if status == 0 {
-                    let packages = HomebrewParser.parseSearchOutput(output,
-                                                                    kind: kind,
-                                                                    installed: self.installed)
-                    self.searchResults = self.packagesEnriched(packages, kind: kind)
-                    if !packages.isEmpty {
-                        self.loadPopularityIfNeeded(kind: kind)
-                    }
-                } else if output.localizedCaseInsensitiveContains("No formulae or casks found") {
-                    self.searchResults = []
-                } else {
-                    self.searchResults = []
-                    self.errorMessage = output.trimmingCharacters(in: .whitespacesAndNewlines)
-                }
-            }
-        }
-    }
-
-    func select(_ package: HomebrewPackage) {
-        selectedPackage = package
-        guard let brewPath = brewPath ?? detectBrewPath() else { return }
-        detailsGeneration += 1
-        let generation = detailsGeneration
-        isLoadingDetails = true
-        errorMessage = nil
-        let command = HomebrewCommandBuilder.details(brewPath: brewPath, package: package)
-        run(command) { [weak self] status, output in
-            DispatchQueue.main.async {
-                guard let self, generation == self.detailsGeneration else { return }
-                self.isLoadingDetails = false
-                guard status == 0 else {
-                    if let tap = HomebrewCommandBuilder.untrustedTapName(fromOutput: output) {
-                        self.presentUntrustedTap(tap) { [weak self] in self?.select(package) }
-                    } else {
-                        self.errorMessage = output.trimmingCharacters(in: .whitespacesAndNewlines)
-                    }
-                    return
-                }
-                do {
-                    if let detail = try HomebrewParser.parseInfoCommandOutput(output).first {
-                        self.selectedPackage = self.packageEnriched(detail)
-                    }
-                } catch {
-                    self.errorMessage = error.localizedDescription
-                }
-            }
-        }
-    }
-
-    func clearSelection() {
-        detailsGeneration += 1
-        selectedPackage = nil
-        isLoadingDetails = false
-    }
-
-    func install(_ package: HomebrewPackage) {
-        perform(.install, package: package)
     }
 
     func uninstall(_ package: HomebrewPackage) {
@@ -255,23 +161,6 @@ final class HomebrewManager: ObservableObject {
         perform(.upgrade, package: package)
     }
 
-    func upgradeAll() {
-        perform(.upgradeAll, package: nil)
-    }
-
-    /// Upgrades exactly the casks asked for, through the same single
-    /// operation lane as every other Homebrew action, so the app never runs
-    /// two package commands at once. Used by the app update list, where the
-    /// person picks which apps to update.
-    func upgradeCasks(_ tokens: [String]) {
-        guard operation == nil,
-              let brewPath = brewPath ?? detectBrewPath(),
-              let command = HomebrewCommandBuilder.upgradeCasks(brewPath: brewPath, tokens: tokens) else {
-            return
-        }
-        perform(.upgradeAll, package: nil, command: command)
-    }
-
     func updateHomebrew() {
         perform(.updateHomebrew, package: nil)
     }
@@ -298,33 +187,6 @@ final class HomebrewManager: ObservableObject {
     func openTerminalFallback() {
         guard let command = terminalFallbackCommand else { return }
         openTerminal(command: command)
-    }
-
-    func openHomebrewInstaller() {
-        errorMessage = nil
-        if openTerminal(command: HomebrewCommandBuilder.installerCommand) {
-            didOpenInstaller = true
-        }
-    }
-
-    func openShellConfiguration() {
-        guard let brewPath = brewPath ?? detectBrewPath() else { return }
-        self.brewPath = brewPath
-        errorMessage = nil
-        let command = HomebrewCommandBuilder.shellConfigCommand(brewPath: brewPath)
-        if openTerminal(command: command) {
-            didOpenShellConfig = true
-        }
-    }
-
-    func refreshShellConfigurationStatus() {
-        guard let brewPath = brewPath ?? detectBrewPath() else {
-            isShellConfigured = true
-            shellConfigProfilePath = nil
-            didOpenShellConfig = false
-            return
-        }
-        updateShellConfigStatus(brewPath: brewPath)
     }
 
     @discardableResult
@@ -382,15 +244,7 @@ final class HomebrewManager: ObservableObject {
                     self.markOperationComplete(result: .succeeded,
                                                phase: .refreshing,
                                                activity: nil)
-                    if action.clearsSelectionOnSuccess {
-                        if self.selectedPackage?.id == package?.id {
-                            self.clearSelection()
-                        }
-                    }
                     self.refreshInstalled()
-                    if !action.clearsSelectionOnSuccess, let package {
-                        self.select(package)
-                    }
                 } else if self.cancelRequested {
                     self.markOperationComplete(result: .cancelled,
                                                phase: self.operationStatus?.phase ?? .finalizing,
@@ -438,16 +292,12 @@ final class HomebrewManager: ObservableObject {
                                  package: HomebrewPackage?,
                                  brewPath: String) -> HomebrewCommand? {
         switch action {
-        case .install, .uninstall, .upgrade:
-            guard let package,
-                  HomebrewCommandBuilder.isValidToken(package.name) else { return nil }
-            switch action {
-            case .install: return HomebrewCommandBuilder.install(brewPath: brewPath, package: package)
-            case .uninstall: return HomebrewCommandBuilder.uninstall(brewPath: brewPath, package: package)
-            default: return HomebrewCommandBuilder.upgrade(brewPath: brewPath, package: package)
-            }
-        case .upgradeAll:
-            return HomebrewCommandBuilder.upgradeAll(brewPath: brewPath)
+        case .uninstall:
+            guard let package else { return nil }
+            return HomebrewCommandBuilder.uninstall(brewPath: brewPath, package: package)
+        case .upgrade:
+            guard let package else { return nil }
+            return HomebrewCommandBuilder.upgrade(brewPath: brewPath, package: package)
         case .updateHomebrew:
             return HomebrewCommandBuilder.update(brewPath: brewPath)
         }
@@ -469,24 +319,10 @@ final class HomebrewManager: ObservableObject {
 
     private func initialPhase(for action: HomebrewOperation.Action) -> HomebrewOperationPhase {
         switch action {
-        case .install, .upgrade, .upgradeAll, .updateHomebrew:
+        case .upgrade, .updateHomebrew:
             return .preparing
         case .uninstall:
             return .uninstalling
-        }
-    }
-
-    private func updateShellConfigStatus(brewPath: String) {
-        let expectedLine = HomebrewCommandBuilder.shellEnvLine(brewPath: brewPath)
-        let primaryPath = HomebrewCommandBuilder.shellProfilePath()
-        let paths = HomebrewCommandBuilder.shellProfilePathsToCheck()
-        shellConfigProfilePath = primaryPath
-        isShellConfigured = paths.contains { path in
-            guard let contents = try? String(contentsOfFile: path) else { return false }
-            return contents.contains(expectedLine)
-        }
-        if isShellConfigured {
-            didOpenShellConfig = false
         }
     }
 
@@ -507,53 +343,6 @@ final class HomebrewManager: ObservableObject {
         scheduleCompletedOperationCleanup(result: result,
                                           targetID: status.targetID,
                                           finishedAt: status.finishedAt)
-    }
-
-    private func loadPopularityIfNeeded(kind: HomebrewPackageKind) {
-        if popularityCache[kind]?.isFresh == true {
-            applyPopularityToCurrentSearch(kind: kind)
-            return
-        }
-        guard !popularityLoads.contains(kind) else { return }
-        popularityLoads.insert(kind)
-        isLoadingPopularity = true
-        let url = HomebrewAnalytics.url(kind: kind)
-        analyticsSession.dataTask(with: url) { [weak self] data, _, _ in
-            DispatchQueue.main.async {
-                guard let self else { return }
-                self.popularityLoads.remove(kind)
-                self.isLoadingPopularity = !self.popularityLoads.isEmpty
-                guard let data,
-                      let values = try? HomebrewAnalytics.parse(data, kind: kind) else { return }
-                self.popularityCache[kind] = PopularityCacheEntry(values: values, fetchedAt: Date())
-                self.applyPopularityToCurrentSearch(kind: kind)
-            }
-        }.resume()
-    }
-
-    private func applyPopularityToCurrentSearch(kind: HomebrewPackageKind) {
-        guard currentSearchKind == kind else { return }
-        searchResults = packagesEnriched(searchResults, kind: kind)
-        if let selectedPackage, selectedPackage.kind == kind {
-            self.selectedPackage = packageEnriched(selectedPackage)
-        }
-    }
-
-    private func packagesApplyingPopularity(_ packages: [HomebrewPackage],
-                                            kind: HomebrewPackageKind) -> [HomebrewPackage] {
-        guard let cache = popularityCache[kind], cache.isFresh else {
-            return packages
-        }
-        return HomebrewAnalytics.enrichAndSort(packages, popularity: cache.values)
-    }
-
-    private func packageApplyingPopularity(_ package: HomebrewPackage) -> HomebrewPackage {
-        guard let popularity = popularityCache[package.kind]?.values[package.name] else {
-            return package
-        }
-        var copy = package
-        copy.popularity = popularity
-        return copy
     }
 
     private func refreshOutdated(brewPath: String) {
@@ -579,19 +368,10 @@ final class HomebrewManager: ObservableObject {
 
     private func applyOutdatedToCurrentPackages() {
         installed = installed.map(packageApplyingOutdated)
-        searchResults = searchResults.map(packageApplyingOutdated)
-        if let selectedPackage {
-            self.selectedPackage = packageApplyingOutdated(selectedPackage)
-        }
-    }
-
-    private func packagesEnriched(_ packages: [HomebrewPackage],
-                                  kind: HomebrewPackageKind) -> [HomebrewPackage] {
-        packagesApplyingPopularity(packages, kind: kind).map(packageApplyingOutdated)
     }
 
     private func packageEnriched(_ package: HomebrewPackage) -> HomebrewPackage {
-        packageApplyingOutdated(packageApplyingPopularity(package))
+        packageApplyingOutdated(package)
     }
 
     private func packageApplyingOutdated(_ package: HomebrewPackage) -> HomebrewPackage {
@@ -674,6 +454,28 @@ final class HomebrewManager: ObservableObject {
     private func detectBrewPath() -> String? {
         HomebrewCommandBuilder.candidatePaths.first {
             FileManager.default.isExecutableFile(atPath: $0)
+        }
+    }
+
+    private func detectMasPath() -> String? {
+        HomebrewCommandBuilder.masCandidatePaths.first {
+            FileManager.default.isExecutableFile(atPath: $0)
+        }
+    }
+
+    /// `mas` is optional and unrelated to brew: a missing or failing binary
+    /// empties this list and leaves the rest of the page alone.
+    private func refreshMasApps() {
+        guard let masPath = detectMasPath() else {
+            self.masPath = nil
+            masApps = []
+            return
+        }
+        self.masPath = masPath
+        run(HomebrewCommandBuilder.masList(masPath: masPath)) { [weak self] status, output in
+            DispatchQueue.main.async {
+                self?.masApps = status == 0 ? MasParser.parseList(output) : []
+            }
         }
     }
 
@@ -822,14 +624,5 @@ final class HomebrewManager: ObservableObject {
             .replacingOccurrences(of: "\\", with: "\\\\")
             .replacingOccurrences(of: "\"", with: "\\\"")
         return "\"\(escaped)\""
-    }
-}
-
-private struct PopularityCacheEntry {
-    let values: [String: HomebrewPopularity]
-    let fetchedAt: Date
-
-    var isFresh: Bool {
-        Date().timeIntervalSince(fetchedAt) < 24 * 60 * 60
     }
 }

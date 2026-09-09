@@ -422,79 +422,45 @@ struct Strings {
 
     // MARK: Feature — Homebrew manager
     let homebrewName: String
-    let homebrewEnableCaption: String
     let homebrewMissingTitle: String
     let homebrewMissingBody: String
-    let homebrewInstallHomebrew: String
-    let homebrewInstallHomebrewCaption: String
-    let homebrewInstallHomebrewOpened: String
-    let homebrewShellSetupTitle: String
-    let homebrewShellSetupBody: String
-    let homebrewShellSetupButton: String
-    let homebrewShellSetupOpened: String
     let homebrewRefresh: String
-    let homebrewCheckPackages: String
+    let homebrewRequested: String
+    let homebrewDependencies: String
+    let homebrewDependenciesNote: String
+    let homebrewMasApps: String
+    let homebrewCopyName: String
     let homebrewTrustTitle: String
     let homebrewTrustCaption: String
     let homebrewTrustButton: String
-    let homebrewSearchPlaceholder: String
-    let homebrewKeyboardHint: String
-    let homebrewSearchButton: String
-    let homebrewSearchResults: String
-    let homebrewInstalled: String
-    let homebrewAll: String
-    let homebrewFormulas: String
-    let homebrewCasks: String
     let homebrewNoPackages: String
-    let homebrewNoSelection: String
-    let homebrewDetailsTitle: String
-    let homebrewInstall: String
     let homebrewUninstall: String
     let homebrewUpgrade: String
-    let homebrewUpgradeAll: String
     let homebrewUpdateHomebrew: String
     let homebrewAllPackages: String
     let homebrewOpenTerminal: String
     let homebrewCancelOperation: String
     let homebrewClearLog: String
-    let homebrewVersion: String
-    let homebrewDescription: String
     let homebrewHomepage: String
-    let homebrewPopularity: String
-    let homebrewPopularityFormat: String
-    let homebrewInstalledBadge: String
-    let homebrewNotInstalledBadge: String
-    let homebrewUpdates: String
     let homebrewUpdateAvailableBadge: String
-    let homebrewLatestVersion: String
-    let homebrewConfirmInstallTitle: String
-    let homebrewConfirmInstallBodyFormat: String
     let homebrewConfirmUninstallTitle: String
     let homebrewConfirmUninstallBodyFormat: String
     let homebrewConfirmUpgradeTitle: String
     let homebrewConfirmUpgradeBodyFormat: String
-    let homebrewConfirmUpgradeAllTitle: String
-    let homebrewConfirmUpgradeAllBody: String
     let homebrewConfirmUpdateHomebrewTitle: String
     let homebrewConfirmUpdateHomebrewBody: String
     let homebrewTerminalFallback: String
     let homebrewLoading: String
-    let homebrewSearchEmpty: String
-    let homebrewOperationInstallFormat: String
     let homebrewOperationUninstallFormat: String
     let homebrewOperationUpgradeFormat: String
-    let homebrewOperationUpgradeAll: String
     let homebrewOperationUpdateHomebrew: String
-    let homebrewOperationInstalledFormat: String
     let homebrewOperationUninstalledFormat: String
     let homebrewOperationUpgradedFormat: String
-    let homebrewOperationUpgradedAll: String
     let homebrewOperationUpdatedHomebrew: String
     let homebrewOperationFailedFormat: String
     let homebrewOperationCancelled: String
     let homebrewOperationPreparing: String
     let homebrewOperationDownloading: String
-    let homebrewOperationInstalling: String
     let homebrewOperationUninstalling: String
     let homebrewOperationUpgrading: String
     let homebrewOperationFinalizing: String
@@ -1290,79 +1256,45 @@ extension Strings {
         urlCleanerLocalNote: "Local. Sem rede.",
 
         homebrewName: "Homebrew",
-        homebrewEnableCaption: "Pesquise, instale e remova fórmulas e casks.",
         homebrewMissingTitle: "Homebrew não encontrado",
-        homebrewMissingBody: "O Vorssaint pode abrir o Terminal com o instalador oficial do Homebrew. O Terminal mostra os passos e pede sua senha se precisar.",
-        homebrewInstallHomebrew: "Instalar Homebrew",
-        homebrewInstallHomebrewCaption: "Depois que terminar no Terminal, volte aqui e clique em Atualizar.",
-        homebrewInstallHomebrewOpened: "Instalador aberto no Terminal.",
-        homebrewShellSetupTitle: "Finalizar configuração do Terminal",
-        homebrewShellSetupBody: "O Homebrew está instalado, mas o Terminal ainda pode não encontrar o comando brew. O Vorssaint pode abrir o Terminal com o comando de configuração.",
-        homebrewShellSetupButton: "Configurar Terminal",
-        homebrewShellSetupOpened: "Comando aberto no Terminal. Depois volte aqui e clique em Atualizar.",
+        homebrewMissingBody: "O Homebrew não está instalado. Quando estiver, os pacotes que ele gerencia aparecem aqui.",
         homebrewRefresh: "Atualizar",
-        homebrewCheckPackages: "Verificar pacotes",
+        homebrewRequested: "Instalados por você",
+        homebrewDependencies: "Trazidos como dependências",
+        homebrewDependenciesNote: "Vieram junto com os pacotes acima e são atualizados com eles.",
+        homebrewMasApps: "App Store",
+        homebrewCopyName: "Copiar nome",
         homebrewTrustTitle: "Tap ainda não confiável",
         homebrewTrustCaption: "O Homebrew agora pede sua confirmação antes de usar taps de terceiros. Confie em %@ para continuar.",
         homebrewTrustButton: "Confiar e continuar",
-        homebrewSearchPlaceholder: "Pesquisar pacotes",
-        homebrewKeyboardHint: "Espaço ou Enter fecham o painel do macOS. Use o botão de busca.",
-        homebrewSearchButton: "Pesquisar",
-        homebrewSearchResults: "Resultados",
-        homebrewInstalled: "Instalados",
-        homebrewAll: "Todos",
-        homebrewFormulas: "Fórmulas",
-        homebrewCasks: "Casks",
         homebrewNoPackages: "Nenhum pacote encontrado",
-        homebrewNoSelection: "Selecione um pacote instalado ou pesquise um novo.",
-        homebrewDetailsTitle: "Detalhes do pacote",
-        homebrewInstall: "Instalar",
         homebrewUninstall: "Desinstalar",
         homebrewUpgrade: "Atualizar",
-        homebrewUpgradeAll: "Atualizar tudo",
         homebrewUpdateHomebrew: "Atualizar Homebrew",
         homebrewAllPackages: "pacotes",
         homebrewOpenTerminal: "Abrir Terminal",
         homebrewCancelOperation: "Cancelar",
         homebrewClearLog: "Limpar log",
-        homebrewVersion: "Versão",
-        homebrewDescription: "Tipo",
         homebrewHomepage: "Abrir site",
-        homebrewPopularity: "Popularidade",
-        homebrewPopularityFormat: "%@ instalações em %@ dias",
-        homebrewInstalledBadge: "Instalado",
-        homebrewNotInstalledBadge: "Não instalado",
-        homebrewUpdates: "Atualizações",
         homebrewUpdateAvailableBadge: "Atualização disponível",
-        homebrewLatestVersion: "Mais recente",
-        homebrewConfirmInstallTitle: "Instalar pelo Homebrew?",
-        homebrewConfirmInstallBodyFormat: "O Homebrew vai baixar e instalar %@. Dependências também podem ser instaladas.",
         homebrewConfirmUninstallTitle: "Desinstalar pelo Homebrew?",
         homebrewConfirmUninstallBodyFormat: "O Homebrew vai desinstalar %@. Arquivos de configuração podem permanecer no sistema.",
         homebrewConfirmUpgradeTitle: "Atualizar pelo Homebrew?",
         homebrewConfirmUpgradeBodyFormat: "O Homebrew vai baixar e aplicar a versão mais recente de %@. Dependências também podem ser atualizadas.",
-        homebrewConfirmUpgradeAllTitle: "Atualizar todos pelo Homebrew?",
-        homebrewConfirmUpgradeAllBody: "O Homebrew vai baixar e aplicar as versões mais recentes dos pacotes com atualização disponível. Dependências também podem ser atualizadas.",
         homebrewConfirmUpdateHomebrewTitle: "Atualizar Homebrew?",
         homebrewConfirmUpdateHomebrewBody: "O Homebrew vai buscar as informações mais recentes e depois recarregar seus pacotes.",
         homebrewTerminalFallback: "Esta operação precisa do Terminal para pedir a senha de administrador. O Vorssaint não captura senhas.",
         homebrewLoading: "Carregando…",
-        homebrewSearchEmpty: "Nenhum resultado",
-        homebrewOperationInstallFormat: "Instalando %@",
         homebrewOperationUninstallFormat: "Desinstalando %@",
         homebrewOperationUpgradeFormat: "Atualizando %@",
-        homebrewOperationUpgradeAll: "Atualizando pacotes",
         homebrewOperationUpdateHomebrew: "Atualizando Homebrew",
-        homebrewOperationInstalledFormat: "%@ instalado.",
         homebrewOperationUninstalledFormat: "%@ desinstalado.",
         homebrewOperationUpgradedFormat: "%@ atualizado.",
-        homebrewOperationUpgradedAll: "Pacotes atualizados.",
         homebrewOperationUpdatedHomebrew: "Homebrew atualizado.",
         homebrewOperationFailedFormat: "Não foi possível concluir %@.",
         homebrewOperationCancelled: "Operação cancelada.",
         homebrewOperationPreparing: "Preparando…",
         homebrewOperationDownloading: "Baixando arquivos…",
-        homebrewOperationInstalling: "Instalando arquivos…",
         homebrewOperationUninstalling: "Removendo arquivos…",
         homebrewOperationUpgrading: "Atualizando arquivos…",
         homebrewOperationFinalizing: "Finalizando…",
@@ -2133,79 +2065,45 @@ extension Strings {
         urlCleanerLocalNote: "Local. No network.",
 
         homebrewName: "Homebrew",
-        homebrewEnableCaption: "Search, install and remove formulae and casks.",
         homebrewMissingTitle: "Homebrew not found",
-        homebrewMissingBody: "Vorssaint can open Terminal with the official Homebrew installer. Terminal shows the steps and asks for your password if needed.",
-        homebrewInstallHomebrew: "Install Homebrew",
-        homebrewInstallHomebrewCaption: "When Terminal finishes, come back here and click Refresh.",
-        homebrewInstallHomebrewOpened: "Installer opened in Terminal.",
-        homebrewShellSetupTitle: "Finish Terminal setup",
-        homebrewShellSetupBody: "Homebrew is installed, but Terminal may not find the brew command yet. Vorssaint can open Terminal with the setup command.",
-        homebrewShellSetupButton: "Set up Terminal",
-        homebrewShellSetupOpened: "Command opened in Terminal. Then come back here and click Refresh.",
+        homebrewMissingBody: "Homebrew is not installed. Once it is, the packages it manages show up here.",
         homebrewRefresh: "Refresh",
-        homebrewCheckPackages: "Check packages",
+        homebrewRequested: "Installed by you",
+        homebrewDependencies: "Pulled in as dependencies",
+        homebrewDependenciesNote: "These came with the packages above and upgrade together with them.",
+        homebrewMasApps: "App Store",
+        homebrewCopyName: "Copy name",
         homebrewTrustTitle: "Tap not trusted yet",
         homebrewTrustCaption: "Homebrew now asks for your confirmation before using third party taps. Trust %@ to continue.",
         homebrewTrustButton: "Trust and continue",
-        homebrewSearchPlaceholder: "Search packages",
-        homebrewKeyboardHint: "Space or Return closes the macOS panel. Use the search button.",
-        homebrewSearchButton: "Search",
-        homebrewSearchResults: "Results",
-        homebrewInstalled: "Installed",
-        homebrewAll: "All",
-        homebrewFormulas: "Formulae",
-        homebrewCasks: "Casks",
         homebrewNoPackages: "No packages found",
-        homebrewNoSelection: "Select an installed package or search for a new one.",
-        homebrewDetailsTitle: "Package details",
-        homebrewInstall: "Install",
         homebrewUninstall: "Uninstall",
         homebrewUpgrade: "Update",
-        homebrewUpgradeAll: "Update all",
         homebrewUpdateHomebrew: "Update Homebrew",
         homebrewAllPackages: "packages",
         homebrewOpenTerminal: "Open Terminal",
         homebrewCancelOperation: "Cancel",
         homebrewClearLog: "Clear log",
-        homebrewVersion: "Version",
-        homebrewDescription: "Type",
         homebrewHomepage: "Open website",
-        homebrewPopularity: "Popularity",
-        homebrewPopularityFormat: "%@ installs in %@ days",
-        homebrewInstalledBadge: "Installed",
-        homebrewNotInstalledBadge: "Not installed",
-        homebrewUpdates: "Updates",
         homebrewUpdateAvailableBadge: "Update available",
-        homebrewLatestVersion: "Latest",
-        homebrewConfirmInstallTitle: "Install with Homebrew?",
-        homebrewConfirmInstallBodyFormat: "Homebrew will download and install %@. Dependencies may also be installed.",
         homebrewConfirmUninstallTitle: "Uninstall with Homebrew?",
         homebrewConfirmUninstallBodyFormat: "Homebrew will uninstall %@. Configuration files may remain on the system.",
         homebrewConfirmUpgradeTitle: "Update with Homebrew?",
         homebrewConfirmUpgradeBodyFormat: "Homebrew will download and apply the latest version of %@. Dependencies may also be updated.",
-        homebrewConfirmUpgradeAllTitle: "Update all with Homebrew?",
-        homebrewConfirmUpgradeAllBody: "Homebrew will download and apply the latest versions for packages with updates available. Dependencies may also be updated.",
         homebrewConfirmUpdateHomebrewTitle: "Update Homebrew?",
         homebrewConfirmUpdateHomebrewBody: "Homebrew will fetch the latest information and then reload your packages.",
         homebrewTerminalFallback: "This operation needs Terminal to ask for the administrator password. Vorssaint does not capture passwords.",
         homebrewLoading: "Loading…",
-        homebrewSearchEmpty: "No results",
-        homebrewOperationInstallFormat: "Installing %@",
         homebrewOperationUninstallFormat: "Uninstalling %@",
         homebrewOperationUpgradeFormat: "Updating %@",
-        homebrewOperationUpgradeAll: "Updating packages",
         homebrewOperationUpdateHomebrew: "Updating Homebrew",
-        homebrewOperationInstalledFormat: "%@ installed.",
         homebrewOperationUninstalledFormat: "%@ uninstalled.",
         homebrewOperationUpgradedFormat: "%@ updated.",
-        homebrewOperationUpgradedAll: "Packages updated.",
         homebrewOperationUpdatedHomebrew: "Homebrew updated.",
         homebrewOperationFailedFormat: "Could not finish %@.",
         homebrewOperationCancelled: "Operation cancelled.",
         homebrewOperationPreparing: "Preparing…",
         homebrewOperationDownloading: "Downloading files…",
-        homebrewOperationInstalling: "Installing files…",
         homebrewOperationUninstalling: "Removing files…",
         homebrewOperationUpgrading: "Updating files…",
         homebrewOperationFinalizing: "Finishing…",

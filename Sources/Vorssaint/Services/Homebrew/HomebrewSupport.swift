@@ -1,14 +1,18 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Vorssaint
 
-import Darwin
 import Foundation
 
 enum HomebrewPackageKind: String, CaseIterable, Identifiable {
     case cask
     case formula
+    case masApp
 
     var id: String { rawValue }
+
+    /// Whether `brew` owns the package, so only those get a brew command
+    /// built for them. App Store apps are listed but never acted on.
+    var isBrew: Bool { self != .masApp }
 }
 
 struct HomebrewPackage: Identifiable, Hashable {
@@ -19,8 +23,10 @@ struct HomebrewPackage: Identifiable, Hashable {
     var installedVersion: String?
     var stableVersion: String?
     var homepage: String?
-    var popularity: HomebrewPopularity?
     var update: HomebrewPackageUpdate?
+    /// False for a formula something else pulled in. Casks and App Store apps
+    /// have no dependency concept, so they are always requested.
+    var installedOnRequest: Bool = true
 
     var id: String { "\(kind.rawValue):\(name)" }
     var isInstalled: Bool { installedVersion != nil }
@@ -105,20 +111,6 @@ enum HomebrewPackageOrdering {
     }
 }
 
-struct HomebrewPopularity: Hashable {
-    let count: Int
-    let rank: Int?
-    let days: Int
-
-    var compactCount: String {
-        HomebrewAnalytics.compactCount(count)
-    }
-
-    var decimalCount: String {
-        HomebrewAnalytics.decimalCount(count)
-    }
-}
-
 struct HomebrewCommand: Equatable {
     let executable: String
     let arguments: [String]
@@ -126,28 +118,24 @@ struct HomebrewCommand: Equatable {
 
 struct HomebrewOperation {
     enum Action {
-        case install
         case uninstall
         case upgrade
-        case upgradeAll
         case updateHomebrew
 
         var clearsSelectionOnSuccess: Bool {
             switch self {
             case .uninstall:
                 return true
-            case .install, .upgrade, .upgradeAll, .updateHomebrew:
+            case .upgrade, .updateHomebrew:
                 return false
             }
         }
 
         var runningSystemImage: String {
             switch self {
-            case .install:
-                return "arrow.down.circle.fill"
             case .uninstall:
                 return "trash.circle.fill"
-            case .upgrade, .upgradeAll:
+            case .upgrade:
                 return "arrow.up.circle.fill"
             case .updateHomebrew:
                 return "arrow.triangle.2.circlepath"
@@ -162,7 +150,6 @@ struct HomebrewOperation {
 enum HomebrewOperationPhase: Equatable {
     case preparing
     case downloading
-    case installing
     case uninstalling
     case upgrading
     case finalizing
@@ -208,13 +195,8 @@ struct HomebrewPendingAction {
 
 enum HomebrewCommandBuilder {
     static let candidatePaths = ["/opt/homebrew/bin/brew", "/usr/local/bin/brew"]
-    static let installerCommand = #"/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)""#
-    static var currentShellPath: String {
-        if let shell = getpwuid(getuid())?.pointee.pw_shell {
-            return String(cString: shell)
-        }
-        return ProcessInfo.processInfo.environment["SHELL"] ?? ""
-    }
+    /// `mas` is itself a Homebrew formula, so it sits next to `brew`.
+    static let masCandidatePaths = ["/opt/homebrew/bin/mas", "/usr/local/bin/mas"]
 
     static func installed(brewPath: String) -> HomebrewCommand {
         HomebrewCommand(executable: brewPath, arguments: ["info", "--json=v2", "--installed"])
@@ -224,59 +206,31 @@ enum HomebrewCommandBuilder {
         HomebrewCommand(executable: brewPath, arguments: ["outdated", "--json=v2"])
     }
 
-    /// Casks the plain listing hides because they carry their own updater.
-    /// Those are exactly the apps the update check is for, so it asks for
-    /// them explicitly and then checks each app bundle before believing the
-    /// answer.
-    static func outdatedCasksIncludingSelfUpdating(brewPath: String) -> HomebrewCommand {
-        HomebrewCommand(executable: brewPath,
-                        arguments: ["outdated", "--cask", "--greedy", "--json=v2"])
-    }
-
-    static func upgradeCasks(brewPath: String, tokens: [String]) -> HomebrewCommand? {
-        let valid = tokens.filter(isValidToken)
-        guard !valid.isEmpty else { return nil }
-        return HomebrewCommand(executable: brewPath,
-                               arguments: ["upgrade", "--cask", "--greedy"] + valid)
+    static func masList(masPath: String) -> HomebrewCommand {
+        HomebrewCommand(executable: masPath, arguments: ["list"])
     }
 
     static func update(brewPath: String) -> HomebrewCommand {
         HomebrewCommand(executable: brewPath, arguments: ["update"])
     }
 
-    static func search(brewPath: String, kind: HomebrewPackageKind, query: String) -> HomebrewCommand {
-        let flag = kind == .formula ? "--formula" : "--cask"
-        return HomebrewCommand(executable: brewPath, arguments: ["search", flag, query])
-    }
-
-    static func details(brewPath: String, package: HomebrewPackage) -> HomebrewCommand {
-        let flag = package.kind == .formula ? "--formula" : "--cask"
-        return HomebrewCommand(executable: brewPath, arguments: ["info", "--json=v2", flag, package.name])
-    }
-
-    static func install(brewPath: String, package: HomebrewPackage) -> HomebrewCommand {
-        var args = ["install"]
-        if package.kind == .cask { args.append("--cask") }
-        args.append(package.name)
-        return HomebrewCommand(executable: brewPath, arguments: args)
-    }
-
-    static func uninstall(brewPath: String, package: HomebrewPackage) -> HomebrewCommand {
+    static func uninstall(brewPath: String, package: HomebrewPackage) -> HomebrewCommand? {
+        guard package.kind.isBrew, isValidToken(package.name) else { return nil }
         var args = ["uninstall"]
         if package.kind == .cask { args.append("--cask") }
         args.append(package.name)
         return HomebrewCommand(executable: brewPath, arguments: args)
     }
 
-    static func upgrade(brewPath: String, package: HomebrewPackage) -> HomebrewCommand {
+    /// Only a package the person asked for by name is upgradable from here.
+    /// A formula something else pulled in gets upgraded when its dependant
+    /// does, and offering its own button hides that.
+    static func upgrade(brewPath: String, package: HomebrewPackage) -> HomebrewCommand? {
+        guard package.kind.isBrew, package.installedOnRequest, isValidToken(package.name) else { return nil }
         var args = ["upgrade"]
         if package.kind == .cask { args.append("--cask") }
         args.append(package.name)
         return HomebrewCommand(executable: brewPath, arguments: args)
-    }
-
-    static func upgradeAll(brewPath: String) -> HomebrewCommand {
-        HomebrewCommand(executable: brewPath, arguments: ["upgrade"])
     }
 
     static func isValidToken(_ token: String) -> Bool {
@@ -326,173 +280,6 @@ enum HomebrewCommandBuilder {
         return "'" + value.replacingOccurrences(of: "'", with: "'\\''") + "'"
     }
 
-    static func shellEnvLine(brewPath: String,
-                             shellPath: String = HomebrewCommandBuilder.currentShellPath) -> String {
-        if URL(fileURLWithPath: shellPath).lastPathComponent == "fish" {
-            return "eval (\(shellQuote(brewPath)) shellenv fish)"
-        }
-        return #"eval "$(\#(shellQuote(brewPath)) shellenv)""#
-    }
-
-    static func shellProfilePath(homeDirectory: String = NSHomeDirectory(),
-                                 shellPath: String = HomebrewCommandBuilder.currentShellPath) -> String {
-        switch URL(fileURLWithPath: shellPath).lastPathComponent {
-        case "bash":
-            return "\(homeDirectory)/.bash_profile"
-        case "fish":
-            return "\(homeDirectory)/.config/fish/config.fish"
-        case "zsh":
-            return "\(homeDirectory)/.zprofile"
-        default:
-            return "\(homeDirectory)/.profile"
-        }
-    }
-
-    static func shellProfilePathsToCheck(homeDirectory: String = NSHomeDirectory(),
-                                         shellPath: String = HomebrewCommandBuilder.currentShellPath) -> [String] {
-        let primary = shellProfilePath(homeDirectory: homeDirectory, shellPath: shellPath)
-        let common = [
-            "\(homeDirectory)/.config/fish/config.fish",
-            "\(homeDirectory)/.zprofile",
-            "\(homeDirectory)/.zshrc",
-            "\(homeDirectory)/.bash_profile",
-            "\(homeDirectory)/.bashrc",
-            "\(homeDirectory)/.profile",
-        ]
-        return ([primary] + common).reduce(into: [String]()) { result, path in
-            if !result.contains(path) {
-                result.append(path)
-            }
-        }
-    }
-
-    static func shellConfigCommand(brewPath: String,
-                                   homeDirectory: String = NSHomeDirectory(),
-                                   shellPath: String = HomebrewCommandBuilder.currentShellPath) -> String {
-        let profile = shellProfilePath(homeDirectory: homeDirectory, shellPath: shellPath)
-        let profileDirectory = URL(fileURLWithPath: profile).deletingLastPathComponent().path
-        let line = shellEnvLine(brewPath: brewPath, shellPath: shellPath)
-        let setup = [
-            "PROFILE=\(shellQuote(profile))",
-            "LINE=\(shellQuote(line))",
-            "/bin/mkdir -p \(shellQuote(profileDirectory))",
-            #"/usr/bin/touch "$PROFILE""#,
-            #"if /usr/bin/grep -qxF "$LINE" "$PROFILE" 2>/dev/null; then echo "Homebrew shell setup already exists in $PROFILE"; else { echo; echo "$LINE"; } >> "$PROFILE"; echo "Added Homebrew shell setup to $PROFILE"; fi"#,
-        ].joined(separator: "; ")
-        return [
-            "/bin/sh -c \(shellQuote(setup))",
-            line,
-            "brew --version",
-        ].joined(separator: "; ")
-    }
-}
-
-enum HomebrewAnalytics {
-    static let defaultDays = 30
-
-    static func url(kind: HomebrewPackageKind, days: Int = defaultDays) -> URL {
-        let category = kind == .formula ? "install-on-request/homebrew-core" : "cask-install/homebrew-cask"
-        return URL(string: "https://formulae.brew.sh/api/analytics/\(category)/\(days)d.json")!
-    }
-
-    static func parse(_ data: Data,
-                      kind: HomebrewPackageKind,
-                      days: Int = defaultDays) throws -> [String: HomebrewPopularity] {
-        guard let root = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-            return [:]
-        }
-        let counts = counts(from: root, kind: kind)
-        let rankedTokens = counts.sorted { lhs, rhs in
-            if lhs.value != rhs.value { return lhs.value > rhs.value }
-            return lhs.key.localizedCaseInsensitiveCompare(rhs.key) == .orderedAscending
-        }
-        return Dictionary(uniqueKeysWithValues: rankedTokens.enumerated().map { index, element in
-            (element.key, HomebrewPopularity(count: element.value, rank: index + 1, days: days))
-        })
-    }
-
-    static func enrichAndSort(_ packages: [HomebrewPackage],
-                              popularity: [String: HomebrewPopularity]) -> [HomebrewPackage] {
-        packages
-            .map { package in
-                var copy = package
-                copy.popularity = popularity[package.name]
-                return copy
-            }
-            .sorted { lhs, rhs in
-                switch (lhs.popularity?.count, rhs.popularity?.count) {
-                case let (left?, right?) where left != right:
-                    return left > right
-                case (_?, nil):
-                    return true
-                case (nil, _?):
-                    return false
-                default:
-                    return lhs.displayName.localizedCaseInsensitiveCompare(rhs.displayName) == .orderedAscending
-                }
-            }
-    }
-
-    static func compactCount(_ count: Int) -> String {
-        if count >= 1_000_000 {
-            let value = Double(count) / 1_000_000
-            return value >= 10 ? "\(Int(value.rounded()))M" : String(format: "%.1fM", locale: MetricFormat.locale, value)
-        }
-        if count >= 1_000 {
-            let value = Double(count) / 1_000
-            return value >= 10 ? "\(Int(value.rounded()))K" : String(format: "%.1fK", locale: MetricFormat.locale, value)
-        }
-        return "\(max(count, 0))"
-    }
-
-    static func decimalCount(_ count: Int) -> String {
-        NumberFormatter.localizedString(from: NSNumber(value: max(count, 0)), number: .decimal)
-    }
-
-    private static func counts(from root: [String: Any],
-                               kind: HomebrewPackageKind) -> [String: Int] {
-        if let grouped = root["formulae"] as? [String: [[String: Any]]] {
-            let nameKey = kind == .formula ? "formula" : "cask"
-            return grouped.reduce(into: [String: Int]()) { result, entry in
-                guard HomebrewCommandBuilder.isValidToken(entry.key) else { return }
-                let count = countForGroupedRecords(entry.value, token: entry.key, nameKey: nameKey)
-                if count > 0 {
-                    result[entry.key] = count
-                }
-            }
-        }
-
-        if let items = root["items"] as? [[String: Any]] {
-            let nameKey = kind == .formula ? "formula" : "cask"
-            return items.reduce(into: [String: Int]()) { result, item in
-                guard let token = item[nameKey] as? String,
-                      HomebrewCommandBuilder.isValidToken(token),
-                      let count = intCount(item["count"]) else { return }
-                result[token, default: 0] += count
-            }
-        }
-
-        return [:]
-    }
-
-    private static func countForGroupedRecords(_ records: [[String: Any]],
-                                               token: String,
-                                               nameKey: String) -> Int {
-        if let exact = records.first(where: { ($0[nameKey] as? String) == token }),
-           let count = intCount(exact["count"]) {
-            return count
-        }
-        return records.reduce(0) { total, record in
-            total + (intCount(record["count"]) ?? 0)
-        }
-    }
-
-    private static func intCount(_ value: Any?) -> Int? {
-        if let int = value as? Int { return int }
-        guard let string = value as? String else { return nil }
-        let digits = string.filter(\.isNumber)
-        return digits.isEmpty ? nil : Int(digits)
-    }
 }
 
 enum HomebrewProgressParser {
@@ -543,12 +330,10 @@ enum HomebrewProgressParser {
             switch action {
             case .uninstall:
                 return .uninstalling
-            case .upgrade, .upgradeAll:
+            case .upgrade:
                 return .upgrading
             case .updateHomebrew:
                 return .refreshing
-            case .install:
-                return .installing
             }
         }
         if lower.contains("cleanup")
@@ -648,29 +433,6 @@ enum HomebrewParser {
         }
     }
 
-    static func parseSearchOutput(_ output: String,
-                                  kind: HomebrewPackageKind,
-                                  installed: [HomebrewPackage]) -> [HomebrewPackage] {
-        let installedByID = Dictionary(uniqueKeysWithValues: installed.map { ($0.id, $0) })
-        var seen: Set<String> = []
-        return output
-            .split(whereSeparator: \.isNewline)
-            .map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { HomebrewCommandBuilder.isValidToken($0) }
-            .compactMap { token -> HomebrewPackage? in
-                let id = "\(kind.rawValue):\(token)"
-                guard seen.insert(id).inserted else { return nil }
-                if let installedPackage = installedByID[id] { return installedPackage }
-                return HomebrewPackage(kind: kind,
-                                       name: token,
-                                       displayName: token,
-                                       desc: nil,
-                                       installedVersion: nil,
-                                       stableVersion: nil,
-                                       homepage: nil)
-            }
-    }
-
     /// Installed casks with the app bundles they install, so a package token
     /// can be traced back to the app on disk.
     static func parseInstalledCaskRecords(_ output: String) -> [HomebrewCaskRecord] {
@@ -763,13 +525,18 @@ enum HomebrewParser {
         let installed = item["installed"] as? [[String: Any]] ?? []
         let installedVersions = installed.compactMap { $0["version"] as? String }
         let stable = (item["versions"] as? [String: Any])?["stable"] as? String
+        // Brew records the flag per installed version. Any version the person
+        // asked for by name makes the package theirs; only when every version
+        // arrived as someone else's dependency is it a dependency here.
+        let onRequest = installed.contains { $0["installed_on_request"] as? Bool == true }
         return HomebrewPackage(kind: .formula,
                                name: identifier,
                                displayName: fullName ?? name,
                                desc: item["desc"] as? String,
                                installedVersion: installedVersions.isEmpty ? nil : installedVersions.joined(separator: ", "),
                                stableVersion: stable,
-                               homepage: item["homepage"] as? String)
+                               homepage: item["homepage"] as? String,
+                               installedOnRequest: onRequest)
     }
 
     private static func parseCask(_ item: [String: Any]) -> HomebrewPackage? {
@@ -877,5 +644,37 @@ enum HomebrewParser {
         }
 
         return objects
+    }
+}
+
+/// `mas list` prints `<id>  <name>  (<version>)`, and app names carry spaces
+/// and non-Latin characters, so the id and the trailing version are peeled off
+/// the ends and whatever remains is the name.
+enum MasParser {
+    static func parseList(_ output: String) -> [HomebrewPackage] {
+        var seen: Set<String> = []
+        return output.split(whereSeparator: \.isNewline).compactMap { rawLine -> HomebrewPackage? in
+            let line = rawLine.trimmingCharacters(in: .whitespaces)
+            guard let idEnd = line.firstIndex(of: " ") else { return nil }
+            let id = String(line[line.startIndex..<idEnd])
+            guard !id.isEmpty, id.allSatisfy(\.isNumber), seen.insert(id).inserted else { return nil }
+
+            var rest = line[idEnd...].trimmingCharacters(in: .whitespaces)
+            var version: String?
+            if rest.hasSuffix(")"), let open = rest.lastIndex(of: "(") {
+                let inner = rest[rest.index(after: open)..<rest.index(before: rest.endIndex)]
+                version = inner.isEmpty ? nil : String(inner)
+                rest = String(rest[rest.startIndex..<open]).trimmingCharacters(in: .whitespaces)
+            }
+            guard !rest.isEmpty else { return nil }
+
+            return HomebrewPackage(kind: .masApp,
+                                   name: id,
+                                   displayName: rest,
+                                   desc: nil,
+                                   installedVersion: version,
+                                   stableVersion: nil,
+                                   homepage: "https://apps.apple.com/app/id\(id)")
+        }
     }
 }

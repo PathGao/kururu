@@ -80,7 +80,7 @@ enum PanelSectionID: String, CaseIterable, Identifiable, Hashable {
         case .disk: return [.monitorDisk]
         case .power: return [.monitorPower]
         case .fanControl: return [.fanControl]
-        case .utilities: return [.cleaner, .homebrew, .mediaTools,
+        case .utilities: return [.cleaner, .mediaTools,
                                  .clipboardHistory, .micMute,
                                  .uninstaller, .urlCleaner, .cleaningMode, .screenOCR,
                                  .colorPicker, .screenshot, .screenRecorder,

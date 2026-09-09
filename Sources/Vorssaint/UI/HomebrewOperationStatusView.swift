@@ -169,16 +169,10 @@ struct HomebrewOperationStatusView: View {
             if status.action == .updateHomebrew {
                 return l10n.s.homebrewOperationUpdateHomebrew
             }
-            if status.action == .upgradeAll {
-                return l10n.s.homebrewOperationUpgradeAll
-            }
             return String(format: runningTitleFormat, packageDisplayName)
         case .succeeded:
             if status.action == .updateHomebrew {
                 return l10n.s.homebrewOperationUpdatedHomebrew
-            }
-            if status.action == .upgradeAll {
-                return l10n.s.homebrewOperationUpgradedAll
             }
             return String(format: succeededTitleFormat, packageDisplayName)
         case .failed:
@@ -202,7 +196,6 @@ struct HomebrewOperationStatusView: View {
             switch status.phase {
             case .preparing: return l10n.s.homebrewOperationPreparing
             case .downloading: return l10n.s.homebrewOperationDownloading
-            case .installing: return l10n.s.homebrewOperationInstalling
             case .uninstalling: return l10n.s.homebrewOperationUninstalling
             case .upgrading: return l10n.s.homebrewOperationUpgrading
             case .finalizing: return l10n.s.homebrewOperationFinalizing
@@ -213,20 +206,16 @@ struct HomebrewOperationStatusView: View {
 
     private var runningTitleFormat: String {
         switch status.action {
-        case .install: return l10n.s.homebrewOperationInstallFormat
         case .uninstall: return l10n.s.homebrewOperationUninstallFormat
         case .upgrade: return l10n.s.homebrewOperationUpgradeFormat
-        case .upgradeAll: return l10n.s.homebrewOperationUpgradeAll
         case .updateHomebrew: return l10n.s.homebrewOperationUpdateHomebrew
         }
     }
 
     private var succeededTitleFormat: String {
         switch status.action {
-        case .install: return l10n.s.homebrewOperationInstalledFormat
         case .uninstall: return l10n.s.homebrewOperationUninstalledFormat
         case .upgrade: return l10n.s.homebrewOperationUpgradedFormat
-        case .upgradeAll: return l10n.s.homebrewOperationUpgradedAll
         case .updateHomebrew: return l10n.s.homebrewOperationUpdatedHomebrew
         }
     }

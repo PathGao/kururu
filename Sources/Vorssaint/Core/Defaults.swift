@@ -234,7 +234,6 @@ enum DefaultsKey {
     static let killProcessSortBy = "killProcessSortBy" // cpu | memory | name | pid
     static let killProcessSortAscending = "killProcessSortAscending"
     static let panelUtilityCleaner = "panelUtilityCleaner"
-    static let panelUtilityHomebrew = "panelUtilityHomebrew"
     static let panelUtilityMedia = "panelUtilityMedia"
     static let panelUtilityClipboard = "panelUtilityClipboard"
     static let panelControlMouseScroll = "panelControlMouseScroll"
@@ -994,7 +993,6 @@ enum Defaults {
         DefaultsKey.killProcessSortBy: "cpu",
         DefaultsKey.killProcessSortAscending: false,
         DefaultsKey.panelUtilityCleaner: true,
-        DefaultsKey.panelUtilityHomebrew: true,
         DefaultsKey.panelUtilityMedia: true,
         DefaultsKey.panelUtilityClipboard: true,
         DefaultsKey.panelControlMouseScroll: true,
@@ -1434,6 +1432,8 @@ enum Defaults {
         "extraBrightnessLevel",
         // Minimal window previews
         "minimalWindowPreviews",
+        // The packages page is a read-only list now, so it has no panel tile.
+        "panelUtilityHomebrew",
     ]
 
     /// The six read-only metrics lost their switch: where they are placed is

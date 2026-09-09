@@ -27,7 +27,6 @@ final class PanelInteractionState {
     var preventsPopoverDismissal: Bool {
         viewKeepsPopoverOpen
             || isPresentingPopoverModal
-            || HomebrewManager.shared.operationStatus?.isActive == true
             || cleanerIsRunning
             || uninstallerIsRunning
     }

@@ -3594,8 +3594,6 @@ struct MetricsTests {
                "panel URL cleaner utility is visible by default")
         expect(registeredDefaults[DefaultsKey.panelUtilityUninstaller] as? Bool == true,
                "panel uninstaller utility is visible by default")
-        expect(registeredDefaults[DefaultsKey.panelUtilityHomebrew] as? Bool == true,
-               "panel Homebrew utility is visible by default")
         expect(registeredDefaults[DefaultsKey.panelUtilityMedia] as? Bool == true,
                "panel Media utility is visible by default")
         expect(registeredDefaults[DefaultsKey.panelControlMouseScroll] as? Bool == true,
@@ -11512,8 +11510,10 @@ struct MetricsTests {
                 && !homebrewRunStreaming.contains("waitUntilExit"),
                "Homebrew operations wait on a bounded semaphore, not waitUntilExit")
 
-        expect(HomebrewPackageKind.allCases == [.cask, .formula],
-               "Homebrew package kinds keep casks before formulae")
+        expect(HomebrewPackageKind.allCases == [.cask, .formula, .masApp],
+               "Homebrew package kinds keep casks before formulae, with App Store apps last")
+        expect(!HomebrewPackageKind.masApp.isBrew && HomebrewPackageKind.cask.isBrew,
+               "only brew's own kinds get a brew command built for them")
         expect(HomebrewCommandBuilder.isValidToken("jq"), "simple Homebrew token is valid")
         expect(HomebrewCommandBuilder.isValidToken("python@3.14"), "versioned formula token is valid")
         expect(HomebrewCommandBuilder.isValidToken("visual-studio-code"), "cask token is valid")
@@ -11539,33 +11539,39 @@ struct MetricsTests {
         let cask = HomebrewPackage(kind: .cask, name: "sample-tool",
                                    displayName: "Sample Tool", desc: nil,
                                    installedVersion: nil, stableVersion: nil, homepage: nil)
-        expect(HomebrewCommandBuilder.search(brewPath: brewPath, kind: .formula, query: "jq").arguments
-               == ["search", "--formula", "jq"],
-               "formula search command uses separated arguments")
         expect(HomebrewCommandBuilder.outdated(brewPath: brewPath).arguments
                == ["outdated", "--json=v2"],
                "Homebrew outdated command uses read-only JSON v2 output")
         expect(HomebrewCommandBuilder.update(brewPath: brewPath).arguments
                == ["update"],
                "Homebrew update command refreshes Homebrew metadata")
-        expect(HomebrewCommandBuilder.install(brewPath: brewPath, package: cask).arguments
-               == ["install", "--cask", "sample-tool"],
-               "cask install command uses --cask")
-        expect(HomebrewCommandBuilder.uninstall(brewPath: brewPath, package: cask).arguments
+        expect(HomebrewCommandBuilder.masList(masPath: "/opt/homebrew/bin/mas").arguments == ["list"],
+               "App Store listing is read-only")
+        expect(HomebrewCommandBuilder.uninstall(brewPath: brewPath, package: cask)?.arguments
                == ["uninstall", "--cask", "sample-tool"],
                "cask uninstall command uses --cask")
-        expect(HomebrewCommandBuilder.upgrade(brewPath: brewPath, package: cask).arguments
+        expect(HomebrewCommandBuilder.upgrade(brewPath: brewPath, package: cask)?.arguments
                == ["upgrade", "--cask", "sample-tool"],
                "cask upgrade command uses --cask")
+        let masApp = HomebrewPackage(kind: .masApp, name: "497799835",
+                                     displayName: "Xcode", desc: nil,
+                                     installedVersion: "26.6", stableVersion: nil, homepage: nil)
+        expect(HomebrewCommandBuilder.uninstall(brewPath: brewPath, package: masApp) == nil
+                && HomebrewCommandBuilder.upgrade(brewPath: brewPath, package: masApp) == nil,
+               "no brew command is ever built for an App Store app")
         let formula = HomebrewPackage(kind: .formula, name: "jq",
                                       displayName: "jq", desc: nil,
                                       installedVersion: "1.8.1", stableVersion: nil, homepage: nil)
-        expect(HomebrewCommandBuilder.upgrade(brewPath: brewPath, package: formula).arguments
+        expect(HomebrewCommandBuilder.upgrade(brewPath: brewPath, package: formula)?.arguments
                == ["upgrade", "jq"],
                "formula upgrade command uses separated arguments")
-        expect(HomebrewCommandBuilder.upgradeAll(brewPath: brewPath).arguments
-               == ["upgrade"],
-               "Homebrew update all command upgrades all outdated packages")
+        var pulledIn = formula
+        pulledIn.installedOnRequest = false
+        expect(HomebrewCommandBuilder.upgrade(brewPath: brewPath, package: pulledIn) == nil,
+               "a formula something else pulled in has no upgrade command of its own")
+        expect(HomebrewCommandBuilder.uninstall(brewPath: brewPath, package: pulledIn)?.arguments
+               == ["uninstall", "jq"],
+               "a dependency can still be uninstalled: only upgrading is withheld")
 
         // brew exits non-zero when it could not do all of a run, not only when it
         // did none of it, so the installed and outdated lists have to be re-read
@@ -11590,8 +11596,6 @@ struct MetricsTests {
                "both banner clears in refreshInstalled are behind its parameter, so the reason "
                + "a failed operation gave survives the refresh that follows it, found "
                + "\(guardedBannerClears)")
-        expect(HomebrewOperation.Action.install.runningSystemImage == "arrow.down.circle.fill",
-               "Homebrew install status uses a download icon")
         expect(HomebrewOperation.Action.uninstall.runningSystemImage == "trash.circle.fill",
                "Homebrew uninstall status uses a trash icon")
         expect(HomebrewOperation.Action.upgrade.runningSystemImage == "arrow.up.circle.fill",
@@ -11600,64 +11604,19 @@ struct MetricsTests {
                "Homebrew metadata refresh status uses a refresh icon")
         expect(HomebrewOperation.Action.uninstall.clearsSelectionOnSuccess,
                "Homebrew uninstall clears details for the package that left the installed list")
-        expect(!HomebrewOperation.Action.install.clearsSelectionOnSuccess
-                && !HomebrewOperation.Action.upgrade.clearsSelectionOnSuccess,
-               "Homebrew install and upgrade preserve package details after success")
+        expect(!HomebrewOperation.Action.upgrade.clearsSelectionOnSuccess,
+               "Homebrew upgrade preserves package details after success")
         expect(HomebrewCommandBuilder.needsTerminalFallback(output: "sudo: a terminal is required to read the password"),
                "sudo terminal error triggers Homebrew terminal fallback")
-        expect(HomebrewCommandBuilder.installerCommand == #"/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)""#,
-               "Homebrew installer command matches the official install script entrypoint")
-        expectEqual(HomebrewCommandBuilder.shellProfilePath(homeDirectory: "/Users/test", shellPath: "/bin/zsh"),
-                    "/Users/test/.zprofile",
-                    "Homebrew shell setup uses zprofile for zsh")
-        expectEqual(HomebrewCommandBuilder.shellProfilePath(homeDirectory: "/Users/test", shellPath: "/bin/bash"),
-                    "/Users/test/.bash_profile",
-                    "Homebrew shell setup uses bash_profile for bash")
-        expectEqual(HomebrewCommandBuilder.shellProfilePath(homeDirectory: "/Users/test", shellPath: "/opt/homebrew/bin/fish"),
-                    "/Users/test/.config/fish/config.fish",
-                    "Homebrew shell setup uses the interactive shell config")
-        expectEqual(HomebrewCommandBuilder.shellEnvLine(brewPath: brewPath, shellPath: "/bin/zsh"),
-                    #"eval "$(/opt/homebrew/bin/brew shellenv)""#,
-                    "Homebrew shell setup line uses brew shellenv")
-        expectEqual(HomebrewCommandBuilder.shellEnvLine(brewPath: brewPath, shellPath: "/opt/homebrew/bin/fish"),
-                    "eval (/opt/homebrew/bin/brew shellenv fish)",
-                    "Homebrew shell setup line matches the interactive shell")
-        expectEqual(HomebrewAnalytics.url(kind: .formula).absoluteString,
-                    "https://formulae.brew.sh/api/analytics/install-on-request/homebrew-core/30d.json",
-                    "Homebrew formula popularity uses install-on-request analytics")
-        expectEqual(HomebrewAnalytics.url(kind: .cask).absoluteString,
-                    "https://formulae.brew.sh/api/analytics/cask-install/homebrew-cask/30d.json",
-                    "Homebrew cask popularity uses cask install analytics")
-        expectEqual(HomebrewAnalytics.compactCount(999), "999", "Homebrew popularity under 1K stays plain")
-        expectEqual(HomebrewAnalytics.compactCount(1_250), "1.2K", "Homebrew popularity compacts thousands")
-        expectEqual(HomebrewAnalytics.compactCount(1_200_000), "1.2M", "Homebrew popularity compacts millions")
-        let shellSetupCommand = HomebrewCommandBuilder.shellConfigCommand(brewPath: brewPath,
-                                                                          homeDirectory: "/Users/test",
-                                                                          shellPath: "/bin/zsh")
-        expect(shellSetupCommand.hasPrefix("/bin/sh -c ")
-                && shellSetupCommand.contains("PROFILE=/Users/test/.zprofile")
-                && shellSetupCommand.hasSuffix(#"; eval "$(/opt/homebrew/bin/brew shellenv)"; brew --version"#),
-               "Homebrew shell setup command targets the detected profile")
-        expect(shellSetupCommand.contains(#"grep -qxF "$LINE""#),
-               "Homebrew shell setup command avoids duplicate profile lines")
-        let alternateShellSetupCommand = HomebrewCommandBuilder.shellConfigCommand(
-            brewPath: brewPath,
-            homeDirectory: "/Users/test",
-            shellPath: "/opt/homebrew/bin/fish"
-        )
-        expect(alternateShellSetupCommand.hasPrefix("/bin/sh -c ")
-                && alternateShellSetupCommand.contains("/bin/mkdir -p /Users/test/.config/fish")
-                && alternateShellSetupCommand.hasSuffix("; eval (/opt/homebrew/bin/brew shellenv fish); brew --version"),
-               "Homebrew shell setup creates and activates the interactive shell config")
         expectClose(HomebrewProgressParser.progressFraction(in: "######## 42.5%") ?? -1,
                     0.425,
                     "Homebrew progress parser reads percentage output")
         expect(HomebrewProgressParser.phase(in: "==> Downloading https://example.com/file",
-                                            action: .install) == .downloading,
+                                            action: .upgrade) == .downloading,
                "Homebrew progress parser detects downloads")
         expect(HomebrewProgressParser.phase(in: "==> Installing Cask sample-tool",
-                                            action: .install) == .installing,
-               "Homebrew progress parser detects installs")
+                                            action: .upgrade) == .upgrading,
+               "an install line during an upgrade still reads as upgrading")
         expect(HomebrewProgressParser.phase(in: "==> Uninstalling Cask sample-tool",
                                             action: .uninstall) == .uninstalling,
                "Homebrew progress parser detects uninstalls")
@@ -11731,6 +11690,50 @@ struct MetricsTests {
                "Homebrew parser identifies a cask from a tap by its short token")
         expect(tappedCask?.displayName == "Tapped Tool",
                "Homebrew parser keeps the human-readable name for a cask from a tap")
+        // Casks and App Store apps have no dependency concept; a formula is a
+        // dependency only when no installed version was asked for by name.
+        expect(homebrewPackages.first(where: { $0.name == "sample-tool" })?.installedOnRequest == true,
+               "a cask is always something the person asked for")
+        expect(homebrewPackages.first(where: { $0.name == "sample-formula" })?.installedOnRequest == false,
+               "a formula with no installed_on_request flag reads as a dependency")
+        let requestJSON = """
+        {
+          "formulae": [
+            {
+              "name": "asked-for",
+              "versions": { "stable": "1.0" },
+              "installed": [{ "version": "1.0", "installed_on_request": true }]
+            },
+            {
+              "name": "mixed",
+              "versions": { "stable": "2.0" },
+              "installed": [{ "version": "1.0", "installed_on_request": false },
+                            { "version": "2.0", "installed_on_request": true }]
+            }
+          ],
+          "casks": []
+        }
+        """
+        let requestPackages = (try? HomebrewParser.parseInfoJSON(Data(requestJSON.utf8))) ?? []
+        expect(requestPackages.first(where: { $0.name == "asked-for" })?.installedOnRequest == true,
+               "installed_on_request marks a formula as the person's own")
+        expect(requestPackages.first(where: { $0.name == "mixed" })?.installedOnRequest == true,
+               "one version asked for by name makes the whole formula the person's own")
+
+        let masListing = """
+         409183694  Keynote  (14.5)
+        1661733229  Local Send  (1.18.2)
+        497799835 Xcode
+        not a listing line
+        """
+        let masPackages = MasParser.parseList(masListing)
+        expect(masPackages.map(\.displayName) == ["Keynote", "Local Send", "Xcode"],
+               "the App Store listing keeps names that carry spaces")
+        expect(masPackages.map(\.installedVersion) == ["14.5", "1.18.2", nil],
+               "the App Store listing reads the trailing version when there is one")
+        expect(masPackages.allSatisfy { $0.kind == .masApp && $0.installedOnRequest },
+               "App Store apps are all the person's own")
+
         let cleanCommandPackages = (try? HomebrewParser.parseInfoCommandOutput(homebrewJSON)) ?? []
         expect(cleanCommandPackages.count == 4,
                "Homebrew command output parser keeps clean JSON")
@@ -11819,36 +11822,6 @@ struct MetricsTests {
         expect(HomebrewPackageOrdering.updatesFirst(orderingPackages).map(\.name)
                == ["beta-tool", "gamma-tool", "alpha-tool", "delta-tool"],
                "Homebrew installed packages keep all pending updates first without reordering either group")
-        let searchPackages = HomebrewParser.parseSearchOutput("sample-formula\nbad token\nsample-filter\nsample-tool\n",
-                                                              kind: .formula,
-                                                              installed: homebrewPackages)
-        expect(searchPackages.map(\.name) == ["sample-formula", "sample-filter", "sample-tool"],
-               "Homebrew search parser keeps valid one-token results")
-        let analyticsJSON = """
-        {
-          "category": "formula_install_on_request",
-          "formulae": {
-            "sample-formula": [
-              { "formula": "sample-formula", "count": "21,557" },
-              { "formula": "sample-formula --HEAD", "count": "30" }
-            ],
-            "sample-filter": [
-              { "formula": "sample-filter", "count": "42,001" }
-            ]
-          }
-        }
-        """
-        let popularity = (try? HomebrewAnalytics.parse(Data(analyticsJSON.utf8), kind: .formula)) ?? [:]
-        expect(popularity["sample-formula"]?.count == 21_557,
-               "Homebrew analytics parser prefers the exact formula count")
-        expect(popularity["sample-filter"]?.rank == 1,
-               "Homebrew analytics parser ranks by count")
-        let rankedPackages = HomebrewAnalytics.enrichAndSort(searchPackages, popularity: popularity)
-        expect(rankedPackages.map(\.name) == ["sample-filter", "sample-formula", "sample-tool"],
-               "Homebrew search results sort by popularity first")
-        expect(rankedPackages.first?.popularity?.compactCount == "42K",
-               "Homebrew search results keep compact popularity")
-
         // MARK: Localization format contracts
 
         let localizedStrings: [(AppLanguage, Strings)] = [
@@ -12033,9 +12006,8 @@ struct MetricsTests {
         // character, which is the tell that it was never a decision.
         for (language, strings) in localizedStrings {
             let working = [strings.homebrewOperationPreparing, strings.homebrewOperationDownloading,
-                           strings.homebrewOperationInstalling, strings.homebrewOperationUninstalling,
-                           strings.homebrewOperationUpgrading, strings.homebrewOperationFinalizing,
-                           strings.homebrewOperationRefreshing]
+                           strings.homebrewOperationUninstalling, strings.homebrewOperationUpgrading,
+                           strings.homebrewOperationFinalizing, strings.homebrewOperationRefreshing]
             expect(working.allSatisfy { !$0.contains("...") && $0.contains("…") },
                    "work in progress ends with the ellipsis character in \(language.rawValue)")
         }
@@ -12077,10 +12049,8 @@ struct MetricsTests {
                    && !strings.keepAwakeRightClickToggle.contains("—")
                    && !strings.keepAwakeRightClickToggleCaption.contains("—"),
                    "\(prefix) right-click Keep Awake labels are present without em dash")
-            expectFormat(strings.homebrewConfirmInstallBodyFormat, ["@"], "\(prefix) Homebrew install format")
             expectFormat(strings.homebrewConfirmUninstallBodyFormat, ["@"], "\(prefix) Homebrew uninstall format")
             expectFormat(strings.homebrewConfirmUpgradeBodyFormat, ["@"], "\(prefix) Homebrew upgrade format")
-            expect(!strings.homebrewUpgradeAll.isEmpty, "\(prefix) Homebrew update all title is present")
             expect(!strings.homebrewUpdateHomebrew.isEmpty, "\(prefix) Homebrew update Homebrew title is present")
             expectFormat(strings.switcherIconRowMode, ["@"], "\(prefix) App Switcher icon-row title format")
             expect(!strings.switcherIconRowModeCaption.isEmpty, "\(prefix) App Switcher icon-row caption is present")
@@ -12262,20 +12232,13 @@ struct MetricsTests {
             expect(!strings.updateShowcaseMessage.isEmpty, "\(prefix) update showcase message is present")
             expect(!strings.updateShowcaseUnavailable.isEmpty, "\(prefix) update showcase fallback is present")
             expect(!strings.updateShowcaseRestart.isEmpty, "\(prefix) update showcase restart control is present")
-            expect(!strings.homebrewConfirmUpgradeAllTitle.isEmpty, "\(prefix) Homebrew update all confirmation title is present")
-            expect(!strings.homebrewConfirmUpgradeAllBody.isEmpty, "\(prefix) Homebrew update all confirmation body is present")
             expect(!strings.homebrewConfirmUpdateHomebrewTitle.isEmpty, "\(prefix) Homebrew update Homebrew confirmation title is present")
             expect(!strings.homebrewConfirmUpdateHomebrewBody.isEmpty, "\(prefix) Homebrew update Homebrew confirmation body is present")
-            expectFormat(strings.homebrewPopularityFormat, ["@", "@"], "\(prefix) Homebrew popularity format")
-            expectFormat(strings.homebrewOperationInstallFormat, ["@"], "\(prefix) Homebrew operation install format")
             expectFormat(strings.homebrewOperationUninstallFormat, ["@"], "\(prefix) Homebrew operation uninstall format")
             expectFormat(strings.homebrewOperationUpgradeFormat, ["@"], "\(prefix) Homebrew operation upgrade format")
-            expect(!strings.homebrewOperationUpgradeAll.isEmpty, "\(prefix) Homebrew operation update all is present")
             expect(!strings.homebrewOperationUpdateHomebrew.isEmpty, "\(prefix) Homebrew operation update Homebrew is present")
-            expectFormat(strings.homebrewOperationInstalledFormat, ["@"], "\(prefix) Homebrew operation installed format")
             expectFormat(strings.homebrewOperationUninstalledFormat, ["@"], "\(prefix) Homebrew operation uninstalled format")
             expectFormat(strings.homebrewOperationUpgradedFormat, ["@"], "\(prefix) Homebrew operation upgraded format")
-            expect(!strings.homebrewOperationUpgradedAll.isEmpty, "\(prefix) Homebrew operation updated all is present")
             expect(!strings.homebrewOperationUpdatedHomebrew.isEmpty, "\(prefix) Homebrew operation updated Homebrew is present")
             expectFormat(strings.homebrewOperationFailedFormat, ["@"], "\(prefix) Homebrew operation failed format")
             expectFormat(strings.homebrewOperationElapsedFormat, ["@"], "\(prefix) Homebrew operation elapsed format")
@@ -12287,12 +12250,8 @@ struct MetricsTests {
                 String(format: strings.shelfSelectedFormat, 2),
                 String(format: strings.powerAdapterMaxFormat, "30 W"),
                 String(format: mixerText.inputErrorFormat, "OSStatus -1"),
-                String(format: strings.homebrewConfirmInstallBodyFormat, "jq"),
                 String(format: strings.homebrewConfirmUninstallBodyFormat, "jq"),
-                String(format: strings.homebrewPopularityFormat, "1,234", "30"),
-                String(format: strings.homebrewOperationInstallFormat, "jq"),
                 String(format: strings.homebrewOperationUninstallFormat, "jq"),
-                String(format: strings.homebrewOperationInstalledFormat, "jq"),
                 String(format: strings.homebrewOperationUninstalledFormat, "jq"),
                 String(format: strings.homebrewOperationFailedFormat, "jq"),
                 String(format: strings.homebrewOperationElapsedFormat, "10s"),
@@ -19898,17 +19857,6 @@ struct MetricsTests {
                 && PreciseVolumeMediaKey.mute.rollerDirection == nil,
                "precise volume only remaps volume up and down media keys")
 
-        expect(HomebrewCommandBuilder.upgradeCasks(brewPath: "/opt/x/brew", tokens: [])?.arguments == nil
-                && HomebrewCommandBuilder.upgradeCasks(brewPath: "/opt/x/brew",
-                                                       tokens: ["; rm -rf /"])?.arguments == nil,
-               "an upgrade with nothing valid to name builds no command")
-        expect(HomebrewCommandBuilder.upgradeCasks(brewPath: "/opt/x/brew",
-                                                   tokens: ["chat", "--force", "editor"])?.arguments
-                == ["upgrade", "--cask", "--greedy", "chat", "editor"],
-               "only real package names reach the upgrade command")
-        expect(HomebrewCommandBuilder.outdatedCasksIncludingSelfUpdating(brewPath: "/opt/x/brew").arguments
-                == ["outdated", "--cask", "--greedy", "--json=v2"],
-               "the update check asks for the apps that carry their own updater too")
         let caskJSON = #"{"formulae":[],"casks":[{"token":"editor","name":["Editor"],"installed":"1.129.0","artifacts":[{"app":["Source.app",{"target":"Editor.app"}],"target":"/Applications/Editor.app"},{"zap":[]}]},{"token":"tapped-tool","full_token":"example/tap/tapped-tool","name":["Tapped Tool"],"installed":"1.0.0","artifacts":[{"app":["Tapped Tool.app"]}]}]}"#
         let parsedRecords = HomebrewParser.parseInstalledCaskRecords(caskJSON)
         expect(parsedRecords.count == 2 && parsedRecords[0].appFileNames == ["Editor.app"]
