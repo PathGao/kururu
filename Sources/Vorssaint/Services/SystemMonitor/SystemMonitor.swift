@@ -36,6 +36,7 @@ struct SystemSnapshot {
     /// The uptime timestamp of the last real battery sensor read. Cached values
     /// keep their original timestamp so they cannot age into a sustained alert.
     var batteryTemperatureReadAt: TimeInterval?
+    var cpuCoreUsage: [Double?] = [] // Logical processors; nil means no interval reading.
     var cpuUsage: Double?          // 0...1
     /// When `cpuUsage` was last really read, on the system uptime clock; the
     /// value is carried over failed reads, and the hot CPU alert has to tell
@@ -64,17 +65,10 @@ struct SystemSnapshot {
     // Disk
     var disk: DiskReading?
 
-    // History (oldest → newest) for the graphs
-    var cpuHistory: [Double] = []          // 0...1
-    var gpuHistory: [Double] = []          // 0...1
-    var memoryHistory: [Double] = []       // 0...1
-    var memoryAppHistory: [Double] = []    // 0...1
-    var netDownHistory: [Double] = []      // bytes/sec
-    var netUpHistory: [Double] = []        // bytes/sec
-    var diskReadHistory: [Double] = []     // bytes/sec
-    var diskWriteHistory: [Double] = []    // bytes/sec
-    var systemPowerHistory: [Double] = []  // watts
-    var batteryHistory: [Double] = []      // 0...1 charge level
+    var history = MonitorHistory()
+    var memoryHistory: [Double] { history.series[.memory, default: []].map(\.value) }
+    var memoryAppHistory: [Double] { history.series[.memoryApp, default: []].map(\.value) }
+
 }
 
 /// What parts of the menu panel are actually visible right now. The popover can
@@ -119,6 +113,7 @@ final class SystemMonitor: ObservableObject {
     private var menuPanelNeeds: SystemMonitorPanelNeeds = .none
     private var menuBarActive = false
     private var alertsActive = false
+    private var samplingGeneration = 0
     private var refreshInFlight = false
     private var pendingRefresh = false
     private var pendingRefreshSuppressesGPU = false
@@ -142,13 +137,14 @@ final class SystemMonitor: ObservableObject {
     private var cpuTemperaturePlatform: CPUTemperaturePlatform = .generic
 
     // Samplers
+    private let cpuCoreSampler = CPUCoreSampler()
     private let networkSampler = NetworkSampler()
     private let diskSampler = DiskSampler()
     private let peripheralBatterySampler = PeripheralBatterySampler()
     private var powerSampler: PowerSampler?
 
     // Running state
-    private var previousCPUTicks: (busy: UInt64, total: UInt64)?
+    private var previousCPUTicks: (busy: UInt64, total: UInt64, time: TimeInterval)?
     private var tickCount = 0
     /// Timer cadence in base ticks (GCD of the needed strides); 1 = every tick.
     private var scheduledWakeTicks = 1
@@ -173,32 +169,14 @@ final class SystemMonitor: ObservableObject {
     private var lastPeripheralBatteries: [PeripheralBatteryDevice] = []
     private var lastPublishedPlan: SamplingPlan?
     private var lastPublishedForeground: Bool?
+    private var lastAcquiredPlan: SamplingPlan?
+    private var lastAcquiredAt: TimeInterval = -.infinity
+    private var lastAcquiredSnapshot = SystemSnapshot()
 
-    // History
-    private let historyCapacity = 120
-    private var cpuHistory: MetricHistory
-    private var gpuHistory: MetricHistory
-    private var memoryHistory: MetricHistory
-    private var memoryAppHistory: MetricHistory
-    private var netDownHistory: MetricHistory
-    private var netUpHistory: MetricHistory
-    private var diskReadHistory: MetricHistory
-    private var diskWriteHistory: MetricHistory
-    private var powerHistory: MetricHistory
-    private var batteryHistory: MetricHistory
+    private var history = MonitorHistory()
     private var powerSourceRunLoopSource: CFRunLoopSource?
 
     private init() {
-        cpuHistory = MetricHistory(capacity: historyCapacity)
-        gpuHistory = MetricHistory(capacity: historyCapacity)
-        memoryHistory = MetricHistory(capacity: historyCapacity)
-        memoryAppHistory = MetricHistory(capacity: historyCapacity)
-        netDownHistory = MetricHistory(capacity: historyCapacity)
-        netUpHistory = MetricHistory(capacity: historyCapacity)
-        diskReadHistory = MetricHistory(capacity: historyCapacity)
-        diskWriteHistory = MetricHistory(capacity: historyCapacity)
-        powerHistory = MetricHistory(capacity: historyCapacity)
-        batteryHistory = MetricHistory(capacity: historyCapacity)
         if PowerSampler.hasInternalBattery {
             installPowerSourceObserver()
         }
@@ -343,10 +321,28 @@ final class SystemMonitor: ObservableObject {
     /// would sit on its placeholder until the next wake (up to 60 s), so a
     /// changed plan resamples right away.
     private func resyncIfPlanChanged() {
-        guard shouldSample() else { return }
         let plan = currentPlan(defaults: .standard)
-        guard plan != lastSyncedPlan else { return }
-        syncTimerCadence(plan: plan)
+        guard plan.any else {
+            stopTimerIfIdle()
+            samplingGeneration &+= 1
+            lastPublishedPlan = nil
+            lastPublishedForeground = nil
+            snapshot = SystemSnapshot()
+            queue.async { [weak self] in
+                guard let self else { return }
+                self.history.markGap()
+                self.lastAcquiredPlan = nil
+                self.lastAcquiredAt = -.infinity
+                self.previousCPUTicks = nil
+                self.lastCPUUsage = nil
+                self.lastCPUUsageReadAt = nil
+                self.cpuCoreSampler.resetBaseline()
+                self.networkSampler.resetBaseline()
+                self.diskSampler.resetBaseline()
+            }
+            return
+        }
+        ensureTimer()
         refresh()
     }
 
@@ -360,7 +356,7 @@ final class SystemMonitor: ObservableObject {
     func setInterval(seconds: Int) {
         runOnMain { [weak self] in
             guard let self else { return }
-            let clamped = max(1, seconds)
+            let clamped = Defaults.sanitizedMonitorInterval(seconds)
             guard clamped != intervalSeconds else { return }
             intervalSeconds = clamped
             // Strides are derived from the interval, so the wake cadence must
@@ -392,7 +388,7 @@ final class SystemMonitor: ObservableObject {
     /// independent surfaces cannot desync.
     private var fullMonitorVisible: Bool { panelClients > 0 }
 
-    private var shouldRun: Bool { fullMonitorVisible || menuPanelNeeds.any || menuBarActive || alertsActive }
+    private var shouldRun: Bool { currentPlan(defaults: .standard).any }
 
     private func shouldSample(defaults: UserDefaults = .standard) -> Bool {
         shouldRun && currentPlan(defaults: defaults).any
@@ -437,77 +433,18 @@ final class SystemMonitor: ObservableObject {
 
     private func currentPlan(defaults: UserDefaults) -> SamplingPlan {
         var plan = SamplingPlan()
-        let hasInternalBattery = PowerSampler.hasInternalBattery
-        let panelNeedsSystem = fullMonitorVisible || menuPanelNeeds.system
-        let panelNeedsNetwork = fullMonitorVisible || menuPanelNeeds.network
-        let panelNeedsDisk = fullMonitorVisible || menuPanelNeeds.disk
-        let panelNeedsPower = fullMonitorVisible || menuPanelNeeds.power
-
-        let panelCPU = (panelNeedsSystem && defaults.bool(forKey: DefaultsKey.monitorSysCPU)) || menuPanelNeeds.cpu
-        let panelGPU = (panelNeedsSystem && defaults.bool(forKey: DefaultsKey.monitorSysGPU)) || menuPanelNeeds.gpu
-        let panelMemory = (panelNeedsSystem && defaults.bool(forKey: DefaultsKey.monitorSysMemory)) || menuPanelNeeds.memory
-        let panelBattery = hasInternalBattery
-            && ((panelNeedsPower && defaults.bool(forKey: DefaultsKey.monitorSysBattery)) || menuPanelNeeds.battery)
-        let panelTemps = panelNeedsSystem && defaults.bool(forKey: DefaultsKey.monitorSysTemps)
-        let alertCPU = defaults.bool(forKey: DefaultsKey.monitorAlertCPU)
-        let alertCPUTemperature = defaults.bool(forKey: DefaultsKey.monitorAlertCPUTemperature)
-        let alertBatteryTemperature = hasInternalBattery
-            && defaults.bool(forKey: DefaultsKey.monitorAlertBatteryTemperature)
-        let alertMemory = defaults.bool(forKey: DefaultsKey.monitorAlertMemory)
-        let alertDisk = defaults.bool(forKey: DefaultsKey.monitorAlertDisk)
-        let alertBattery = hasInternalBattery && defaults.bool(forKey: DefaultsKey.monitorAlertBattery)
-
-        plan.needCPU = panelCPU || defaults.bool(forKey: DefaultsKey.menuBarCPU) || alertCPU
-        plan.needMemory = panelMemory || defaults.bool(forKey: DefaultsKey.menuBarMemory) || alertMemory
-        plan.needNetwork = panelNeedsNetwork || defaults.bool(forKey: DefaultsKey.menuBarNetwork)
-        plan.needDisk = panelNeedsDisk
-            || defaults.bool(forKey: DefaultsKey.menuBarDiskUsage)
-            || defaults.bool(forKey: DefaultsKey.menuBarDiskActivity)
-            || alertDisk
-        plan.needPower = panelNeedsPower || panelBattery
-            || defaults.bool(forKey: DefaultsKey.menuBarPower)
-            || (hasInternalBattery && defaults.bool(forKey: DefaultsKey.menuBarBattery))
-            || (hasInternalBattery && defaults.bool(forKey: DefaultsKey.menuBarBatteryTime))
-            || alertBattery
-        plan.needPeripheralBattery = menuPanelNeeds.peripheralBattery
-            || defaults.bool(forKey: DefaultsKey.menuBarPeripheralBattery)
-        plan.needGPUUsage = panelGPU || defaults.bool(forKey: DefaultsKey.menuBarGPU)
-        plan.needCPUTemperature = panelTemps || menuPanelNeeds.cpuTemperature ||
-            defaults.bool(forKey: DefaultsKey.menuBarCPUTemperature) || alertCPUTemperature
-        plan.needGPUTemperature = panelTemps || menuPanelNeeds.gpuTemperature ||
-            defaults.bool(forKey: DefaultsKey.menuBarGPUTemperature)
-        plan.needBatteryTemperature = hasInternalBattery && (
-            (panelNeedsPower && defaults.bool(forKey: DefaultsKey.monitorPwrTemperature))
-                || menuPanelNeeds.batteryTemperature
-                || defaults.bool(forKey: DefaultsKey.menuBarBatteryTemperature) || alertBatteryTemperature)
-        if AppFeature.fanControl.isAvailable(in: defaults),
-           Self.fanTelemetryAvailable {
-            plan.needFanSpeed = fullMonitorVisible || menuPanelNeeds.fanSpeed
-                || defaults.bool(forKey: DefaultsKey.menuBarFanSpeed)
-        }
-
-        // The hub gates whole metric families: an unavailable metric never
-        // samples, no matter what is pinned, shown or alerting.
-        func available(_ feature: AppFeature) -> Bool {
-            feature.isAvailable(in: defaults)
-        }
-        if !available(.monitorCPU) {
-            plan.needCPU = false
-            plan.needCPUTemperature = false
-        }
-        if !available(.monitorGPU) {
-            plan.needGPUUsage = false
-            plan.needGPUTemperature = false
-        }
-        if !available(.monitorMemory) { plan.needMemory = false }
-        if !available(.monitorNetwork) { plan.needNetwork = false }
-        if !available(.monitorDisk) { plan.needDisk = false }
-        if !available(.monitorPower) {
-            plan.needPower = false
-            plan.needPeripheralBattery = false
-            plan.needBatteryTemperature = false
-        }
-        if !available(.fanControl) { plan.needFanSpeed = false }
+        // Availability controls collection. Panel layout and chart visibility do not.
+        plan.needCPU = AppFeature.monitorCPU.isAvailable(in: defaults)
+        plan.needGPUUsage = AppFeature.monitorGPU.isAvailable(in: defaults)
+        plan.needMemory = AppFeature.monitorMemory.isAvailable(in: defaults)
+        plan.needNetwork = AppFeature.monitorNetwork.isAvailable(in: defaults)
+        plan.needDisk = AppFeature.monitorDisk.isAvailable(in: defaults)
+        plan.needPower = AppFeature.monitorPower.isAvailable(in: defaults)
+        plan.needCPUTemperature = plan.needCPU
+        plan.needGPUTemperature = plan.needGPUUsage
+        plan.needBatteryTemperature = plan.needPower && PowerSampler.hasInternalBattery
+        plan.needPeripheralBattery = plan.needPower
+        plan.needFanSpeed = AppFeature.fanControl.isAvailable(in: defaults) && Self.fanTelemetryAvailable
         return plan
     }
 
@@ -574,6 +511,29 @@ final class SystemMonitor: ObservableObject {
 
     // MARK: - Refresh
 
+    private func publishRefresh(_ next: SystemSnapshot, plan: SamplingPlan, foreground: Bool, sampled: Bool, generation: Int) {
+        DispatchQueue.main.async {
+            // Skip pure carry-over publishes (nothing sampled, same plan,
+            // same mode): the values are identical to the ones on screen.
+            let planChanged = plan != self.lastPublishedPlan
+                || foreground != self.lastPublishedForeground
+            if (sampled || planChanged), generation == self.samplingGeneration,
+               plan == self.currentPlan(defaults: .standard) {
+                self.snapshot = next
+                self.lastPublishedPlan = plan
+                self.lastPublishedForeground = foreground
+            }
+            self.refreshInFlight = false
+            let shouldRunPendingRefresh = self.pendingRefresh
+            let suppressGPU = self.pendingRefreshSuppressesGPU
+            self.pendingRefresh = false
+            self.pendingRefreshSuppressesGPU = false
+            if shouldRunPendingRefresh, self.shouldRun {
+                self.refresh(suppressImmediateGPU: suppressGPU)
+            }
+        }
+    }
+
     private func refresh(suppressImmediateGPU: Bool = false) {
         if !Thread.isMainThread {
             DispatchQueue.main.async { [weak self] in self?.refresh(suppressImmediateGPU: suppressImmediateGPU) }
@@ -592,8 +552,10 @@ final class SystemMonitor: ObservableObject {
         }
         syncTimerCadence(plan: plan)
         refreshInFlight = true
+        let generation = samplingGeneration
         let suppressGPUReadsUntil = self.suppressGPUReadsUntil
         let foregroundSampling = fullMonitorVisible || menuPanelNeeds.any
+        let needsCPUCoreUsage = plan.needCPU
         let intervalSeconds = self.intervalSeconds
         // Ticks advance by the timer's cadence so `tick % stride` keeps
         // measuring base intervals; mutated on main only, read by the queue
@@ -607,7 +569,18 @@ final class SystemMonitor: ObservableObject {
                                  needFanSpeed: plan.needFanSpeed)
             let now = ProcessInfo.processInfo.systemUptime
 
+            if self.lastAcquiredPlan == plan, now - self.lastAcquiredAt < Double(intervalSeconds) * 0.9 {
+                var cached = self.lastAcquiredSnapshot
+                cached.history = foregroundSampling ? self.history : MonitorHistory()
+                self.publishRefresh(cached, plan: plan, foreground: foregroundSampling, sampled: false, generation: generation)
+                return
+            }
+
             var next = SystemSnapshot()
+            let recordedAt = Date().timeIntervalSince1970
+            func record(_ metric: MonitorMetric, _ value: Double?) {
+                self.history.record(metric, value: value, at: recordedAt, interval: Double(intervalSeconds))
+            }
 
             // Publishing a snapshot redraws the menu bar (attributed-string
             // rebuild + width measurement); on ticks where every needed metric
@@ -624,17 +597,23 @@ final class SystemMonitor: ObservableObject {
             }
 
             if plan.needCPU {
-                if take(.cpu),
-                   let cpu = self.readCPUUsage() {
+                let readsCPU = take(.cpu)
+                if readsCPU,
+                   let cpu = self.readCPUUsage(now: now) {
                     self.lastCPUUsage = cpu
                     self.lastCPUUsageReadAt = now
                     self.missedCPUUsageSamples = 0
-                    self.cpuHistory.push(cpu)
+                    record(.cpu, cpu)
                 } else if self.missedCPUUsageSamples < 3 {
+                    record(.cpu, nil)
                     self.missedCPUUsageSamples += 1
                 } else {
                     self.lastCPUUsage = nil
                     self.lastCPUUsageReadAt = nil
+                }
+                if readsCPU, needsCPUCoreUsage {
+                    next.cpuCoreUsage = self.cpuCoreSampler.sample(now: now,
+                                                                  maxInterval: 12.5)
                 }
                 next.cpuUsage = self.lastCPUUsage
                 next.cpuUsageReadAt = self.lastCPUUsageReadAt
@@ -651,8 +630,8 @@ final class SystemMonitor: ObservableObject {
                     next.memorySwapUsed = memory.swapUsed
                     next.memoryPressure = memory.pressure
                     if isFresh, memory.total > 0 {
-                        self.memoryHistory.push(Double(memory.used) / Double(memory.total))
-                        self.memoryAppHistory.push(Double(memory.appUsed) / Double(memory.total))
+                        record(.memory, Double(memory.used) / Double(memory.total))
+                        record(.memoryApp, Double(memory.appUsed) / Double(memory.total))
                     }
                 }
             }
@@ -664,8 +643,8 @@ final class SystemMonitor: ObservableObject {
                     next.netUpBytesPerSec = network.upBytesPerSec
                     next.netTotalDown = network.totalDown
                     next.netTotalUp = network.totalUp
-                    if let down = network.downBytesPerSec { self.netDownHistory.push(down) }
-                    if let up = network.upBytesPerSec { self.netUpHistory.push(up) }
+                    record(.networkDown, network.downBytesPerSec)
+                    record(.networkUp, network.upBytesPerSec)
                 }
             }
 
@@ -678,10 +657,10 @@ final class SystemMonitor: ObservableObject {
                     let readValues = ioDevices.compactMap(\.readBytesPerSec)
                     let writeValues = ioDevices.compactMap(\.writeBytesPerSec)
                     if !readValues.isEmpty {
-                        self.diskReadHistory.push(readValues.reduce(0, +))
+                        record(.diskRead, readValues.reduce(0, +))
                     }
                     if !writeValues.isEmpty {
-                        self.diskWriteHistory.push(writeValues.reduce(0, +))
+                        record(.diskWrite, writeValues.reduce(0, +))
                     }
                 } else {
                     next.disk = self.lastDiskReading
@@ -693,8 +672,8 @@ final class SystemMonitor: ObservableObject {
                     let power = powerSampler.sample()
                     self.lastPowerReading = power
                     next.power = power
-                    if let watts = power.systemWatts { self.powerHistory.push(watts) }
-                    if let charge = power.chargePercent { self.batteryHistory.push(Double(charge) / 100.0) }
+                    record(.power, power.systemWatts)
+                    record(.battery, power.chargePercent.map { Double($0) / 100 })
                 } else {
                     next.power = self.lastPowerReading
                 }
@@ -718,8 +697,9 @@ final class SystemMonitor: ObservableObject {
                         self.lastGPUUsage = MetricFormat.stabilizedGPUUsage(previous: self.lastGPUUsage,
                                                                             current: rawGPU)
                         self.missedGPUUsageSamples = 0
-                        if let gpu = self.lastGPUUsage { self.gpuHistory.push(gpu) }
+                        record(.gpu, self.lastGPUUsage)
                     } else if self.missedGPUUsageSamples < 3 {
+                        record(.gpu, nil)
                         self.missedGPUUsageSamples += 1
                     } else {
                         self.lastGPUUsage = nil
@@ -749,6 +729,7 @@ final class SystemMonitor: ObservableObject {
                 // The cache timestamp only moves on a real read, which is
                 // exactly what marks a value as fresh for the alert.
                 next.cpuTemperatureReadAt = self.cpuTemperatureCache?.updatedAt
+                record(.cpuTemperature, self.cpuTemperatureCache?.updatedAt == now ? next.cpuTemperature : nil)
             }
             if plan.needGPUTemperature {
                 if take(.temperature) {
@@ -762,6 +743,9 @@ final class SystemMonitor: ObservableObject {
                     next.gpuTemperature = self.gpuTemperatureCache?.value
                 }
             }
+            if plan.needGPUTemperature {
+                record(.gpuTemperature, self.gpuTemperatureCache?.updatedAt == now ? next.gpuTemperature : nil)
+            }
             if plan.needBatteryTemperature {
                 if take(.temperature) {
                     next.batteryTemperature = TemperatureSensorSelector.stabilizedTemperature(
@@ -773,13 +757,16 @@ final class SystemMonitor: ObservableObject {
                     next.batteryTemperature = self.batteryTemperatureCache?.value
                 }
                 next.batteryTemperatureReadAt = self.batteryTemperatureCache?.updatedAt
+                record(.batteryTemperature, self.batteryTemperatureCache?.updatedAt == now ? next.batteryTemperature : nil)
             }
             if plan.needFanSpeed {
                 if take(.fanSpeed) {
                     if let speeds = self.readFanSpeeds() {
+                        record(.fan, speeds.max())
                         self.lastFanSpeeds = speeds
                         self.missedFanSpeedSamples = 0
                     } else if self.missedFanSpeedSamples < 3 {
+                        record(.fan, nil)
                         self.missedFanSpeedSamples += 1
                     } else {
                         self.lastFanSpeeds = []
@@ -788,46 +775,13 @@ final class SystemMonitor: ObservableObject {
                 next.fanSpeeds = self.lastFanSpeeds
             }
 
-            next.cpuHistory = plan.needCPU
-                ? self.cpuHistory.publishedValues(whileVisible: foregroundSampling) : []
-            next.gpuHistory = plan.needGPUUsage
-                ? self.gpuHistory.publishedValues(whileVisible: foregroundSampling) : []
-            next.memoryHistory = plan.needMemory
-                ? self.memoryHistory.publishedValues(whileVisible: foregroundSampling) : []
-            next.memoryAppHistory = plan.needMemory
-                ? self.memoryAppHistory.publishedValues(whileVisible: foregroundSampling) : []
-            next.netDownHistory = plan.needNetwork
-                ? self.netDownHistory.publishedValues(whileVisible: foregroundSampling) : []
-            next.netUpHistory = plan.needNetwork
-                ? self.netUpHistory.publishedValues(whileVisible: foregroundSampling) : []
-            next.diskReadHistory = plan.needDisk
-                ? self.diskReadHistory.publishedValues(whileVisible: foregroundSampling) : []
-            next.diskWriteHistory = plan.needDisk
-                ? self.diskWriteHistory.publishedValues(whileVisible: foregroundSampling) : []
-            next.systemPowerHistory = plan.needPower
-                ? self.powerHistory.publishedValues(whileVisible: foregroundSampling) : []
-            next.batteryHistory = plan.needPower
-                ? self.batteryHistory.publishedValues(whileVisible: foregroundSampling) : []
+            if foregroundSampling { next.history = self.history }
 
-            DispatchQueue.main.async {
-                // Skip pure carry-over publishes (nothing sampled, same plan,
-                // same mode): the values are identical to the ones on screen.
-                let planChanged = plan != self.lastPublishedPlan
-                    || foregroundSampling != self.lastPublishedForeground
-                if sampledAnything || planChanged {
-                    self.snapshot = next
-                    self.lastPublishedPlan = plan
-                    self.lastPublishedForeground = foregroundSampling
-                }
-                self.refreshInFlight = false
-                let shouldRunPendingRefresh = self.pendingRefresh
-                let suppressGPU = self.pendingRefreshSuppressesGPU
-                self.pendingRefresh = false
-                self.pendingRefreshSuppressesGPU = false
-                if shouldRunPendingRefresh, self.shouldRun {
-                    self.refresh(suppressImmediateGPU: suppressGPU)
-                }
-            }
+            self.lastAcquiredAt = now
+            self.lastAcquiredPlan = plan
+            self.lastAcquiredSnapshot = next
+            self.publishRefresh(next, plan: plan, foreground: foregroundSampling, sampled: sampledAnything, generation: generation)
+
         }
     }
 
@@ -982,7 +936,7 @@ final class SystemMonitor: ObservableObject {
 
     /// Aggregated load from HOST_CPU_LOAD_INFO; usage is the busy-tick share
     /// since the previous refresh.
-    private func readCPUUsage() -> Double? {
+    private func readCPUUsage(now: TimeInterval) -> Double? {
         var info = host_cpu_load_info()
         var count = mach_msg_type_number_t(MemoryLayout<host_cpu_load_info>.stride / MemoryLayout<integer_t>.stride)
         // mach_host_self() returns a send right the caller owns; release it or each
@@ -1003,8 +957,9 @@ final class SystemMonitor: ObservableObject {
         let busy = user + system + nice
         let total = busy + idle
 
-        defer { previousCPUTicks = (busy, total) }
-        guard let previous = previousCPUTicks, total > previous.total else { return nil }
+        defer { previousCPUTicks = (busy, total, now) }
+        guard let previous = previousCPUTicks, total > previous.total, busy >= previous.busy,
+              now - previous.time <= 12.5 else { return nil }
         return Double(busy - previous.busy) / Double(total - previous.total)
     }
 

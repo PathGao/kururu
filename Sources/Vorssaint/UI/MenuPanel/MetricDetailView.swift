@@ -124,7 +124,7 @@ struct ActivityMonitorButton: View {
             NSWorkspace.shared.open(url)
         } label: {
             Image(systemName: "arrow.up.forward.app")
-                .font(.system(size: 10, weight: .medium))
+                .font(PanelTypography.meta)
                 .foregroundStyle(.secondary)
                 .frame(width: 18, height: 18)
                 .background(Circle().fill(Color.primary.opacity(isHovered ? 0.1 : 0)))
@@ -154,8 +154,9 @@ struct MetricDetailView: View {
     private let processLimit = 15
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 12) {
             summaryCard
+            MonitorTrendView(metrics: historyMetrics)
             detailCard
             if kind == .network {
                 speedTestCard
@@ -187,104 +188,72 @@ struct MetricDetailView: View {
         }
     }
 
+    private var historyMetrics: [MonitorMetric] {
+        switch kind {
+        case .cpu: return [.cpu, .cpuTemperature]
+        case .gpu: return [.gpu, .gpuTemperature]
+        case .memory: return [.memory, .memoryApp]
+        case .network: return [.networkDown, .networkUp]
+        case .disk: return [.diskRead, .diskWrite]
+        case .battery: return [.battery, .batteryTemperature]
+        case .power: return [.power, .battery]
+        case .fan: return [.fan]
+        }
+    }
+
     private var summaryCard: some View {
-        VStack(alignment: .leading, spacing: 9) {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Image(systemName: kind.symbolName)
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(summaryColor)
-                    .frame(width: 18)
-                VStack(alignment: .leading, spacing: 1) {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top, spacing: 14) {
+                VStack(alignment: .leading, spacing: 6) {
                     Text(primaryValue)
-                        .font(.system(size: 28, weight: .semibold, design: .rounded))
+                        .font(PanelTypography.metric)
                         .monospacedDigit()
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                     Text(secondaryValue)
-                        .font(.system(size: 10.5, weight: .medium))
+                        .font(PanelTypography.title)
                         .foregroundStyle(.secondary)
-                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer(minLength: 0)
+                MetricSymbol(name: kind.symbolName)
             }
-            graph
+            switch kind {
+            case .memory, .disk, .battery:
+                MetricScale(fraction: summaryFraction)
+            case .cpu:
+                CPUCoreMatrix(usage: monitor.snapshot.cpuCoreUsage)
+            case .gpu, .network, .power, .fan:
+                EmptyView()
+            }
         }
+        .padding(4)
         .panelCard()
     }
 
-    @ViewBuilder
-    private var graph: some View {
+    private var summaryFraction: Double? {
+        let snapshot = monitor.snapshot
         switch kind {
-        case .cpu:
-            historyGraph(monitor.snapshot.cpuHistory, color: summaryColor, maxValue: 1)
-        case .gpu:
-            historyGraph(monitor.snapshot.gpuHistory, color: summaryColor, maxValue: 1)
+        case .cpu: return snapshot.cpuUsage
+        case .gpu: return snapshot.gpuUsage
         case .memory:
-            historyGraph(MonitorMemoryMetric.current.history(in: monitor.snapshot),
-                         color: summaryColor,
-                         maxValue: 1)
-        case .network:
-            networkGraph
-        case .disk:
-            diskGraph
+            guard let used = MonitorMemoryMetric.current.value(in: snapshot),
+                  let total = snapshot.memoryTotal, total > 0 else { return nil }
+            return Double(used) / Double(total)
+        case .disk: return primaryDisk(from: snapshot.disk)?.usedFraction
         case .battery:
-            if PowerSampler.hasInternalBattery {
-                historyGraph(monitor.snapshot.batteryHistory, color: summaryColor, maxValue: 1)
-            }
-        case .power:
-            historyGraph(monitor.snapshot.systemPowerHistory, color: summaryColor)
-        case .fan:
-            EmptyView()
-        }
-    }
-
-    @ViewBuilder
-    private func historyGraph(_ values: [Double], color: Color, maxValue: Double? = nil) -> some View {
-        if values.count >= 2 {
-            Sparkline(values: values,
-                      color: color,
-                      maxValue: maxValue,
-                      showsZeroBaseline: true)
-                .frame(height: 38)
-        }
-    }
-
-    @ViewBuilder
-    private var networkGraph: some View {
-        let down = monitor.snapshot.netDownHistory
-        let up = monitor.snapshot.netUpHistory
-        if down.count >= 2 || up.count >= 2 {
-            let peak = max(down.max() ?? 0, up.max() ?? 0, 1)
-            ZStack {
-                Sparkline(values: down, color: .accentColor, maxValue: peak, showsZeroBaseline: true)
-                Sparkline(values: up,
-                          color: PanelMetricColor.green(for: colorScheme),
-                          maxValue: peak,
-                          fillOpacity: 0.08)
-            }
-            .frame(height: 38)
-        }
-    }
-
-    @ViewBuilder
-    private var diskGraph: some View {
-        let read = monitor.snapshot.diskReadHistory
-        let write = monitor.snapshot.diskWriteHistory
-        if read.count >= 2 || write.count >= 2 {
-            let peak = max(read.max() ?? 0, write.max() ?? 0, 1)
-            ZStack {
-                Sparkline(values: read, color: summaryColor, maxValue: peak, showsZeroBaseline: true)
-                Sparkline(values: write,
-                          color: PanelMetricColor.pink(for: colorScheme),
-                          maxValue: peak,
-                          fillOpacity: 0.08)
-            }
-            .frame(height: 38)
+            let percent = PowerSampler.hasInternalBattery
+                ? snapshot.power?.chargePercent
+                : PeripheralBatterySupport.sorted(snapshot.peripheralBatteries).first?.percent
+            return percent.map { Double($0) / 100 }
+        case .network, .power, .fan: return nil
         }
     }
 
     private var detailCard: some View {
         VStack(alignment: .leading, spacing: 7) {
             ForEach(detailRows) { row in
-                detailRow(row)
+                detailRow(row).padding(.vertical, 5)
             }
         }
         .panelCard()
@@ -318,11 +287,11 @@ struct MetricDetailView: View {
             }
             if case .failed = speed.phase {
                 Text(l10n.s.speedTestFailed)
-                    .font(.system(size: 10))
+                    .font(PanelTypography.meta)
                     .foregroundStyle(PanelMetricColor.orange(for: colorScheme))
             } else if let latency = speed.latencyMs {
                 Text("\(l10n.s.speedTestLatency): \(Int(latency.rounded())) ms")
-                    .font(.system(size: 10))
+                    .font(PanelTypography.meta)
                     .foregroundStyle(.tertiary)
             }
         }
@@ -333,14 +302,14 @@ struct MetricDetailView: View {
         VStack(alignment: .leading, spacing: 7) {
             HStack(spacing: 6) {
                 Text(processTitle)
-                    .font(.system(size: 10, weight: .medium))
+                    .font(PanelTypography.meta)
                     .foregroundStyle(.tertiary)
                 Spacer(minLength: 0)
                 ActivityMonitorButton()
             }
             if processRows.isEmpty {
                 Text(processRowsLoading ? l10n.s.breakdownMeasuring : emptyProcessText)
-                    .font(.system(size: 10.5))
+                    .font(PanelTypography.meta)
                     .foregroundStyle(.tertiary)
             } else {
                 ForEach(processRows) { row in
@@ -522,25 +491,6 @@ struct MetricDetailView: View {
         }
     }
 
-    private var summaryColor: Color {
-        switch kind {
-        case .cpu, .network:
-            return .accentColor
-        case .gpu:
-            return PanelMetricColor.cyan(for: colorScheme)
-        case .memory:
-            return PanelMetricColor.mint(for: colorScheme)
-        case .disk:
-            return PanelMetricColor.yellow(for: colorScheme)
-        case .battery:
-            return PanelMetricColor.green(for: colorScheme)
-        case .power:
-            return PanelMetricColor.orange(for: colorScheme)
-        case .fan:
-            return PanelMetricColor.cyan(for: colorScheme)
-        }
-    }
-
     private var emptyProcessText: String {
         switch kind {
         case .power: return l10n.s.energyAppsIdle
@@ -562,10 +512,10 @@ struct MetricDetailView: View {
         if row.wrapsValue {
             VStack(alignment: .leading, spacing: 2) {
                 Text(row.title)
-                    .font(.system(size: 10.5))
+                    .font(PanelTypography.label)
                     .foregroundStyle(.secondary)
                 Text(row.value)
-                    .font(.system(size: 11, weight: .medium))
+                    .font(PanelTypography.body)
                     .foregroundStyle(.primary)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
@@ -573,7 +523,7 @@ struct MetricDetailView: View {
         } else {
             HStack(spacing: 8) {
                 Text(row.title)
-                    .font(.system(size: 10.5))
+                    .font(PanelTypography.label)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
@@ -582,7 +532,7 @@ struct MetricDetailView: View {
                     PressureIndicator(pressure: monitor.snapshot.memoryPressure)
                 } else {
                     Text(row.value)
-                        .font(.system(size: 11, weight: .medium))
+                        .font(PanelTypography.metric)
                         .monospacedDigit()
                         .foregroundStyle(.primary)
                         .lineLimit(1)

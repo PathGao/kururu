@@ -12,6 +12,7 @@ struct MonitorSettings: View {
     @ObservedObject private var l10n = L10n.shared
     @ObservedObject private var features = FeatureRuntime.shared
 
+    @AppStorage("monitorHistoryMinutes") private var historyMinutes = 1
     @AppStorage(DefaultsKey.monitorInterval) private var interval = 2
     @AppStorage(DefaultsKey.temperatureUnit) private var temperatureUnit = TemperatureUnit.celsius.rawValue
     @AppStorage(DefaultsKey.monitorMemoryMetric) private var memoryMetric = "used"
@@ -19,13 +20,20 @@ struct MonitorSettings: View {
 
     var body: some View {
         Form {
-            FeatureSwitchSection(unit: .monitor)
+            Section {
+                MonitorPerformanceStatus()
+            }
+            .listRowBackground(Color.clear)
+            FeatureSwitchSection(unit: .monitor, usesGrid: true)
+                .listRowBackground(Color.clear)
             Section {
                 Picker(l10n.s.monitorIntervalLabel, selection: $interval) {
-                    Text(l10n.s.monitorInterval1).tag(1)
-                    Text(l10n.s.monitorInterval2).tag(2)
-                    Text(l10n.s.monitorInterval5).tag(5)
+                    ForEach(1...5, id: \.self) { seconds in
+                        Text(intervalTitle(seconds)).tag(seconds)
+                    }
                 }
+                Text(MonitorHistoryStrings.text(l10n.language).intervalHint)
+                    .font(.caption).foregroundStyle(.secondary)
                 Picker(l10n.s.temperatures, selection: $temperatureUnit) {
                     Text("°C").tag(TemperatureUnit.celsius.rawValue)
                     Text("°F").tag(TemperatureUnit.fahrenheit.rawValue)
@@ -37,6 +45,23 @@ struct MonitorSettings: View {
                         Text(l10n.s.memoryMetricApp).tag("app")
                     }
                     .pickerStyle(.segmented)
+                }
+            }
+            Section(MonitorHistoryStrings.text(l10n.language).history) {
+                Picker(MonitorHistoryStrings.text(l10n.language).range, selection: $historyMinutes) {
+                    ForEach(1...5, id: \.self) { value in
+                        Text("\(value) \(MonitorHistoryStrings.text(l10n.language).minutes)").tag(value)
+                    }
+                }
+                MonitorGraphToggle(title: l10n.s.cpuLabel, key: DefaultsKey.monitorGraphCPU)
+                MonitorGraphToggle(title: l10n.s.gpuLabel, key: DefaultsKey.monitorGraphGPU)
+                MonitorGraphToggle(title: l10n.s.memorySection, key: DefaultsKey.monitorGraphMemory)
+                MonitorGraphToggle(title: l10n.s.networkSection, key: DefaultsKey.monitorGraphNetwork)
+                MonitorGraphToggle(title: AppFeature.monitorDisk.name(l10n.s, language: l10n.language), key: DefaultsKey.monitorGraphDisk)
+                MonitorGraphToggle(title: AppFeature.monitorPower.name(l10n.s, language: l10n.language), key: DefaultsKey.monitorGraphPower)
+                MonitorGraphToggle(title: l10n.s.batteryLabel, key: DefaultsKey.monitorGraphBattery)
+                if AppFeature.fanControl.isAvailable {
+                    MonitorGraphToggle(title: FeatureStrings.fanControl(l10n.language).menuBarTitle, key: "monitorGraphFan")
                 }
             }
             monitorAlertsSection
@@ -73,6 +98,15 @@ struct MonitorSettings: View {
         }
     }
 
+    private func intervalTitle(_ seconds: Int) -> String {
+        switch seconds {
+        case 1: return l10n.s.monitorInterval1
+        case 2: return l10n.s.monitorInterval2
+        case 5: return l10n.s.monitorInterval5
+        default: return "\(seconds) \(MonitorHistoryStrings.text(l10n.language).seconds)"
+        }
+    }
+
     private var monitorAlertsSection: some View {
         let text = FeatureStrings.monitorAlerts(l10n.language)
         return Section(text.section) {
@@ -88,3 +122,15 @@ struct MonitorSettings: View {
 
 
 
+
+private struct MonitorGraphToggle: View {
+    let title: String
+    @AppStorage private var visible: Bool
+
+    init(title: String, key: String) {
+        self.title = title
+        _visible = AppStorage(wrappedValue: true, key)
+    }
+
+    var body: some View { Toggle(title, isOn: $visible) }
+}

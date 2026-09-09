@@ -51,8 +51,20 @@ struct SettingsView: View {
         )
 
         NavigationSplitView {
-            sidebar(searchResults: searchResults)
-                .navigationSplitViewColumnWidth(min: 198, ideal: 210, max: 240)
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 12) {
+                    BrandMark(width: 40, tint: .primary)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(AppInfo.name).font(PanelTypography.metric)
+                        Text(l10n.s.panelSettings).font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 24)
+                .padding(.bottom, 12)
+                sidebar(searchResults: searchResults)
+            }
+            .navigationSplitViewColumnWidth(min: 210, ideal: 230, max: 260)
         } detail: {
             // NavigationSplitView's detail slot sometimes queries its content
             // for an unconstrained ideal size (settling the divider, or on a
@@ -64,9 +76,38 @@ struct SettingsView: View {
             // real space it was actually given for normal layout, and ~zero
             // when asked for an unconstrained ideal size, breaking the chain.
             GeometryReader { geometry in
-                detail
-                    .settingsSectionFocus(for: router.page)
-                    .frame(width: geometry.size.width, height: geometry.size.height, alignment: .top)
+                VStack(alignment: .leading, spacing: 0) {
+                    HStack(alignment: .center, spacing: 20) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            if let group = sidebarSections.first(where: { $0.items.contains { $0.page == router.page } }),
+                               !group.title.isEmpty {
+                                Text(group.title)
+                                    .font(.system(size: 11, weight: .medium))
+                                    .foregroundStyle(.secondary)
+                            }
+                            Text(router.page.title(l10n.s, language: l10n.language))
+                                .font(PanelTypography.pageTitle)
+                                .accessibilityAddTraits(.isHeader)
+                        }
+                        Spacer(minLength: 0)
+                        if let item = sidebarSections.flatMap(\.items).first(where: { $0.page == router.page }) {
+                            Image(systemName: item.icon)
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundStyle(.secondary)
+                                .frame(width: 32, height: 32)
+                                .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 8))
+                                .accessibilityHidden(true)
+                        }
+                    }
+                    .padding(24)
+                    detail
+                        .font(PanelTypography.body)
+                        .environment(\.defaultMinListRowHeight, 40)
+                        .settingsSectionFocus(for: router.page)
+                        .scrollContentBackground(.hidden)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+                .frame(width: geometry.size.width, height: geometry.size.height, alignment: .top)
             }
         }
         .navigationSplitViewStyle(.balanced)
@@ -141,7 +182,15 @@ struct SettingsView: View {
                 }
                 if !items.isEmpty {
                     let rows = ForEach(items) { item in
-                        Label(item.title, systemImage: item.icon).tag(item.page)
+                        Label {
+                            Text(item.title).font(.system(size: 12, weight: router.page == item.page ? .semibold : .regular))
+                        } icon: {
+                            Image(systemName: item.icon)
+                                .font(.system(size: 13))
+                                .frame(width: 26, height: 28)
+                        }
+                        .padding(.vertical, 3)
+                        .tag(item.page)
                     }
                     // The top rows have no group; an empty header would still
                     // take its row of height.
@@ -954,7 +1003,7 @@ struct AboutSettings: View {
 
     private var aboutContent: some View {
         VStack(spacing: 14) {
-            BrandBadge(size: 76)
+            BrandBadge(size: 80)
             VStack(spacing: 3) {
                 Text(AppInfo.name)
                     .font(.title2.bold())
@@ -1049,7 +1098,7 @@ struct ReleaseNotesSettings: View {
         HStack(alignment: .top, spacing: 9) {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(.secondary)
                 .frame(width: 18, alignment: .center)
             Text(l10n.s.obWhatsNewFallback)
                 .font(.system(size: 12.5))
@@ -1084,7 +1133,7 @@ struct ReleaseNotesSettings: View {
             HStack(alignment: .top, spacing: 9) {
                 Image(systemName: iconName(for: sectionTitle))
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(Color.accentColor)
+                    .foregroundStyle(.secondary)
                     .frame(width: 18, alignment: .center)
                 Text(text)
                     .font(.system(size: 12.5))

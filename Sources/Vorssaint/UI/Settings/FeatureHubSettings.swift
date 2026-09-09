@@ -365,7 +365,7 @@ private struct FeatureHubRow: View {
                 .frame(width: 30, height: 30)
                 .overlay(
                     Image(systemName: symbolName)
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(PanelTypography.title)
                         .foregroundStyle(installed ? AnyShapeStyle(.white) : AnyShapeStyle(.secondary))
                 )
             VStack(alignment: .leading, spacing: 2) {
@@ -374,7 +374,7 @@ private struct FeatureHubRow: View {
                         .foregroundStyle(installed ? AnyShapeStyle(.primary) : AnyShapeStyle(.secondary))
                     if unit.isBeta {
                         Text(l10n.s.betaBadge)
-                            .font(.system(size: 8, weight: .bold))
+                            .font(PanelTypography.meta)
                             .foregroundStyle(Color.white)
                             .padding(.horizontal, 5)
                             .padding(.vertical, 1)
@@ -383,14 +383,14 @@ private struct FeatureHubRow: View {
                     }
                     ForEach(unit.permissions, id: \.self) { permission in
                         Image(systemName: permission.symbolName)
-                            .font(.system(size: 9))
+                            .font(PanelTypography.meta)
                             .foregroundStyle(.tertiary)
                             .help(permission.name(hub))
                             .accessibilityHidden(true)
                     }
                     ForEach(energyLabels, id: \.self) { label in
                         Text(label)
-                            .font(.system(size: 9))
+                            .font(PanelTypography.meta)
                             .foregroundStyle(.tertiary)
                             .padding(.horizontal, 5)
                             .padding(.vertical, 1)
@@ -411,7 +411,7 @@ private struct FeatureHubRow: View {
                     .accessibilityHidden(true)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, minHeight: 40, alignment: .leading)
         .contentShape(Rectangle())
     }
 
@@ -439,12 +439,23 @@ private struct FeatureHubRow: View {
 /// waiting below.
 struct FeatureSwitchSection: View {
     let unit: FeatureUnit
+    var usesGrid = false
 
     var body: some View {
         Section {
-            ForEach(unit.features, id: \.self) { feature in
-                SwitchRow(feature: feature)
+            if usesGrid {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 190), spacing: 12)], spacing: 12) {
+                    memberRows
+                }
+            } else {
+                memberRows
             }
+        }
+    }
+
+    private var memberRows: some View {
+        ForEach(unit.features, id: \.self) { feature in
+            SwitchRow(feature: feature, usesCard: usesGrid)
         }
     }
 
@@ -452,6 +463,7 @@ struct FeatureSwitchSection: View {
         @ObservedObject private var l10n = L10n.shared
         @ObservedObject private var features = FeatureRuntime.shared
         let feature: AppFeature
+        var usesCard = false
 
         /// The mouse page asked for Accessibility the moment one of these
         /// went on; the other members show a permission row instead.
@@ -462,26 +474,59 @@ struct FeatureSwitchSection: View {
 
         var body: some View {
             let blocked = feature.installBlockedReason
-            // .help() never fires on a disabled control, so the tooltip sits
-            // on this wrapper, as the hub row does it.
-            HStack(spacing: 8) {
-                Toggle(feature.name(l10n.s, language: l10n.language), isOn: Binding(
-                    get: { feature.pageSwitchKey.map { UserDefaults.standard.bool(forKey: $0) } ?? false },
-                    set: { on in
-                        FeatureRuntime.shared.setSwitch(feature, on)
-                        if on, Self.asksAccessibility.contains(feature) {
-                            Permissions.shared.requestAccessibility()
+            let name = feature.name(l10n.s, language: l10n.language)
+            let energyLabel = feature.energyProfile.label(FeatureStrings.hub(l10n.language))
+            let binding = Binding(
+                get: { feature.pageSwitchKey.map { UserDefaults.standard.bool(forKey: $0) } ?? feature.isAvailable },
+                set: { on in
+                    FeatureRuntime.shared.setSwitch(feature, on)
+                    if on, Self.asksAccessibility.contains(feature) {
+                        Permissions.shared.requestAccessibility()
+                    }
+                }
+            )
+            Group {
+                if usesCard {
+                    VStack(alignment: .leading, spacing: 16) {
+                        HStack {
+                            Image(systemName: feature.symbolName)
+                                .font(.system(size: 21, weight: .light))
+                                .foregroundStyle(binding.wrappedValue ? Color.accentColor : Color.secondary)
+                            Spacer()
+                            if feature.pageSwitchKey != nil {
+                                Toggle(name, isOn: binding).labelsHidden().toggleStyle(.switch)
+                                    .disabled(blocked != nil)
+                            } else {
+                                Image(systemName: feature.isAvailable ? "checkmark.circle.fill" : "minus.circle")
+                                    .foregroundStyle(.secondary)
+                                    .accessibilityLabel(name)
+                            }
+                        }
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(name).font(PanelTypography.title)
+                            Text(energyLabel)
+                                .font(.system(size: 10)).foregroundStyle(.secondary)
                         }
                     }
-                ))
-                .disabled(blocked != nil)
-                Text(feature.energyProfile.label(FeatureStrings.hub(l10n.language)))
-                    .font(.system(size: 9))
-                    .foregroundStyle(.tertiary)
-                    .padding(.horizontal, 5)
-                    .padding(.vertical, 1)
-                    .background(Capsule().fill(Color.secondary.opacity(0.12)))
-                    .help(FeatureStrings.hub(l10n.language).energyHelp)
+                    .padding(16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 16))
+                } else {
+                    HStack(spacing: 8) {
+                        if feature.pageSwitchKey != nil {
+                            Toggle(name, isOn: binding).disabled(blocked != nil)
+                        } else {
+                            Label(name, systemImage: "checkmark.circle.fill")
+                        }
+                        Text(energyLabel)
+                            .font(PanelTypography.meta)
+                            .foregroundStyle(.tertiary)
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 1)
+                            .background(Capsule().fill(Color.secondary.opacity(0.12)))
+                            .help(FeatureStrings.hub(l10n.language).energyHelp)
+                    }
+                }
             }
             .help(blocked ?? "")
         }

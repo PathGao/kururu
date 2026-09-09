@@ -738,8 +738,6 @@ struct Strings {
     var monitorShowBatteryTemperature: String = "Battery temperature"
     var monitorShowPeripheralBattery: String = "Peripheral battery"
     var peripheralBatteryNoDevices: String = "No devices found"
-    var monitorGraphsSection: String = "Graphs"
-    var monitorGraphsCaption: String = "Choose which metrics show a graph over time."
 
     // MARK: Update notification + onboarding menu bar setup
     var updateBannerTitle: String = "Update available"
@@ -1553,8 +1551,6 @@ extension Strings {
         monitorShowBatteryTemperature: "Temperatura da bateria",
         monitorShowPeripheralBattery: "Bateria dos periféricos",
         peripheralBatteryNoDevices: "Nenhum periférico encontrado",
-        monitorGraphsSection: "Gráficos",
-        monitorGraphsCaption: "Escolha quais métricas mostram um gráfico ao longo do tempo.",
 
         updateBannerTitle: "Atualização disponível",
         updateBannerAction: "Atualizar",

@@ -29,9 +29,7 @@ enum MonitorSamplingPolicy {
     static func sampleStride(for kind: MonitorSamplingKind,
                              intervalSeconds: Int,
                              foreground: Bool) -> Int {
-        let interval = max(1, intervalSeconds)
-        let targetSeconds = targetIntervalSeconds(for: kind, foreground: foreground)
-        return max(1, Int(ceil(targetSeconds / Double(interval))))
+        1 // Every enabled family follows the user-selected interval.
     }
 
     /// The timer cadence, in base ticks, that still lands every needed kind
@@ -67,34 +65,4 @@ enum MonitorSamplingPolicy {
         return a
     }
 
-    private static func targetIntervalSeconds(for kind: MonitorSamplingKind,
-                                              foreground: Bool) -> Double {
-        if foreground {
-            switch kind {
-            case .peripheralBattery:
-                return 15
-            case .cpu, .memory, .network, .disk, .power, .gpuUsage, .temperature, .fanSpeed:
-                return 1
-            }
-        }
-
-        switch kind {
-        case .cpu, .memory, .network:
-            return 1
-        case .gpuUsage:
-            return 10
-        case .fanSpeed:
-            return 5
-        case .power, .temperature:
-            return 15
-        case .disk:
-            // Must stay comfortably under DiskSampler.maxGap (15 s) even
-            // after timer tolerance and scheduling slop, or the delta guard
-            // discards background samples, blanking the menu bar IO metric
-            // and freezing session totals while the panel is closed.
-            return 10
-        case .peripheralBattery:
-            return 60
-        }
-    }
 }

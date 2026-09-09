@@ -103,7 +103,7 @@ struct MixerSection: View {
                         .frame(width: 12)
                         .rotationEffect(.degrees(optionsExpanded ? 90 : 0))
                     Text(l10n.s.keepAwakeOptions)
-                        .font(.system(size: 11.5, weight: .semibold))
+                        .font(PanelTypography.title)
                         .foregroundStyle(.secondary)
                     Spacer(minLength: 0)
                 }
@@ -130,10 +130,10 @@ struct MixerSection: View {
             HStack(spacing: 8) {
                 Label {
                     Text(mixerText.systemOutputTitle)
-                        .font(.system(size: 11.5, weight: .medium))
+                        .font(PanelTypography.title)
                 } icon: {
                     Image(systemName: "speaker.wave.2.fill")
-                        .font(.system(size: 10.5, weight: .semibold))
+                        .font(PanelTypography.meta)
                 }
                 .foregroundStyle(.secondary)
 
@@ -167,7 +167,7 @@ struct MixerSection: View {
                     Image(systemName: mixer.systemOutputMuted == true || volume <= 0.001
                           ? "speaker.slash.fill"
                           : "speaker.wave.2.fill")
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(PanelTypography.meta)
                         .foregroundStyle(.secondary)
                         .frame(width: 16)
 
@@ -186,7 +186,7 @@ struct MixerSection: View {
                                           editingID: $editingVolumeID,
                                           accessibilityLabel: mixerText.systemOutputTitle) {
                         Text("\(Int((volume * 100).rounded()))%")
-                            .font(.system(size: 10.5, weight: .medium))
+                            .font(PanelTypography.meta)
                             .monospacedDigit()
                             .foregroundStyle(.secondary)
                     } onCommit: {
@@ -206,10 +206,10 @@ struct MixerSection: View {
             HStack(spacing: 8) {
                 Label {
                     Text(mixerText.soundEffectsOutputTitle)
-                        .font(.system(size: 11.5, weight: .medium))
+                        .font(PanelTypography.title)
                 } icon: {
                     Image(systemName: "bell.fill")
-                        .font(.system(size: 10.5, weight: .semibold))
+                        .font(PanelTypography.meta)
                 }
                 .foregroundStyle(.secondary)
 
@@ -291,7 +291,7 @@ struct MixerSection: View {
             }
 
             Text(switcherText.devices)
-                .font(.system(size: 10.5, weight: .medium))
+                .font(PanelTypography.meta)
                 .foregroundStyle(.secondary)
 
             if universalOutputDevices.isEmpty {
@@ -300,7 +300,7 @@ struct MixerSection: View {
                 ForEach(universalOutputDevices) { device in
                     Toggle(isOn: soundOutputSwitcherSelectionBinding(for: device.uid)) {
                         Text(outputDeviceTitle(device))
-                            .font(.system(size: 10.5))
+                            .font(PanelTypography.meta)
                             .lineLimit(1)
                             .truncationMode(.middle)
                     }
@@ -340,10 +340,10 @@ struct MixerSection: View {
             HStack(spacing: 8) {
                 Label {
                     Text(mixerText.inputTitle)
-                        .font(.system(size: 11.5, weight: .medium))
+                        .font(PanelTypography.title)
                 } icon: {
                     Image(systemName: "mic.fill")
-                        .font(.system(size: 10.5, weight: .semibold))
+                        .font(PanelTypography.meta)
                 }
                 .foregroundStyle(.secondary)
 
@@ -437,13 +437,13 @@ struct MixerSection: View {
             } label: {
                 HStack(spacing: 8) {
                     Text(mixerText.visibleApps)
-                        .font(.system(size: 10))
+                        .font(PanelTypography.meta)
                         .foregroundStyle(.secondary)
                     Spacer(minLength: 6)
                     Text(mixer.hiddenApps.isEmpty
                          ? mixerText.allShown
                          : "\(mixerText.hiddenCountLabel): \(mixer.hiddenApps.count)")
-                        .font(.system(size: 10))
+                        .font(PanelTypography.meta)
                         .foregroundStyle(.secondary)
                     Image(systemName: "chevron.right")
                         .font(.system(size: 8, weight: .semibold))
@@ -462,7 +462,7 @@ struct MixerSection: View {
                 ForEach(listChoices) { choice in
                     Toggle(isOn: listedBinding(for: choice)) {
                         Text(choice.name)
-                            .font(.system(size: 10.5))
+                            .font(PanelTypography.meta)
                             .lineLimit(1)
                             .truncationMode(.middle)
                     }
@@ -512,7 +512,7 @@ struct MixerSection: View {
 
     private func inputMessage(_ text: String, systemImage: String) -> some View {
         Label(text, systemImage: systemImage)
-            .font(.system(size: 9.5))
+            .font(PanelTypography.meta)
             .foregroundStyle(.secondary)
             .lineLimit(2)
             .fixedSize(horizontal: false, vertical: true)
@@ -571,7 +571,7 @@ struct MixerSection: View {
     private var permissionHint: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(mixerText.permissionBody)
-                .font(.system(size: 10.5))
+                .font(PanelTypography.meta)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             Button(l10n.s.permissionOpenSettings) {
@@ -622,7 +622,7 @@ private struct MixerRow: View {
             VStack(alignment: .leading, spacing: 5) {
                 HStack(spacing: 8) {
                     Text(app.name)
-                        .font(.system(size: 11.5, weight: .medium))
+                        .font(PanelTypography.title)
                         .lineLimit(1)
                         .truncationMode(.middle)
 
@@ -638,7 +638,7 @@ private struct MixerRow: View {
                     // (issue #177): the row explains itself instead of the
                     // app silently missing from the mixer.
                     Text(mixerText.bypassedCaption)
-                        .font(.system(size: 10.5))
+                        .font(PanelTypography.meta)
                         .foregroundStyle(.secondary)
                         .lineLimit(2)
                         .fixedSize(horizontal: false, vertical: true)
@@ -665,7 +665,7 @@ private struct MixerRow: View {
                                         .foregroundStyle(boostColor)
                                 }
                                 Text("\(Int((app.volume * 100).rounded()))%")
-                                    .font(.system(size: 10.5, weight: .medium))
+                                    .font(PanelTypography.meta)
                                     .monospacedDigit()
                                     .foregroundStyle(isBoosting ? boostColor : Color.secondary)
                             }
@@ -677,7 +677,7 @@ private struct MixerRow: View {
                             mixer.setVolume(1, for: app)
                         } label: {
                             Image(systemName: "arrow.counterclockwise")
-                                .font(.system(size: 9.5, weight: .semibold))
+                                .font(PanelTypography.meta)
                                 .foregroundStyle(isBoosting ? boostColor : Color.secondary)
                                 .frame(width: 14)
                         }
@@ -690,7 +690,7 @@ private struct MixerRow: View {
                             mixer.toggleMute(app)
                         } label: {
                             Image(systemName: app.volume <= 0.001 ? "speaker.slash.fill" : "speaker.wave.2.fill")
-                                .font(.system(size: 10))
+                                .font(PanelTypography.meta)
                                 .foregroundStyle(app.volume <= 0.001
                                                  ? PanelMetricColor.red(for: colorScheme)
                                                  : Color.secondary)
@@ -701,7 +701,7 @@ private struct MixerRow: View {
 
                     if app.outputDeviceUnavailable {
                         Label(mixerText.outputFallback, systemImage: "speaker.badge.exclamationmark")
-                            .font(.system(size: 9.5))
+                            .font(PanelTypography.meta)
                             .foregroundStyle(.secondary)
                             .lineLimit(2)
                             .fixedSize(horizontal: false, vertical: true)
@@ -788,7 +788,7 @@ private struct EditableVolumePercent<Label: View>: View {
                                             onSubmit: commit,
                                             onCancel: cancel)
                 Text("%")
-                    .font(.system(size: 9.5, weight: .medium))
+                    .font(PanelTypography.meta)
                     .foregroundStyle(.secondary)
                     .accessibilityHidden(true)
             }

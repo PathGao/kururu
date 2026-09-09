@@ -16,7 +16,31 @@ enum Theme {
     )
 }
 
+enum PanelTypography {
+    static let pageTitle = Font.system(size: 24, weight: .semibold)
+    static let panelTitle = Font.system(size: 20, weight: .semibold)
+    static let title = Font.system(size: 13, weight: .medium)
+    static let body = Font.system(size: 13)
+    static let label = Font.system(size: 12)
+    static let meta = Font.system(size: 11)
+    static let metric = Font.system(size: 16, weight: .medium)
+}
+
+struct MetricSymbol: View {
+    let name: String
+
+    var body: some View {
+        Image(systemName: name)
+            .font(.system(size: 14, weight: .medium))
+            .foregroundStyle(.secondary)
+            .frame(width: 20, height: 20)
+            .accessibilityHidden(true)
+    }
+}
+
 enum PanelMetricColor {
+    static let data = Color.primary.opacity(0.78)
+
     static func green(for scheme: ColorScheme) -> Color {
         scheme == .light ? Color(red: 0.00, green: 0.44, blue: 0.18) : .green
     }
@@ -99,10 +123,9 @@ enum PanelSurface {
 }
 
 func sectionTitle(_ text: String) -> some View {
-    Text(text.uppercased())
-        .font(.system(size: 10, weight: .semibold))
-        .kerning(0.5)
-        .foregroundStyle(.secondary)
+    Text(text)
+        .font(PanelTypography.title)
+        .foregroundStyle(.primary)
 }
 
 extension View {
@@ -111,70 +134,66 @@ extension View {
         modifier(PanelCardModifier())
     }
 
-    /// A restrained glass base for the menu panel: still translucent, but with a
-    /// stable tint so text and controls do not depend too much on the wallpaper.
     func panelGlassSurface(cornerRadius: CGFloat = 18) -> some View {
-        background(PanelGlassSurface(cornerRadius: cornerRadius))
+        background {
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .fill(Color(nsColor: .windowBackgroundColor))
+                .overlay {
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .fill(Color.primary.opacity(0.03))
+                }
+        }
+    }
+
+    func panelNavigationSurface() -> some View {
+        background(PanelNavigationSurface())
     }
 }
 
 private struct PanelCardModifier: ViewModifier {
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.colorSchemeContrast) private var contrast
 
     func body(content: Content) -> some View {
         content
-            .padding(10)
-            .background(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(PanelSurface.cardFill(for: colorScheme))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .strokeBorder(PanelSurface.border(for: colorScheme), lineWidth: 0.7)
-            )
+            .padding(12)
+            .background {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(Color(nsColor: .controlBackgroundColor))
+            }
+            .overlay {
+                if contrast == .increased {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .strokeBorder(PanelSurface.border(for: colorScheme), lineWidth: 1)
+                }
+            }
     }
 }
 
-private struct PanelGlassSurface: View {
-    @Environment(\.colorScheme) private var colorScheme
+private struct PanelNavigationSurface: View {
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @AppStorage(DefaultsKey.liquidGlassEnabled) private var liquidGlassEnabled = false
-    let cornerRadius: CGFloat
 
     var body: some View {
+        let shape = RoundedRectangle(cornerRadius: 12, style: .continuous)
 #if compiler(>=6.2)
         if #available(macOS 26.0, *), liquidGlassEnabled, !reduceTransparency {
-            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .fill(Color.clear)
-                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .fill(PanelSurface.baseFill(for: colorScheme).opacity(colorScheme == .light ? 0.35 : 0.45))
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .strokeBorder(PanelSurface.border(for: colorScheme), lineWidth: 0.8)
-                )
+            shape.fill(Color.clear).glassEffect(.regular, in: shape)
         } else {
-            standardSurface
+            standardSurface(shape)
         }
 #else
-        standardSurface
+        standardSurface(shape)
 #endif
     }
 
     @ViewBuilder
-    private var standardSurface: some View {
-        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-            .fill(.regularMaterial)
-            .overlay(
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(PanelSurface.baseFill(for: colorScheme))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .strokeBorder(PanelSurface.border(for: colorScheme), lineWidth: 0.8)
-            )
+    private func standardSurface(_ shape: RoundedRectangle) -> some View {
+        if reduceTransparency {
+            shape.fill(Color(nsColor: .controlBackgroundColor))
+        } else {
+            shape.fill(.regularMaterial)
+        }
     }
 }
 
@@ -182,34 +201,21 @@ func appDelegate() -> AppDelegate? {
     NSApp.delegate as? AppDelegate
 }
 
-/// The official mark (Resources/Brand/logo.png, trimmed at build time),
-/// tintable for light or dark surfaces.
+/// Static, template-colored interpretation of the supplied octopus study.
 struct BrandMark: View {
     var width: CGFloat
     var tint: Color = .white
 
-    private static let mark: NSImage? = {
-        guard let url = Bundle.main.url(forResource: "BrandMark", withExtension: "png") else { return nil }
-        return NSImage(contentsOf: url)
-    }()
-
     var body: some View {
-        if let mark = Self.mark {
-            Image(nsImage: mark)
-                .renderingMode(.template)
-                .interpolation(.high)
-                .antialiased(true)
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .foregroundStyle(tint)
-                .frame(width: width)
-        } else {
-            Image(systemName: "circle.fill")
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .foregroundStyle(tint)
-                .frame(width: width * 0.5)
+        Rectangle().fill(tint).mask {
+            Canvas { context, size in
+                context.withCGContext { graphics in
+                    OctopusMark.draw(in: graphics, size: size, color: NSColor.white.cgColor)
+                }
+            }
         }
+        .frame(width: width, height: width * 210 / 250)
+        .accessibilityHidden(true)
     }
 }
 

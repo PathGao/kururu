@@ -22,6 +22,11 @@ final class DiskSampler {
         var smart: DiskSMARTReading?
     }
 
+    /// Discard a delta baseline across an explicit pause, preserving session totals and metadata.
+    func resetBaseline() {
+        previous.removeAll()
+    }
+
     private var previous: [String: (counters: DiskIOCounters, time: TimeInterval)] = [:]
     private var sessionTotals: [String: DiskIOCounters] = [:]
     private var metadataCache: [String: (metadata: DiskMetadata, updatedAt: TimeInterval, isFull: Bool)] = [:]

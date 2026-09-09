@@ -10,7 +10,7 @@ import SwiftUI
 struct MonitorPanelConfig: View {
     @ObservedObject private var l10n = L10n.shared
     @ObservedObject private var features = FeatureRuntime.shared
-    @State private var expandedBlocks = Set<PanelConfigBlock>()
+    @State private var expandedBlocks = Set<PanelSectionID>()
 
     @AppStorage(DefaultsKey.monitorShowSystem) private var showSystem = true
     @AppStorage(DefaultsKey.monitorSysTemps) private var sysTemps = true
@@ -43,16 +43,6 @@ struct MonitorPanelConfig: View {
 
     @AppStorage(DefaultsKey.monitorShowMixer) private var showMixer = true
 
-    // Whether a block draws its history curve: it only ever draws one here, so
-    // it belongs with the rest of what the panel shows.
-    @AppStorage(DefaultsKey.monitorGraphCPU) private var graphCPU = true
-    @AppStorage(DefaultsKey.monitorGraphGPU) private var graphGPU = true
-    @AppStorage(DefaultsKey.monitorGraphMemory) private var graphMemory = true
-    @AppStorage(DefaultsKey.monitorGraphNetwork) private var graphNetwork = true
-    @AppStorage(DefaultsKey.monitorGraphDisk) private var graphDisk = true
-    @AppStorage(DefaultsKey.monitorGraphPower) private var graphPower = true
-    @AppStorage(DefaultsKey.monitorGraphBattery) private var graphBattery = true
-
     var body: some View {
         if PanelSectionID.system.isAvailable {
             block(.system, title: l10n.s.systemSection, master: $showSystem) {
@@ -69,20 +59,6 @@ struct MonitorPanelConfig: View {
                     Toggle(l10n.s.memorySection, isOn: $sysMemory)
                 }
                 Toggle(l10n.s.monitorItemUptime, isOn: $sysUptime)
-                DisclosureGroup(l10n.s.monitorGraphsSection) {
-                    Text(l10n.s.monitorGraphsCaption)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    if AppFeature.monitorCPU.isAvailable {
-                        Toggle(l10n.s.cpuLabel, isOn: $graphCPU)
-                    }
-                    if AppFeature.monitorGPU.isAvailable {
-                        Toggle(l10n.s.gpuLabel, isOn: $graphGPU)
-                    }
-                    if AppFeature.monitorMemory.isAvailable {
-                        Toggle(l10n.s.memorySection, isOn: $graphMemory)
-                    }
-                }
             }
         }
         if AppFeature.monitorNetwork.isAvailable {
@@ -91,7 +67,6 @@ struct MonitorPanelConfig: View {
                 Toggle(l10n.s.networkApps, isOn: $netApps)
                 Toggle(l10n.s.monitorItemNetTotals, isOn: $netTotals)
                 Toggle(l10n.s.monitorItemNetTest, isOn: $netTest)
-                Toggle(l10n.s.monitorGraphsSection, isOn: $graphNetwork)
             }
         }
         if AppFeature.monitorDisk.isAvailable {
@@ -101,7 +76,6 @@ struct MonitorPanelConfig: View {
                 Toggle(l10n.s.monitorItemDiskSMART, isOn: $diskSMART)
                 Toggle(l10n.s.monitorItemDiskProtection, isOn: $diskProtection)
                 Toggle(l10n.s.monitorItemDiskTools, isOn: $diskTools)
-                Toggle(l10n.s.monitorGraphsSection, isOn: $graphDisk)
             }
         }
         if AppFeature.monitorPower.isAvailable {
@@ -117,12 +91,6 @@ struct MonitorPanelConfig: View {
                         Toggle(l10n.s.powerHealth, isOn: $pwrHealth)
                     }
                 }
-                DisclosureGroup(l10n.s.monitorGraphsSection) {
-                    Toggle(l10n.s.monitorShowPowerLabel, isOn: $graphPower)
-                    if PowerSampler.hasInternalBattery {
-                        Toggle(l10n.s.batteryLabel, isOn: $graphBattery)
-                    }
-                }
             }
         }
         // The mixer is a per-app list, so it has no sub-items — just show/hide.
@@ -134,12 +102,17 @@ struct MonitorPanelConfig: View {
     /// One expandable section: a master "show in panel" toggle, then the per-item
     /// toggles (disabled while the whole block is hidden).
     @ViewBuilder
-    private func block<Content: View>(_ id: PanelConfigBlock,
+    private func block<Content: View>(_ id: PanelSectionID,
                                       title: String,
                                       master: Binding<Bool>,
                                       @ViewBuilder _ items: @escaping () -> Content) -> some View {
         DisclosureHeaderRow(isExpanded: expansionBinding(for: id)) {
-            Text(title)
+            Image(systemName: id.symbolName)
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(master.wrappedValue ? Color.accentColor : Color.secondary)
+                .frame(width: 32, height: 32)
+                .background(Color.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 9))
+            Text(title).font(.system(size: 12, weight: .medium))
             Spacer()
         }
         if expandedBlocks.contains(id) {
@@ -152,7 +125,7 @@ struct MonitorPanelConfig: View {
         }
     }
 
-    private func expansionBinding(for id: PanelConfigBlock) -> Binding<Bool> {
+    private func expansionBinding(for id: PanelSectionID) -> Binding<Bool> {
         Binding(
             get: { expandedBlocks.contains(id) },
             set: { expanded in
@@ -165,8 +138,4 @@ struct MonitorPanelConfig: View {
         )
     }
 
-}
-
-private enum PanelConfigBlock: Hashable {
-    case system, network, disk, power
 }

@@ -55,17 +55,17 @@ struct PanelClipboardView: View {
         VStack(alignment: .leading, spacing: 7) {
             Toggle(text.enable, isOn: $enabled)
                 .toggleStyle(.checkbox)
-                .font(.system(size: 11.5, weight: .medium))
+                .font(PanelTypography.title)
                 .onChange(of: enabled) { _, _ in
                     ClipboardHistoryService.shared.syncWithPreferences()
                 }
             Text(enabled ? text.caption : text.disabled)
-                .font(.system(size: 10))
+                .font(PanelTypography.meta)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             if enabled, shortcutEnabled {
                 Text("\(text.shortcut): \(shortcut.displayString)")
-                    .font(.system(size: 9.5, weight: .medium, design: .rounded))
+                    .font(PanelTypography.meta)
                     .foregroundStyle(.tertiary)
             }
             HStack(spacing: 6) {
@@ -122,7 +122,7 @@ struct PanelClipboardView: View {
 
     private func emptyState(_ message: String) -> some View {
         Text(message)
-            .font(.system(size: 10.5))
+            .font(PanelTypography.meta)
             .foregroundStyle(.tertiary)
             .frame(maxWidth: .infinity)
             .frame(height: 72)
@@ -143,7 +143,7 @@ struct PanelClipboardView: View {
             // ignores the line limit, so a long entry paints over the rows
             // below it. The history window shows the full, selectable text.
             Text(entry.preview)
-                .font(.system(size: 10.5))
+                .font(PanelTypography.meta)
                 .lineLimit(3)
                 .truncationMode(.tail)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -158,7 +158,7 @@ struct PanelClipboardView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
                 }
                 Text("\(text.imageEntryLabel) · \(entry.imageDimensionsLabel)")
-                    .font(.system(size: 10))
+                    .font(PanelTypography.meta)
                     .foregroundStyle(.secondary)
             }
         case .files:
@@ -173,7 +173,7 @@ struct PanelClipboardView: View {
                         .frame(maxWidth: 110, maxHeight: 40)
                         .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
                     Text(entry.fileNames.first ?? entry.preview)
-                        .font(.system(size: 10.5))
+                        .font(PanelTypography.meta)
                         .lineLimit(2)
                         .truncationMode(.middle)
                 }
@@ -186,7 +186,7 @@ struct PanelClipboardView: View {
                     Text(entry.filePaths.count == 1
                          ? (entry.fileNames.first ?? entry.preview)
                          : String(format: text.fileCountFormat, entry.filePaths.count))
-                        .font(.system(size: 10.5))
+                        .font(PanelTypography.meta)
                         .lineLimit(2)
                         .truncationMode(.middle)
                 }
@@ -199,7 +199,7 @@ struct PanelClipboardView: View {
         VStack(alignment: .leading, spacing: 7) {
             if entry.isPinned {
                 Label(text.pinned, systemImage: "pin.fill")
-                    .font(.system(size: 9.5, weight: .bold))
+                    .font(PanelTypography.meta)
                     .foregroundStyle(Color.accentColor)
             }
             entryPreview(entry)
@@ -208,7 +208,7 @@ struct PanelClipboardView: View {
                     history.move(entry, .up)
                 } label: {
                     Image(systemName: "arrow.up")
-                        .font(.system(size: 10, weight: .bold))
+                        .font(PanelTypography.meta)
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.mini)
@@ -218,7 +218,7 @@ struct PanelClipboardView: View {
                     history.move(entry, .down)
                 } label: {
                     Image(systemName: "arrow.down")
-                        .font(.system(size: 10, weight: .bold))
+                        .font(PanelTypography.meta)
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.mini)
@@ -228,7 +228,7 @@ struct PanelClipboardView: View {
                     history.togglePin(entry)
                 } label: {
                     Image(systemName: entry.isPinned ? "pin.slash" : "pin")
-                        .font(.system(size: 10, weight: .bold))
+                        .font(PanelTypography.meta)
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.mini)
@@ -243,7 +243,7 @@ struct PanelClipboardView: View {
                 } label: {
                     Label(copiedID == entry.id ? text.copied : text.copy,
                           systemImage: copiedID == entry.id ? "checkmark" : "doc.on.doc")
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(PanelTypography.meta)
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.mini)
@@ -251,14 +251,14 @@ struct PanelClipboardView: View {
                     history.remove(entry)
                 } label: {
                     Image(systemName: "trash")
-                        .font(.system(size: 10, weight: .bold))
+                        .font(PanelTypography.meta)
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.mini)
                 .help(text.delete)
                 Spacer()
                 Text(entry.copiedAt, style: .time)
-                    .font(.system(size: 9.5))
+                    .font(PanelTypography.meta)
                     .foregroundStyle(.tertiary)
             }
         }

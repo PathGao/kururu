@@ -16,6 +16,13 @@ struct NetworkReading {
 /// State (previous counters, accumulated totals) is only touched from the
 /// monitor's serial queue, so no extra synchronization is needed.
 final class NetworkSampler {
+    /// Discard a delta baseline across an explicit pause, preserving session totals and metadata.
+    func resetBaseline() {
+        previous = nil
+        counterFallback.reset()
+        processDeltaTracker.reset()
+    }
+
     private var previous: (counters: NetworkCounters, time: TimeInterval)?
     private var totalDown: UInt64 = 0
     private var totalUp: UInt64 = 0

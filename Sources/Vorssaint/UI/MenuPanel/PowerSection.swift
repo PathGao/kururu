@@ -11,11 +11,9 @@ struct PowerSection: View {
     @ObservedObject private var monitor = SystemMonitor.shared
     @Environment(\.colorScheme) private var colorScheme
     var collapsible = true
-    @AppStorage(DefaultsKey.monitorGraphPower) private var showGraph = true
     @AppStorage(DefaultsKey.monitorSysBattery) private var showCharge = true
     @AppStorage(DefaultsKey.monitorPwrTemperature) private var showTemperature = true
     @AppStorage(DefaultsKey.menuBarPeripheralBattery) private var showPeripherals = false
-    @AppStorage(DefaultsKey.monitorGraphBattery) private var graphBattery = true
     @AppStorage(DefaultsKey.temperatureUnit) private var temperatureUnit = TemperatureUnit.celsius.rawValue
     @AppStorage(DefaultsKey.monitorPwrSystem) private var pwrSystem = true
     @AppStorage(DefaultsKey.monitorPwrAdapter) private var pwrAdapter = true
@@ -29,14 +27,13 @@ struct PowerSection: View {
         PanelSection(.power, title: AppFeature.monitorPower.name(l10n.s, language: l10n.language), collapsible: collapsible,
                      supportsEditing: true,
                      resetAction: resetPanelDefaults) { editing in
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 12) {
                 if blocks(editing: editing).isEmpty {
                     Text(l10n.s.powerUnavailable)
-                        .font(.system(size: 10.5))
+                        .font(PanelTypography.meta)
                         .foregroundStyle(.tertiary)
                 }
-                ForEach(Array(blocks(editing: editing).enumerated()), id: \.element) { index, block in
-                    if index > 0 { Divider() }
+                ForEach(blocks(editing: editing), id: \.self) { block in
                     PanelReorderableItem(item: block,
                                          isEnabled: editing,
                                          order: blockOrderBinding,
@@ -45,10 +42,22 @@ struct PowerSection: View {
                             if editing {
                                 PanelDragHandle()
                             }
-                            blockContent(block, editing: editing)
+                            VStack(alignment: .leading, spacing: 10) {
+                                blockContent(block, editing: editing)
+                                if !editing {
+                                    switch block {
+                                    case .charge: MonitorTrendView(metrics: [.battery], embedded: true)
+                                    case .temperature: MonitorTrendView(metrics: [.batteryTemperature], embedded: true)
+                                    case .system: MonitorTrendView(metrics: [.power], embedded: true)
+                                    default: EmptyView()
+                                    }
+                                }
+                            }
                                 .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.vertical, 3)
                         }
                     }
+                    if block != blocks(editing: editing).last { Divider().opacity(0.5) }
                 }
             }
             .panelCard()
@@ -128,7 +137,7 @@ struct PowerSection: View {
             }
         case .temperature:
             if showTemperature, let value = monitor.snapshot.batteryTemperature {
-                row(icon: "thermometer.medium", color: .secondary,
+                row(icon: "thermometer.medium",
                     label: l10n.s.monitorShowBatteryTemperature,
                     value: MetricFormat.temperature(value, unit: TemperatureUnit(rawValue: temperatureUnit) ?? .celsius),
                     visible: $showTemperature, editing: editing)
@@ -140,15 +149,9 @@ struct PowerSection: View {
             peripheralBatteryRows
         case .system:
             if pwrSystem, let watts = power?.systemWatts {
-                row(icon: "bolt.fill", color: PanelMetricColor.orange(for: colorScheme),
+                row(icon: "bolt.fill",
                     label: l10n.s.powerSystem, value: MetricFormat.watts(watts),
                     visible: $pwrSystem, editing: editing)
-                if showGraph, monitor.snapshot.systemPowerHistory.count >= 2 {
-                    Sparkline(values: monitor.snapshot.systemPowerHistory,
-                              color: PanelMetricColor.orange(for: colorScheme),
-                              showsZeroBaseline: true)
-                        .frame(height: 26)
-                }
             } else if editing && !pwrSystem {
                 PanelHiddenItemRow(title: l10n.s.powerSystem,
                                    systemImage: "bolt.fill",
@@ -156,7 +159,7 @@ struct PowerSection: View {
             }
         case .adapter:
             if pwrAdapter, let power, power.externalConnected, let adapter = power.adapterWatts {
-                row(icon: "powerplug.fill", color: .accentColor,
+                row(icon: "powerplug.fill",
                     label: l10n.s.powerAdapter, value: MetricFormat.watts(adapter),
                     caption: adapterCaption(power),
                     visible: $pwrAdapter, editing: editing)
@@ -168,7 +171,6 @@ struct PowerSection: View {
         case .battery:
             if pwrBattery, power?.hasBattery == true, let flow = power?.batteryWatts {
                 row(icon: flow >= 0 ? "battery.100.bolt" : "battery.50",
-                    color: flow >= 0 ? PanelMetricColor.green(for: colorScheme) : .secondary,
                     label: l10n.s.powerBattery,
                     value: MetricFormat.watts(abs(flow)),
                     caption: flow >= 0 ? l10n.s.powerCharging : l10n.s.powerOnBattery,
@@ -180,7 +182,7 @@ struct PowerSection: View {
             }
         case .health:
             if pwrHealth, let power, let health = power.healthPercent {
-                row(icon: "heart.fill", color: PanelMetricColor.pink(for: colorScheme),
+                row(icon: "heart.fill",
                     label: l10n.s.powerHealth,
                     value: "\(Int(health.rounded()))%",
                     caption: power.cycleCount.map { "\($0) \(l10n.s.powerCycles)" },
@@ -195,7 +197,7 @@ struct PowerSection: View {
                !power.externalConnected, !power.isCharging {
                 let strings = FeatureStrings.batteryTime(l10n.language)
                 let value = power.timeRemainingSeconds.flatMap(BatteryTimeSupport.formatted)
-                row(icon: "clock", color: PanelMetricColor.green(for: colorScheme),
+                row(icon: "clock",
                     label: strings.title,
                     value: value ?? "...",
                     caption: value == nil ? strings.calculating : strings.systemEstimate,
@@ -209,39 +211,28 @@ struct PowerSection: View {
     }
 
     private func subsectionLabel(_ text: String) -> some View {
-        Text(text).font(.system(size: 10.5, weight: .semibold)).foregroundStyle(.secondary)
+        Text(text).font(PanelTypography.title).foregroundStyle(.secondary)
     }
 
     @ViewBuilder
     private func batteryUsageRow(editing: Bool) -> some View {
         if let charge = monitor.snapshot.power?.chargePercent {
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(spacing: 8) {
-                    Image(systemName: (monitor.snapshot.power?.isCharging ?? false) ? "bolt.fill" : "battery.100")
-                        .font(.system(size: 9))
-                        .foregroundStyle(.secondary)
-                        .frame(width: 10)
-                    Text(l10n.s.batteryLabel)
-                        .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
-                        .frame(width: 52, alignment: .leading)
-                    UsageBar(fraction: Double(charge) / 100, tint: chargeTint(charge))
-                    Text("\(charge)%")
-                        .font(.system(size: 11, weight: .medium))
-                        .monospacedDigit()
-                        .frame(width: 38, alignment: .trailing)
-                    if editing {
-                        PanelInlineHideButton(isVisible: $showCharge)
-                    }
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Label(l10n.s.batteryLabel,
+                          systemImage: (monitor.snapshot.power?.isCharging ?? false) ? "bolt.fill" : "battery.100")
+                        .font(.system(size: 11, weight: .medium)).foregroundStyle(.secondary)
+                    Spacer()
+                    if editing { PanelInlineHideButton(isVisible: $showCharge) }
                 }
-                if graphBattery, monitor.snapshot.batteryHistory.count >= 2 {
-                    Sparkline(values: monitor.snapshot.batteryHistory,
-                              color: PanelMetricColor.green(for: colorScheme),
-                              maxValue: 1,
-                              showsZeroBaseline: true)
-                        .frame(height: 22)
+                Text("\(charge)%")
+                    .font(PanelTypography.metric)
+                    .monospacedDigit()
+                MetricScale(fraction: Double(charge) / 100)
+                if charge < 40 {
+                    Label(FeatureStrings.monitorAlerts(l10n.language).battery, systemImage: "exclamationmark.triangle")
+                        .font(PanelTypography.label)
+                        .foregroundStyle(charge < 20 ? PanelMetricColor.red(for: colorScheme) : PanelMetricColor.yellow(for: colorScheme))
                 }
                 EnergyAppsBreakdown()
             }
@@ -254,24 +245,24 @@ struct PowerSection: View {
             ForEach(PeripheralBatterySupport.sorted(monitor.snapshot.peripheralBatteries).prefix(5)) { device in
                 HStack(spacing: 8) {
                     Image(systemName: peripheralIcon(for: device.kind))
-                        .font(.system(size: 9))
+                        .font(PanelTypography.meta)
                         .foregroundStyle(.secondary)
                         .frame(width: 10)
                     Text(device.name)
-                        .font(.system(size: 10.5, weight: .medium))
+                        .font(PanelTypography.meta)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                         .truncationMode(.middle)
                     Spacer(minLength: 8)
                     Text("\(device.percent)%")
-                        .font(.system(size: 10.5, weight: .semibold))
+                        .font(PanelTypography.meta)
                         .monospacedDigit()
                 }
             }
             let extra = max(0, monitor.snapshot.peripheralBatteries.count - 5)
             if extra > 0 {
                 Text("+\(extra)")
-                    .font(.system(size: 10))
+                    .font(PanelTypography.meta)
                     .foregroundStyle(.tertiary)
             }
         }
@@ -285,12 +276,6 @@ struct PowerSection: View {
         case .audio: return "headphones"
         case .device: return "battery.100"
         }
-    }
-
-    private func chargeTint(_ charge: Int) -> Color {
-        if charge < 20 { return PanelMetricColor.red(for: colorScheme) }
-        if charge < 40 { return PanelMetricColor.yellow(for: colorScheme) }
-        return PanelMetricColor.green(for: colorScheme)
     }
 
     private func resetPanelDefaults() {
@@ -312,33 +297,33 @@ struct PowerSection: View {
         return l10n.s.powerPluggedIn
     }
 
-    private func row(icon: String, color: Color, label: String, value: String, caption: String? = nil,
+    private func row(icon: String, label: String, value: String, caption: String? = nil,
                      visible: Binding<Bool>, editing: Bool) -> some View {
         HStack(spacing: 8) {
-            Image(systemName: icon)
-                .font(.system(size: 11))
-                .foregroundStyle(color)
-                .frame(width: 16)
-            VStack(alignment: .leading, spacing: 1) {
+            MetricSymbol(name: icon)
+            VStack(alignment: .leading, spacing: 3) {
                 Text(label)
-                    .font(.system(size: 11))
-                    .foregroundStyle(Color.primary.opacity(0.74))
+                    .font(PanelTypography.label)
+                    .foregroundStyle(.secondary)
                 if let caption {
                     Text(caption)
-                        .font(.system(size: 9.5))
+                        .font(PanelTypography.meta)
                         .foregroundStyle(.secondary)
                 }
             }
             Spacer(minLength: 8)
             Text(value)
-                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .font(PanelTypography.metric)
                 .monospacedDigit()
                 .contentTransition(.numericText())
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
                 .frame(minWidth: 44, alignment: .trailing)
             if editing {
                 PanelInlineHideButton(isVisible: visible)
             }
         }
+        .frame(minHeight: 32)
     }
 }
 
@@ -387,7 +372,7 @@ private struct EnergyAppsBreakdown: View {
                 }
             }
         }
-        .font(.system(size: 10.5))
+        .font(PanelTypography.meta)
         .foregroundStyle(.secondary)
         .onReceive(monitor.$snapshot) { _ in
             guard expanded, !loading,

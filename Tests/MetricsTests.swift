@@ -57,6 +57,10 @@ struct MetricsTests {
         }
 
 
+        MonitorHistoryTests.run { expect($0, $1) }
+        CPUCoreUsageTests.run { expect($0, $1) }
+        CPUCoreTopologyTests.run { expect($0, $1) }
+
         // MARK: Byte / rate formatting
 
         // Pinned, because everything below reads a decimal point and this
@@ -13002,62 +13006,17 @@ struct MetricsTests {
                     54,
                     "network monitoring stop shortens the lease instead of depending on balanced disappear events")
 
-        expect(MonitorSamplingPolicy.sampleStride(for: .cpu, intervalSeconds: 2, foreground: false) == 1,
-               "monitor CPU stays responsive in menu-bar-only mode")
-        expect(MonitorSamplingPolicy.sampleStride(for: .disk, intervalSeconds: 2, foreground: false) == 5,
-               "monitor disk sampling slows down in menu-bar-only mode without exceeding DiskSampler.maxGap")
-        expect(MonitorSamplingPolicy.sampleStride(for: .peripheralBattery, intervalSeconds: 2, foreground: false) == 30,
-               "monitor peripheral battery sampling is heavily throttled in menu-bar-only mode")
-        expect(MonitorSamplingPolicy.sampleStride(for: .fanSpeed, intervalSeconds: 2, foreground: false) == 3,
-               "fan speed refreshes without waking the monitor every base tick")
-        expect(MonitorSamplingPolicy.sampleStride(for: .disk, intervalSeconds: 2, foreground: true) == 1,
-               "monitor disk sampling stays live while the panel is open")
-        expect(MonitorSamplingPolicy.shouldSample(.disk, tick: 4, intervalSeconds: 2, foreground: false) == false,
-               "monitor skips heavy menu-bar-only ticks before the stride")
-        expect(MonitorSamplingPolicy.shouldSample(.disk, tick: 5, intervalSeconds: 2, foreground: false),
-               "monitor samples heavy menu-bar-only ticks at the stride")
-
-        expect(MonitorSamplingPolicy.wakeTicks(for: [.cpu, .disk], intervalSeconds: 2, foreground: false) == 1,
-               "monitor wakes every tick while an every-tick metric is on")
-        expect(MonitorSamplingPolicy.wakeTicks(for: [.temperature], intervalSeconds: 2, foreground: false) == 8,
-               "monitor with only temperature wakes once per temperature stride")
-        expect(MonitorSamplingPolicy.wakeTicks(for: [.fanSpeed], intervalSeconds: 2, foreground: false) == 3,
-               "monitor with only fan speed wakes once per fan stride")
-        expect(MonitorSamplingPolicy.wakeTicks(for: [.peripheralBattery], intervalSeconds: 2, foreground: false) == 30,
-               "monitor with only peripheral battery wakes once per minute")
-        expect(MonitorSamplingPolicy.wakeTicks(for: [.disk, .peripheralBattery], intervalSeconds: 2, foreground: false) == 5,
-               "monitor wake cadence is the GCD of the needed strides")
-        expect(MonitorSamplingPolicy.wakeTicks(for: [.temperature], intervalSeconds: 2, foreground: true) == 1,
-               "monitor wakes every tick in the foreground")
-        expect(MonitorSamplingPolicy.wakeTicks(for: [], intervalSeconds: 2, foreground: false) == 1,
-               "monitor wake cadence defaults to every tick with no needs")
-        // Exactness invariant: the cadence always divides every needed stride,
-        // so grid-aligned ticks keep hitting each stride exactly on schedule.
-        let wakeKinds: [MonitorSamplingKind] = [.disk, .power, .gpuUsage, .temperature,
-                                                .fanSpeed, .peripheralBattery]
-        let cadence = MonitorSamplingPolicy.wakeTicks(for: wakeKinds, intervalSeconds: 2, foreground: false)
-        expect(wakeKinds.allSatisfy {
-            MonitorSamplingPolicy.sampleStride(for: $0, intervalSeconds: 2, foreground: false) % cadence == 0
-        }, "monitor wake cadence divides every needed stride")
-        expect(MonitorSamplingPolicy.alignedTick(16, wakeTicks: 8) == 16,
-               "monitor tick already on the wake grid stays put")
-        expect(MonitorSamplingPolicy.alignedTick(7, wakeTicks: 8) == 8,
-               "monitor tick off the wake grid realigns to the next slot")
-        expect(MonitorSamplingPolicy.alignedTick(9, wakeTicks: 1) == 9,
-               "monitor tick needs no alignment at every-tick cadence")
-
-        // MARK: Interface filtering
-
-        expect(MetricFormat.includeNetworkInterface("en0"), "en0 included")
-        expect(MetricFormat.includeNetworkInterface("en12"), "en12 included")
-        expect(!MetricFormat.includeNetworkInterface("lo0"), "lo0 excluded")
-        expect(!MetricFormat.includeNetworkInterface("awdl0"), "awdl0 excluded")
-        expect(!MetricFormat.includeNetworkInterface("nan0"), "nan0 excluded")
-        expect(!MetricFormat.includeNetworkInterface("utun3"), "utun3 (VPN) excluded")
-        expect(!MetricFormat.includeNetworkInterface("bridge0"), "bridge0 excluded")
-        expect(!MetricFormat.includeNetworkInterface(""), "empty excluded")
-
-        // MARK: History ring buffer
+        for seconds in 1...5 {
+            expect(Defaults.sanitizedMonitorInterval(seconds) == seconds, "all five intervals are supported")
+            for kind in [MonitorSamplingKind.cpu, .memory, .network, .disk, .power,
+                         .peripheralBattery, .gpuUsage, .temperature, .fanSpeed] {
+                for foreground in [false, true] {
+                    expect(MonitorSamplingPolicy.sampleStride(for: kind, intervalSeconds: seconds,
+                                                              foreground: foreground) == 1,
+                           "all enabled metrics honor the selected cadence")
+                }
+            }
+        }
 
         var history = MetricHistory(capacity: 3)
         history.push(1)
@@ -24190,11 +24149,15 @@ struct MetricsTests {
                     && occurrences(measure, panelPageCode) == 0,
                    "\(measure) is about what is measured, so only the monitor page names it")
         }
-        // A curve is drawn in the panel and nowhere else, so it is placement.
+        // Graph controls belong to Monitor settings; panels only present the data.
         let panelConfigCode = codeLines("Sources/Vorssaint/UI/Settings/MonitorPanelConfig.swift")
-        expect(occurrences("monitorGraph", panelConfigCode) > 0
-                && occurrences("monitorGraph", monitorPageCode) == 0,
-               "the history curves are placed with the rest of what the panel shows")
+        let trendCode = codeLines("Sources/Vorssaint/UI/MenuPanel/MonitorTrendView.swift")
+        expect(occurrences("monitorGraph", panelConfigCode) == 0
+                && occurrences("selection: $historyMinutes", monitorPageCode) == 1
+                && occurrences("MonitorGraphToggle(title:", monitorPageCode) == 8
+                && occurrences("Picker(", trendCode) == 0
+                && occurrences("expanded.toggle()", trendCode) == 0,
+               "history visibility and time controls live only in monitor settings")
         // Nothing puts a surface switch back on a feature's own page.
         for (page, key) in [("MicMuteSettings.swift", "micMuteMenuBarIndicator"),
                             ("ClipboardSettings.swift", "panelUtilityClipboard"),
@@ -24708,9 +24671,9 @@ struct MetricsTests {
                      "monitorNetworkEnabled", "monitorDiskEnabled", "monitorPowerEnabled"] {
             expect(occurrences(gone, samplingPlanCode) == 0, "the sampler never named \(gone)")
         }
-        expect(occurrences("plan.needCPU = panelCPU || defaults.bool(forKey: DefaultsKey.menuBarCPU) || alertCPU",
+        expect(occurrences("plan.needCPU = AppFeature.monitorCPU.isAvailable(in: defaults)",
                            samplingPlanCode) == 1,
-               "what is sampled is still placement plus alerts")
+               "enabled CPU monitoring collects history independently of placement")
         expect(AppFeature.allCases.compactMap(\.switchKey).count == 12
                 && Set(AppFeature.allCases.compactMap(\.switchKey)).count == 12,
                "12 members carry a switch, each its own key")
@@ -24838,7 +24801,7 @@ struct MetricsTests {
                              ("ScreenCaptureSettings.swift", "screenshot"), ("SettingsView.swift", "mouse"),
                              ("ClipboardSettings.swift", "clipboard"), ("CutPasteSettings.swift", "cutPaste"),
                              ("DockSettings.swift", "dock")] {
-            let found = occurrenceCount("FeatureSwitchSection(unit: .\(unit))", in: settingsShape(file))
+            let found = occurrenceCount("FeatureSwitchSection(unit: .\(unit)", in: settingsShape(file))
             expect(found == 1, "\(file) carries the \(unit) member switches once, found \(found)")
         }
 

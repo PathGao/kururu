@@ -10,7 +10,6 @@ struct DiskSection: View {
     @ObservedObject private var protection = DiskProtectionService.shared
     @Environment(\.colorScheme) private var colorScheme
     var collapsible = true
-    @AppStorage(DefaultsKey.monitorGraphDisk) private var showGraph = true
     @AppStorage(DefaultsKey.monitorDiskUsage) private var diskUsage = true
     @AppStorage(DefaultsKey.monitorDiskActivity) private var diskActivity = true
     @AppStorage(DefaultsKey.monitorDiskSMART) private var diskSMART = true
@@ -27,33 +26,37 @@ struct DiskSection: View {
         PanelSection(.disk, title: AppFeature.monitorDisk.name(l10n.s, language: l10n.language), collapsible: collapsible,
                      supportsEditing: true,
                      resetAction: resetPanelDefaults) { editing in
-            VStack(alignment: .leading, spacing: 10) {
+            if !editing { MonitorTrendView(metrics: [.diskRead, .diskWrite]) }
+            VStack(alignment: .leading, spacing: 12) {
                 if disks.isEmpty {
                     Text(l10n.s.diskNoDisks)
-                        .font(.system(size: 10.5))
+                        .font(PanelTypography.meta)
                         .foregroundStyle(.tertiary)
                 } else {
                     diskSelector
                     if let selected = selectedDisk {
-                        ForEach(blocks(editing: editing), id: \.self) { block in
-                            Divider()
-                            PanelReorderableItem(item: block,
-                                                 isEnabled: editing,
-                                                 order: blockOrderBinding,
-                                                 dragging: $draggingBlock) {
-                                HStack(alignment: .top, spacing: 8) {
-                                    if editing {
-                                        PanelDragHandle()
+                        VStack(alignment: .leading, spacing: 10) {
+                            ForEach(blocks(editing: editing), id: \.self) { block in
+                                PanelReorderableItem(item: block,
+                                                     isEnabled: editing,
+                                                     order: blockOrderBinding,
+                                                     dragging: $draggingBlock) {
+                                    HStack(alignment: .top, spacing: 8) {
+                                        if editing {
+                                            PanelDragHandle()
+                                        }
+                                        blockContent(block, disk: selected, editing: editing)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                            .padding(.vertical, 3)
                                     }
-                                    blockContent(block, disk: selected, editing: editing)
-                                        .frame(maxWidth: .infinity, alignment: .leading)
                                 }
+                                if block != blocks(editing: editing).last { Divider().opacity(0.5) }
                             }
                         }
+                        .panelCard()
                     }
                 }
             }
-            .panelCard()
             .onAppear(perform: ensureSelectedDisk)
             .onChange(of: disks.map(\.id)) { _, _ in ensureSelectedDisk() }
         }
@@ -142,7 +145,7 @@ struct DiskSection: View {
     private var diskSelector: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(l10n.s.diskSelect)
-                .font(.system(size: 10, weight: .medium))
+                .font(PanelTypography.meta)
                 .foregroundStyle(.tertiary)
             LazyVGrid(columns: diskSelectorColumns, alignment: .leading, spacing: 6) {
                 ForEach(disks) { disk in
@@ -154,7 +157,7 @@ struct DiskSection: View {
     }
 
     private var diskSelectorColumns: [GridItem] {
-        [GridItem(.adaptive(minimum: 96, maximum: 138), spacing: 6, alignment: .leading)]
+        [GridItem(.adaptive(minimum: 144), spacing: 8, alignment: .leading)]
     }
 
     private func diskSelectorButton(for disk: DiskDeviceReading) -> some View {
@@ -164,14 +167,14 @@ struct DiskSection: View {
             } label: {
                 HStack(spacing: 6) {
                     Image(systemName: disk.isInternal ? "internaldrive" : "externaldrive")
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(PanelTypography.meta)
                     VStack(alignment: .leading, spacing: 1) {
                         Text(disk.name)
-                            .font(.system(size: 10.5, weight: .semibold))
+                            .font(PanelTypography.meta)
                             .lineLimit(1)
                             .truncationMode(.middle)
                         Text("\(MetricFormat.percent(disk.usedFraction)) \(l10n.s.diskUsed)")
-                            .font(.system(size: 9))
+                            .font(PanelTypography.meta)
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                     }
@@ -214,13 +217,25 @@ struct DiskSection: View {
                 blockHeader(l10n.s.monitorItemDiskUsage, editing: editing, visible: $diskUsage)
                 VStack(alignment: .leading, spacing: 5) {
                     diskTitleRow(disk)
-                    DiskUsageBar(fraction: disk.usedFraction)
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        Text(MetricFormat.diskBytes(disk.freeBytes))
+                            .font(PanelTypography.metric)
+                            .monospacedDigit()
+                        Text(l10n.s.diskAvailable)
+                            .font(.system(size: 11)).foregroundStyle(.secondary)
+                    }
+                    .padding(.vertical, 7)
+                    MetricScale(fraction: disk.usedFraction)
+                    if disk.usedFraction >= 0.75 {
+                        Label(FeatureStrings.monitorAlerts(l10n.language).disk, systemImage: "exclamationmark.triangle")
+                            .font(PanelTypography.label)
+                            .foregroundStyle(disk.usedFraction >= 0.9 ? PanelMetricColor.red(for: colorScheme) : PanelMetricColor.yellow(for: colorScheme))
+                    }
                     HStack(spacing: 6) {
                         Text("\(MetricFormat.percent(disk.usedFraction)) \(l10n.s.diskUsed)")
-                        Spacer()
-                        Text("\(MetricFormat.diskBytes(disk.freeBytes)) \(l10n.s.diskAvailable)")
+
                     }
-                    .font(.system(size: 10.5, weight: .medium))
+                    .font(PanelTypography.meta)
                     .monospacedDigit()
                     .foregroundStyle(.secondary)
                     HStack(spacing: 6) {
@@ -230,7 +245,7 @@ struct DiskSection: View {
                             Text("\(MetricFormat.diskBytes(purgeable)) \(l10n.s.diskPurgeable)")
                         }
                     }
-                    .font(.system(size: 10))
+                    .font(PanelTypography.meta)
                     .monospacedDigit()
                     .foregroundStyle(.tertiary)
                 }
@@ -251,23 +266,20 @@ struct DiskSection: View {
                     rateColumn(icon: "arrow.down",
                                label: l10n.s.diskRead,
                                value: disk.readBytesPerSec,
-                               color: .accentColor)
+                               color: .secondary)
                     Divider().frame(height: 28)
                     rateColumn(icon: "arrow.up",
                                label: l10n.s.diskWrite,
                                value: disk.writeBytesPerSec,
-                               color: PanelMetricColor.pink(for: colorScheme))
-                }
-                if showGraph, monitor.snapshot.diskReadHistory.count >= 2 {
-                    graph
+                               color: .secondary)
                 }
                 HStack(spacing: 6) {
                     Text(l10n.s.networkThisSession)
-                        .font(.system(size: 10))
+                        .font(PanelTypography.meta)
                         .foregroundStyle(.tertiary)
                     Spacer()
                     Text("↓ \(MetricFormat.diskBytes(disk.totalReadBytes ?? 0))  ↑ \(MetricFormat.diskBytes(disk.totalWrittenBytes ?? 0))")
-                        .font(.system(size: 10.5, weight: .medium))
+                        .font(PanelTypography.meta)
                         .monospacedDigit()
                         .foregroundStyle(.secondary)
                 }
@@ -275,36 +287,19 @@ struct DiskSection: View {
         }
     }
 
-    private var graph: some View {
-        let read = monitor.snapshot.diskReadHistory
-        let write = monitor.snapshot.diskWriteHistory
-        let peak = max(read.max() ?? 0, write.max() ?? 0, 1)
-        return ZStack {
-            Sparkline(values: read, color: .accentColor, maxValue: peak, showsZeroBaseline: true)
-            Sparkline(values: write,
-                      color: PanelMetricColor.pink(for: colorScheme),
-                      maxValue: peak,
-                      fillOpacity: 0.08)
-        }
-        .frame(height: 30)
-    }
 
     private func rateColumn(icon: String, label: String, value: Double?, color: Color) -> some View {
-        HStack(spacing: 7) {
-            Image(systemName: icon)
-                .font(.system(size: 12, weight: .semibold))
+        VStack(alignment: .leading, spacing: 12) {
+            Label(label, systemImage: icon)
+                .font(.system(size: 11, weight: .medium))
                 .foregroundStyle(color)
-            VStack(alignment: .leading, spacing: 1) {
-                Text(value.map { MetricFormat.bytesPerSec($0) } ?? l10n.s.networkMeasuring)
-                    .font(.system(size: 13.5, weight: .semibold, design: .rounded))
-                    .monospacedDigit()
-                    .contentTransition(.numericText())
-                Text(label)
-                    .font(.system(size: 10))
-                    .foregroundStyle(.secondary)
-            }
-            Spacer(minLength: 0)
+            Text(value.map { MetricFormat.bytesPerSec($0) } ?? l10n.s.networkMeasuring)
+                .font(PanelTypography.metric)
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
         }
+        .padding(.vertical, 6)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
@@ -318,12 +313,12 @@ struct DiskSection: View {
             VStack(alignment: .leading, spacing: 8) {
                 blockHeader(l10n.s.monitorItemDiskSMART, editing: editing, visible: $diskSMART)
                 VStack(alignment: .leading, spacing: 5) {
-                    diskTitleRow(disk, showsTags: !diskUsage)
+                    if !diskUsage { diskTitleRow(disk) }
                     if let smart = disk.smart {
                         smartRows(smart)
                     } else {
                         Text(l10n.s.diskSMARTUnavailable)
-                            .font(.system(size: 10.5))
+                            .font(PanelTypography.meta)
                             .foregroundStyle(.tertiary)
                     }
                 }
@@ -359,11 +354,11 @@ struct DiskSection: View {
     private func smartRow(_ label: String, _ value: String) -> some View {
         HStack(spacing: 8) {
             Text(label)
-                .font(.system(size: 10.5))
+                .font(PanelTypography.meta)
                 .foregroundStyle(.secondary)
             Spacer()
             Text(value)
-                .font(.system(size: 10.5, weight: .semibold))
+                .font(PanelTypography.meta)
                 .monospacedDigit()
                 .foregroundStyle(.primary)
         }
@@ -383,7 +378,7 @@ struct DiskSection: View {
                         protection.eject(disk)
                     } label: {
                         Label(l10n.s.diskEject, systemImage: "eject.fill")
-                            .font(.system(size: 10.5, weight: .medium))
+                            .font(PanelTypography.meta)
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
@@ -393,14 +388,14 @@ struct DiskSection: View {
                         protection.ejectAll(disks)
                     } label: {
                         Label(l10n.s.diskEjectAll, systemImage: "eject.fill")
-                            .font(.system(size: 10.5, weight: .medium))
+                            .font(PanelTypography.meta)
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
                     .disabled(ejectableDisks.isEmpty)
                 }
                 Text(disk.canEject ? ejectCaption(for: disk) : l10n.s.diskNoExternal)
-                    .font(.system(size: 9.5))
+                    .font(PanelTypography.meta)
                     .foregroundStyle(disk.canEject ? ejectCaptionColor(for: disk) : .secondary)
                     .lineLimit(2)
             }
@@ -443,7 +438,7 @@ struct DiskSection: View {
                         NSWorkspace.shared.open(URL(fileURLWithPath: disk.mountPath))
                     } label: {
                         Label(l10n.s.diskOpenInFinder, systemImage: "folder")
-                            .font(.system(size: 10.5))
+                            .font(PanelTypography.meta)
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
@@ -454,7 +449,7 @@ struct DiskSection: View {
                     }
                 } label: {
                     Label(l10n.s.diskStorageSettings, systemImage: "gearshape")
-                        .font(.system(size: 10.5, weight: .medium))
+                        .font(PanelTypography.meta)
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
@@ -465,7 +460,7 @@ struct DiskSection: View {
     private func diskTitleRow(_ disk: DiskDeviceReading, showsTags: Bool = true) -> some View {
         HStack(spacing: 6) {
             Image(systemName: disk.isInternal ? "internaldrive" : "externaldrive")
-                .font(.system(size: 10, weight: .semibold))
+                .font(PanelTypography.meta)
                 .foregroundStyle(.secondary)
             Text(disk.name)
                 .font(.system(size: 11.5, weight: .semibold))
@@ -483,7 +478,7 @@ struct DiskSection: View {
 
     private func titleTag(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 9, weight: .medium))
+            .font(PanelTypography.meta)
             .foregroundStyle(.secondary)
             .padding(.horizontal, 5)
             .padding(.vertical, 2)
@@ -493,7 +488,7 @@ struct DiskSection: View {
     private func blockHeader(_ title: String, editing: Bool, visible: Binding<Bool>) -> some View {
         HStack(spacing: 6) {
             Text(title)
-                .font(.system(size: 10, weight: .medium))
+                .font(PanelTypography.meta)
                 .foregroundStyle(.tertiary)
             Spacer(minLength: 0)
             if editing {
@@ -541,15 +536,15 @@ private struct DiskSelectorEjectButton: View {
                 .scaleEffect(0.55)
         case .ready:
             Image(systemName: "checkmark")
-                .font(.system(size: 9, weight: .semibold))
+                .font(PanelTypography.meta)
                 .foregroundStyle(PanelMetricColor.green(for: colorScheme))
         case .failed:
             Image(systemName: "eject.fill")
-                .font(.system(size: 9, weight: .semibold))
+                .font(PanelTypography.meta)
                 .foregroundStyle(PanelMetricColor.red(for: colorScheme))
         case .none:
             Image(systemName: "eject.fill")
-                .font(.system(size: 9, weight: .semibold))
+                .font(PanelTypography.meta)
                 .foregroundStyle(hovering ? .primary : .secondary)
         }
     }
@@ -564,32 +559,6 @@ private struct DiskSelectorEjectButton: View {
         case .ready: return readyHelp
         case .failed: return failedHelp
         case .none: return idleHelp
-        }
-    }
-}
-
-private struct DiskUsageBar: View {
-    @Environment(\.colorScheme) private var colorScheme
-    let fraction: Double
-
-    var body: some View {
-        GeometryReader { proxy in
-            ZStack(alignment: .leading) {
-                Capsule().fill(Color.primary.opacity(0.08))
-                Capsule()
-                    .fill(color)
-                    .frame(width: max(3, proxy.size.width * min(1, max(0, fraction))))
-                    .animation(.easeOut(duration: 0.4), value: fraction)
-            }
-        }
-        .frame(height: 6)
-    }
-
-    private var color: Color {
-        switch fraction {
-        case ..<0.75: return .accentColor
-        case ..<0.9: return PanelMetricColor.yellow(for: colorScheme)
-        default: return PanelMetricColor.red(for: colorScheme)
         }
     }
 }

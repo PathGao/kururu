@@ -4,6 +4,7 @@
 import Foundation
 
 struct MenuBarAppearanceStrings {
+    var metricsTitle: String = "Metrics and order"
     var label: String = "Usage display"
     var values: String = "Values"
     var bars: String = "Bars"
@@ -40,6 +41,7 @@ extension MenuBarAppearanceStrings {
     static let enUS = MenuBarAppearanceStrings()
 
     static let ptBR = MenuBarAppearanceStrings(
+        metricsTitle: "Métricas e ordem",
         label: "Exibição de uso",
         values: "Valores",
         bars: "Barras",
@@ -53,6 +55,7 @@ extension MenuBarAppearanceStrings {
     )
 
     static let tr = MenuBarAppearanceStrings(
+        metricsTitle: "Metrikler ve sıralama",
         label: "Kullanım görünümü",
         values: "Değerler",
         bars: "Çubuklar",
@@ -66,6 +69,7 @@ extension MenuBarAppearanceStrings {
     )
 
     static let ru = MenuBarAppearanceStrings(
+        metricsTitle: "Показатели и порядок",
         label: "Отображение нагрузки",
         values: "Значения",
         bars: "Шкалы",
@@ -79,6 +83,7 @@ extension MenuBarAppearanceStrings {
     )
 
     static let es = MenuBarAppearanceStrings(
+        metricsTitle: "Métricas y orden",
         label: "Vista de uso",
         values: "Valores",
         bars: "Barras",
@@ -92,6 +97,7 @@ extension MenuBarAppearanceStrings {
     )
 
     static let de = MenuBarAppearanceStrings(
+        metricsTitle: "Messwerte und Reihenfolge",
         label: "Auslastungsanzeige",
         values: "Werte",
         bars: "Balken",
@@ -105,6 +111,7 @@ extension MenuBarAppearanceStrings {
     )
 
     static let fr = MenuBarAppearanceStrings(
+        metricsTitle: "Mesures et ordre",
         label: "Affichage de l’utilisation",
         values: "Valeurs",
         bars: "Barres",
@@ -118,6 +125,7 @@ extension MenuBarAppearanceStrings {
     )
 
     static let it = MenuBarAppearanceStrings(
+        metricsTitle: "Metriche e ordine",
         label: "Visualizzazione utilizzo",
         values: "Valori",
         bars: "Barre",
@@ -131,6 +139,7 @@ extension MenuBarAppearanceStrings {
     )
 
     static let ja = MenuBarAppearanceStrings(
+        metricsTitle: "指標と順序",
         label: "使用率の表示",
         values: "数値",
         bars: "バー",
@@ -144,6 +153,7 @@ extension MenuBarAppearanceStrings {
     )
 
     static let ko = MenuBarAppearanceStrings(
+        metricsTitle: "지표 및 순서",
         label: "사용량 표시",
         values: "값",
         bars: "막대",
@@ -157,6 +167,7 @@ extension MenuBarAppearanceStrings {
     )
 
     static let zhHans = MenuBarAppearanceStrings(
+        metricsTitle: "指标与顺序",
         label: "使用率显示",
         values: "数值",
         bars: "条形",
@@ -170,6 +181,7 @@ extension MenuBarAppearanceStrings {
     )
 
     static let zhTW = MenuBarAppearanceStrings(
+        metricsTitle: "指標與順序",
         label: "使用率顯示",
         values: "數值",
         bars: "長條",
@@ -183,6 +195,7 @@ extension MenuBarAppearanceStrings {
     )
 
     static let zhHK = MenuBarAppearanceStrings(
+        metricsTitle: "指標與順序",
         label: "使用率顯示",
         values: "數值",
         bars: "長條",

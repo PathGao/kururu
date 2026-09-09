@@ -658,9 +658,7 @@ final class StatusItemController {
 /// The official mark, bundled as a template image so the idle state adapts to
 /// light and dark menu bars. Active states can use real colors for attention.
 enum BlackHoleGlyph {
-    /// Logical size of the glyph in the menu bar, in points. Wide because the
-    /// mark is ~1.97:1 and sized from its height. Tools/MakeIcon.swift writes
-    /// the bundled PNGs at this size; `--selftest` checks the two still agree.
+    /// Keep the existing canvas so brand updates never move adjacent metrics.
     static let pointSize = NSSize(width: 26, height: 20)
 
     /// Requested ink height for the active states' system symbols. A compact
@@ -669,15 +667,23 @@ enum BlackHoleGlyph {
     /// costs about a point of what is asked for here.
     private static let symbolHeight: CGFloat = 16
 
-    /// Both scale representations go into one NSImage — loading the 1x file
-    /// alone would render blurry on Retina menu bars.
+    /// Render both template scales from the same geometry as the in-app mark.
     private static let base: NSImage? = {
         let image = NSImage(size: pointSize)
-        for resource in ["MenuBarIcon", "MenuBarIcon@2x"] {
-            guard let url = Bundle.main.url(forResource: resource, withExtension: "png"),
-                  let data = try? Data(contentsOf: url),
-                  let rep = NSBitmapImageRep(data: data)
-            else { continue }
+        for scale in [1, 2] {
+            let width = Int(pointSize.width) * scale
+            let height = Int(pointSize.height) * scale
+            guard let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: width, pixelsHigh: height,
+                                             bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true,
+                                             isPlanar: false, colorSpaceName: .deviceRGB,
+                                             bytesPerRow: 0, bitsPerPixel: 0),
+                  let context = NSGraphicsContext(bitmapImageRep: rep)?.cgContext else { continue }
+            context.translateBy(x: 0, y: CGFloat(height))
+            context.scaleBy(x: CGFloat(scale), y: -CGFloat(scale))
+            context.translateBy(x: 1, y: 1)
+            OctopusMark.draw(in: context,
+                             size: NSSize(width: pointSize.width - 2, height: pointSize.height - 2),
+                             color: NSColor.black.cgColor)
             rep.size = pointSize
             image.addRepresentation(rep)
         }

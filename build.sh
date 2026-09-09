@@ -412,6 +412,8 @@ if (( TEST )); then
         Sources/Vorssaint/Services/Metrics/PeripheralBatterySupport.swift \
         Sources/Vorssaint/Services/Metrics/DiskSupport.swift \
         Sources/Vorssaint/Services/Metrics/MonitorSamplingPolicy.swift \
+        Sources/Vorssaint/Services/Metrics/MonitorHistory.swift \
+        Tests/MonitorHistoryTests.swift \
         Sources/Vorssaint/Services/Metrics/MaxCapacityProbe.swift \
         Sources/Vorssaint/Services/Metrics/TemperatureSensorSelector.swift \
         Sources/Vorssaint/Services/Metrics/SustainedAlertGate.swift \
@@ -422,6 +424,10 @@ if (( TEST )); then
         Sources/Vorssaint/Services/Cleaner/CleanerSchedule.swift \
         Sources/Vorssaint/Services/Uninstall/UninstallerSupport.swift \
         Sources/Vorssaint/Services/ManagedDownloads/WhatsAppDownloadSupport.swift \
+        Sources/Vorssaint/Services/Metrics/CPUCoreUsageSupport.swift \
+        Tests/CPUCoreUsageTests.swift \
+        Sources/Vorssaint/Services/Metrics/CPUCoreTopologySupport.swift \
+        Tests/CPUCoreTopologyTests.swift \
         Tests/MetricsTests.swift \
         Tests/RecentCaptureStoreTests.swift \
         Tests/RecorderPresetImageStoreTests.swift \

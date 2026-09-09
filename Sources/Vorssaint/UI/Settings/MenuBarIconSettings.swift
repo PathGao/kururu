@@ -17,39 +17,31 @@ struct MenuBarIconSettings: View {
     @AppStorage(DefaultsKey.micMuteMenuBarIndicator) private var micMenuBarIndicator = true
 
     var body: some View {
+        let appearanceStrings = FeatureStrings.menuBarAppearance(l10n.language)
+        let appearance = MenuBarMetricAppearance(
+            rawValue: Defaults.sanitizedMenuBarMetricAppearance(metricAppearance)
+        ) ?? .values
         Form {
             Section(l10n.s.monitorMenuBarSection) {
-                Button(l10n.s.showMenuBarIcon) {
-                    appDelegate()?.reshowStatusItem()
-                }
-                Text(l10n.s.showMenuBarIconCaption)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Toggle(l10n.s.menuBarHideIconToggle, isOn: $hideIconWithMetrics)
-                Text(l10n.s.menuBarHideIconCaption)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                let appearanceStrings = FeatureStrings.menuBarAppearance(l10n.language)
-                let appearance = MenuBarMetricAppearance(
-                    rawValue: Defaults.sanitizedMenuBarMetricAppearance(metricAppearance)
-                ) ?? .values
                 MenuBarMetricsPreview()
-                    .padding(.vertical, 4)
+                    .padding(.vertical, 10)
+                Text(l10n.s.monitorMenuBarCaption)
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            Section(appearanceStrings.label) {
                 Picker(appearanceStrings.label, selection: $metricAppearance) {
                     Text(appearanceStrings.values).tag("values")
                     Text(appearanceStrings.bars).tag("bars")
                 }
                 .pickerStyle(.segmented)
                 Text(appearanceStrings.caption)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.caption).foregroundStyle(.secondary)
                 if appearance == .bars {
                     MenuBarUsageBarSettings(strings: appearanceStrings)
                 } else {
                     Toggle(l10n.s.monitorCombineTemperatures, isOn: $combineTemperatures)
                     Text(l10n.s.monitorCombineTemperaturesCaption)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.caption).foregroundStyle(.secondary)
                 }
                 Picker(l10n.s.menuBarSpacingLabel, selection: $metricSpacing) {
                     Text(l10n.s.menuBarSpacingStandard).tag("standard")
@@ -59,21 +51,28 @@ struct MenuBarIconSettings: View {
                 Toggle(l10n.s.monitorSeparateMenuBarMetrics, isOn: $separateMetrics)
                 if appearance.allowsCombinedTemperatures {
                     Text(l10n.s.monitorSeparateMenuBarMetricsCaption)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.caption).foregroundStyle(.secondary)
                 }
+            }
+            Section(appearanceStrings.metricsTitle) {
                 MenuBarMetricOrderEditor()
-                Text(l10n.s.monitorMenuBarCaption)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            }
+            Section {
+                Toggle(l10n.s.menuBarHideIconToggle, isOn: $hideIconWithMetrics)
+                Text(l10n.s.menuBarHideIconCaption)
+                    .font(.caption).foregroundStyle(.secondary)
+                Button(l10n.s.showMenuBarIcon) {
+                    appDelegate()?.reshowStatusItem()
+                }
+                Text(l10n.s.showMenuBarIconCaption)
+                    .font(.caption).foregroundStyle(.secondary)
             }
             if AppFeature.micMute.isAvailable {
                 Section(AppFeature.micMute.name(l10n.s, language: l10n.language)) {
                     Toggle(FeatureStrings.micMute(l10n.language).menuBarToggle,
                            isOn: $micMenuBarIndicator)
                     Text(FeatureStrings.micMute(l10n.language).menuBarCaption)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.caption).foregroundStyle(.secondary)
                 }
             }
         }
@@ -276,20 +275,10 @@ private struct MenuBarMetricVisibilityToggle: View {
     }
 
     var body: some View {
-        Button {
-            shown.toggle()
-        } label: {
-            Image(systemName: shown ? "eye.fill" : "eye.slash.fill")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(shown ? Color.accentColor : Color.secondary)
-                .frame(width: 30, height: 24)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .help(shown ? l10n.s.panelHideItem : l10n.s.panelShowItem)
-        .accessibilityLabel(shown ? l10n.s.panelHideItem : l10n.s.panelShowItem)
-        .accessibilityValue(metric.title(l10n.s))
+        PanelInlineHideButton(isVisible: $shown)
+            .accessibilityValue(metric.title(l10n.s))
     }
+
 }
 
 private struct MemoryMenuBarOrderOption: View {

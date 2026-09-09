@@ -164,48 +164,56 @@ struct MenuPanelView: View {
         }
     }
 
+    private let panelWidth: CGFloat = 440
+    private let contentWidth: CGFloat = 340
+
     private var navigablePanel: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            UpdateBanner()
-                .reportHeight($updateBannerHeight)
-            header
-            sectionNavigation
-
-            OverlayScrollView(measuredHeight: $navigableContentHeight) {
-                VStack(alignment: .leading, spacing: 12) {
-                    section(for: activeSection, collapsible: false)
-                }
-                .frame(width: 308)
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(spacing: 16) {
+                header
+                Spacer(minLength: 0)
+                footer
             }
-            .frame(width: 308, height: navigableScrollHeight)
+            UpdateBanner().reportHeight($updateBannerHeight)
+            HStack(alignment: .top, spacing: 16) {
+                ScrollView(.vertical) {
+                    sectionNavigation
+                }
+                .scrollIndicators(.hidden)
+                .frame(width: 52, height: navigableScrollHeight)
 
-            footer
+                OverlayScrollView(measuredHeight: $navigableContentHeight) {
+                    section(for: activeSection, collapsible: false)
+                        .frame(width: contentWidth)
+                }
+                .frame(width: contentWidth, height: navigableScrollHeight)
+            }
         }
-        .padding(12)
-        .frame(width: 332, height: navigablePanelHeight)
-        .panelGlassSurface()
+        .padding(16)
+        .frame(width: panelWidth, height: navigablePanelHeight)
+        .panelGlassSurface(cornerRadius: 24)
     }
 
     private var metricPanel: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            UpdateBanner()
-                .reportHeight($updateBannerHeight)
-            header
-
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(spacing: 16) {
+                header
+                Spacer(minLength: 0)
+                footer
+            }
+            UpdateBanner().reportHeight($updateBannerHeight)
             if let selectedMetric {
                 metricNavigationHeader(selectedMetric)
                 OverlayScrollView(measuredHeight: $metricContentHeight) {
                     MetricDetailView(kind: selectedMetric)
-                        .frame(width: 308)
+                        .frame(width: panelWidth - 32)
                 }
-                .frame(width: 308, height: metricScrollHeight)
+                .frame(width: panelWidth - 32, height: metricScrollHeight)
             }
-
-            footer
         }
-        .padding(12)
-        .frame(width: 332, height: metricPanelHeight)
-        .panelGlassSurface()
+        .padding(16)
+        .frame(width: panelWidth, height: metricPanelHeight)
+        .panelGlassSurface(cornerRadius: 24)
     }
 
     /// The major sections in the user's saved order. Reading `sectionOrderRaw`
@@ -227,27 +235,27 @@ struct MenuPanelView: View {
 
     private var navigableScrollHeight: CGFloat {
         let measured = navigableContentHeight == 0 ? estimatedNavigableContentHeight : navigableContentHeight
-        return min(measured, max(80, maxHeight - navigableChromeHeight))
+        return min(max(300, measured), max(80, maxHeight - navigableChromeHeight))
     }
 
     private var navigablePanelHeight: CGFloat {
-        min(maxHeight, max(220, navigableScrollHeight + navigableChromeHeight))
+        min(maxHeight, navigableScrollHeight + navigableChromeHeight)
     }
 
     private var metricScrollHeight: CGFloat {
         let measured = metricContentHeight == 0 ? estimatedMetricContentHeight : metricContentHeight
-        return min(measured, max(80, maxHeight - navigableChromeHeight))
+        return min(measured, max(80, maxHeight - navigableChromeHeight - 40))
     }
 
     private var metricPanelHeight: CGFloat {
-        min(maxHeight, max(220, metricScrollHeight + navigableChromeHeight))
+        min(maxHeight, metricScrollHeight + navigableChromeHeight + 40)
     }
 
     private var navigableChromeHeight: CGFloat {
         let bannerHeight = updates.state.showsMenuPanelBanner
             ? (max(updateBannerHeight, 48) + 12)
             : 0
-        return 180 + bannerHeight
+        return 112 + bannerHeight
     }
 
     private var estimatedNavigableContentHeight: CGFloat {
@@ -314,42 +322,39 @@ struct MenuPanelView: View {
     }
 
     private var sectionNavigation: some View {
-        HStack(spacing: 2) {
+        VStack(spacing: 8) {
             ForEach(visibleSections) { id in
                 let isActive = activeSection == id
                 Button {
                     selectedSection = id
                     focusedSection = id
                 } label: {
-                    Image(systemName: id.symbolName)
-                        .font(.system(size: 13.5, weight: .semibold))
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 30)
-                        .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    VStack(spacing: 5) {
+                        Image(systemName: id.symbolName)
+                            .font(.system(size: 17, weight: .medium))
+                        Text(id.title(l10n.s))
+                            .font(PanelTypography.meta)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.75)
+                    }
+                    .frame(width: 44, height: 52)
+                    .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
                 .buttonStyle(.plain)
                 .focused($focusedSection, equals: id)
-                .foregroundStyle(isActive ? Color.accentColor : Color.secondary.opacity(0.86))
-                .background(
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(isActive ? navigationActiveFill : Color.clear)
-                )
+                .foregroundStyle(isActive ? Color(nsColor: .windowBackgroundColor) : Color.secondary)
+                .background {
+                    if isActive {
+                        RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.primary)
+                    }
+                }
+                .accessibilityLabel(id.title(l10n.s))
+                .accessibilityAddTraits(isActive ? .isSelected : [])
                 .help(id.title(l10n.s))
             }
         }
         .padding(4)
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(PanelSurface.cardFill(for: colorScheme))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(PanelSurface.border(for: colorScheme), lineWidth: 0.7)
-        )
-    }
-
-    private var navigationActiveFill: Color {
-        colorScheme == .light ? Color.accentColor.opacity(0.13) : Color.accentColor.opacity(0.20)
+        .panelNavigationSurface()
     }
 
     private func metricNavigationHeader(_ kind: MetricDetailKind) -> some View {
@@ -376,7 +381,7 @@ struct MenuPanelView: View {
             )
 
             Label(kind.title(l10n.s), systemImage: kind.symbolName)
-                .font(.system(size: 12.5, weight: .semibold))
+                .font(PanelTypography.panelTitle)
                 .lineLimit(1)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -396,97 +401,56 @@ struct MenuPanelView: View {
     }
 
     private var footer: some View {
-        HStack(spacing: 8) {
-            footerButton(l10n.s.panelSettings,
-                         systemImage: "gearshape",
-                         horizontalPadding: 7) {
-                // The hosted utility's own page, or the hub from the panel's
-                // lists: the router is sticky, so it is set every time.
+        HStack(spacing: 12) {
+            Button {
                 SettingsRouter.shared.page = PanelInteractionState.shared.hostedSettingsPage ?? .features
                 appDelegate()?.openSettingsWindow()
+            } label: {
+                Image(systemName: "gearshape").frame(width: 28, height: 28)
             }
-
-            footerButton(l10n.s.panelQuit,
-                         systemImage: "power",
-                         horizontalPadding: 7) {
+            .help(l10n.s.panelSettings)
+            .accessibilityLabel(l10n.s.panelSettings)
+            Button {
                 NSApp.terminate(nil)
+            } label: {
+                Image(systemName: "power").frame(width: 28, height: 28)
             }
-        }
-        .frame(maxWidth: .infinity)
-        .frame(height: 30)
-        .padding(.top, 4)
-    }
-
-    private func footerButton(_ title: String, systemImage: String,
-                              horizontalPadding: CGFloat = 8,
-                              action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Label(title, systemImage: systemImage)
-                .font(.system(size: 11, weight: .medium))
-                .lineLimit(1)
-                .truncationMode(.tail)
-                .minimumScaleFactor(0.78)
-                .labelStyle(.titleAndIcon)
-                .padding(.horizontal, horizontalPadding)
-                .frame(maxWidth: .infinity, minHeight: 28)
-                .background(
-                    RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .fill(PanelSurface.cardFill(for: colorScheme))
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .strokeBorder(PanelSurface.border(for: colorScheme), lineWidth: 0.8)
-                )
-                .contentShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+            .help(l10n.s.panelQuit)
+            .accessibilityLabel(l10n.s.panelQuit)
         }
         .buttonStyle(.plain)
+        .font(.system(size: 13, weight: .medium))
         .foregroundStyle(.secondary)
     }
+
 }
 
 private struct MenuPanelHeader: View {
     @Environment(\.colorScheme) private var colorScheme
     @ObservedObject private var l10n = L10n.shared
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var markHovered = false
 
     var body: some View {
-        ZStack {
-            BrandMark(width: 48, tint: markTint)
-                .frame(height: 28)
-                .accessibilityHidden(true)
-
+        HStack(spacing: 10) {
+            BrandMark(width: 32, tint: .primary)
+                .rotationEffect(.degrees(markHovered && !reduceMotion ? -6 : 0))
+                .scaleEffect(markHovered && !reduceMotion ? 1.06 : 1)
+                .animation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.75), value: markHovered)
+                .onHover { markHovered = $0 }
+            Text(AppInfo.name)
+                .font(PanelTypography.metric)
             if AppInfo.isBeta {
-                HStack {
-                    Text(l10n.s.betaBadgeLabel.uppercased())
-                        .font(.system(size: 9, weight: .bold))
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Color.orange.opacity(0.18))
-                        .foregroundStyle(.orange)
-                        .clipShape(Capsule())
-
-                    Spacer()
-
-                    Button {
-                        appDelegate()?.openFeedbackWindow()
-                    } label: {
-                        Image(systemName: "bubble.left.and.text.bubble.right")
-                            .font(.system(size: 11, weight: .medium))
-                            .foregroundStyle(.secondary)
-                            .padding(4)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .help(FeatureStrings.feedback(l10n.language).openButton)
+                Button {
+                    appDelegate()?.openFeedbackWindow()
+                } label: {
+                    Image(systemName: "bubble.left.and.text.bubble.right")
                 }
+                .buttonStyle(.plain)
+                .help(FeatureStrings.feedback(l10n.language).openButton)
             }
         }
-        .frame(height: 28)
-        .padding(.vertical, 4)
-        .frame(maxWidth: .infinity)
-    }
-
-    private var markTint: Color {
-        colorScheme == .light ? Color(white: 0.03) : .white
+        .frame(height: 40)
     }
 }
 

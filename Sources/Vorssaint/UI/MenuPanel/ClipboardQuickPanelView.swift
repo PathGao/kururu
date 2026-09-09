@@ -102,7 +102,7 @@ struct ClipboardQuickPanelView: View {
                 history.hideHistoryWindow()
             } label: {
                 Image(systemName: "xmark")
-                    .font(.system(size: 10.5, weight: .semibold))
+                    .font(PanelTypography.meta)
                     .foregroundStyle(.secondary)
                     .frame(width: 22, height: 22)
             }
@@ -177,7 +177,7 @@ struct ClipboardQuickPanelView: View {
                     .padding(.vertical, 5)
             }
             Text(title.uppercased())
-                .font(.system(size: 9.5, weight: .semibold))
+                .font(PanelTypography.meta)
                 .foregroundStyle(.secondary)
                 .tracking(0.6)
                 .padding(.horizontal, 8)
@@ -247,7 +247,7 @@ struct ClipboardQuickPanelView: View {
                 Image(systemName: "doc.on.clipboard")
                 Text("\(history.entries.count)")
             }
-            .font(.system(size: 10.5, weight: .medium))
+            .font(PanelTypography.meta)
             .foregroundStyle(.secondary)
         }
         .controlSize(.small)
@@ -328,13 +328,13 @@ private struct QuickEntryRow: View, Equatable {
         .padding(.vertical, 6)
         .frame(minHeight: 48)
         .background(
-            RoundedRectangle(cornerRadius: 7, style: .continuous)
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .fill(rowBackground(isSelected: isSelected,
                                     isBatchSelected: isBatchSelected,
                                     isHovered: isHovered))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 7, style: .continuous)
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .strokeBorder(isBatchSelected ? Color.accentColor.opacity(0.38)
                               : isSelected ? Color.accentColor.opacity(0.24) : Color.clear,
                               lineWidth: 1)
@@ -365,7 +365,7 @@ private struct QuickEntryRow: View, Equatable {
         switch entry.kind {
         case .text:
             Text(entry.preview)
-                .font(.system(size: 12))
+                .font(PanelTypography.body)
                 .lineLimit(2)
                 .truncationMode(.tail)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -398,7 +398,7 @@ private struct QuickEntryRow: View, Equatable {
                         .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
                     VStack(alignment: .leading, spacing: 2) {
                         Text(entry.fileNames.first ?? entry.preview)
-                            .font(.system(size: 12))
+                            .font(PanelTypography.body)
                             .lineLimit(1)
                             .truncationMode(.middle)
                         if let dim = ClipboardImageStore.imageDimensionsLabel(atPath: path) {
@@ -413,12 +413,12 @@ private struct QuickEntryRow: View, Equatable {
             } else {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(fileTitle(entry))
-                        .font(.system(size: 12))
+                        .font(PanelTypography.body)
                         .lineLimit(1)
                         .truncationMode(.middle)
                     if entry.filePaths.count > 1 {
                         Text(entry.preview)
-                            .font(.system(size: 10))
+                            .font(PanelTypography.meta)
                             .foregroundStyle(.tertiary)
                             .lineLimit(1)
                             .truncationMode(.tail)
@@ -440,7 +440,7 @@ private struct QuickEntryRow: View, Equatable {
                     history.copyOnlyQuickEntry(entry)
                 } label: {
                     Image(systemName: "doc.on.doc")
-                        .font(.system(size: 10.5, weight: .semibold))
+                        .font(PanelTypography.meta)
                         .frame(width: 24, height: 24)
                         .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 6))
                 }
@@ -461,11 +461,11 @@ private struct QuickEntryRow: View, Equatable {
         } else {
             VStack(alignment: .trailing, spacing: 3) {
                 Text(entry.copiedAt, style: .time)
-                    .font(.system(size: 9.5))
+                    .font(PanelTypography.meta)
                     .foregroundStyle(.tertiary)
                 if let shortcutIndex {
                     Text("⌘\(shortcutIndex + 1)")
-                        .font(.system(size: 9.5, weight: .semibold, design: .rounded))
+                        .font(PanelTypography.meta)
                         .foregroundStyle(.secondary)
                 }
             }

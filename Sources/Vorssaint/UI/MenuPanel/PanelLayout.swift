@@ -242,7 +242,9 @@ struct PanelSection<Content: View>: View {
                 }
                 .buttonStyle(.plain)
             } else {
-                sectionTitle(title)
+                Text(title)
+                    .font(PanelTypography.panelTitle)
+                    .accessibilityAddTraits(.isHeader)
                 Spacer(minLength: 0)
             }
             if supportsEditing {
@@ -278,7 +280,7 @@ struct PanelSection<Content: View>: View {
                     .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
             } else {
                 Image(systemName: "slider.horizontal.3")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(PanelTypography.title)
                     .frame(width: 22, height: 18)
                     .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
             }
@@ -329,7 +331,7 @@ struct PanelSection<Content: View>: View {
 struct PanelDragHandle: View {
     var body: some View {
         Image(systemName: "line.3.horizontal")
-            .font(.system(size: 11, weight: .semibold))
+            .font(PanelTypography.title)
             .foregroundStyle(.tertiary)
             .frame(width: 16, height: 22)
             .contentShape(Rectangle())
@@ -393,7 +395,7 @@ struct PanelInlineHideButton: View {
             Image(systemName: isVisible ? "eye.slash.fill" : "eye.fill")
                 .font(.system(size: 11, weight: .bold))
                 .foregroundStyle(isVisible ? Color.secondary : Color.accentColor)
-                .frame(width: 24, height: 22)
+                .frame(width: 28, height: 28)
                 .background(
                     RoundedRectangle(cornerRadius: 7, style: .continuous)
                         .fill((isVisible ? Color.primary : Color.accentColor).opacity(0.10))
@@ -409,8 +411,8 @@ struct PanelHiddenBadge: View {
     @ObservedObject private var l10n = L10n.shared
 
     var body: some View {
-        Label(l10n.s.panelHiddenItem, systemImage: "eye.slash.fill")
-            .font(.system(size: 9.5, weight: .bold))
+        Text(l10n.s.panelHiddenItem)
+            .font(PanelTypography.meta)
             .foregroundStyle(.secondary)
             .padding(.horizontal, 7)
             .padding(.vertical, 3)
@@ -429,11 +431,11 @@ struct PanelHiddenItemRow: View {
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: systemImage)
-                .font(.system(size: 11, weight: .semibold))
+                .font(PanelTypography.title)
                 .foregroundStyle(.tertiary)
                 .frame(width: 16)
             Text(title)
-                .font(.system(size: 11, weight: .semibold))
+                .font(PanelTypography.title)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
             Spacer(minLength: 0)

@@ -11,7 +11,6 @@ struct NetworkSection: View {
     @ObservedObject private var speed = SpeedTest.shared
     @Environment(\.colorScheme) private var colorScheme
     var collapsible = true
-    @AppStorage(DefaultsKey.monitorGraphNetwork) private var showGraph = true
     @AppStorage(DefaultsKey.monitorNetSpeed) private var netSpeed = true
     @AppStorage(DefaultsKey.monitorNetApps) private var netApps = true
     @AppStorage(DefaultsKey.monitorNetTotals) private var netTotals = true
@@ -30,8 +29,7 @@ struct NetworkSection: View {
                      supportsEditing: true,
                      resetAction: resetPanelDefaults) { editing in
             VStack(alignment: .leading, spacing: 10) {
-                ForEach(Array(blocks(editing: editing).enumerated()), id: \.element) { index, block in
-                    if index > 0 { Divider() }
+                ForEach(blocks(editing: editing), id: \.self) { block in
                     PanelReorderableItem(item: block,
                                          isEnabled: editing,
                                          order: blockOrderBinding,
@@ -42,8 +40,10 @@ struct NetworkSection: View {
                             }
                             blockContent(block, editing: editing)
                                 .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.vertical, 3)
                         }
                     }
+                    if block != blocks(editing: editing).last { Divider().opacity(0.5) }
                 }
             }
             .panelCard()
@@ -137,7 +137,7 @@ struct NetworkSection: View {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 6) {
                     Text(l10n.s.networkApps)
-                        .font(.system(size: 10, weight: .medium))
+                        .font(PanelTypography.meta)
                         .foregroundStyle(.tertiary)
                     Spacer(minLength: 0)
                     if editing {
@@ -146,7 +146,7 @@ struct NetworkSection: View {
                 }
                 if appRows.isEmpty {
                     Text(appRowsLoading ? l10n.s.breakdownMeasuring : l10n.s.networkAppsIdle)
-                        .font(.system(size: 10.5))
+                        .font(PanelTypography.meta)
                         .foregroundStyle(.tertiary)
                 } else {
                     ForEach(appRows) { row in
@@ -177,52 +177,31 @@ struct NetworkSection: View {
                     rateColumn(icon: "arrow.down",
                                label: l10n.s.networkDownload,
                                value: monitor.snapshot.netDownBytesPerSec,
-                               color: .accentColor)
+                               color: .secondary, metric: .networkDown, editing: editing)
                     Divider().frame(height: 28)
                     rateColumn(icon: "arrow.up",
                                label: l10n.s.networkUpload,
                                value: monitor.snapshot.netUpBytesPerSec,
-                               color: PanelMetricColor.green(for: colorScheme))
-                }
-                if showGraph, monitor.snapshot.netDownHistory.count >= 2 {
-                    graph
+                               color: .secondary, metric: .networkUp, editing: editing)
                 }
             }
         }
     }
 
-    private func rateColumn(icon: String, label: String, value: Double?, color: Color) -> some View {
-        HStack(spacing: 7) {
-            Image(systemName: icon)
-                .font(.system(size: 12, weight: .semibold))
+    private func rateColumn(icon: String, label: String, value: Double?, color: Color, metric: MonitorMetric, editing: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Label(label, systemImage: icon)
+                .font(.system(size: 11, weight: .medium))
                 .foregroundStyle(color)
-            VStack(alignment: .leading, spacing: 1) {
-                Text(value.map { MetricFormat.bytesPerSec($0) } ?? l10n.s.networkMeasuring)
-                    .font(.system(size: 13.5, weight: .semibold, design: .rounded))
-                    .monospacedDigit()
-                    .contentTransition(.numericText())
-                Text(label)
-                    .font(.system(size: 10))
-                    .foregroundStyle(.secondary)
-            }
-            Spacer(minLength: 0)
+            Text(value.map { MetricFormat.bytesPerSec($0) } ?? l10n.s.networkMeasuring)
+                .font(PanelTypography.metric)
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            if !editing { MonitorTrendView(metrics: [metric], embedded: true) }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    /// Download (filled) and upload (line) share one scale so they compare fairly.
-    private var graph: some View {
-        let down = monitor.snapshot.netDownHistory
-        let up = monitor.snapshot.netUpHistory
-        let peak = max(down.max() ?? 0, up.max() ?? 0, 1)
-        return ZStack {
-            Sparkline(values: down, color: .accentColor, maxValue: peak, showsZeroBaseline: true)
-            Sparkline(values: up,
-                      color: PanelMetricColor.green(for: colorScheme),
-                      maxValue: peak,
-                      fillOpacity: 0.08)
-        }
-        .frame(height: 30)
+        .padding(.vertical, 8)
     }
 
     @ViewBuilder
@@ -234,12 +213,12 @@ struct NetworkSection: View {
         } else {
             HStack(spacing: 6) {
                 Text(l10n.s.networkThisSession)
-                    .font(.system(size: 10))
+                    .font(PanelTypography.meta)
                     .foregroundStyle(.tertiary)
                 Spacer()
                 if let down = monitor.snapshot.netTotalDown, let up = monitor.snapshot.netTotalUp {
                     Text("↓\(MetricFormat.bytes(down))  ↑\(MetricFormat.bytes(up))")
-                        .font(.system(size: 10.5, weight: .medium))
+                        .font(PanelTypography.meta)
                         .monospacedDigit()
                         .foregroundStyle(.secondary)
                 }
@@ -289,11 +268,11 @@ struct NetworkSection: View {
                 }
                 if case .failed = speed.phase {
                     Text(l10n.s.speedTestFailed)
-                        .font(.system(size: 10))
+                        .font(PanelTypography.meta)
                         .foregroundStyle(PanelMetricColor.orange(for: colorScheme))
                 } else if let latency = speed.latencyMs {
                     Text("\(l10n.s.speedTestLatency): \(Int(latency.rounded())) ms")
-                        .font(.system(size: 10))
+                        .font(PanelTypography.meta)
                         .foregroundStyle(.tertiary)
                 }
             }

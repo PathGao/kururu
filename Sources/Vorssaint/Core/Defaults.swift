@@ -298,7 +298,7 @@ enum DefaultsKey {
     static let menuBarLabelStyle = "menuBarLabelStyle"     // compact | classic
     static let menuBarMemoryStyle = "menuBarMemoryStyle"   // dot | percent | both
     static let monitorMemoryMetric = "monitorMemoryMetric" // used | app
-    static let monitorInterval = "monitorIntervalSeconds"  // sampling cadence: 1/2/5
+    static let monitorInterval = "monitorIntervalSeconds"  // sampling cadence: 1...5
     static let temperatureUnit = "temperatureUnit"          // celsius | fahrenheit
     // System monitor — which blocks appear in the panel.
     static let monitorShowSystem = "monitorShowSystem"
@@ -776,7 +776,7 @@ enum Defaults {
     static let allowedDurations = [0, 15, 30, 60, 120, 240, 480]
     static let allowedKeepAwakeMouseJiggleIntervals = [1, 2, 5, 10, 15]
     static let allowedBatteryLimits = [0, 5, 10, 15, 20]
-    static let allowedMonitorIntervals = [1, 2, 5]
+    static let allowedMonitorIntervals = [1, 2, 3, 4, 5]
     static let defaultKeyboardDebounceWindowMs = 5
     static let allowedKeyboardDebounceWindowRange = 0...500
     static let defaultMouseClickDebounceWindowMs = 25
@@ -1026,6 +1026,8 @@ enum Defaults {
         // The panel shows every monitoring block by default; users hide what
         // they don't want.
         DefaultsKey.monitorInterval: 2,
+        "monitorHistoryMinutes": 1,
+        "monitorGraphFan": true,
         DefaultsKey.temperatureUnit: TemperatureUnit.celsius.rawValue,
         DefaultsKey.menuBarCPUTemperature: false,
         DefaultsKey.menuBarGPUTemperature: false,

@@ -50,13 +50,13 @@ struct MenuBarMetricsPreview: View {
         let lines = MenuBarRenderer.lines(for: monitor.snapshot, metrics: activeMetrics)
         let stacked = lines.count > 1
 
-        HStack(spacing: 12) {
-            Spacer()
+        ScrollView(.horizontal) {
+          HStack(spacing: 12) {
             Image(systemName: "wifi")
-                .foregroundStyle(.white.opacity(0.5))
+                .foregroundStyle(.secondary)
             if PowerSampler.hasInternalBattery {
                 Image(systemName: "battery.75")
-                    .foregroundStyle(.white.opacity(0.5))
+                    .foregroundStyle(.secondary)
             }
             HStack(spacing: 5) {
                 glyph
@@ -76,13 +76,16 @@ struct MenuBarMetricsPreview: View {
                 }
             }
         }
-        .font(.system(size: 12))
-        .padding(.horizontal, 14)
-        .frame(height: 32)
+          .font(.system(size: 12))
+          .padding(.horizontal, 14)
+          .frame(height: 44)
+        }
+        .defaultScrollAnchor(.trailing)
+        .frame(height: 48)
         .frame(maxWidth: .infinity)
         .background(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Color.black.opacity(0.82))
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color(nsColor: .controlBackgroundColor))
         )
     }
 
@@ -111,18 +114,18 @@ struct MenuBarMetricsPreview: View {
                 .font(.system(size: MenuBarRenderer.statusFontSize(stacked: stacked),
                               weight: stacked ? .semibold : .medium,
                               design: .monospaced))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
                 .lineLimit(1)
                 .fixedSize(horizontal: true, vertical: false)
         case let .symbol(name):
             Image(systemName: name)
                 .font(.system(size: stacked ? 8.8 : 10.8, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
                 .frame(width: stacked ? 9.2 : 11.4, height: stacked ? 9.2 : 11.4)
         case let .largeSymbol(name):
             Image(systemName: name)
                 .font(.system(size: 13.6, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
                 .frame(width: 14.2, height: 14.2)
         case let .metricBlock(label, value, minimumValue, style, pressure):
             metricBlock(label: label,
@@ -146,7 +149,7 @@ struct MenuBarMetricsPreview: View {
             .font(.system(size: MenuBarRenderer.networkBlockFontSize(style: style),
                           weight: .semibold,
                           design: .monospaced))
-            .foregroundStyle(.white)
+            .foregroundStyle(.primary)
             .frame(width: MenuBarRenderer.rateBlockWidth(style: style),
                    height: style == .readable ? 22 : 20,
                    alignment: .center)
@@ -160,7 +163,7 @@ struct MenuBarMetricsPreview: View {
             .font(.system(size: MenuBarRenderer.networkBlockFontSize(style: style),
                           weight: .semibold,
                           design: .monospaced))
-            .foregroundStyle(.white)
+            .foregroundStyle(.primary)
             .frame(width: MenuBarRenderer.rateBlockWidth(style: style),
                    height: style == .readable ? 22 : 20,
                    alignment: .center)
@@ -174,7 +177,7 @@ struct MenuBarMetricsPreview: View {
                                   design: .monospaced))
                     .frame(minWidth: style == .readable ? 33 : 30, alignment: .leading)
             }
-            .foregroundStyle(.white)
+            .foregroundStyle(.primary)
             .fixedSize(horizontal: true, vertical: true)
         case let .dot(pressure):
             Circle()
@@ -185,7 +188,7 @@ struct MenuBarMetricsPreview: View {
                 .font(.system(size: MenuBarRenderer.statusFontSize(stacked: stacked),
                               weight: .medium,
                               design: .monospaced))
-                .foregroundStyle(.white.opacity(0.28))
+                .foregroundStyle(.tertiary)
                 .padding(.horizontal, 5)
         }
     }
@@ -215,7 +218,7 @@ struct MenuBarMetricsPreview: View {
                 }
             }
         }
-        .foregroundStyle(.white)
+        .foregroundStyle(.primary)
         .fixedSize(horizontal: true, vertical: true)
     }
 
@@ -250,7 +253,7 @@ struct MenuBarMetricsPreview: View {
 
             ZStack(alignment: .bottom) {
                 RoundedRectangle(cornerRadius: 2.2, style: .continuous)
-                    .stroke(Color.white, lineWidth: 1.15)
+                    .stroke(Color.primary, lineWidth: 1.15)
                 if let clamped, clamped > 0 {
                     RoundedRectangle(cornerRadius: 1.2, style: .continuous)
                         .fill(usageBarColor(for: clamped))
@@ -259,13 +262,13 @@ struct MenuBarMetricsPreview: View {
                         .padding(.bottom, 2.1)
                 } else if clamped == nil {
                     Rectangle()
-                        .fill(Color.white.opacity(0.55))
+                        .fill(Color.primary.opacity(0.55))
                         .frame(width: barWidth - 4.8, height: 1)
                 }
             }
             .frame(width: barWidth, height: barHeight)
         }
-        .foregroundStyle(.white)
+        .foregroundStyle(.primary)
         .frame(width: size.width, height: size.height)
         .fixedSize(horizontal: true, vertical: true)
     }
@@ -310,6 +313,6 @@ struct MenuBarMetricsPreview: View {
                 Image(systemName: "circle.fill")
             }
         }
-        .foregroundStyle(.white)
+        .foregroundStyle(.primary)
     }
 }

@@ -583,8 +583,6 @@ extension Strings {
         monitorShowBatteryTemperature: "Температура батареи",
         monitorShowPeripheralBattery: "Батарея аксессуаров",
         peripheralBatteryNoDevices: "Устройства не найдены",
-        monitorGraphsSection: "Графики",
-        monitorGraphsCaption: "Выберите, для каких метрик показывать график во времени.",
 
         updateBannerTitle: "Доступно обновление",
         updateBannerAction: "Обновить",

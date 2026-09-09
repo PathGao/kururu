@@ -46,7 +46,7 @@ struct PanelOrderEditor: View {
     @State private var visibilityChanges = 0
 
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: 8) {
             ForEach(editableOrder) { id in
                 VStack(spacing: 0) {
                     HStack(spacing: 8) {
@@ -54,7 +54,13 @@ struct PanelOrderEditor: View {
                             Image(systemName: "line.3.horizontal")
                                 .font(.system(size: 12))
                                 .foregroundStyle(.tertiary)
+                            Image(systemName: id.symbolName)
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundStyle(isShown(id) ? Color.accentColor : Color.secondary)
+                                .frame(width: 34, height: 34)
+                                .background(Color.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 10))
                             Text(id.title(l10n.s))
+                                .font(.system(size: 12, weight: .medium))
                                 .foregroundStyle(isShown(id) ? .primary : .secondary)
                             Spacer(minLength: 0)
                         }
@@ -78,11 +84,9 @@ struct PanelOrderEditor: View {
                                                  onChange: { visibilityChanges += 1 })
                         }
                     }
-                    .frame(height: 32)
-
-                    if id != editableOrder.last {
-                        Divider()
-                    }
+                    .frame(height: 46)
+                    .padding(.horizontal, 8)
+                    .background(Color.primary.opacity(0.025), in: RoundedRectangle(cornerRadius: 13))
                 }
             }
         }
@@ -125,21 +129,15 @@ private struct SectionVisibilityEye: View {
     }
 
     var body: some View {
-        Button {
-            shown.toggle()
-            onChange()
-        } label: {
-            Image(systemName: shown ? "eye.fill" : "eye.slash.fill")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(shown ? Color.accentColor : Color.secondary)
-                .frame(width: 30, height: 24)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
+        PanelInlineHideButton(isVisible: Binding(
+            get: { shown },
+            set: { shown = $0; onChange() }
+        ))
         // Keep at least one section visible.
         .disabled(shown && !canHide)
-        .help(shown ? l10n.s.panelHideItem : l10n.s.panelShowItem)
+        .accessibilityValue(id.title(l10n.s))
     }
+
 }
 
 private struct PanelOrderDropDelegate: DropDelegate {
