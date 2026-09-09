@@ -364,6 +364,7 @@ struct SettingsView: View {
         case .uninstaller: UninstallerView()
         case .cleaner: CleanerSettings()
         case .homebrew: HomebrewSettings()
+        case .environment: EnvironmentSettings()
         case .media: MediaSettings()
         case .clipboard: ClipboardSettings()
         case .mixer: MixerSettings()

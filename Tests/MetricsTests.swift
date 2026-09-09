@@ -11499,6 +11499,68 @@ struct MetricsTests {
                     "https://www.reddit.com/r/swift/comments/abc/?sort=new",
                     "URL cleaner strips Reddit's deep-link tracking in either spelling")
 
+        // MARK: Global environment inspection
+
+        expect(EnvironmentInspector.splitPath("/a:/b::/a:/c") == ["/a", "/b", "/c"],
+               "PATH parsing drops empty entries and keeps only the first of a repeat")
+        expect(EnvironmentInspector.launchdDefaultPath == ["/usr/bin", "/bin", "/usr/sbin", "/sbin"],
+               "the fallback GUI PATH is launchd's own default, not this process's")
+
+        var pathReport = EnvironmentReport()
+        pathReport.terminalPath = ["/opt/homebrew/bin", "/usr/bin", "/Users/test/.bun/bin"]
+        pathReport.guiPath = ["/usr/bin", "/bin"]
+        expect(pathReport.terminalOnlyPath == ["/opt/homebrew/bin", "/Users/test/.bun/bin"],
+               "the terminal-only list keeps PATH order and names exactly what a GUI app lacks")
+
+        let envFixture = FileManager.default.temporaryDirectory
+            .appendingPathComponent("vorssaint-env-\(UUID().uuidString)")
+        let envFirst = envFixture.appendingPathComponent("first")
+        let envSecond = envFixture.appendingPathComponent("second")
+        try? FileManager.default.createDirectory(at: envFirst, withIntermediateDirectories: true)
+        try? FileManager.default.createDirectory(at: envSecond, withIntermediateDirectories: true)
+        let shimScript = "#!/bin/sh\n# a wrapper, never falls back\nexec /Users/test/.bun/bin/bun \"$@\"\n"
+        let realScript = "#!/bin/sh\necho real\n"
+        for (directory, body) in [(envFirst, shimScript), (envSecond, realScript)] {
+            let file = directory.appendingPathComponent("node")
+            try? body.write(to: file, atomically: true, encoding: .utf8)
+            try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: file.path)
+        }
+        let shimmed = EnvironmentInspector.tool(named: "node", in: [envFirst.path, envSecond.path])
+        expect(shimmed.path == envFirst.appendingPathComponent("node").path,
+               "the first PATH entry wins, the way the shell resolves it")
+        expect(shimmed.shimTarget == "/Users/test/.bun/bin/bun" && shimmed.isShim,
+               "a wrapper script reports the command it actually execs")
+        expect(shimmed.shadowedPaths == [envSecond.appendingPathComponent("node").path],
+               "the copy that loses is still reported, so a shadowed command is visible")
+        let plain = EnvironmentInspector.tool(named: "node", in: [envSecond.path])
+        expect(plain.shimTarget == nil && !plain.isShim,
+               "a script that execs nothing else is not a wrapper")
+        expect(EnvironmentInspector.tool(named: "definitely-not-installed",
+                                         in: [envFirst.path]).path == nil,
+               "a command that is nowhere in PATH reports no path")
+
+        let linkTarget = envSecond.appendingPathComponent("bun")
+        try? realScript.write(to: linkTarget, atomically: true, encoding: .utf8)
+        try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: linkTarget.path)
+        let linkPath = envFirst.appendingPathComponent("npx")
+        try? FileManager.default.createSymbolicLink(at: linkPath, withDestinationURL: linkTarget)
+        expect(EnvironmentInspector.tool(named: "npx", in: [envFirst.path]).shimTarget == linkTarget.path,
+               "a symlink to another command is a wrapper too")
+        try? FileManager.default.removeItem(at: envFixture)
+
+        // Wrappers rarely put `exec` first on the line: a dispatch table puts
+        // it after the case label, and the target arrives quoted.
+        expect(EnvironmentInspector.execTarget(in: #"  install|i) exec "$HOME/.bun/bin/bun" install "$@" ;;"#)
+                == "$HOME/.bun/bin/bun",
+               "an exec inside a case branch still names its target, unquoted")
+        expect(EnvironmentInspector.execTarget(in: "exec /opt/homebrew/bin/bun run") == "/opt/homebrew/bin/bun",
+               "an exec at the start of the line names its target")
+        expect(EnvironmentInspector.execTarget(in: "exec -a login /bin/zsh") == "/bin/zsh",
+               "flags between exec and its target are skipped")
+        expect(EnvironmentInspector.execTarget(in: "# nothing to execute here") == nil
+                && EnvironmentInspector.execTarget(in: "codexec /bin/zsh") == nil,
+               "a word that merely ends in exec is not an exec")
+
         // MARK: Homebrew command building and parsing
 
         let homebrewManagerSource = (try? String(
@@ -13096,7 +13158,7 @@ struct MetricsTests {
 
         // MARK: Features hub catalog
 
-        expect(AppFeature.allCases.count == 49, "feature catalog has 49 features")
+        expect(AppFeature.allCases.count == 50, "feature catalog has 50 features")
         expect(Set(AppFeature.allCases.map(\.rawValue)).count == AppFeature.allCases.count,
                "feature ids are unique")
         expect(AppFeature.allCases.map(\.rawValue) == [
@@ -13108,7 +13170,7 @@ struct MetricsTests {
             "keepAwake", "brightness", "bluetoothSleep",
             "colorPicker", "screenOCR", "cleaningMode", "mediaTools",
             "cleaner", "uninstaller", "homebrew", "screenshot",
-            "radialMenu", "scratchpad", "commandBar", "screenRecorder",
+            "radialMenu", "scratchpad", "commandBar", "screenRecorder", "environment",
             "monitorCPU", "monitorGPU", "monitorMemory", "monitorNetwork", "monitorDisk", "monitorPower",
             "fanControl",
         ], "feature ids are stable (they persist inside availability keys)")
@@ -23839,7 +23901,7 @@ struct MetricsTests {
             (.capture, [.screenshot, .screenRecorder, .colorPicker, .screenOCR, .mediaTools]),
             (.soundDevices, [.mixer, .soundOutputSwitcher, .micMute, .musicBlock]),
             (.focusEnergy, [.keepAwake, .brightness, .bluetoothSleep, .cleaningMode]),
-            (.appManagement, [.cleaner, .uninstaller, .homebrew]),
+            (.appManagement, [.cleaner, .uninstaller, .homebrew, .environment]),
         ]
         for (group, members) in taxonomy {
             expect(Set(AppFeature.features(in: group)) == members,
@@ -24047,7 +24109,7 @@ struct MetricsTests {
             "Output switcher", "Mute microphone", "Music app blocker", "Keep awake", "Displays",
             "Bluetooth on sleep", "Color picker", "Copy text from screen", "Cleaning Mode", "Media", "Cleaner",
             "Uninstaller", "Homebrew", "Screenshot",
-            "Radial menu", "Scratchpad", "Command Bar", "Screen recording", "CPU",
+            "Radial menu", "Scratchpad", "Command Bar", "Screen recording", "Global environment", "CPU",
             "GPU", "Memory", "Network", "Disks", "Power", "Fan Control"
         ]
         let featureNamesZhHans = [
@@ -24055,7 +24117,7 @@ struct MetricsTests {
             "关闭鼠标加速", "侧键", "鼠标按键快捷键", "三指中键", "点击防抖", "按键防抖", "文本片段", "超级键", "退出与关闭保护", "剪贴板",
             "粘贴为纯文本", "剪切和粘贴", "重命名快捷键", "暂存架", "清理 URL", "音量混音器", "输出切换器", "静音麦克风",
             "「音乐」App 拦截", "保持唤醒", "显示器", "睡眠时的蓝牙", "颜色吸管", "拷贝屏幕文字", "清洁模式",
-            "媒体", "清理", "卸载器", "Homebrew", "截屏", "径向菜单", "草稿板", "命令栏", "屏幕录制",
+            "媒体", "清理", "卸载器", "Homebrew", "截屏", "径向菜单", "草稿板", "命令栏", "屏幕录制", "全局环境",
             "CPU", "GPU", "内存", "网络", "磁盘", "电源", "风扇控制"
         ]
         let pageTitlesEnUS = [
@@ -24063,7 +24125,7 @@ struct MetricsTests {
             "Mouse", "Trackpad", "App switcher",
             "Dock", "Keyboard", "Finder shortcuts",
             "Window behaviour", "Cleaner", "Uninstaller",
-            "Homebrew", "Media", "Clipboard", "Shelf",
+            "Homebrew", "Global environment", "Media", "Clipboard", "Shelf",
             "Screen capture", "Radial menu", "Command Bar",
             "Volume mixer", "Mute microphone", "Music app blocker", "Scratchpad",
             "Keyboard shortcuts", "Advanced", "About", "What’s New",
@@ -24071,7 +24133,7 @@ struct MetricsTests {
         ]
         let pageTitlesZhHans = [
             "功能", "菜单栏图标", "菜单栏面板", "监视", "保持唤醒", "显示器", "睡眠时的蓝牙", "清洁模式", "鼠标", "触控板", "窗口切换器", "Dock", "键盘", "访达快捷键",
-            "窗口行为", "清理", "卸载器", "Homebrew", "媒体", "剪贴板",
+            "窗口行为", "清理", "卸载器", "Homebrew", "全局环境", "媒体", "剪贴板",
             "暂存架", "屏幕捕捉", "径向菜单", "命令栏", "音量混音器", "静音麦克风", "「音乐」App 拦截",
             "草稿板",
             "键盘快捷键", "高级", "关于", "新功能", "支持"
@@ -24456,7 +24518,7 @@ struct MetricsTests {
             (.clipboardFiles, [.clipboard, .cutPaste, .shelf, .scratchpad]),
             (.capture, [.screenshot, .media]),
             (.soundDevices, [.mixer, .micMute, .musicBlock]),
-            (.appManagement, [.cleaner, .uninstaller, .homebrew]),
+            (.appManagement, [.cleaner, .uninstaller, .homebrew, .environment]),
         ]
         for (group, units) in unitsByGroup {
             expect(group.units == units,

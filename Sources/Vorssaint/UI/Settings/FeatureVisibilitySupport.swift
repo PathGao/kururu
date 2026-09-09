@@ -8,7 +8,7 @@ import Foundation
 /// below and the unit tests can reason about pages without pulling UI in.
 enum SettingsPage: Hashable {
     case features, menuBarIcon, menuBarPanel, monitor
-    case keepAwake, brightness, bluetoothSleep, cleaningMode, mouse, trackpad, switcher, dock, keyboard, cutPaste, windowBehavior, cleaner, uninstaller, homebrew, media, clipboard, shelf, screenshot, radialMenu, commandBar, mixer, micMute, musicBlock, scratchpad
+    case keepAwake, brightness, bluetoothSleep, cleaningMode, mouse, trackpad, switcher, dock, keyboard, cutPaste, windowBehavior, cleaner, uninstaller, homebrew, environment, media, clipboard, shelf, screenshot, radialMenu, commandBar, mixer, micMute, musicBlock, scratchpad
     case shortcuts, advanced, about, releaseNotes, support
 }
 
@@ -43,6 +43,7 @@ extension SettingsPage: CaseIterable {
         case .cleaningMode: return AppFeature.cleaningMode.name(s, language: language)
         case .cleaner: return s.cleanerName
         case .homebrew: return s.homebrewName
+        case .environment: return FeatureStrings.environment(language).pageTitle
         case .uninstaller: return s.uninstallerName
         case .shortcuts: return s.shortcutsPageTitle
         case .advanced: return s.tabAdvanced
@@ -271,6 +272,7 @@ extension AppFeature {
         case .cleaner: return FeatureSettingsDestination(.cleaner)
         case .uninstaller: return FeatureSettingsDestination(.uninstaller)
         case .homebrew: return FeatureSettingsDestination(.homebrew)
+        case .environment: return FeatureSettingsDestination(.environment)
         case .screenshot:
             return FeatureSettingsDestination(.screenshot, sectionAnchor: .screenshot)
         case .radialMenu: return FeatureSettingsDestination(.radialMenu)
@@ -320,6 +322,7 @@ enum FeatureVisibilitySupport {
         case .scratchpad: return [.scratchpad]
         case .cleaner: return [.cleaner]
         case .homebrew: return [.homebrew]
+        case .environment: return [.environment]
         case .uninstaller: return [.uninstaller]
         case .keyboard: return [.keyboardDebounce, .textSnippets, .superKey]
         case .screenshot: return [.screenshot, .screenRecorder, .screenOCR, .colorPicker]

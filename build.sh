@@ -287,6 +287,7 @@ if (( TEST )); then
         Sources/Vorssaint/Core/BatteryTimeStrings.swift \
         Sources/Vorssaint/Core/KeepAwakeStrings.swift \
         Sources/Vorssaint/Core/BluetoothSleepStrings.swift \
+        Sources/Vorssaint/Core/EnvironmentStrings.swift \
         Sources/Vorssaint/Core/PermissionGuideStrings.swift \
         Sources/Vorssaint/Core/FanControlStrings.swift \
         Sources/Vorssaint/Services/FanControl/FanControlSupport.swift \
@@ -295,6 +296,8 @@ if (( TEST )); then
         Sources/Vorssaint/Services/QuickTools/ScratchpadSupport.swift \
         Sources/Vorssaint/Services/QuickTools/ScratchpadStore.swift \
         Sources/Vorssaint/Services/KillProcess/KillProcessSupport.swift \
+        Sources/Vorssaint/Services/DirectorySize.swift \
+        Sources/Vorssaint/Services/Environment/EnvironmentInspector.swift \
         Sources/Vorssaint/Services/Recorder/RecorderSupport.swift \
             Sources/Vorssaint/Services/PrivateFileStore.swift \
         Sources/Vorssaint/Services/Recorder/RecorderTakeStore.swift \

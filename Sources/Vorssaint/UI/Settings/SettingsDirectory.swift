@@ -276,6 +276,7 @@ enum SettingsDirectory {
                                                  FeatureStrings.whatsAppDownloads(language).automatic,
                                                  FeatureStrings.whatsAppDownloads(language).fileTypes]),
                 SettingsDirectoryItem(page: .homebrew, s: s, language: language, icon: "shippingbox"),
+                SettingsDirectoryItem(page: .environment, s: s, language: language, icon: "terminal"),
                 SettingsDirectoryItem(page: .uninstaller, s: s, language: language, icon: "trash"),
             ]),
             (AppInfo.name, [

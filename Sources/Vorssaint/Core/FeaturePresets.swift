@@ -138,7 +138,7 @@ extension AppFeature {
                 ? .keyboard : .idle
         case .mouseAcceleration, .pastePlain, .soundOutputSwitcher, .micMute,
              .musicBlock, .bluetoothSleep, .keepAwake, .brightness, .colorPicker,
-             .screenOCR, .cleaningMode, .mediaTools, .cleaner, .uninstaller, .homebrew, .screenshot,
+             .screenOCR, .cleaningMode, .mediaTools, .cleaner, .uninstaller, .homebrew, .environment, .screenshot,
              .scratchpad, .commandBar, .screenRecorder, .fanControl:
             return .idle
         }

@@ -618,27 +618,10 @@ final class JunkCleaner: ObservableObject {
     }
 
     private static func directorySize(of url: URL, fm: FileManager) -> Int64 {
-        if UninstallerSupport.isSymbolicLink(url) { return 0 }
-        var isDir: ObjCBool = false
-        guard fm.fileExists(atPath: url.path, isDirectory: &isDir) else { return 0 }
-        if !isDir.boolValue { return fileSize(url) }
-        var total: Int64 = 0
-        if let enumerator = fm.enumerator(at: url,
-                                          includingPropertiesForKeys: [.totalFileAllocatedSizeKey, .fileAllocatedSizeKey],
-                                          options: [], errorHandler: nil) {
-            for case let item as URL in enumerator {
-                if UninstallerSupport.isSymbolicLink(item) {
-                    enumerator.skipDescendants()
-                    continue
-                }
-                total += fileSize(item)
-            }
-        }
-        return total
+        DirectorySize.of(url, fm: fm)
     }
 
     private static func fileSize(_ url: URL) -> Int64 {
-        let values = try? url.resourceValues(forKeys: [.totalFileAllocatedSizeKey, .fileAllocatedSizeKey])
-        return Int64(values?.totalFileAllocatedSize ?? values?.fileAllocatedSize ?? 0)
+        DirectorySize.fileSize(url)
     }
 }

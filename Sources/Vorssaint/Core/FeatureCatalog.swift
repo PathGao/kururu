@@ -28,7 +28,7 @@ enum AppFeature: String, CaseIterable {
     // new cases append here rather than move.
     case colorPicker, screenOCR, cleaningMode, mediaTools,
          cleaner, uninstaller, homebrew, screenshot, radialMenu, scratchpad,
-         commandBar, screenRecorder
+         commandBar, screenRecorder, environment
     // System monitor, one entry per metric family (temperatures live with
     // their parent metric: CPU temp with CPU, battery temp with power).
     case monitorCPU, monitorGPU, monitorMemory, monitorNetwork, monitorDisk, monitorPower, fanControl
@@ -45,7 +45,7 @@ enum FeatureUnit: String, CaseIterable {
     case mouse, trackpad, keyboard
     case clipboard, cutPaste, shelf
     case mixer, micMute, musicBlock, keepAwake, brightness, bluetoothSleep, cleaningMode
-    case screenshot, media, cleaner, uninstaller, homebrew,
+    case screenshot, media, cleaner, uninstaller, homebrew, environment,
          radialMenu, scratchpad, commandBar
     case monitor
 }
@@ -107,6 +107,7 @@ extension AppFeature {
         case .cleaningMode: return .cleaningMode
         case .cleaner: return .cleaner
         case .homebrew: return .homebrew
+        case .environment: return .environment
         case .uninstaller: return .uninstaller
         case .monitorCPU, .monitorGPU, .monitorMemory, .monitorNetwork, .monitorDisk, .monitorPower,
              .fanControl:
@@ -236,6 +237,7 @@ extension FeatureUnit {
         case .cleaningMode: return .cleaningMode
         case .cleaner: return .cleaner
         case .homebrew: return .homebrew
+        case .environment: return .environment
         case .uninstaller: return .uninstaller
         case .monitor: return .monitor
         }
@@ -330,7 +332,7 @@ extension AppFeature {
             return .soundDevices
         case .keepAwake, .brightness, .bluetoothSleep, .cleaningMode:
             return .focusEnergy
-        case .cleaner, .uninstaller, .homebrew:
+        case .cleaner, .uninstaller, .homebrew, .environment:
             return .appManagement
         }
     }
@@ -377,6 +379,7 @@ extension AppFeature {
         case .cleaner: return "sparkles"
         case .uninstaller: return "trash"
         case .homebrew: return "shippingbox"
+        case .environment: return "terminal"
         case .screenshot: return "camera.viewfinder"
         case .screenRecorder: return "record.circle"
         case .radialMenu: return "circle.grid.cross"
@@ -438,7 +441,7 @@ extension AppFeature {
         case .bluetoothSleep: return [DefaultsKey.bluetoothSleepEnabled]
         case .mixer, .micMute, .keepAwake,
  .colorPicker, .screenOCR, .cleaningMode, .mediaTools,
-             .cleaner, .uninstaller, .homebrew, .screenshot, .scratchpad,
+             .cleaner, .uninstaller, .homebrew, .environment, .screenshot, .scratchpad,
              .commandBar, .screenRecorder,
              .monitorCPU, .monitorGPU, .monitorMemory, .monitorNetwork, .monitorDisk, .monitorPower,
              .fanControl:
@@ -478,6 +481,8 @@ extension AppFeature {
         case .cleaner: return [.fullDiskAccess, .filesAndFolders, .notifications]
         case .uninstaller: return [.fullDiskAccess, .automationFinder]
         case .homebrew: return [.automationTerminal, .appManagement]
+        // Reading PATH, a few version strings and two cache folders needs nothing.
+        case .environment: return []
         case .mixer: return [.audioCapture, .accessibility]
         case .monitorCPU, .monitorMemory, .monitorDisk, .monitorPower: return [.notifications]
         case .clipboardHistory, .shelf, .urlCleaner,
@@ -494,7 +499,7 @@ extension AppFeature {
     var onboardingPermissions: [AppPermission] {
         switch self {
         case .keepAwake, .brightness, .radialMenu, .cleaner,
-             .uninstaller, .homebrew, .mixer,
+             .uninstaller, .homebrew, .environment, .mixer,
              .micMute, .cleaningMode:
             return []
         default:
@@ -653,6 +658,7 @@ extension AppFeature {
         case .cleaner: return s.cleanerName
         case .uninstaller: return s.uninstallerName
         case .homebrew: return s.homebrewName
+        case .environment: return FeatureStrings.environment(language).pageTitle
         case .monitorCPU: return s.monitorShowCPU
         case .monitorGPU: return s.monitorShowGPU
         case .monitorMemory: return s.monitorShowMemory
