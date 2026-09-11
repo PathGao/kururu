@@ -40,8 +40,6 @@ struct CleanerSettings: View {
                 .frame(maxWidth: 440)
                 .padding(.horizontal, 24)
                 .padding(.vertical, 14)
-
-                Divider()
             }
 
             if whatsAppEnabled, tool == .whatsApp {
@@ -84,6 +82,8 @@ struct CleanerView: View {
     @AppStorage(DefaultsKey.cleanerScheduleWeekday) private var scheduleWeekday = 2
     @AppStorage(DefaultsKey.cleanerLastAutoRun) private var lastAutoRun = 0.0
     @AppStorage(DefaultsKey.cleanerLastAutoFreed) private var lastAutoFreed = 0
+    @AppStorage(DefaultsKey.cleanerLastAutoFailed) private var lastAutoFailed = -1
+    @AppStorage(DefaultsKey.cleanerLastAutoAttempted) private var lastAutoAttempted = -1
     @AppStorage(DefaultsKey.cleanerScheduleNotify) private var scheduleNotify = true
     @ObservedObject private var scheduler = CleanerScheduler.shared
     @ObservedObject private var whatsAppScheduler = WhatsAppDownloadScheduler.shared
@@ -101,8 +101,18 @@ struct CleanerView: View {
     var compact = false
 
     var body: some View {
-        content
-            .frame(maxWidth: .infinity)
+        VStack(spacing: 0) {
+            content
+                .frame(maxWidth: .infinity, maxHeight: compact ? nil : .infinity)
+            if !compact {
+                fullScheduleCard
+                    .frame(maxWidth: 760)
+                    .padding(.horizontal, SettingsVisualStyle.current.pageInset)
+                    .padding(.bottom, SettingsVisualStyle.current.pageInset)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .frame(maxWidth: .infinity)
     }
 
     @ViewBuilder
@@ -252,7 +262,7 @@ struct CleanerView: View {
             Button(l10n.s.cleanerScan) { cleaner.scan() }
                 .controlSize(.large)
                 .buttonStyle(.borderedProminent)
-            scheduleCard
+            if compact { scheduleCard }
             if !compact, !whatsAppEnabled { whatsAppOptInCard }
             // The Settings page has its own full tool for these downloads;
             // the panel gets this one-line home so the feature is findable
@@ -274,17 +284,13 @@ struct CleanerView: View {
     }
 
     private var whatsAppOptInCard: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Toggle(whatsAppStrings.title, isOn: $whatsAppEnabled)
-                .font(.system(size: 12, weight: .medium))
-            Text(whatsAppStrings.hubDescription)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
+        SettingsSection {
+            SettingsToggleWithCaption(title: whatsAppStrings.title,
+                                      caption: whatsAppStrings.hubDescription,
+                                      isOn: $whatsAppEnabled)
         }
-        .padding(11)
-        .frame(maxWidth: 380)
-        .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(Color.primary.opacity(0.05)))
+        .toggleStyle(.checkbox)
+        .frame(maxWidth: 760)
     }
 
     /// Collapsed summary: Off until the automation is armed, then the next
@@ -506,23 +512,13 @@ struct CleanerView: View {
     }
 
     private var fullScheduleCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
-                Image(systemName: "clock").foregroundStyle(.secondary)
-                Text(l10n.s.cleanerScheduleTitle)
-                    .font(.system(size: 12, weight: .medium))
-                Spacer()
+        SettingsSection {
+            SettingsControlRow(title: l10n.s.cleanerScheduleTitle, systemImage: "clock",
+                               caption: l10n.s.cleanerScheduleCaption) {
                 frequencyPicker
             }
             scheduleDetails
-            Text(l10n.s.cleanerScheduleCaption)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(11)
-        .frame(maxWidth: 380)
-        .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(Color.primary.opacity(0.05)))
         .modifier(ScheduleChangeSync(notify: $scheduleNotify,
                                      frequency: $scheduleFrequencyRaw,
                                      hour: $scheduleHour,
@@ -581,10 +577,10 @@ struct CleanerView: View {
                 }
                 Toggle(l10n.s.cleanerScheduleNotifyToggle, isOn: $scheduleNotify)
                     .toggleStyle(.checkbox)
-                    .font(.system(size: 11.5))
+                    .font(compact ? .system(size: 11.5) : SettingsTypography.body)
                 if scheduleNotify, notificationsDenied {
                     Text(l10n.s.cleanerNotifDenied)
-                        .font(.caption2)
+                        .font(compact ? .caption2 : SettingsTypography.caption)
                         .foregroundStyle(.orange)
                         .fixedSize(horizontal: false, vertical: true)
                     Button(l10n.s.cleanerNotifOpenSettings) {
@@ -592,19 +588,19 @@ struct CleanerView: View {
                             NSWorkspace.shared.open(url)
                         }
                     }
-                    .controlSize(.small)
+                    .controlSize(compact ? .small : .regular)
                 }
                 if let next = scheduler.nextFire {
                     Text(String(format: l10n.s.cleanerScheduleNextFormat,
                                 Self.nextRunFormatter.string(from: next)))
-                        .font(.caption2)
+                        .font(compact ? .caption2 : SettingsTypography.caption)
                         .foregroundStyle(.secondary)
                 }
-                if lastAutoRun > 0 {
-                    Text(lastRunLine)
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
-                }
+        }
+        if lastAutoRun > 0 {
+            Text(lastRunLine)
+                .font(compact ? .caption2 : SettingsTypography.caption)
+                .foregroundStyle(lastRunResult.failed > 0 ? Color.orange : Color.secondary)
         }
     }
 
@@ -638,13 +634,15 @@ struct CleanerView: View {
         }
     }
 
+    private var lastRunResult: CleanerRunResult {
+        CleanerRunResult(failed: lastAutoFailed, attempted: lastAutoAttempted)
+    }
+
     private var lastRunLine: String {
-        let ranAt = Self.nextRunFormatter.string(from: Date(timeIntervalSince1970: lastAutoRun))
-        if lastAutoFreed > 0 {
-            return String(format: l10n.s.cleanerScheduleLastFormat,
-                          Self.byteString(Int64(lastAutoFreed)))
-        }
-        return String(format: l10n.s.cleanerScheduleRanFormat, ranAt)
+        CleanerRunStrings.localized(l10n.language).summary(
+            result: lastRunResult,
+            ranAt: Self.nextRunFormatter.string(from: Date(timeIntervalSince1970: lastAutoRun)),
+            freed: Self.byteString(Int64(lastAutoFreed)))
     }
 
     /// Checked slightly delayed so a just fired authorization prompt has a
@@ -669,6 +667,9 @@ struct CleanerView: View {
             Spacer(minLength: compact ? 24 : 0)
             SparkleGlyph(animating: true, size: compact ? 40 : 54)
             Text(message).foregroundStyle(.secondary)
+            if cleaner.phase == .scanning {
+                Button(l10n.s.uninstallerCancel) { cleaner.reset() }
+            }
             if let detail {
                 Text(detail).font(.caption).foregroundStyle(.tertiary)
             }
@@ -682,7 +683,7 @@ struct CleanerView: View {
     private var resultsState: some View {
         VStack(spacing: 0) {
             resultsHeader
-            Divider()
+                .padding(.bottom, compact ? 0 : 4)
             if cleaner.items.isEmpty {
                 VStack(spacing: 10) {
                     Spacer(minLength: 24)
@@ -705,8 +706,8 @@ struct CleanerView: View {
                 // opaque backdrop over the panel's translucent material.
                 .scrollContentBackground(compact ? .hidden : .automatic)
                 .frame(minHeight: compact ? 280 : 0)
-                Divider()
                 resultsFooter
+                    .padding(.top, compact ? 0 : 4)
             }
         }
     }
@@ -724,6 +725,8 @@ struct CleanerView: View {
                 Image(systemName: "xmark.circle.fill").font(.system(size: 16)).foregroundStyle(.secondary)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(l10n.s.uninstallerCancel)
+            .help(l10n.s.uninstallerCancel)
         }
         .padding(compact ? 12 : 16)
     }
@@ -733,8 +736,12 @@ struct CleanerView: View {
         let visible = groups.filter { !items(for: $0).isEmpty }
         if !visible.isEmpty {
             Section(header) {
-                ForEach(visible) { group in groupRow(group) }
+                ForEach(visible) { group in
+                    groupRow(group)
+                        .listRowSeparator(.hidden)
+                }
             }
+            .listSectionSeparator(.hidden)
         }
     }
 
@@ -745,16 +752,22 @@ struct CleanerView: View {
                 Text(l10n.s.cleanerLeftoversNote)
                     .font(.caption2)
                     .foregroundStyle(.orange)
+                    .listRowSeparator(.hidden)
             }
             if group == .loginItems {
                 Text(l10n.s.cleanerLoginItemsNote)
                     .font(.caption2)
                     .foregroundStyle(.secondary)
+                    .listRowSeparator(.hidden)
             }
-            ForEach(group_items) { item in itemRow(item) }
+            ForEach(group_items) { item in
+                itemRow(item)
+                    .listRowSeparator(.hidden)
+            }
         } label: {
             HStack(spacing: 10) {
                 Toggle("", isOn: groupBinding(group)).labelsHidden().toggleStyle(.checkbox)
+                    .accessibilityLabel(title(for: group))
                 Image(systemName: group.icon)
                     .font(.system(size: 14))
                     .foregroundStyle(.secondary)
@@ -776,6 +789,7 @@ struct CleanerView: View {
     private func itemRow(_ item: JunkCleaner.Item) -> some View {
         HStack(spacing: 10) {
             Toggle("", isOn: includeBinding(item)).labelsHidden().toggleStyle(.checkbox)
+                .accessibilityLabel(item.name)
             VStack(alignment: .leading, spacing: 1) {
                 Text(item.name).font(.system(size: 12)).lineLimit(1).truncationMode(.middle)
                 Text(prettyPath(item.url))
@@ -820,21 +834,32 @@ struct CleanerView: View {
     private func doneState(freed: Int64, failed: Int) -> some View {
         VStack(spacing: 16) {
             Spacer(minLength: compact ? 20 : 0)
-            Image(systemName: "checkmark.circle.fill")
+            Image(systemName: failed == 0 ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
                 .font(.system(size: compact ? 40 : 54))
-                .foregroundStyle(.green)
-            Text(l10n.s.uninstallerDoneTitle).font(.system(size: compact ? 17 : 20, weight: .bold))
+                .foregroundStyle(failed == 0 ? .green : .orange)
+            Text(failed == 0 ? l10n.s.uninstallerDoneTitle : l10n.s.cleanerIncompleteTitle).font(.system(size: compact ? 17 : 20, weight: .bold))
             Text(String(format: l10n.s.uninstallerFreedFormat, Self.byteString(freed)))
                 .font(.system(size: 13)).foregroundStyle(.secondary)
-            Text(l10n.s.cleanerDoneNote)
-                .font(.caption).foregroundStyle(.tertiary)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: 340)
-            if failed > 0 {
-                Text(l10n.s.uninstallerSomeFailed)
-                    .font(.caption).foregroundStyle(.orange)
+            if failed == 0 {
+                Text(l10n.s.cleanerDoneNote)
+                    .font(.caption).foregroundStyle(.tertiary)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 40)
+                    .frame(maxWidth: 340)
+            } else {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(l10n.s.cleanerFailedNote)
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                        .fixedSize(horizontal: false, vertical: true)
+                    ForEach(cleaner.failedItems) { item in
+                        Text(item.url.path)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .textSelection(.enabled)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .frame(maxWidth: 340, alignment: .leading)
             }
             Button(l10n.s.cleanerAgain) { cleaner.reset() }
                 .controlSize(.large)

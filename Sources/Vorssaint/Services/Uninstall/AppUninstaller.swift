@@ -57,6 +57,7 @@ final class AppUninstaller: ObservableObject {
         }
     }
 
+    @Published private(set) var selectionError: UninstallerSelectionError?
     @Published private(set) var phase: Phase = .empty
     @Published private(set) var target: Target?
     @Published private(set) var homebrewPackage: HomebrewPackage?
@@ -94,25 +95,50 @@ final class AppUninstaller: ObservableObject {
             && status.isActive
     }
 
+    /// Once removal starts, its target and follow-up cleanup remain fixed.
+    var isBusy: Bool { phase == .removing || isRemovingWithHomebrew }
+
+    struct HomebrewRemovalConfirmation {
+        let package: HomebrewPackage
+        let targetURL: URL
+        let selectedIDs: Set<UUID>
+    }
+
+    var homebrewRemovalConfirmation: HomebrewRemovalConfirmation? {
+        guard phase == .results, !isBusy,
+              let package = selectedHomebrewPackage, let target else { return nil }
+        return HomebrewRemovalConfirmation(package: package, targetURL: target.url,
+                                           selectedIDs: Set(items.filter(\.include).map(\.id)))
+    }
+
     // MARK: - Selection & scan
 
     /// Reads an app bundle and starts scanning for its leftovers.
     func select(appURL: URL) {
-        guard let bundle = Bundle(url: appURL) else { return }
-        // System apps are SIP-protected and their support data is live OS
-        // state; removing either would be wrong, so refuse the selection.
-        guard !InstalledApps.isSystemApplication(at: appURL) else { return }
-        // Only a verified bundle identifier becomes a path component. A
-        // display name is presentation only and can never claim user data.
-        guard let bundleID = UninstallerSupport.verifiedBundleID(bundle.bundleIdentifier) else { return }
+        guard !isBusy else { return }
+        let bundle = Bundle(url: appURL)
         let selectedURL = appURL.standardizedFileURL
-        guard selectedURL == selectedURL.resolvingSymlinksInPath() else { return }
-        guard selectedURL != Bundle.main.bundleURL.standardizedFileURL else { return }
-        guard !UninstallerSupport.isSymbolicLink(appURL) else { return }
-        guard let selectedIdentity = UninstallerSupport.fileIdentity(at: selectedURL) else { return }
+        let bundleID = UninstallerSupport.verifiedBundleID(bundle?.bundleIdentifier)
+        let selectedIdentity = UninstallerSupport.fileIdentity(at: selectedURL)
         let infoURL = selectedURL.appendingPathComponent("Contents/Info.plist")
-        guard let selectedInfoIdentity = UninstallerSupport.fileIdentity(at: infoURL),
-              UninstallerSupport.removalPathIsSafe(infoURL, within: selectedURL) else { return }
+        let selectedInfoIdentity = UninstallerSupport.fileIdentity(at: infoURL)
+        let protected = selectedURL == Bundle.main.bundleURL.standardizedFileURL
+            || bundle?.bundleIdentifier.map(CleanerSupport.isProtectedBundleID) == true
+        let actualPath = selectedURL == selectedURL.resolvingSymlinksInPath()
+            && !UninstallerSupport.isSymbolicLink(appURL)
+        let valid = bundle != nil && bundleID != nil && selectedIdentity != nil
+            && selectedInfoIdentity != nil && UninstallerSupport.removalPathIsSafe(infoURL, within: selectedURL)
+        if let reason = UninstallerSelectionSupport.rejection(
+            system: InstalledApps.isSystemApplication(at: appURL), protected: protected,
+            actualPath: actualPath, valid: valid) {
+            rejectSelection(reason)
+            return
+        }
+        guard let bundleID, let selectedIdentity, let selectedInfoIdentity else {
+            rejectSelection(.invalidApplication)
+            return
+        }
+        selectionError = nil
         var name = FileManager.default.displayName(atPath: appURL.path)
         if name.hasSuffix(".app") { name.removeLast(4) }
         let icon = NSWorkspace.shared.icon(forFile: appURL.path)
@@ -158,7 +184,7 @@ final class AppUninstaller: ObservableObject {
                 guard Self.applicationIdentityMatches(
                     selectedURL, appIdentity: selectedIdentity,
                     infoIdentity: selectedInfoIdentity) else {
-                    self.reset()
+                    self.rejectSelection(.changedApplication)
                     return
                 }
                 HomebrewManager.shared.packageManagingApplication(at: selectedURL) { [weak self] package in
@@ -168,7 +194,7 @@ final class AppUninstaller: ObservableObject {
                     guard Self.applicationIdentityMatches(
                         selectedURL, appIdentity: selectedIdentity,
                         infoIdentity: selectedInfoIdentity) else {
-                        self.reset()
+                        self.rejectSelection(.changedApplication)
                         return
                     }
                     self.items = found
@@ -186,8 +212,14 @@ final class AppUninstaller: ObservableObject {
         items[index].include = include
     }
 
+    private func rejectSelection(_ error: UninstallerSelectionError) {
+        reset()
+        selectionError = error
+    }
+
     func reset() {
-        guard !isRemovingWithHomebrew else { return }
+        guard !isBusy else { return }
+        selectionError = nil
         target = nil
         targetFileIdentity = nil
         targetInfoIdentity = nil
@@ -204,6 +236,7 @@ final class AppUninstaller: ObservableObject {
     // MARK: - Removal
 
     func removeSelected() {
+        guard phase == .results, !isBusy else { return }
         let chosen = items.filter(\.include)
         guard !chosen.isEmpty else { return }
         phase = .removing
@@ -342,8 +375,16 @@ final class AppUninstaller: ObservableObject {
     /// After Homebrew has removed its package receipt and app artifact, clean
     /// only the other items the person selected. The app itself is excluded so
     /// this flow never tries to remove the same bundle twice.
-    func removeSelectedWithHomebrew() {
-        guard let package = selectedHomebrewPackage else { return }
+    func removeSelectedWithHomebrew(confirmation: HomebrewRemovalConfirmation) {
+        guard phase == .results, !isBusy,
+              target?.url == confirmation.targetURL,
+              selectedHomebrewPackage?.id == confirmation.package.id,
+              Set(items.filter(\.include).map(\.id)) == confirmation.selectedIDs else {
+            QuickToolHUD.show(icon: "exclamationmark.circle",
+                              message: L10n.shared.s.uninstallerConfirmationExpired)
+            return
+        }
+        let package = confirmation.package
         let manager = HomebrewManager.shared
         guard manager.operation == nil else { return }
         manager.clearLog()
@@ -372,6 +413,10 @@ final class AppUninstaller: ObservableObject {
             removeSelected()
             return
         }
+        // @Published sends the success value before its stored status changes.
+        // This package operation is complete, so release its busy ownership
+        // before changing the selection and starting ordinary leftover cleanup.
+        homebrewPackage = nil
         homebrewRemovalSize = app.size
         homebrewRemovedApplication = true
         setInclude(false, for: app.id)

@@ -10,7 +10,7 @@ final class SoundOutputSwitcher: ObservableObject {
     static let shared = SoundOutputSwitcher()
 
     @Published private(set) var registrationFailed = false
-    @Published private(set) var lastSwitchFailed = false
+    @Published private(set) var lastSwitchResult: SoundOutputSwitchResult?
 
     private var hotKeyRef: EventHotKeyRef?
     private var eventHandler: EventHandlerRef?
@@ -42,14 +42,25 @@ final class SoundOutputSwitcher: ObservableObject {
         } else {
             UserDefaults.standard.set(sanitized, forKey: DefaultsKey.soundOutputSwitcherDeviceUIDs)
         }
-        lastSwitchFailed = false
+        lastSwitchResult = nil
+    }
+
+    func clearSwitchResult() { lastSwitchResult = nil }
+
+    var failureMessage: String? {
+        let strings = FeatureStrings.soundOutputSwitcher(L10n.shared.language)
+        switch lastSwitchResult {
+        case .noAvailableSelection: return strings.noAvailableSelection
+        case .failed: return strings.switchFailed
+        case .switched, .unchanged, nil: return nil
+        }
     }
 
     @discardableResult
-    func switchToNextOutput() -> Bool {
-        let ok = AppVolumeMixer.shared.switchToNextSoundOutput(in: selectedDeviceUIDs())
-        lastSwitchFailed = !ok
-        return ok
+    func switchToNextOutput() -> SoundOutputSwitchResult {
+        let result = AppVolumeMixer.shared.switchToNextSoundOutput(in: selectedDeviceUIDs())
+        lastSwitchResult = result
+        return result
     }
 
     private func registerHotkey() {
@@ -106,6 +117,6 @@ final class SoundOutputSwitcher: ObservableObject {
         hotKeyRef = nil
         registeredShortcut = nil
         registrationFailed = false
-        lastSwitchFailed = false
+        lastSwitchResult = nil
     }
 }

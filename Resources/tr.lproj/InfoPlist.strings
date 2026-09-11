@@ -1,22 +1,22 @@
 /* macOS Automation permission prompt. */
-"NSAppleEventsUsageDescription" = "Vorssaint; Finder'da dosya taşımak, öğeleri Çöp Sepeti'ne göndermek ve Homebrew işlemleri istediğinde Terminal komutları açmak için Otomasyon kullanır.";
+"NSAppleEventsUsageDescription" = "__APP_NAME__; Finder'da dosya taşımak, öğeleri Çöp Sepeti'ne göndermek ve Homebrew işlemleri istediğinde Terminal komutları açmak için Otomasyon kullanır. Also used to set Finder folder arrangement rules when you request it.";
 
 /* macOS Screen & System Audio Recording permission prompt. */
-"NSAudioCaptureUsageDescription" = "Vorssaint, mikserde ses düzeyini ayarlamak ve başlattığın ekran kayıtlarına Mac'in sesini eklemek için her uygulamanın sesini kullanır. Hiçbir şey Mac'inden çıkmaz.";
+"NSAudioCaptureUsageDescription" = "__APP_NAME__, mikserde ses düzeyini ayarlamak ve başlattığın ekran kayıtlarına Mac'in sesini eklemek için her uygulamanın sesini kullanır. Hiçbir şey Mac'inden çıkmaz.";
 
 /* macOS Bluetooth permission prompt. */
-"NSBluetoothAlwaysUsageDescription" = "Vorssaint, Bluetooth'u yalnızca bağlı çevre birimlerinin pil düzeyini okumak için kullanır. Hiçbir veri Mac'inden çıkmaz.";
+"NSBluetoothAlwaysUsageDescription" = "__APP_NAME__, Bluetooth'u yalnızca bağlı çevre birimlerinin pil düzeyini okumak için kullanır. Hiçbir veri Mac'inden çıkmaz.";
 
 /* macOS Microphone permission prompt. */
-"NSMicrophoneUsageDescription" = "Vorssaint, mikrofonunuzu yalnızca ekran kaydı için açtığınızda kaydeder. Geçici bir bağlantı oluşturmadığınız sürece ses Mac'inizde kalır.";
+"NSMicrophoneUsageDescription" = "__APP_NAME__, mikrofonunuzu yalnızca ekran kaydı için açtığınızda kaydeder. Ses Mac'inizde kalır.";
 
 /* macOS Camera permission prompt. */
 
 /* macOS Downloads folder permission prompt. */
-"NSDownloadsFolderUsageDescription" = "Vorssaint, yalnızca seçtiğiniz doğrulanmış WhatsApp dosyalarını incelemek, düzenlemek veya Çöp Sepeti'ne taşımak için İndirilenler'deki yerel meta verileri denetler.";
+"NSDownloadsFolderUsageDescription" = "__APP_NAME__, yalnızca seçtiğiniz doğrulanmış WhatsApp dosyalarını incelemek, düzenlemek veya Çöp Sepeti'ne taşımak için İndirilenler'deki yerel meta verileri denetler.";
 
 /* macOS user-selected organizer destination prompts. */
-"NSDesktopFolderUsageDescription" = "Vorssaint, doğrulanmış WhatsApp indirmelerini açıkça seçtiğiniz bir hedef klasörde düzenler.";
-"NSDocumentsFolderUsageDescription" = "Vorssaint, doğrulanmış WhatsApp indirmelerini açıkça seçtiğiniz bir hedef klasörde düzenler.";
-"NSNetworkVolumesUsageDescription" = "Vorssaint, doğrulanmış WhatsApp indirmelerini açıkça seçtiğiniz bir hedef klasörde düzenler.";
-"NSRemovableVolumesUsageDescription" = "Vorssaint, doğrulanmış WhatsApp indirmelerini açıkça seçtiğiniz bir hedef klasörde düzenler.";
+"NSDesktopFolderUsageDescription" = "__APP_NAME__, doğrulanmış WhatsApp indirmelerini açıkça seçtiğiniz bir hedef klasörde düzenler.";
+"NSDocumentsFolderUsageDescription" = "__APP_NAME__, doğrulanmış WhatsApp indirmelerini açıkça seçtiğiniz bir hedef klasörde düzenler.";
+"NSNetworkVolumesUsageDescription" = "__APP_NAME__, doğrulanmış WhatsApp indirmelerini açıkça seçtiğiniz bir hedef klasörde düzenler.";
+"NSRemovableVolumesUsageDescription" = "__APP_NAME__, doğrulanmış WhatsApp indirmelerini açıkça seçtiğiniz bir hedef klasörde düzenler.";

@@ -9,7 +9,6 @@ import UniformTypeIdentifiers
 struct MediaSettings: View {
     var body: some View {
         MediaWorkspaceView(compact: false)
-            .padding(16)
     }
 }
 
@@ -95,6 +94,13 @@ struct MediaWorkspaceView: View {
     @AppStorage(DefaultsKey.mediaTextAccurate) private var textAccurate = true
 
     @State private var inputURLs: [URL] = []
+    @State private var inputRevision = 0
+    @State private var pdfCompressionMode: MediaPDFCompressionMode = .preserveResolution
+    @State private var pdfInspectionTask: Task<Void, Never>?
+    @State private var pdfInspectionGeneration = 0
+    @State private var pdfPageCounts: [URL: Int] = [:]
+    @State private var pdfInspectionErrors: [URL: MediaPDFError] = [:]
+    @State private var pdfInspectionBatchError: MediaPDFError?
     @State private var inputImageSize: CGSize?
     @State private var outputURL: URL?
     @State private var outputWasChosenManually = false
@@ -115,6 +121,8 @@ struct MediaWorkspaceView: View {
     var onClose: (() -> Void)? = nil
 
     private var inputURL: URL? { inputURLs.first }
+    private var isPDFTool: Bool { selectedTool == .pdfMerger || selectedTool == .pdfCompressor }
+    private var pdfText: MediaPDFStrings { .localized(l10n.language) }
     private var imageText: MediaImageConverterStrings {
         MediaImageConverterStrings.localized(l10n.language)
     }
@@ -126,15 +134,21 @@ struct MediaWorkspaceView: View {
     private var selectedTool: MediaTool {
         get { MediaSupport.sanitizedTool(toolRaw) }
         nonmutating set {
+            guard !isRunning else { return }
             cancelVideoImport()
+            inputRevision &+= 1
+            let rejected = !inputURLs.isEmpty
+                && MediaInputSelectionSupport.validatedURLs(inputURLs, for: newValue) == nil
+            if rejected { inputURLs = [] }
             toolRaw = newValue.rawValue
+            refreshPDFInspection()
             inputImageSize = newValue == .imageCompressor
                 ? inputURL.flatMap { MediaSupport.imageDisplaySize(at: $0) }
                 : nil
             outputURL = defaultOutputURL(for: inputURLs, tool: newValue)
             outputWasChosenManually = false
             applyMediaDefaults(for: inputURL, tool: newValue)
-            localMessage = nil
+            localMessage = rejected ? pdfText.changedTool : nil
             media.reset()
         }
     }
@@ -153,17 +167,34 @@ struct MediaWorkspaceView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: compact ? 10 : 14) {
-            header
-            toolPicker
-            ScrollView {
-                content
-                    .padding(.trailing, 1)
+        Group {
+            if compact {
+                VStack(alignment: .leading, spacing: 10) {
+                    header
+                    toolPicker
+                    ScrollView {
+                        content.padding(.trailing, 1)
+                    }
+                    .frame(maxHeight: 430)
+                }
+            } else {
+                SettingsForm {
+                    SettingsSection {
+                        toolPicker
+                        SettingsInfo(text: l10n.s.mediaLocalNote, systemImage: "lock.shield")
+                    }
+                    content
+                }
             }
-            .frame(maxHeight: compact ? 430 : .infinity)
+        }
+        .onAppear { refreshPDFInspection() }
+        .onChange(of: pdfCompressionMode) {
+            guard selectedTool == .pdfCompressor, !isRunning else { return }
+            media.reset()
+            localMessage = nil
         }
         .onChange(of: currentImageOptions) { oldOptions, newOptions in
-            guard selectedTool == .imageCompressor else { return }
+            guard selectedTool == .imageCompressor, !isRunning else { return }
             if outputWasChosenManually {
                 if inputURLs.count == 1,
                    oldOptions.format != newOptions.format,
@@ -177,6 +208,7 @@ struct MediaWorkspaceView: View {
             outputURL = defaultOutputURL(for: inputURLs, tool: .imageCompressor)
         }
         .onDisappear {
+            cancelPDFInspection()
             mediaDefaultsTask?.cancel()
             cancelVideoImport()
         }
@@ -188,10 +220,10 @@ struct MediaWorkspaceView: View {
     private var header: some View {
         HStack(spacing: 9) {
             Label(AppFeature.mediaTools.name(l10n.s, language: l10n.language), systemImage: "photo.on.rectangle.angled")
-                .font(.system(size: compact ? 12 : 16, weight: .semibold))
+                .font(compact ? .system(size: 12, weight: .semibold) : SettingsTypography.body.weight(.semibold))
             Spacer(minLength: 0)
             Text(l10n.s.mediaLocalNote)
-                .font(.system(size: compact ? 9.5 : 11, weight: .medium))
+                .font(compact ? .system(size: 9.5, weight: .medium) : SettingsTypography.body.weight(.medium))
                 .foregroundStyle(.secondary)
             if let onClose {
                 Button(action: onClose) {
@@ -207,20 +239,37 @@ struct MediaWorkspaceView: View {
     }
 
     private var toolPicker: some View {
+        Group {
+            if compact { toolChoices.pickerStyle(.menu) }
+            else { toolChoices.pickerStyle(.segmented) }
+        }
+        .disabled(isRunning)
+    }
+
+    private var toolChoices: some View {
         Picker("", selection: selectedToolBinding) {
             ForEach(MediaTool.allCases) { tool in
                 Text(title(for: tool)).tag(tool)
             }
         }
-        .pickerStyle(.segmented)
         .labelsHidden()
     }
 
     private var content: some View {
-        VStack(alignment: .leading, spacing: compact ? 9 : 12) {
+        VStack(alignment: .leading, spacing: compact ? 9 : SettingsVisualStyle.current.sectionSpacing) {
             fileCard
-            optionsCard
-            actionRow
+                .disabled(isRunning)
+            if compact {
+                optionsCard.disabled(isRunning)
+                actionRow
+            } else {
+                VStack(alignment: .leading, spacing: SettingsVisualStyle.current.contentSpacing) {
+                    optionsCard.disabled(isRunning)
+                    Divider()
+                    actionRow
+                }
+                .settingsSurface()
+            }
             statusCard
         }
     }
@@ -236,11 +285,12 @@ struct MediaWorkspaceView: View {
                             .font(.system(size: 16, weight: .semibold))
                         VStack(alignment: .leading, spacing: 2) {
                             Text(inputTitle)
-                                .font(.system(size: compact ? 11.5 : 12.5, weight: .semibold))
+                                .font(compact ? .system(size: 11.5, weight: .semibold) : SettingsTypography.body.weight(.semibold))
                                 .lineLimit(1)
                                 .truncationMode(.middle)
-                            Text(l10n.s.mediaDropHint)
-                                .font(.system(size: compact ? 9.5 : 10.5))
+                            Text(selectedTool == .pdfCompressor ? pdfText.chooseSingle
+                                 : selectedTool == .pdfMerger ? pdfText.choose : l10n.s.mediaDropHint)
+                                .font(compact ? .system(size: 9.5) : SettingsTypography.caption)
                                 .foregroundStyle(.secondary)
                                 .lineLimit(1)
                         }
@@ -259,7 +309,7 @@ struct MediaWorkspaceView: View {
                         clearInput()
                     } label: {
                         Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: compact ? 14 : 16, weight: .semibold))
+                            .font(compact ? .system(size: 14, weight: .semibold) : SettingsTypography.body.weight(.semibold))
                             .foregroundStyle(.secondary)
                             .frame(width: compact ? 24 : 28, height: compact ? 24 : 28)
                             .contentShape(Circle())
@@ -285,10 +335,10 @@ struct MediaWorkspaceView: View {
 
             HStack(spacing: 7) {
                 Text(l10n.s.mediaOutput)
-                    .font(.system(size: compact ? 9.5 : 10.5, weight: .semibold))
+                    .font(compact ? .system(size: 9.5, weight: .semibold) : SettingsTypography.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
                 Text(outputURL?.lastPathComponent ?? l10n.s.mediaOutputAutomatic)
-                    .font(.system(size: compact ? 10 : 11))
+                    .font(compact ? .system(size: 10) : SettingsTypography.body)
                     .lineLimit(1)
                     .truncationMode(.middle)
                 Spacer(minLength: 0)
@@ -297,11 +347,11 @@ struct MediaWorkspaceView: View {
                 } label: {
                     Label(l10n.s.mediaChooseOutput, systemImage: "folder")
                 }
-                .controlSize(.small)
+                .controlSize(compact ? .small : .regular)
                 .disabled(inputURLs.isEmpty || isRunning)
             }
         }
-        .panelCard()
+        .mediaWorkspaceSurface(compact: compact)
     }
 
     @ViewBuilder
@@ -318,7 +368,7 @@ struct MediaWorkspaceView: View {
                     targetSizeRow(value: $videoTargetMegabytes)
                 }
             }
-            .panelCard()
+            .mediaWorkspaceSurface(compact: compact, settings: false)
         case .gifMaker:
             VStack(alignment: .leading, spacing: 10) {
                 timeRangeRow(start: $gifStart, end: $gifEnd)
@@ -334,7 +384,7 @@ struct MediaWorkspaceView: View {
                 Toggle(l10n.s.mediaLoopGIF, isOn: $gifLoops)
                     .toggleStyle(.checkbox)
             }
-            .panelCard()
+            .mediaWorkspaceSurface(compact: compact, settings: false)
         case .imageCompressor:
             VStack(alignment: .leading, spacing: 10) {
                 imageQuickPresetsRow
@@ -371,7 +421,7 @@ struct MediaWorkspaceView: View {
                     .disclosureIndent()
                 }
             }
-            .panelCard()
+            .mediaWorkspaceSurface(compact: compact, settings: false)
         case .textExtractor:
             VStack(alignment: .leading, spacing: 10) {
                 Picker(l10n.s.mediaOCRMode, selection: $textAccurate) {
@@ -380,8 +430,83 @@ struct MediaWorkspaceView: View {
                 }
                 .pickerStyle(.segmented)
             }
-            .panelCard()
+            .mediaWorkspaceSurface(compact: compact, settings: false)
+        case .pdfMerger:
+            pdfFilesCard
+        case .pdfCompressor:
+            VStack(alignment: .leading, spacing: 10) {
+                Picker(pdfText.compressorTitle, selection: $pdfCompressionMode) {
+                    Text(pdfText.preserveResolution).tag(MediaPDFCompressionMode.preserveResolution)
+                    Text(pdfText.screen).tag(MediaPDFCompressionMode.screen)
+                }
+                .pickerStyle(.menu)
+                Text(pdfText.compressionHint).font(compact ? .caption : SettingsTypography.caption).foregroundStyle(.secondary)
+                Text(pdfCompressionMode == .preserveResolution ? pdfText.preserveHint : pdfText.screenHint)
+                    .font(compact ? .caption : SettingsTypography.caption).foregroundStyle(.secondary)
+                if let inputURL {
+                    Text(pdfPageDescription(for: inputURL)).font(compact ? .caption : SettingsTypography.caption)
+                        .foregroundStyle(pdfInspectionErrors[inputURL] == nil ? Color.secondary : Color.orange)
+                }
+                if let error = pdfInspectionBatchError {
+                    Text(message(for: error)).font(compact ? .caption : SettingsTypography.caption).foregroundStyle(.orange)
+                }
+            }
+            .mediaWorkspaceSurface(compact: compact, settings: false)
         }
+    }
+
+    private var pdfFilesCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(pdfText.order).font(compact ? .headline : SettingsTypography.sectionTitle)
+            Text(pdfText.hint).font(compact ? .caption : SettingsTypography.caption).foregroundStyle(.secondary)
+            ForEach(Array(inputURLs.enumerated()), id: \.offset) { index, url in
+                HStack(spacing: 8) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("\(index + 1). \(url.lastPathComponent)")
+                            .lineLimit(1).truncationMode(.middle)
+                            .help(url.path)
+                        Text(pdfPageDescription(for: url))
+                            .font(compact ? .caption : SettingsTypography.caption)
+                            .foregroundStyle(pdfInspectionErrors[url] == nil ? Color.secondary : Color.orange)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    Button { movePDF(at: index, by: -1) } label: {
+                        Image(systemName: "arrow.up")
+                    }
+                    .disabled(index == 0)
+                    .help(pdfText.moveUp)
+                    .accessibilityLabel(pdfText.moveUp + " " + url.lastPathComponent)
+                    Button { movePDF(at: index, by: 1) } label: {
+                        Image(systemName: "arrow.down")
+                    }
+                    .disabled(index + 1 == inputURLs.count)
+                    .help(pdfText.moveDown)
+                    .accessibilityLabel(pdfText.moveDown + " " + url.lastPathComponent)
+                    Button { removePDF(at: index) } label: {
+                        Image(systemName: "minus.circle")
+                    }
+                    .help(pdfText.remove)
+                    .accessibilityLabel(pdfText.remove + " " + url.lastPathComponent)
+                }
+                .controlSize(compact ? .small : .regular)
+            }
+            Button(pdfText.add) { chooseInput(appending: true) }
+            if let error = pdfInspectionBatchError {
+                Text(message(for: error)).font(compact ? .caption : SettingsTypography.caption).foregroundStyle(.orange)
+            }
+            if inputURLs.count < 2 {
+                Text(pdfText.tooFew).font(compact ? .caption : SettingsTypography.caption).foregroundStyle(.secondary)
+            }
+        }
+        .mediaWorkspaceSurface(compact: compact, settings: false)
+    }
+
+    private func pdfPageDescription(for url: URL) -> String {
+        if let error = pdfInspectionErrors[url] { return message(for: error) }
+        if let count = pdfPageCounts[url] { return String(format: pdfText.pagesFormat, count) }
+        if let error = pdfInspectionBatchError { return message(for: error) }
+        return pdfText.readingPages
     }
 
     private var actionRow: some View {
@@ -391,8 +516,8 @@ struct MediaWorkspaceView: View {
             } label: {
                 Label(actionTitle, systemImage: selectedTool == .textExtractor ? "text.viewfinder" : "play.fill")
             }
-            .buttonStyle(.borderedProminent)
-            .disabled(inputURLs.isEmpty || isRunning)
+            .mediaWorkspacePrimaryAction(compact: compact)
+            .disabled(inputURLs.isEmpty || isRunning || (selectedTool == .pdfMerger && inputURLs.count < 2))
 
             if selectedTool == .videoCompressor {
                 Button {
@@ -403,7 +528,7 @@ struct MediaWorkspaceView: View {
                 .disabled(inputURLs.count != 1 || isRunning || isImportingVideo)
                 if isImportingVideo {
                     ProgressView()
-                        .controlSize(.small)
+                        .controlSize(compact ? .small : .regular)
                 }
             }
 
@@ -431,15 +556,22 @@ struct MediaWorkspaceView: View {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
                     Label(l10n.s.mediaRunning, systemImage: "gearshape.2")
-                        .font(.system(size: compact ? 10.5 : 11.5, weight: .semibold))
+                        .font(compact ? .system(size: 10.5, weight: .semibold) : SettingsTypography.body.weight(.semibold))
                     Spacer()
-                    Text("\(Int((progress * 100).rounded()))%")
-                        .font(.system(size: compact ? 10 : 11, weight: .medium, design: .monospaced))
-                        .foregroundStyle(.secondary)
+                    if selectedTool != .pdfCompressor {
+                        Text("\(Int((progress * 100).rounded()))%")
+                            .font(compact ? .system(size: 10, weight: .medium, design: .monospaced) : SettingsTypography.body.weight(.medium).monospaced())
+                            .foregroundStyle(.secondary)
+                    }
                 }
-                ProgressView(value: progress)
+                if selectedTool == .pdfCompressor {
+                    ProgressView()
+                        .controlSize(compact ? .small : .regular)
+                } else {
+                    ProgressView(value: progress)
+                }
             }
-            .panelCard()
+            .mediaWorkspaceSurface(compact: compact)
         case let .completed(result):
             resultCard(result)
         case let .failed(failure):
@@ -451,42 +583,48 @@ struct MediaWorkspaceView: View {
 
     private func resultCard(_ result: MediaResult) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Label(l10n.s.mediaCompleted, systemImage: "checkmark.circle.fill")
-                .font(.system(size: compact ? 10.5 : 11.5, weight: .semibold))
-                .foregroundStyle(.green)
+            Label(result.pdfNotSmaller ? pdfText.notSmaller : l10n.s.mediaCompleted,
+                  systemImage: result.pdfNotSmaller ? "info.circle" : "checkmark.circle.fill")
+                .font(compact ? .system(size: 10.5, weight: .semibold) : SettingsTypography.body.weight(.semibold))
+                .foregroundStyle(result.pdfNotSmaller ? Color.secondary : Color.green)
+            if result.pdfNotSmaller {
+                Text(String(format: pdfText.originalSizeFormat,
+                    ByteCountFormatter.string(fromByteCount: result.originalBytes, countStyle: .file)))
+                    .font(compact ? .caption : SettingsTypography.caption).foregroundStyle(.secondary)
+            }
             if let outputURL = result.outputURL {
                 Text(result.imageBatchItems.count > 1 ? batchSummary(result) : String(format: l10n.s.mediaResultSavedFormat, outputURL.lastPathComponent))
-                    .font(.system(size: compact ? 10 : 11))
+                    .font(compact ? .system(size: 10) : SettingsTypography.body)
                     .lineLimit(2)
                     .truncationMode(.middle)
                 Text(String(format: l10n.s.mediaResultSizeFormat,
                             ByteCountFormatter.string(fromByteCount: result.originalBytes, countStyle: .file),
                             ByteCountFormatter.string(fromByteCount: result.outputBytes, countStyle: .file)))
-                    .font(.system(size: compact ? 9.5 : 10.5))
+                    .font(compact ? .system(size: 9.5) : SettingsTypography.caption)
                     .foregroundStyle(.secondary)
-                if let delta = resultSizeDelta(result) {
+                if result.tool != .pdfMerger, let delta = resultSizeDelta(result) {
                     Text(delta)
-                        .font(.system(size: compact ? 9.5 : 10.5))
+                        .font(compact ? .system(size: 9.5) : SettingsTypography.caption)
                         .foregroundStyle(.secondary)
                 }
-                if MediaSupport.outputGrew(originalBytes: result.originalBytes,
+                if result.tool != .pdfMerger, MediaSupport.outputGrew(originalBytes: result.originalBytes,
                                            outputBytes: result.outputBytes) {
                     Text(l10n.s.mediaResultGrewCaption)
-                        .font(.system(size: compact ? 9.5 : 10.5))
+                        .font(compact ? .system(size: 9.5) : SettingsTypography.caption)
                         .foregroundStyle(.secondary)
                 }
                 if result.failedCount > 0 {
                     Text(result.imageBatchItems.compactMap { item in
                         item.failure.map { "\(item.inputURL.lastPathComponent): \(message(for: $0))" }
                     }.prefix(3).joined(separator: "\n"))
-                        .font(.system(size: compact ? 9 : 10))
+                        .font(compact ? .system(size: 9) : SettingsTypography.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(3)
                 }
             }
             if let text = result.text {
                 Text(text.isEmpty ? l10n.s.mediaEmptyText : text)
-                    .font(.system(size: compact ? 10 : 11, design: .monospaced))
+                    .font(compact ? .system(size: 10, design: .monospaced) : SettingsTypography.body.monospaced())
                     .lineLimit(compact ? 5 : 8)
                     .textSelection(.enabled)
                     .padding(8)
@@ -521,9 +659,9 @@ struct MediaWorkspaceView: View {
                     Label(l10n.s.mediaRunAgain, systemImage: "arrow.clockwise")
                 }
             }
-            .controlSize(.small)
+            .controlSize(compact ? .small : .regular)
         }
-        .panelCard()
+        .mediaWorkspaceSurface(compact: compact)
     }
 
     private func batchSummary(_ result: MediaResult) -> String {
@@ -562,10 +700,10 @@ struct MediaWorkspaceView: View {
 
     private func messageCard(_ message: String, systemImage: String, color: Color) -> some View {
         Label(message, systemImage: systemImage)
-            .font(.system(size: compact ? 10.5 : 11.5, weight: .medium))
+            .font(compact ? .system(size: 10.5, weight: .medium) : SettingsTypography.body.weight(.medium))
             .foregroundStyle(color)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .panelCard()
+            .mediaWorkspaceSurface(compact: compact)
     }
 
     private var imageProfileRow: some View {
@@ -593,7 +731,7 @@ struct MediaWorkspaceView: View {
             }
             if selectedImageProfile != nil, imageProfileIsModified {
                 Label(imageText.profileModified, systemImage: "pencil")
-                    .font(.system(size: compact ? 9 : 10, weight: .medium))
+                    .font(compact ? .system(size: 9, weight: .medium) : SettingsTypography.caption.weight(.medium))
                     .foregroundStyle(.secondary)
             }
             HStack(spacing: 6) {
@@ -604,14 +742,14 @@ struct MediaWorkspaceView: View {
                 } label: {
                     Label(imageText.updateProfile, systemImage: "checkmark")
                 }
-                .controlSize(.small)
+                .controlSize(compact ? .small : .regular)
                 .disabled(imageSelectedProfileID.isEmpty)
                 Button {
                     saveNewProfile()
                 } label: {
                     Label(imageText.saveAsNew, systemImage: "plus")
                 }
-                .controlSize(.small)
+                .controlSize(compact ? .small : .regular)
             }
         }
     }
@@ -644,7 +782,7 @@ struct MediaWorkspaceView: View {
                                                     preserveModificationDate: true))
             }
         }
-        .controlSize(.small)
+        .controlSize(compact ? .small : .regular)
     }
 
     private var imagePreviewSection: some View {
@@ -677,9 +815,9 @@ struct MediaWorkspaceView: View {
 
             VStack(alignment: .leading, spacing: 5) {
                 Text(imageText.preview)
-                    .font(.system(size: compact ? 10 : 11, weight: .semibold))
+                    .font(compact ? .system(size: 10, weight: .semibold) : SettingsTypography.body.weight(.semibold))
                 Text("\(imageText.outputName): \(previewOutputName)")
-                    .font(.system(size: compact ? 9.5 : 10.5))
+                    .font(compact ? .system(size: 9.5) : SettingsTypography.caption)
                     .lineLimit(2)
                     .truncationMode(.middle)
                     .foregroundStyle(.secondary)
@@ -779,7 +917,7 @@ struct MediaWorkspaceView: View {
             if currentWatermarkKind == .logo || currentWatermarkKind == .textAndLogo {
                 HStack(spacing: 6) {
                     Text(imageWatermarkLogoPath.isEmpty ? imageText.noLogo : URL(fileURLWithPath: imageWatermarkLogoPath).lastPathComponent)
-                        .font(.system(size: compact ? 10 : 11))
+                        .font(compact ? .system(size: 10) : SettingsTypography.body)
                         .lineLimit(1)
                         .truncationMode(.middle)
                     Spacer(minLength: 0)
@@ -788,7 +926,7 @@ struct MediaWorkspaceView: View {
                     } label: {
                         Label(imageText.chooseLogo, systemImage: "photo")
                     }
-                    .controlSize(.small)
+                    .controlSize(compact ? .small : .regular)
                     if !imageWatermarkLogoPath.isEmpty {
                         Button {
                             imageWatermarkLogoPath = ""
@@ -831,11 +969,11 @@ struct MediaWorkspaceView: View {
     private var imageRenameSection: some View {
         VStack(alignment: .leading, spacing: 5) {
             Text(imageText.rename)
-                .font(.system(size: compact ? 10 : 11, weight: .semibold))
+                .font(compact ? .system(size: 10, weight: .semibold) : SettingsTypography.body.weight(.semibold))
             TextField("{name}-{index:03}", text: $imageRenamePattern)
                 .textFieldStyle(.roundedBorder)
             Text("{name} {index} {index:03} {counter} {date} {time} {datetime} {width} {height} {format}")
-                .font(.system(size: compact ? 8.5 : 9.5, design: .monospaced))
+                .font(compact ? .system(size: 8.5, design: .monospaced) : SettingsTypography.caption.monospaced())
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
         }
@@ -871,7 +1009,7 @@ struct MediaWorkspaceView: View {
                          value: value,
                          suffix: l10n.s.mediaMegabytesSuffix)
             Text(l10n.s.mediaTargetSizeHint)
-                .font(.system(size: compact ? 9.5 : 10.5))
+                .font(compact ? .system(size: 9.5) : SettingsTypography.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -880,7 +1018,7 @@ struct MediaWorkspaceView: View {
     private func compressionRow(value: Binding<Double>) -> some View {
         VStack(alignment: .leading, spacing: 5) {
             Text(l10n.s.mediaQuality)
-                .font(.system(size: compact ? 10 : 11, weight: .semibold))
+                .font(compact ? .system(size: 10, weight: .semibold) : SettingsTypography.body.weight(.semibold))
             HStack(spacing: 6) {
                 ForEach(MediaCompressionLevel.allCases) { level in
                     compressionButton(level, value: value)
@@ -896,9 +1034,9 @@ struct MediaWorkspaceView: View {
         } label: {
             HStack(spacing: 5) {
                 Image(systemName: level.symbolName)
-                    .font(.system(size: compact ? 10 : 11, weight: .semibold))
+                    .font(compact ? .system(size: 10, weight: .semibold) : SettingsTypography.body.weight(.semibold))
                 Text(compressionTitle(for: level))
-                    .font(.system(size: compact ? 10 : 11, weight: .semibold))
+                    .font(compact ? .system(size: 10, weight: .semibold) : SettingsTypography.body.weight(.semibold))
                     .lineLimit(1)
             }
             .frame(maxWidth: .infinity)
@@ -921,10 +1059,10 @@ struct MediaWorkspaceView: View {
         VStack(alignment: .leading, spacing: 5) {
             HStack {
                 Text(l10n.s.mediaFPS)
-                    .font(.system(size: compact ? 10 : 11, weight: .semibold))
+                    .font(compact ? .system(size: 10, weight: .semibold) : SettingsTypography.body.weight(.semibold))
                 Spacer()
                 Text("\(Int(value.wrappedValue.rounded()))")
-                    .font(.system(size: compact ? 10 : 11, design: .monospaced))
+                    .font(compact ? .system(size: 10, design: .monospaced) : SettingsTypography.body.monospaced())
                     .foregroundStyle(.secondary)
             }
             Slider(value: value, in: range, step: 1)
@@ -951,13 +1089,13 @@ struct MediaWorkspaceView: View {
                                           @ViewBuilder field: () -> Field) -> some View {
         HStack(spacing: 5) {
             Text(label)
-                .font(.system(size: compact ? 10 : 11, weight: .semibold))
+                .font(compact ? .system(size: 10, weight: .semibold) : SettingsTypography.body.weight(.semibold))
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
                 .frame(width: labelWidth ?? (compact ? 48 : 62), alignment: .leading)
             field()
                 .textFieldStyle(.plain)
-                .font(.system(size: compact ? 13 : 14, weight: .medium, design: .monospaced))
+                .font(compact ? .system(size: 13, weight: .medium, design: .monospaced) : SettingsTypography.body.weight(.medium).monospaced())
                 .padding(.horizontal, 9)
                 .frame(width: compact ? 62 : 76, height: compact ? 28 : 30, alignment: .leading)
                 .background(
@@ -969,7 +1107,7 @@ struct MediaWorkspaceView: View {
                         .strokeBorder(PanelSurface.border(for: colorScheme), lineWidth: 0.8)
                 )
             Text(suffix)
-                .font(.system(size: compact ? 9.5 : 10.5))
+                .font(compact ? .system(size: 9.5) : SettingsTypography.caption)
                 .foregroundStyle(.secondary)
         }
     }
@@ -979,10 +1117,10 @@ struct MediaWorkspaceView: View {
         Stepper(value: value, in: range, step: step) {
             HStack(spacing: 4) {
                 Text(label)
-                    .font(.system(size: compact ? 10 : 11, weight: .semibold))
+                    .font(compact ? .system(size: 10, weight: .semibold) : SettingsTypography.body.weight(.semibold))
                 Spacer(minLength: 0)
                 Text("\(value.wrappedValue)\(suffix)")
-                    .font(.system(size: compact ? 10 : 11, design: .monospaced))
+                    .font(compact ? .system(size: 10, design: .monospaced) : SettingsTypography.body.monospaced())
                     .foregroundStyle(.secondary)
             }
         }
@@ -997,10 +1135,10 @@ struct MediaWorkspaceView: View {
         Stepper(value: value, in: range, step: step) {
             HStack(spacing: 4) {
                 Text(label)
-                    .font(.system(size: compact ? 10 : 11, weight: .semibold))
+                    .font(compact ? .system(size: 10, weight: .semibold) : SettingsTypography.body.weight(.semibold))
                 Spacer(minLength: 0)
                 Text("\(display(value.wrappedValue))\(suffix)")
-                    .font(.system(size: compact ? 10 : 11, design: .monospaced))
+                    .font(compact ? .system(size: 10, design: .monospaced) : SettingsTypography.body.monospaced())
                     .foregroundStyle(.secondary)
             }
         }
@@ -1008,6 +1146,7 @@ struct MediaWorkspaceView: View {
 
     private var inputTitle: String {
         guard !inputURLs.isEmpty else { return l10n.s.mediaSelectFile }
+        if selectedTool == .pdfMerger { return "\(inputURLs.count) PDF" }
         if selectedTool == .imageCompressor, inputURLs.count > 1 {
             return String(format: imageText.filesSelectedFormat, inputURLs.count)
         }
@@ -1136,6 +1275,8 @@ struct MediaWorkspaceView: View {
                 ? l10n.s.mediaStartConvertPDF
                 : l10n.s.mediaStartImage
         case .textExtractor: return l10n.s.mediaStartText
+        case .pdfMerger: return pdfText.merge
+        case .pdfCompressor: return pdfText.compress
         }
     }
 
@@ -1145,6 +1286,8 @@ struct MediaWorkspaceView: View {
         case .gifMaker: return l10n.s.mediaToolGIF
         case .imageCompressor: return l10n.s.mediaToolImage
         case .textExtractor: return l10n.s.mediaToolText
+        case .pdfMerger: return pdfText.title
+        case .pdfCompressor: return pdfText.compressorTitle
         }
     }
 
@@ -1156,20 +1299,41 @@ struct MediaWorkspaceView: View {
         }
     }
 
-    private func chooseInput() {
+    private func chooseInput(appending: Bool = false) {
+        guard !isRunning else { return }
+        inputRevision &+= 1
+        let revision = inputRevision
+        let tool = selectedTool
         let panel = NSOpenPanel()
         panel.canChooseDirectories = false
-        panel.allowsMultipleSelection = selectedTool == .imageCompressor
+        panel.allowsMultipleSelection = MediaSupport.allowsMultipleInputs(for: tool)
         panel.allowedContentTypes = inputTypes
         Self.runPanelModal(panel) { response in
-            if response == .OK {
-                setInputs(panel.urls)
+            if response == .OK, !isRunning, selectedTool == tool, inputRevision == revision {
+                if appending { editPDFInputs(inputURLs + panel.urls) }
+                else { setInputs(panel.urls) }
             }
         }
     }
 
     private func chooseOutput() {
-        guard let inputURL else { return }
+        guard let inputURL, !isRunning else { return }
+        if isPDFTool {
+            let tool = selectedTool
+            let panel = NSOpenPanel()
+            panel.canChooseFiles = false
+            panel.canChooseDirectories = true
+            panel.allowsMultipleSelection = false
+            panel.directoryURL = outputURL?.deletingLastPathComponent() ?? inputURL.deletingLastPathComponent()
+            Self.runPanelModal(panel) { response in
+                if response == .OK, let directory = panel.url, !isRunning, selectedTool == tool {
+                    outputURL = pdfOutputURL(in: directory)
+                    outputWasChosenManually = true
+                    localMessage = nil
+                }
+            }
+            return
+        }
         if selectedTool == .imageCompressor, inputURLs.count > 1 {
             let panel = NSOpenPanel()
             panel.canChooseFiles = false
@@ -1221,9 +1385,14 @@ struct MediaWorkspaceView: View {
 
     private func acceptDrop(_ providers: [NSItemProvider]) -> Bool {
         let fileProviders = providers.filter { $0.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) }
-        guard !fileProviders.isEmpty else {
+        guard !isRunning else { return false }
+        guard !fileProviders.isEmpty, fileProviders.count == providers.count else {
+            rejectInputSelection()
             return false
         }
+        inputRevision &+= 1
+        let revision = inputRevision
+        let tool = selectedTool
         let group = DispatchGroup()
         let lock = NSLock()
         var indexedURLs: [(offset: Int, url: URL)] = []
@@ -1248,15 +1417,15 @@ struct MediaWorkspaceView: View {
         }
         group.notify(queue: .main) {
             let urls = MediaSupport.urlsInProviderOrder(indexedURLs)
-            let accepted = urls.filter { url in
-                let contentType = try? url.resourceValues(forKeys: [.contentTypeKey]).contentType
-                return MediaSupport.inputMatchesTool(contentType: contentType, inputTypes: inputTypes)
+            guard inputRevision == revision, selectedTool == tool, !isRunning,
+                  AppFeature.mediaTools.isAvailable else { return }
+            guard urls.count == providers.count,
+                  MediaInputSelectionSupport.validatedURLs(urls, for: tool) != nil else {
+                rejectInputSelection()
+                return
             }
-            if accepted.isEmpty || (selectedTool != .imageCompressor && accepted.count != urls.count) {
-                media.rejectUnsupportedInput()
-            } else {
-                setInputs(selectedTool == .imageCompressor ? accepted : Array(accepted.prefix(1)))
-            }
+            if tool == .pdfMerger { editPDFInputs(inputURLs + urls) }
+            else { setInputs(urls) }
         }
         return true
     }
@@ -1266,8 +1435,20 @@ struct MediaWorkspaceView: View {
     }
 
     private func setInputs(_ urls: [URL]) {
+        guard !isRunning else { return }
+        guard let accepted = MediaInputSelectionSupport.validatedURLs(urls, for: selectedTool) else {
+            rejectInputSelection()
+            return
+        }
+        guard selectedTool != .pdfMerger || accepted.count <= MediaPDFSupport.maximumInputs else {
+            media.reset()
+            localMessage = pdfText.tooMany
+            return
+        }
+        inputRevision &+= 1
         cancelVideoImport()
-        inputURLs = selectedTool == .imageCompressor ? urls : Array(urls.prefix(1))
+        inputURLs = accepted
+        refreshPDFInspection()
         inputImageSize = selectedTool == .imageCompressor
             ? inputURL.flatMap { MediaSupport.imageDisplaySize(at: $0) }
             : nil
@@ -1278,10 +1459,107 @@ struct MediaWorkspaceView: View {
         media.reset()
     }
 
+    private func cancelPDFInspection() {
+        pdfInspectionGeneration &+= 1
+        pdfInspectionTask?.cancel()
+        pdfInspectionTask = nil
+    }
+
+    private func refreshPDFInspection() {
+        cancelPDFInspection()
+        pdfInspectionBatchError = nil
+        guard isPDFTool, !inputURLs.isEmpty else {
+            pdfPageCounts = [:]
+            pdfInspectionErrors = [:]
+            return
+        }
+        let urls = inputURLs
+        let selected = Set(urls)
+        pdfPageCounts = pdfPageCounts.filter { selected.contains($0.key) }
+        pdfInspectionErrors = pdfInspectionErrors.filter { selected.contains($0.key) }
+        let cached = Set(pdfPageCounts.keys).union(pdfInspectionErrors.keys)
+        let generation = pdfInspectionGeneration
+        pdfInspectionTask = Task.detached(priority: .utility) {
+            do {
+                try MediaPDFSupport.inspect(urls, cachedURLs: cached,
+                    isCancelled: { Task.isCancelled }, inspected: { url, result in
+                        DispatchQueue.main.async {
+                            guard pdfInspectionGeneration == generation, isPDFTool else { return }
+                            switch result {
+                            case let .success(count):
+                                pdfPageCounts[url] = count
+                                pdfInspectionErrors.removeValue(forKey: url)
+                            case let .failure(error):
+                                pdfInspectionErrors[url] = error
+                                pdfPageCounts.removeValue(forKey: url)
+                            }
+                        }
+                    })
+                guard !Task.isCancelled else { return }
+                DispatchQueue.main.async {
+                    guard pdfInspectionGeneration == generation, isPDFTool else { return }
+                    let total = urls.reduce(0) { $0 + (pdfPageCounts[$1] ?? 0) }
+                    if total > MediaPDFSupport.maximumPages { pdfInspectionBatchError = .tooManyPages }
+                    pdfInspectionTask = nil
+                }
+            } catch {
+                guard !Task.isCancelled else { return }
+                let failure = (error as? MediaPDFError) ?? .verificationFailed
+                DispatchQueue.main.async {
+                    guard pdfInspectionGeneration == generation, isPDFTool else { return }
+                    pdfInspectionBatchError = failure
+                    pdfInspectionTask = nil
+                }
+            }
+        }
+    }
+
+    private func rejectInputSelection() {
+        media.reset()
+        localMessage = selectedTool == .pdfCompressor ? pdfText.singleSelectionRejected
+            : selectedTool == .pdfMerger ? pdfText.selectionRejected : l10n.s.mediaErrorUnsupported
+    }
+
+    private func movePDF(at index: Int, by delta: Int) {
+        guard !isRunning, selectedTool == .pdfMerger,
+              inputURLs.indices.contains(index), inputURLs.indices.contains(index + delta) else { return }
+        var urls = inputURLs
+        urls.swapAt(index, index + delta)
+        editPDFInputs(urls)
+    }
+
+    private func removePDF(at index: Int) {
+        guard !isRunning, selectedTool == .pdfMerger, inputURLs.indices.contains(index) else { return }
+        var urls = inputURLs
+        urls.remove(at: index)
+        editPDFInputs(urls)
+    }
+
+    private func editPDFInputs(_ urls: [URL]) {
+        let directory = outputWasChosenManually ? outputURL?.deletingLastPathComponent() : nil
+        if urls.isEmpty { clearInput(); return }
+        setInputs(urls)
+        guard inputURLs == urls else { return }
+        if let directory {
+            outputURL = pdfOutputURL(in: directory)
+            outputWasChosenManually = true
+        }
+    }
+
+    private func pdfOutputURL(in directory: URL) -> URL? {
+        guard let inputURL else { return nil }
+        return MediaSupport.uniqueOutputURL(in: directory,
+            baseName: MediaSupport.visibleOutputBaseName(for: inputURL)
+                + (selectedTool == .pdfCompressor ? "-compressed" : "-merged"), fileExtension: "pdf")
+    }
+
     private func clearInput() {
+        guard !isRunning else { return }
+        inputRevision &+= 1
         mediaDefaultsTask?.cancel()
         cancelVideoImport()
         inputURLs = []
+        refreshPDFInspection()
         inputImageSize = nil
         outputURL = nil
         outputWasChosenManually = false
@@ -1304,7 +1582,7 @@ struct MediaWorkspaceView: View {
                 case .gifMaker:
                     gifStart = 0
                     gifEnd = duration
-                case .imageCompressor, .textExtractor:
+                case .imageCompressor, .textExtractor, .pdfMerger, .pdfCompressor:
                     break
                 }
             }
@@ -1368,6 +1646,17 @@ struct MediaWorkspaceView: View {
     }
 
     private func run() {
+        guard !isRunning else { return }
+        inputRevision &+= 1
+        guard MediaInputSelectionSupport.validatedURLs(inputURLs, for: selectedTool) != nil else {
+            rejectInputSelection()
+            return
+        }
+        if selectedTool == .pdfMerger, inputURLs.count < 2 {
+            media.reset()
+            localMessage = pdfText.tooFew
+            return
+        }
         guard let inputURL, !inputURLs.isEmpty else {
             localMessage = l10n.s.mediaErrorNoFile
             return
@@ -1376,6 +1665,18 @@ struct MediaWorkspaceView: View {
         guard let outputURL else {
             localMessage = l10n.s.mediaErrorNoFile
             return
+        }
+        if isPDFTool {
+            if inputURLs.contains(where: { MediaSupport.fileURLsReferToSameItem($0, outputURL) }) {
+                media.reset()
+                localMessage = l10n.s.mediaErrorSameOutput
+                return
+            }
+            if FileManager.default.fileExists(atPath: outputURL.path) {
+                media.reset()
+                localMessage = pdfText.outputExists
+                return
+            }
         }
         self.outputURL = outputURL
         localMessage = nil
@@ -1413,6 +1714,10 @@ struct MediaWorkspaceView: View {
                                     outputURL: outputURL,
                                     options: currentImageOptions)
             }
+        case .pdfMerger:
+            media.mergePDFs(inputURLs: inputURLs, outputURL: outputURL)
+        case .pdfCompressor:
+            media.compressPDF(inputURL: inputURL, outputURL: outputURL, mode: pdfCompressionMode)
         case .textExtractor:
             media.extractText(inputURL: inputURL, outputURL: outputURL,
                               options: MediaTextOptions(accurate: textAccurate,
@@ -1422,12 +1727,7 @@ struct MediaWorkspaceView: View {
     }
 
     private var inputTypes: [UTType] {
-        switch selectedTool {
-        case .videoCompressor, .gifMaker:
-            return [.movie, .video, .mpeg4Movie, .quickTimeMovie]
-        case .imageCompressor, .textExtractor:
-            return [.image]
-        }
+        MediaSupport.inputTypes(for: selectedTool)
     }
 
     private var outputType: UTType {
@@ -1442,6 +1742,7 @@ struct MediaWorkspaceView: View {
             case .pdf: return .pdf
             }
         case .textExtractor: return .plainText
+        case .pdfMerger, .pdfCompressor: return .pdf
         }
     }
 
@@ -1462,6 +1763,10 @@ struct MediaWorkspaceView: View {
                                                options: currentImageOptions,
                                                index: 1,
                                                outputSize: currentResizeMode.targetSize(for: sourceSize))
+        case .pdfCompressor:
+            return MediaSupport.uniqueOutputURL(for: inputURL, suffix: "-compressed", fileExtension: "pdf")
+        case .pdfMerger:
+            return MediaSupport.uniqueOutputURL(for: inputURL, suffix: "-merged", fileExtension: "pdf")
         case .textExtractor:
             return MediaSupport.uniqueOutputURL(for: inputURL, suffix: "-text", fileExtension: "txt")
         }
@@ -1469,6 +1774,7 @@ struct MediaWorkspaceView: View {
 
     private func message(for failure: MediaFailure) -> String {
         switch failure {
+        case let .pdf(error): return message(for: error)
         case .noInput: return l10n.s.mediaErrorNoFile
         case .noVideoTrack: return l10n.s.mediaErrorNoVideo
         case .sameOutput: return l10n.s.mediaErrorSameOutput
@@ -1481,6 +1787,25 @@ struct MediaWorkspaceView: View {
         case .watermarkUnavailable: return imageText.noLogo
         case .cancelled: return l10n.s.mediaCancelled
         case let .failed(message): return message.isEmpty ? l10n.s.mediaErrorUnsupported : message
+        }
+    }
+
+    private func message(for error: MediaPDFError) -> String {
+        switch error {
+        case .unsupportedStructure: return pdfText.unsupportedStructure
+        case .tooFewInputs: return pdfText.tooFew
+        case .tooManyInputs: return pdfText.tooMany
+        case .inputTooLarge: return pdfText.tooLarge
+        case .tooManyPages: return pdfText.tooManyPages
+        case .cancelled: return l10n.s.mediaCancelled
+        case .sameOutput: return l10n.s.mediaErrorSameOutput
+        case .outputExists: return pdfText.outputExists
+        case .writeFailed: return pdfText.writeFailed
+        case .verificationFailed: return pdfText.verificationFailed
+        case let .unreadable(name): return pdfText.unreadable + name
+        case let .invalidDocument(name): return pdfText.invalid + name
+        case let .encryptedDocument(name): return pdfText.encrypted + name
+        case let .emptyDocument(name): return pdfText.empty + name
         }
     }
 
@@ -1581,4 +1906,19 @@ struct MediaWorkspaceView: View {
         formatter.minimum = 0
         return formatter
     }()
+}
+
+private extension View {
+    @ViewBuilder
+    func mediaWorkspaceSurface(compact: Bool, settings: Bool = true) -> some View {
+        if compact { panelCard() }
+        else if settings { settingsSurface() }
+        else { self }
+    }
+
+    @ViewBuilder
+    func mediaWorkspacePrimaryAction(compact: Bool) -> some View {
+        if compact { buttonStyle(.borderedProminent) }
+        else { settingsAction(.primary) }
+    }
 }

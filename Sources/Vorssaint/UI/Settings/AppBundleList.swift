@@ -58,42 +58,11 @@ struct AppBundleList<Accessory: View>: View {
     var body: some View {
         DisclosureGroup(isExpanded: $isExpanded) {
             ForEach(sortedBundleIDs, id: \.self) { bundleID in
-                HStack(spacing: 9) {
-                    Image(nsImage: InstalledApps.icon(for: bundleID))
-                        .resizable()
-                        .frame(width: 18, height: 18)
-                    if let location = InstalledApps.location(for: bundleID) {
-                        // Path identities all display the file's own name —
-                        // every bundled runtime is "java" (issue #1009) — so
-                        // the directory is what tells the rows apart. Sibling
-                        // runtimes share a long common prefix and differ in
-                        // the middle or tail, so the head is what truncation
-                        // must drop: cutting the middle would hide exactly
-                        // the component that differs.
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text(InstalledApps.name(for: bundleID))
-                                .lineLimit(1)
-                            Text(location)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                                .truncationMode(.head)
-                        }
-                        .help(bundleID)
-                    } else {
-                        Text(InstalledApps.name(for: bundleID))
-                            .lineLimit(1)
-                    }
-                    Spacer(minLength: 8)
+                AppBundleRow(bundleID: bundleID) {
                     accessory(bundleID)
-                    Button {
+                    AppBundleRemoveButton(label: removeLabel + " · " + InstalledApps.name(for: bundleID)) {
                         onRemove(bundleID)
-                    } label: {
-                        Image(systemName: "minus.circle.fill")
-                            .foregroundStyle(.secondary)
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(removeLabel)
                 }
             }
 
@@ -102,19 +71,20 @@ struct AppBundleList<Accessory: View>: View {
             } label: {
                 Label(addTitle, systemImage: "plus")
             }
-            .controlSize(.small)
+            .controlSize(.regular)
             // Rows inside a disclosure group center themselves; the button
             // belongs under the list it adds to.
             .frame(maxWidth: .infinity, alignment: .leading)
 
             Text(caption)
-                .font(.caption)
+                .font(SettingsTypography.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
         } label: {
             HStack {
-                Text(title)
+                Label(title, systemImage: "app.badge")
+                    .font(SettingsTypography.body.weight(.medium))
                 Spacer()
                 if !bundleIDs.isEmpty {
                     Text("\(bundleIDs.count)")
@@ -190,5 +160,63 @@ extension AppBundleList where Accessory == EmptyView {
                   onAdd: onAdd,
                   onRemove: onRemove,
                   accessory: { _ in EmptyView() })
+    }
+}
+
+/// Reuses app identity layout without changing each list's picker or exception policy.
+struct AppBundleRow<Accessory: View>: View {
+    let bundleID: String
+    @ViewBuilder let accessory: Accessory
+
+    var body: some View {
+        HStack(spacing: 9) {
+            Image(nsImage: InstalledApps.icon(for: bundleID))
+                .resizable()
+                .frame(width: 18, height: 18)
+            if let location = InstalledApps.location(for: bundleID) {
+                // Path identities all display the file's own name —
+                // every bundled runtime is "java" (issue #1009) — so
+                // the directory is what tells the rows apart. Sibling
+                // runtimes share a long common prefix and differ in
+                // the middle or tail, so the head is what truncation
+                // must drop: cutting the middle would hide exactly
+                // the component that differs.
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(InstalledApps.name(for: bundleID))
+                        .lineLimit(1)
+                    Text(location)
+                        .font(SettingsTypography.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.head)
+                }
+                .help(bundleID)
+            } else {
+                Text(InstalledApps.name(for: bundleID))
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 8)
+            accessory
+        }
+        .frame(maxWidth: .infinity, minHeight: 30, alignment: .leading)
+        .accessibilityElement(children: .contain)
+    }
+}
+
+struct AppBundleRemoveButton: View {
+    let label: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "minus.circle.fill")
+                .font(SettingsTypography.icon)
+                .foregroundStyle(.secondary)
+                .frame(width: 24, height: 24)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(label)
+        .accessibilityLabel(label)
     }
 }

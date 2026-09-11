@@ -9,6 +9,9 @@ import UniformTypeIdentifiers
 /// are placed; each keeps whatever else it does on its own page.
 struct MenuBarIconSettings: View {
     @ObservedObject private var l10n = L10n.shared
+    @ObservedObject private var features = FeatureRuntime.shared
+    @State private var showingMetricPicker = false
+    @State private var activeMetricCount = 0
     @AppStorage(DefaultsKey.menuBarHideIconWithMetrics) private var hideIconWithMetrics = false
     @AppStorage(DefaultsKey.menuBarCombineTemperatures) private var combineTemperatures = true
     @AppStorage(DefaultsKey.menuBarSeparateMetrics) private var separateMetrics = false
@@ -16,32 +19,49 @@ struct MenuBarIconSettings: View {
     @AppStorage(DefaultsKey.menuBarMetricAppearance) private var metricAppearance = "values"
     @AppStorage(DefaultsKey.micMuteMenuBarIndicator) private var micMenuBarIndicator = true
 
+    private var workspace: ModuleWorkspaceStrings { ModuleWorkspaceStrings(l10n.language) }
+
     var body: some View {
         let appearanceStrings = FeatureStrings.menuBarAppearance(l10n.language)
         let appearance = MenuBarMetricAppearance(
             rawValue: Defaults.sanitizedMenuBarMetricAppearance(metricAppearance)
         ) ?? .values
-        Form {
-            Section(l10n.s.monitorMenuBarSection) {
-                MenuBarMetricsPreview()
-                    .padding(.vertical, 10)
-                Text(l10n.s.monitorMenuBarCaption)
-                    .font(.caption).foregroundStyle(.secondary)
+        SettingsForm {
+            SettingsSection(l10n.s.monitorMenuBarSection) {
+                if FeatureUnit.monitor.isAvailable {
+                    MenuBarMetricsPreview()
+                }
+                if activeMetricCount == 0 {
+                    Label(workspace.noMetrics, systemImage: "chart.bar")
+                    Button(workspace.addMetrics) { showingMetricPicker = true }
+                        .buttonStyle(.borderedProminent)
+                } else {
+                    Text(l10n.s.monitorMenuBarCaption)
+                        .foregroundStyle(.secondary)
+                }
+                if !MenuBarMetricOrderEditor.availableOrder(MenuBarMetric.order(in: .standard)).isEmpty {
+                    Text(appearanceStrings.metricsTitle).font(SettingsTypography.sectionTitle)
+                    MenuBarMetricOrderEditor()
+                }
             }
-            Section(appearanceStrings.label) {
+            SettingsSection(appearanceStrings.label) {
+                if activeMetricCount == 0 {
+                    Text(workspace.deferredAppearance)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
                 Picker(appearanceStrings.label, selection: $metricAppearance) {
                     Text(appearanceStrings.values).tag("values")
                     Text(appearanceStrings.bars).tag("bars")
                 }
                 .pickerStyle(.segmented)
-                Text(appearanceStrings.caption)
-                    .font(.caption).foregroundStyle(.secondary)
                 if appearance == .bars {
+                    Text(appearanceStrings.caption)
+                        .font(SettingsTypography.caption).foregroundStyle(.secondary)
                     MenuBarUsageBarSettings(strings: appearanceStrings)
                 } else {
                     Toggle(l10n.s.monitorCombineTemperatures, isOn: $combineTemperatures)
                     Text(l10n.s.monitorCombineTemperaturesCaption)
-                        .font(.caption).foregroundStyle(.secondary)
+                        .font(SettingsTypography.caption).foregroundStyle(.secondary)
                 }
                 Picker(l10n.s.menuBarSpacingLabel, selection: $metricSpacing) {
                     Text(l10n.s.menuBarSpacingStandard).tag("standard")
@@ -51,35 +71,93 @@ struct MenuBarIconSettings: View {
                 Toggle(l10n.s.monitorSeparateMenuBarMetrics, isOn: $separateMetrics)
                 if appearance.allowsCombinedTemperatures {
                     Text(l10n.s.monitorSeparateMenuBarMetricsCaption)
-                        .font(.caption).foregroundStyle(.secondary)
+                        .font(SettingsTypography.caption).foregroundStyle(.secondary)
                 }
             }
-            Section(appearanceStrings.metricsTitle) {
-                MenuBarMetricOrderEditor()
-            }
-            Section {
+            SettingsSection {
                 Toggle(l10n.s.menuBarHideIconToggle, isOn: $hideIconWithMetrics)
                 Text(l10n.s.menuBarHideIconCaption)
-                    .font(.caption).foregroundStyle(.secondary)
+                    .font(SettingsTypography.caption).foregroundStyle(.secondary)
                 Button(l10n.s.showMenuBarIcon) {
                     appDelegate()?.reshowStatusItem()
                 }
                 Text(l10n.s.showMenuBarIconCaption)
-                    .font(.caption).foregroundStyle(.secondary)
+                    .font(SettingsTypography.caption).foregroundStyle(.secondary)
             }
             if AppFeature.micMute.isAvailable {
-                Section(AppFeature.micMute.name(l10n.s, language: l10n.language)) {
+                SettingsSection(AppFeature.micMute.name(l10n.s, language: l10n.language)) {
                     Toggle(FeatureStrings.micMute(l10n.language).menuBarToggle,
                            isOn: $micMenuBarIndicator)
                     Text(FeatureStrings.micMute(l10n.language).menuBarCaption)
-                        .font(.caption).foregroundStyle(.secondary)
+                        .font(SettingsTypography.caption).foregroundStyle(.secondary)
                 }
             }
         }
         .formStyle(.grouped)
         .onAppear {
             metricAppearance = Defaults.sanitizedMenuBarMetricAppearance(metricAppearance)
+            refreshMetricCount()
         }
+        .onReceive(NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)) { _ in
+            refreshMetricCount()
+        }
+        .onChange(of: features.revision) { _, _ in refreshMetricCount() }
+        .sheet(isPresented: $showingMetricPicker) {
+            MenuBarMetricPicker()
+        }
+    }
+
+    private func refreshMetricCount() {
+        activeMetricCount = MenuBarMetric.enabled(in: .standard).count
+    }
+}
+
+private struct MenuBarMetricPicker: View {
+    @ObservedObject private var l10n = L10n.shared
+    @ObservedObject private var features = FeatureRuntime.shared
+    @Environment(\.dismiss) private var dismiss
+    private var text: ModuleWorkspaceStrings { ModuleWorkspaceStrings(l10n.language) }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text(text.metricSetup).font(.headline)
+            if FeatureUnit.monitor.isAvailable {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 12) {
+                        ForEach(MenuBarMetricOrderEditor.availableOrder(MenuBarMetric.order(in: .standard))) { metric in
+                            MenuBarMetricPickerRow(metric: metric)
+                        }
+                    }
+                    .padding(4)
+                }
+            } else {
+                Text(text.inactiveMonitor)
+                    .fixedSize(horizontal: false, vertical: true)
+                Button(text.add) { FeatureRuntime.shared.setAvailable(.monitor, true) }
+                    .buttonStyle(.borderedProminent)
+            }
+            HStack {
+                Spacer()
+                Button(text.done) { dismiss() }.keyboardShortcut(.defaultAction)
+            }
+        }
+        .padding(24)
+        .frame(width: 360, height: FeatureUnit.monitor.isAvailable ? 480 : 260)
+    }
+}
+
+struct MenuBarMetricPickerRow: View {
+    @ObservedObject private var l10n = L10n.shared
+    let metric: MenuBarMetric
+    @AppStorage private var shown: Bool
+
+    init(metric: MenuBarMetric) {
+        self.metric = metric
+        _shown = AppStorage(wrappedValue: false, metric.defaultsKey)
+    }
+
+    var body: some View {
+        Toggle(metric.title(l10n.s), isOn: $shown)
     }
 }
 
@@ -110,8 +188,6 @@ private struct MenuBarUsageBarSettings: View {
                                                 fallback: MenuBarUsageBarSupport.defaultCriticalColor),
                         supportsOpacity: false)
 
-            Divider()
-
             Stepper(value: mediumBinding, in: 1...99) {
                 HStack {
                     Text(strings.mediumFrom)
@@ -120,6 +196,7 @@ private struct MenuBarUsageBarSettings: View {
                         .monospacedDigit()
                 }
             }
+            .padding(.top, 8)
             Stepper(value: highBinding, in: 2...100) {
                 HStack {
                     Text(strings.highFrom)
@@ -179,7 +256,7 @@ struct MenuBarMetricOrderEditor: View {
     @State private var dragging: MenuBarMetric?
 
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: 8) {
             ForEach(visibleOrder) { metric in
                 VStack(spacing: 0) {
                     HStack(spacing: 8) {
@@ -218,9 +295,6 @@ struct MenuBarMetricOrderEditor: View {
                         NetworkMenuBarOrderOption()
                     }
 
-                    if metric != visibleOrder.last {
-                        Divider()
-                    }
                 }
             }
         }
@@ -232,6 +306,10 @@ struct MenuBarMetricOrderEditor: View {
     /// Metrics whose family left the hub keep their saved slot but stay out
     /// of the editor until they return.
     private var visibleOrder: [MenuBarMetric] {
+        Self.availableOrder(order)
+    }
+
+    static func availableOrder(_ order: [MenuBarMetric]) -> [MenuBarMetric] {
         order.filter { $0.feature.isAvailable && $0.isAvailableOnCurrentHardware }
     }
 }
@@ -275,8 +353,11 @@ private struct MenuBarMetricVisibilityToggle: View {
     }
 
     var body: some View {
-        PanelInlineHideButton(isVisible: $shown)
-            .accessibilityValue(metric.title(l10n.s))
+        let text = ModuleWorkspaceStrings(l10n.language)
+        Toggle(text.showMenuBarMetric, isOn: $shown)
+            .toggleStyle(.checkbox)
+            .font(SettingsTypography.caption)
+            .accessibilityLabel("\(text.showMenuBarMetric): \(metric.title(l10n.s))")
     }
 
 }
@@ -322,7 +403,7 @@ private struct MetricRowOptionToggle: View {
     var body: some View {
         HStack(spacing: 8) {
             Text(label)
-                .font(.caption)
+                .font(SettingsTypography.caption)
                 .foregroundStyle(.secondary)
             Spacer(minLength: 0)
             Button {
@@ -350,4 +431,3 @@ private struct MetricRowOptionToggle: View {
         .padding(.bottom, 7)
     }
 }
-

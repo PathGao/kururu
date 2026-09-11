@@ -56,6 +56,7 @@ struct MediaResult: Identifiable, Equatable {
     let elapsed: TimeInterval
     let text: String?
     let imageBatchItems: [MediaImageBatchItemResult]
+    let pdfNotSmaller: Bool
 
     init(tool: MediaTool,
          inputURL: URL,
@@ -65,7 +66,8 @@ struct MediaResult: Identifiable, Equatable {
          outputBytes: Int64,
          elapsed: TimeInterval,
          text: String?,
-         imageBatchItems: [MediaImageBatchItemResult] = []) {
+         imageBatchItems: [MediaImageBatchItemResult] = [],
+         pdfNotSmaller: Bool = false) {
         self.tool = tool
         self.inputURL = inputURL
         self.outputURL = outputURL
@@ -75,10 +77,11 @@ struct MediaResult: Identifiable, Equatable {
         self.elapsed = elapsed
         self.text = text
         self.imageBatchItems = imageBatchItems
+        self.pdfNotSmaller = pdfNotSmaller
     }
 
     var processedCount: Int {
-        imageBatchItems.isEmpty ? (outputURL == nil && text == nil ? 0 : 1) : imageBatchItems.filter { $0.outputURL != nil }.count
+        imageBatchItems.isEmpty ? (outputURL == nil && text == nil && !pdfNotSmaller ? 0 : 1) : imageBatchItems.filter { $0.outputURL != nil }.count
     }
 
     var failedCount: Int {
@@ -87,6 +90,7 @@ struct MediaResult: Identifiable, Equatable {
 }
 
 enum MediaFailure: Equatable {
+    case pdf(MediaPDFError)
     case noInput
     case noVideoTrack
     case sameOutput
@@ -106,23 +110,6 @@ enum MediaServiceState: Equatable {
     case completed(MediaResult)
     case failed(MediaFailure)
     case cancelled
-}
-
-private final class MediaCancellationToken {
-    private let lock = NSLock()
-    private var _isCancelled = false
-
-    var isCancelled: Bool {
-        lock.lock()
-        defer { lock.unlock() }
-        return _isCancelled
-    }
-
-    func cancel() {
-        lock.lock()
-        _isCancelled = true
-        lock.unlock()
-    }
 }
 
 final class MediaService: ObservableObject {
@@ -146,7 +133,10 @@ final class MediaService: ObservableObject {
 
     func cancel() {
         lock.lock()
-        token?.cancel()
+        if let token, !token.cancel() {
+            lock.unlock()
+            return
+        }
         activeProcess?.terminate()
         activeVisionRequest?.cancel()
         operationID = nil
@@ -197,6 +187,88 @@ final class MediaService: ObservableObject {
             try self?.extractTextWork(inputURL: inputURL, outputURL: outputURL, options: options,
                                       operationID: id, token: token)
         }
+    }
+
+    func mergePDFs(inputURLs: [URL], outputURL: URL) {
+        run(.pdfMerger) { [weak self] id, token in
+            try self?.mergePDFsWork(inputURLs: inputURLs, outputURL: outputURL,
+                                   operationID: id, token: token)
+        }
+    }
+
+    private func mergePDFsWork(inputURLs: [URL], outputURL: URL,
+                              operationID: UUID, token: MediaCancellationToken) throws {
+        guard let inputURL = inputURLs.first else { throw MediaFailureBox(.noInput) }
+        guard !inputURLs.contains(where: { MediaSupport.fileURLsReferToSameItem($0, outputURL) }) else {
+            throw MediaFailureBox(.sameOutput)
+        }
+        let started = Date()
+        let stagedURL = try MediaSupport.temporaryOutputURL(for: outputURL)
+        defer { MediaSupport.discardStagedOutput(stagedURL) }
+        do {
+            _ = try MediaPDFSupport.merge(inputURLs, to: stagedURL,
+                isCancelled: { token.isCancelled },
+                progress: { completed, total in
+                    self.publish(.running(progress: 0.9 * Double(completed) / Double(max(1, total)), message: "pdf"),
+                                 operationID: operationID)
+                })
+            try commitPDF(stagedURL, at: outputURL, inputs: inputURLs, operationID: operationID, token: token)
+        } catch let error as MediaPDFError {
+            if token.isCancelled { throw MediaFailureBox(.cancelled) }
+            throw MediaFailureBox(.pdf(error))
+        }
+        MediaSupport.makeVisibleIfNeeded(outputURL)
+        publish(.completed(MediaResult(tool: .pdfMerger, inputURL: inputURL, outputURL: outputURL,
+                                       originalBytes: inputURLs.reduce(0) { $0 + fileSize($1) },
+                                       outputBytes: fileSize(outputURL),
+                                       elapsed: Date().timeIntervalSince(started), text: nil)),
+                operationID: operationID)
+    }
+
+    func compressPDF(inputURL: URL, outputURL: URL, mode: MediaPDFCompressionMode) {
+        run(.pdfCompressor) { [weak self] id, token in
+            try self?.compressPDFWork(inputURL: inputURL, outputURL: outputURL, mode: mode,
+                                      operationID: id, token: token)
+        }
+    }
+
+    private func compressPDFWork(inputURL: URL, outputURL: URL, mode: MediaPDFCompressionMode,
+                                 operationID: UUID, token: MediaCancellationToken) throws {
+        guard !MediaSupport.fileURLsReferToSameItem(inputURL, outputURL) else {
+            throw MediaFailureBox(.sameOutput)
+        }
+        let started = Date()
+        let stagedURL = try MediaSupport.temporaryOutputURL(for: outputURL)
+        defer { MediaSupport.discardStagedOutput(stagedURL) }
+        let result: MediaPDFCompressionResult
+        do {
+            result = try MediaPDFSupport.compress(inputURL, to: stagedURL, mode: mode,
+                                                   isCancelled: { token.isCancelled })
+            try commitPDF(result.didCompress ? stagedURL : nil, at: outputURL,
+                          inputs: [inputURL], operationID: operationID, token: token)
+        } catch let error as MediaPDFError {
+            if token.isCancelled { throw MediaFailureBox(.cancelled) }
+            throw MediaFailureBox(.pdf(error))
+        }
+        if result.didCompress { MediaSupport.makeVisibleIfNeeded(outputURL) }
+        publish(.completed(MediaResult(tool: .pdfCompressor, inputURL: inputURL,
+                                       outputURL: result.didCompress ? outputURL : nil,
+                                       originalBytes: result.originalBytes, outputBytes: result.outputBytes,
+                                       elapsed: Date().timeIntervalSince(started), text: nil,
+                                       pdfNotSmaller: !result.didCompress)), operationID: operationID)
+    }
+
+    private func commitPDF(_ stagedURL: URL?, at outputURL: URL, inputs: [URL],
+                           operationID: UUID, token: MediaCancellationToken) throws {
+        lock.lock()
+        defer { lock.unlock() }
+        guard self.operationID == operationID, !token.isCancelled else {
+            throw MediaFailureBox(.cancelled)
+        }
+        if let stagedURL {
+            try MediaPDFSupport.installWithoutReplacing(stagedURL, at: outputURL, inputs: inputs)
+        }
+        token.markCommitted()
     }
 
     private func run(_ tool: MediaTool,

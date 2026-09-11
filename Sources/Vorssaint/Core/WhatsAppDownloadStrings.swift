@@ -11,7 +11,7 @@ struct WhatsAppDownloadStrings {
     var automaticCaption: String = "Checks once a day and sends matching files older than your limit to the Trash."
     var folder: String = "Watched folder"
     var accessReady: String = "Downloads is accessible"
-    var accessDenied: String = "Vorssaint cannot access Downloads. Allow it in Files & Folders."
+    var accessDenied: String = "\(AppInfo.name) cannot access Downloads. Allow it in Files & Folders."
     var fileTypes: String = "File types"
     var allTypes: String = "All"
     var image: String = "Images"
@@ -39,7 +39,7 @@ struct WhatsAppDownloadStrings {
     var futureOnly: String = "Only future downloads"
     var includeExisting: String = "Include existing files"
     var trashNote: String = "Files are moved to the Trash and remain recoverable until you empty it."
-    var localNote: String = "Only local file metadata is inspected. Vorssaint never reads chats or file contents."
+    var localNote: String = "Only local file metadata is inspected. \(AppInfo.name) never reads chats or file contents."
     var notificationTitle: String = "WhatsApp cleanup"
     var notificationFormat: String = "%1$d files (%2$@) moved to the Trash. %3$d failed."
     var scanFailed: String = "Downloads could not be scanned. Check Files & Folders in System Settings."
@@ -75,7 +75,7 @@ extension WhatsAppDownloadStrings {
         automaticCaption: "Comprueba una vez al día y envía a la Papelera los archivos seleccionados que superen el plazo.",
         folder: "Carpeta vigilada",
         accessReady: "Descargas está accesible",
-        accessDenied: "Vorssaint no puede acceder a Descargas. Permite el acceso en Archivos y carpetas.",
+        accessDenied: "\(AppInfo.name) no puede acceder a Descargas. Permite el acceso en Archivos y carpetas.",
         fileTypes: "Tipos de archivo",
         allTypes: "Todos",
         image: "Imágenes",
@@ -103,7 +103,7 @@ extension WhatsAppDownloadStrings {
         futureOnly: "Solo futuras descargas",
         includeExisting: "Incluir los existentes",
         trashNote: "Los archivos se mueven a la Papelera y pueden recuperarse hasta que la vacíes.",
-        localNote: "Solo se consultan metadatos locales. Vorssaint nunca lee los chats ni el contenido de los archivos.",
+        localNote: "Solo se consultan metadatos locales. \(AppInfo.name) nunca lee los chats ni el contenido de los archivos.",
         notificationTitle: "Limpieza de WhatsApp",
         notificationFormat: "%1$d archivos (%2$@) movidos a la Papelera. %3$d fallidos.",
         scanFailed: "No se pudo analizar Descargas. Comprueba Archivos y carpetas en Ajustes del Sistema.",
@@ -118,7 +118,7 @@ extension WhatsAppDownloadStrings {
         automaticCaption: "Verifica uma vez por dia e envia para a Lixeira os arquivos selecionados acima do prazo.",
         folder: "Pasta monitorada",
         accessReady: "Downloads está acessível",
-        accessDenied: "O Vorssaint não pode acessar Downloads. Permita em Arquivos e Pastas.",
+        accessDenied: "O \(AppInfo.name) não pode acessar Downloads. Permita em Arquivos e Pastas.",
         fileTypes: "Tipos de arquivo",
         allTypes: "Todos",
         image: "Imagens",
@@ -146,7 +146,7 @@ extension WhatsAppDownloadStrings {
         futureOnly: "Só downloads futuros",
         includeExisting: "Incluir arquivos existentes",
         trashNote: "Os arquivos vão para a Lixeira e podem ser recuperados até ela ser esvaziada.",
-        localNote: "Apenas metadados locais são consultados. O Vorssaint nunca lê conversas nem o conteúdo dos arquivos.",
+        localNote: "Apenas metadados locais são consultados. O \(AppInfo.name) nunca lê conversas nem o conteúdo dos arquivos.",
         notificationTitle: "Limpeza do WhatsApp",
         notificationFormat: "%1$d arquivos (%2$@) movidos para a Lixeira. %3$d falharam.",
         scanFailed: "Não foi possível verificar Downloads. Confira Arquivos e Pastas nos Ajustes do Sistema.",
@@ -157,7 +157,7 @@ extension WhatsAppDownloadStrings {
         title: "WhatsApp-Downloads", hub: "Hält WhatsApp-Dateien in Downloads unter Kontrolle",
         intro: "Findet Dateien, deren Herkunft von macOS als WhatsApp bestätigt wird. Inhalte und Chats werden nie gelesen.",
         automatic: "Automatisch aufräumen", folder: "Überwachter Ordner", accessReady: "Downloads ist zugänglich",
-        accessDenied: "Vorssaint kann nicht auf Downloads zugreifen. Erlaube den Zugriff unter Dateien & Ordner.",
+        accessDenied: "\(AppInfo.name) kann nicht auf Downloads zugreifen. Erlaube den Zugriff unter Dateien & Ordner.",
         types: "Dateitypen", all: "Alle", image: "Bilder", video: "Videos", audio: "Audio und Sprachnachrichten",
         document: "Dokumente", archive: "Archive", other: "Andere", retention: "Aufbewahren für", days: "%d Tage",
         noFiles: "Keine bestätigten WhatsApp-Dateien in Downloads gefunden.", keep: "Behalten", manage: "Wieder verwalten",
@@ -170,7 +170,7 @@ extension WhatsAppDownloadStrings {
         title: "Téléchargements WhatsApp", hub: "Garde les fichiers WhatsApp de Téléchargements sous contrôle",
         intro: "Repère les fichiers dont macOS confirme la provenance WhatsApp. Le contenu et les discussions ne sont jamais lus.",
         automatic: "Nettoyer automatiquement", folder: "Dossier surveillé", accessReady: "Téléchargements est accessible",
-        accessDenied: "Vorssaint ne peut pas accéder à Téléchargements. Autorisez-le dans Fichiers et dossiers.",
+        accessDenied: "\(AppInfo.name) ne peut pas accéder à Téléchargements. Autorisez-le dans Fichiers et dossiers.",
         types: "Types de fichiers", all: "Tous", image: "Images", video: "Vidéos", audio: "Audio et messages vocaux",
         document: "Documents", archive: "Archives", other: "Autres", retention: "Conserver pendant", days: "%d jours",
         noFiles: "Aucun fichier WhatsApp confirmé dans Téléchargements.", keep: "Conserver", manage: "Gérer à nouveau",
@@ -183,7 +183,7 @@ extension WhatsAppDownloadStrings {
         title: "Download di WhatsApp", hub: "Tiene sotto controllo i file WhatsApp in Download",
         intro: "Trova i file che macOS conferma provenire da WhatsApp. Non legge mai contenuti o chat.",
         automatic: "Pulisci automaticamente", folder: "Cartella monitorata", accessReady: "Download è accessibile",
-        accessDenied: "Vorssaint non può accedere a Download. Consenti l’accesso in File e cartelle.",
+        accessDenied: "\(AppInfo.name) non può accedere a Download. Consenti l’accesso in File e cartelle.",
         types: "Tipi di file", all: "Tutti", image: "Immagini", video: "Video", audio: "Audio e messaggi vocali",
         document: "Documenti", archive: "Archivi", other: "Altro", retention: "Conserva per", days: "%d giorni",
         noFiles: "Nessun file WhatsApp confermato in Download.", keep: "Conserva", manage: "Gestisci di nuovo",
@@ -196,7 +196,7 @@ extension WhatsAppDownloadStrings {
         title: "WhatsApp indirmeleri", hub: "İndirilenler’deki WhatsApp dosyalarını kontrol altında tutar",
         intro: "macOS’in WhatsApp’tan geldiğini doğruladığı dosyaları bulur. İçerikler ve sohbetler asla okunmaz.",
         automatic: "Otomatik temizle", folder: "İzlenen klasör", accessReady: "İndirilenler erişilebilir",
-        accessDenied: "Vorssaint İndirilenler’e erişemiyor. Dosyalar ve Klasörler’den izin verin.",
+        accessDenied: "\(AppInfo.name) İndirilenler’e erişemiyor. Dosyalar ve Klasörler’den izin verin.",
         types: "Dosya türleri", all: "Tümü", image: "Görseller", video: "Videolar", audio: "Ses ve sesli mesajlar",
         document: "Belgeler", archive: "Arşivler", other: "Diğer", retention: "Şu kadar sakla", days: "%d gün",
         noFiles: "İndirilenler’de doğrulanmış WhatsApp dosyası bulunamadı.", keep: "Sakla", manage: "Yeniden yönet",
@@ -209,7 +209,7 @@ extension WhatsAppDownloadStrings {
         title: "Загрузки WhatsApp", hub: "Наводит порядок среди файлов WhatsApp в Загрузках",
         intro: "Находит файлы, происхождение из WhatsApp которых подтверждает macOS. Содержимое и чаты не читаются.",
         automatic: "Очищать автоматически", folder: "Отслеживаемая папка", accessReady: "Папка «Загрузки» доступна",
-        accessDenied: "Vorssaint не может открыть Загрузки. Разрешите доступ в разделе «Файлы и папки».",
+        accessDenied: "\(AppInfo.name) не может открыть Загрузки. Разрешите доступ в разделе «Файлы и папки».",
         types: "Типы файлов", all: "Все", image: "Изображения", video: "Видео", audio: "Аудио и голосовые сообщения",
         document: "Документы", archive: "Архивы", other: "Другие", retention: "Хранить", days: "%d дн.",
         noFiles: "Подтверждённых файлов WhatsApp в Загрузках нет.", keep: "Сохранить", manage: "Снова управлять",
@@ -246,7 +246,7 @@ extension WhatsAppDownloadStrings {
         title: "WhatsApp 下载", hub: "管理下载文件夹中的 WhatsApp 文件",
         intro: "查找经 macOS 确认为来自 WhatsApp 的文件。绝不读取文件内容或聊天。",
         automatic: "自动清理", folder: "监控的文件夹", accessReady: "可以访问下载文件夹",
-        accessDenied: "Vorssaint 无法访问下载文件夹。请在“文件与文件夹”中允许访问。",
+        accessDenied: "\(AppInfo.name) 无法访问下载文件夹。请在“文件与文件夹”中允许访问。",
         types: "文件类型", all: "全部", image: "图像", video: "视频", audio: "音频和语音消息",
         document: "文稿", archive: "压缩包", other: "其他", retention: "保留时间", days: "%d 天",
         noFiles: "下载文件夹中没有确认的 WhatsApp 文件。", keep: "保留", manage: "重新管理",
@@ -258,7 +258,7 @@ extension WhatsAppDownloadStrings {
         title: "WhatsApp 下載項目", hub: "管理下載項目中的 WhatsApp 檔案",
         intro: "尋找經 macOS 確認來自 WhatsApp 的檔案。絕不讀取檔案內容或對話。",
         automatic: "自動清理", folder: "監察的資料夾", accessReady: "可以取用下載項目",
-        accessDenied: "Vorssaint 無法取用下載項目。請在「檔案與資料夾」允許取用。",
+        accessDenied: "\(AppInfo.name) 無法取用下載項目。請在「檔案與資料夾」允許取用。",
         types: "檔案類型", all: "全部", image: "圖片", video: "影片", audio: "音訊和語音訊息",
         document: "文件", archive: "壓縮檔", other: "其他", retention: "保留時間", days: "%d 天",
         noFiles: "下載項目中沒有已確認的 WhatsApp 檔案。", keep: "保留", manage: "重新管理",
@@ -270,7 +270,7 @@ extension WhatsAppDownloadStrings {
         title: "WhatsApp 下載項目", hub: "管理下載項目中的 WhatsApp 檔案",
         intro: "尋找經 macOS 確認來自 WhatsApp 的檔案。絕不讀取檔案內容或對話。",
         automatic: "自動清理", folder: "監察的資料夾", accessReady: "可以取用下載項目",
-        accessDenied: "Vorssaint 無法取用下載項目。請在「檔案與資料夾」允許取用。",
+        accessDenied: "\(AppInfo.name) 無法取用下載項目。請在「檔案與資料夾」允許取用。",
         types: "檔案類型", all: "全部", image: "圖片", video: "影片", audio: "音訊和語音訊息",
         document: "文件", archive: "壓縮檔", other: "其他", retention: "保留時間", days: "%d 日",
         noFiles: "下載項目中沒有已確認的 WhatsApp 檔案。", keep: "保留", manage: "重新管理",
@@ -306,7 +306,7 @@ extension WhatsAppDownloadStrings {
                 lastRunFormat: "Letzte Bereinigung %@: %d Dateien · %@ · %d fehlgeschlagen",
                 nextRunFormat: "Nächste automatische Prüfung %@.",
                 firstMessageFormat: "%d vorhandene Dateien erfüllen bereits deine Regeln. Wähle, ob sie oder nur künftige Downloads verwaltet werden.",
-                localNote: "Nur lokale Metadaten werden geprüft. Vorssaint liest weder Chats noch Dateiinhalte.",
+                localNote: "Nur lokale Metadaten werden geprüft. \(AppInfo.name) liest weder Chats noch Dateiinhalte.",
                 notificationFormat: "%1$d Dateien (%2$@) in den Papierkorb verschoben. %3$d fehlgeschlagen.",
                 scanFailed: "Downloads konnte nicht geprüft werden. Kontrolliere Dateien & Ordner in den Systemeinstellungen.", manageButton: "Verwalten…")
         case .fr:
@@ -319,7 +319,7 @@ extension WhatsAppDownloadStrings {
                 lastRunFormat: "Dernier nettoyage %@ : %d fichiers · %@ · %d échecs",
                 nextRunFormat: "Prochaine vérification automatique %@.",
                 firstMessageFormat: "%d fichiers existants correspondent déjà à vos règles. Choisissez de les inclure ou de ne gérer que les futurs téléchargements.",
-                localNote: "Seules les métadonnées locales sont consultées. Vorssaint ne lit ni les discussions ni le contenu des fichiers.",
+                localNote: "Seules les métadonnées locales sont consultées. \(AppInfo.name) ne lit ni les discussions ni le contenu des fichiers.",
                 notificationFormat: "%1$d fichiers (%2$@) placés dans la Corbeille. %3$d échecs.",
                 scanFailed: "Impossible d’analyser Téléchargements. Vérifiez Fichiers et dossiers dans Réglages Système.", manageButton: "Gérer…")
         case .it:
@@ -332,7 +332,7 @@ extension WhatsAppDownloadStrings {
                 lastRunFormat: "Ultima pulizia %@: %d file · %@ · %d non riusciti",
                 nextRunFormat: "Prossimo controllo automatico %@.",
                 firstMessageFormat: "%d file esistenti rispettano già le regole. Scegli se includerli o gestire solo i download futuri.",
-                localNote: "Vengono controllati solo metadati locali. Vorssaint non legge chat o contenuti dei file.",
+                localNote: "Vengono controllati solo metadati locali. \(AppInfo.name) non legge chat o contenuti dei file.",
                 notificationFormat: "%1$d file (%2$@) spostati nel Cestino. %3$d non riusciti.",
                 scanFailed: "Impossibile controllare Download. Verifica File e cartelle nelle Impostazioni di Sistema.", manageButton: "Gestisci…")
         case .tr:
@@ -345,7 +345,7 @@ extension WhatsAppDownloadStrings {
                 lastRunFormat: "Son temizlik %@: %d dosya · %@ · %d başarısız",
                 nextRunFormat: "Sonraki otomatik denetim %@.",
                 firstMessageFormat: "%d mevcut dosya kurallarınıza uyuyor. Bunları dahil etmeyi veya yalnızca gelecekteki indirmeleri yönetmeyi seçin.",
-                localNote: "Yalnızca yerel meta veriler incelenir. Vorssaint sohbetleri veya dosya içeriklerini okumaz.",
+                localNote: "Yalnızca yerel meta veriler incelenir. \(AppInfo.name) sohbetleri veya dosya içeriklerini okumaz.",
                 notificationFormat: "%1$d dosya (%2$@) Çöp Sepeti’ne taşındı. %3$d başarısız.",
                 scanFailed: "İndirilenler taranamadı. Sistem Ayarları’nda Dosyalar ve Klasörler’i denetleyin.", manageButton: "Yönet…")
         case .ru:
@@ -358,7 +358,7 @@ extension WhatsAppDownloadStrings {
                 lastRunFormat: "Последняя очистка %@: %d файлов · %@ · ошибок: %d",
                 nextRunFormat: "Следующая автоматическая проверка %@.",
                 firstMessageFormat: "%d существующих файлов уже подходят под правила. Включите их или управляйте только будущими загрузками.",
-                localNote: "Проверяются только локальные метаданные. Vorssaint не читает чаты и содержимое файлов.",
+                localNote: "Проверяются только локальные метаданные. \(AppInfo.name) не читает чаты и содержимое файлов.",
                 notificationFormat: "%1$d файлов (%2$@) перемещено в Корзину. Ошибок: %3$d.",
                 scanFailed: "Не удалось проверить Загрузки. Проверьте «Файлы и папки» в Системных настройках.", manageButton: "Управление…")
         case .ja:
@@ -394,7 +394,7 @@ extension WhatsAppDownloadStrings {
                 cleanSelectedFormat: "将 %1$d 个移到废纸篓 · %2$@",
                 lastRunFormat: "上次清理 %@：%d 个文件 · %@ · %d 个失败", nextRunFormat: "下次自动检查 %@。",
                 firstMessageFormat: "已有 %d 个文件符合规则。请选择包括它们，或仅管理未来下载。",
-                localNote: "只检查本地元数据。Vorssaint 绝不读取聊天或文件内容。",
+                localNote: "只检查本地元数据。\(AppInfo.name) 绝不读取聊天或文件内容。",
                 notificationFormat: "%1$d 个文件（%2$@）已移到废纸篓。%3$d 个失败。",
                 scanFailed: "无法扫描下载文件夹。请检查系统设置中的“文件与文件夹”。", manageButton: "管理…")
         case .zhTW, .zhHK:
@@ -406,7 +406,7 @@ extension WhatsAppDownloadStrings {
                 cleanSelectedFormat: "將 %1$d 個移至垃圾桶 · %2$@",
                 lastRunFormat: "上次清理 %@：%d 個檔案 · %@ · %d 個失敗", nextRunFormat: "下次自動檢查 %@。",
                 firstMessageFormat: "已有 %d 個檔案符合規則。請選擇包括它們，或只管理日後下載。",
-                localNote: "只檢查本機中繼資料。Vorssaint 絕不讀取對話或檔案內容。",
+                localNote: "只檢查本機中繼資料。\(AppInfo.name) 絕不讀取對話或檔案內容。",
                 notificationFormat: "%1$d 個檔案（%2$@）已移至垃圾桶。%3$d 個失敗。",
                 scanFailed: "無法掃描下載項目。請檢查系統設定中的「檔案與資料夾」。", manageButton: "管理…")
         case .enUS: return OperationalStrings(

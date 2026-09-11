@@ -131,6 +131,7 @@ final class CleanerScheduler: ObservableObject {
         // dropFirst: a published property replays its CURRENT value (.idle)
         // to every new subscriber, and that echo must not be read as "the
         // user interrupted the pass" before the pass even started.
+        var attempted = 0
         runObserver = cleaner.$phase
             .dropFirst()
             .receive(on: DispatchQueue.main)
@@ -141,12 +142,13 @@ final class CleanerScheduler: ObservableObject {
                     // The scan pre checks exactly the safe groups; an
                     // automatic run takes that selection as is.
                     if cleaner.selectedCount > 0 {
+                        attempted = cleaner.selectedCount
                         cleaner.cleanSelected(escalate: false)
                     } else {
-                        self.finishRun(freed: 0, failed: 0)
+                        self.finishRun(freed: 0, failed: 0, attempted: 0)
                     }
                 case let .done(freed, failed):
-                    self.finishRun(freed: freed, failed: failed)
+                    self.finishRun(freed: freed, failed: failed, attempted: attempted)
                 case .idle:
                     // The user (or a reset) interrupted the automatic pass.
                     self.runObserver = nil
@@ -158,12 +160,12 @@ final class CleanerScheduler: ObservableObject {
         cleaner.scan()
     }
 
-    private func finishRun(freed: Int64, failed: Int) {
+    private func finishRun(freed: Int64, failed: Int, attempted: Int) {
         runObserver = nil
         JunkCleaner.shared.reset()
         let defaults = UserDefaults.standard
-        defaults.set(Date().timeIntervalSince1970, forKey: DefaultsKey.cleanerLastAutoRun)
-        defaults.set(freed, forKey: DefaultsKey.cleanerLastAutoFreed)
+        CleanerRunResult(failed: failed, attempted: attempted)
+            .save(freed: freed, at: Date(), defaults: defaults)
         notifyIfWanted(freed: freed, failed: failed)
         scheduleNext()
     }

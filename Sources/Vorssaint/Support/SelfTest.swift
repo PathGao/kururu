@@ -11,6 +11,57 @@ enum SelfTest {
         var failures: [String] = []
         var warnings: [String] = []
 
+        #if VORSSAINT_DEVELOPMENT
+        var clipboardChecks = 0
+        ClipboardClearSelfTest.run { passed, message in
+            clipboardChecks += 1
+            if !passed { failures.append(message) }
+        }
+        print("CLIPBOARD CLEAR: \(clipboardChecks) checks, \(failures.count) failures")
+        let failuresBeforePersistence = failures.count
+        var persistenceChecks = 0
+        ClipboardPersistenceSelfTest.run { passed, message in
+            persistenceChecks += 1
+            if !passed { failures.append(message) }
+        }
+        print("CLIPBOARD PERSISTENCE: \(persistenceChecks) checks, \(failures.count - failuresBeforePersistence) failures")
+        let failuresBeforeImport = failures.count
+        var importChecks = 0
+        ClipboardImportSelfTest.run { passed, message in
+            importChecks += 1
+            if !passed { failures.append(message) }
+        }
+        print("CLIPBOARD IMPORT: \(importChecks) checks, \(failures.count - failuresBeforeImport) failures")
+        let failuresBeforeShelf = failures.count
+        var shelfChecks = 0
+        ShelfPersistenceSelfTest.run { passed, message in
+            shelfChecks += 1
+            if !passed { failures.append(message) }
+        }
+        print("SHELF PERSISTENCE: \(shelfChecks) checks, \(failures.count - failuresBeforeShelf) failures")
+        let failuresBeforeShelfImport = failures.count
+        var shelfImportChecks = 0
+        ShelfImportSelfTest.run { passed, message in
+            shelfImportChecks += 1
+            if !passed { failures.append(message) }
+        }
+        print("SHELF IMPORT: \(shelfImportChecks) checks, \(failures.count - failuresBeforeShelfImport) failures")
+        let failuresBeforeScratchpad = failures.count
+        var scratchpadChecks = 0
+        ScratchpadImportSelfTest.run { passed, message in
+            scratchpadChecks += 1
+            if !passed { failures.append(message) }
+        }
+        print("SCRATCHPAD IMPORT: \(scratchpadChecks) checks, \(failures.count - failuresBeforeScratchpad) failures")
+        let failuresBeforeScratchpadSave = failures.count
+        var scratchpadSaveChecks = 0
+        ScratchpadSaveSelfTest.run { passed, message in
+            scratchpadSaveChecks += 1
+            if !passed { failures.append(message) }
+        }
+        print("SCRATCHPAD SAVE: \(scratchpadSaveChecks) checks, \(failures.count - failuresBeforeScratchpadSave) failures")
+        #endif
+
         var assertionID = IOPMAssertionID(0)
         let result = IOPMAssertionCreateWithName("PreventUserIdleSystemSleep" as CFString,
                                                  IOPMAssertionLevel(kIOPMAssertionLevelOn),
@@ -86,11 +137,16 @@ enum SelfTest {
             warnings.append("no power metrics on this Mac")
         }
 
-        UserDefaults.standard.set("ok", forKey: "selftest")
-        if UserDefaults.standard.string(forKey: "selftest") != "ok" {
+        let suiteName = "kururu-selftest-\(UUID().uuidString)"
+        if let defaults = UserDefaults(suiteName: suiteName) {
+            defaults.set("ok", forKey: "selftest")
+            if defaults.string(forKey: "selftest") != "ok" {
+                failures.append("UserDefaults")
+            }
+            defaults.removePersistentDomain(forName: suiteName)
+        } else {
             failures.append("UserDefaults")
         }
-        UserDefaults.standard.removeObject(forKey: "selftest")
 
         for style in KeepAwakeActiveIcon.allCases {
             guard let image = BlackHoleGlyph.activeImage(style: style, tint: .orange) else {

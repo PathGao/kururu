@@ -6,6 +6,11 @@ import Carbon.HIToolbox
 import SwiftUI
 import UniformTypeIdentifiers
 
+enum ScratchpadSaveIssue: Equatable {
+    case unsavedChanges
+    case operationFailed
+}
+
 /// A floating pad for short-lived text: meeting notes, numbers, fragments on
 /// their way somewhere else. Summoned from the panel, the quick panel or a
 /// global shortcut, it saves every edit by itself in a small tabbed document, so
@@ -13,9 +18,15 @@ import UniformTypeIdentifiers
 /// aside on a click outside, and an option keeps it floating over other apps
 /// instead.
 final class ScratchpadService: NSObject, ObservableObject, NSWindowDelegate {
-    static let shared = ScratchpadService()
+    static let shared = ScratchpadService(directory: PrivateFileStore.containerURL, defaults: .standard)
 
     @Published private(set) var shortcutRegistrationFailed = false
+    @Published private(set) var saveIssue: ScratchpadSaveIssue?
+    @Published private(set) var isAtTop = false
+    var onTopPresentationChange: (() -> Void)?
+    var canChangePresentation: Bool { !modalInteractionActive }
+    private var presentation = ScratchpadPresentationState()
+    private var screenObserver: NSObjectProtocol?
     @Published private(set) var isPinned = false
     @Published private(set) var isPreviewing = false
     @Published private(set) var pads: [ScratchpadPad] = []
@@ -26,6 +37,7 @@ final class ScratchpadService: NSObject, ObservableObject, NSWindowDelegate {
             document.updateSelectedText(text, modifiedAt: Date())
             self.document = document
             pads = document.pads
+            if saveIssue == .operationFailed { saveIssue = nil }
             scheduleSave()
         }
     }
@@ -36,20 +48,35 @@ final class ScratchpadService: NSObject, ObservableObject, NSWindowDelegate {
     private var localClickMonitor: Any?
     private var outsideClickMonitor: Any?
     private weak var textView: NSTextView?
+    private var focusRequest: UInt = 0
+    private var persistenceStoppedForRemoval = false
     private var pendingSave: DispatchWorkItem?
     private var document: ScratchpadDocument?
-    private var store = ScratchpadStore(directoryURL: PrivateFileStore.containerURL,
-                                        defaults: .standard)
+    private var store: ScratchpadStore
+    private let fixture: Bool
     private var hasLoaded = false
     private var isReplacingText = false
     private var modalInteractionActive = false
 
-    private override init() {
+    private init(directory: URL?, defaults: UserDefaults, fixture: Bool = false) {
+        store = ScratchpadStore(directoryURL: directory, defaults: defaults)
+        self.fixture = fixture
         super.init()
         hotkey.onPress = { [weak self] in self?.toggle() }
     }
 
+    #if VORSSAINT_DEVELOPMENT
+    convenience init(fixtureDirectory: URL, defaults: UserDefaults) {
+        self.init(directory: fixtureDirectory, defaults: defaults, fixture: true)
+    }
+    #endif
+
+    private var defaultPadName: String {
+        fixture ? "Note" : FeatureStrings.scratchpad(L10n.shared.language).pageTitle
+    }
+
     func syncWithPreferences() {
+        guard !fixture else { return }
         let available = AppFeature.scratchpad.isAvailable
         let enabled = available
             && UserDefaults.standard.bool(forKey: DefaultsKey.scratchpadShortcutEnabled)
@@ -105,6 +132,7 @@ final class ScratchpadService: NSObject, ObservableObject, NSWindowDelegate {
         if !NSScreen.screens.contains(where: { $0.visibleFrame.intersects(panel.frame) }) {
             center(panel)
         }
+        panel.title = FeatureStrings.scratchpad(L10n.shared.language).pageTitle
         panel.alphaValue = 0
         panel.orderFrontRegardless()
         focusText()
@@ -114,32 +142,86 @@ final class ScratchpadService: NSObject, ObservableObject, NSWindowDelegate {
         }
     }
 
+    /// Moves the existing editor and its undo stack; never creates a second host.
+    func showAtTop(on screen: ShelfDockScreen) {
+        guard AppFeature.scratchpad.isAvailable, canChangePresentation else { return }
+        if !isVisible { show() }
+        guard let panel, panel.isVisible else { return }
+        commitMarkedText()
+        let frame = presentation.enterTop(screen: screen, currentFrame: panel.frame)
+        isAtTop = true
+        panel.setFrame(frame, display: true)
+        installScreenObserver()
+        onTopPresentationChange?()
+        if !isPreviewing { focusText(preserveSelection: true) }
+    }
+
+    private var screens: [ShelfDockScreen] {
+        NSScreen.screens.compactMap { screen in
+            guard let id = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber else { return nil }
+            return ShelfDockScreen(id: id.uint32Value, frame: screen.frame, visibleFrame: screen.visibleFrame,
+                                   safeTopInset: screen.safeAreaInsets.top)
+        }
+    }
+
+    private func installScreenObserver() {
+        guard screenObserver == nil else { return }
+        screenObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            guard let self, self.isAtTop, let panel = self.panel else { return }
+            guard let screen = self.presentation.screen(in: self.screens, mouse: NSEvent.mouseLocation) else {
+                self.hide()
+                return
+            }
+            panel.setFrame(ScratchpadPresentationState.topFrame(on: screen), display: true)
+            self.onTopPresentationChange?()
+        }
+    }
+
     func hide() {
-        guard panel != nil else { return }
+        focusRequest &+= 1
+        commitMarkedText()
         flushSave()
         removeMonitors()
+        if let screenObserver { NotificationCenter.default.removeObserver(screenObserver) }
+        screenObserver = nil
         panel?.orderOut(nil)
+        if let frame = presentation.leaveTop() { panel?.setFrame(frame, display: false) }
+        let wasAtTop = isAtTop
+        isAtTop = false
         isPinned = false
         isPreviewing = false
         modalInteractionActive = false
+        if wasAtTop { onTopPresentationChange?() }
+    }
+
+    /// Commit to the old selected pad before its identity or preview state changes.
+    private func commitMarkedText() {
+        guard let textView, textView.window === panel, textView.hasMarkedText() else { return }
+        textView.unmarkText()
+        if text != textView.string { text = textView.string }
     }
 
     // MARK: - Document
 
     @discardableResult
     private func loadApplyingRetention() -> Bool {
+        guard !persistenceStoppedForRemoval else { return false }
         if hasLoaded, let document, document != store.lastSavedDocument {
             flushSave()
             return true
         }
-        let defaults = UserDefaults.standard
-        let defaultName = FeatureStrings.scratchpad(L10n.shared.language).pageTitle
+        let defaults = store.defaults
+        let defaultName = defaultPadName
         let retention = ScratchpadRetention.sanitized(
             defaults.string(forKey: DefaultsKey.scratchpadRetention))
         do {
             let loaded = try store.load(defaultName: defaultName, retention: retention, now: Date())
             apply(loaded)
             hasLoaded = true
+            if loaded == store.lastSavedDocument { saveIssue = nil }
+            else { recordSaveFailure() }
             return true
         } catch {
             hasLoaded = false
@@ -147,18 +229,57 @@ final class ScratchpadService: NSObject, ObservableObject, NSWindowDelegate {
         }
     }
 
+    func stopPersistenceForRemoval() {
+        persistenceStoppedForRemoval = true
+        pendingSave?.cancel()
+        pendingSave = nil
+    }
+
     private func scheduleSave() {
+        guard !persistenceStoppedForRemoval else { return }
         pendingSave?.cancel()
         let work = DispatchWorkItem { [weak self] in self?.flushSave() }
         pendingSave = work
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.8, execute: work)
     }
 
-    private func flushSave() {
+    @discardableResult
+    private func flushSave() -> Bool {
         pendingSave?.cancel()
         pendingSave = nil
-        guard hasLoaded, let document else { return }
-        _ = store.save(document)
+        guard hasLoaded, let document else { return true }
+        return saveDocument(document)
+    }
+
+    private func saveDocument(_ next: ScratchpadDocument) -> Bool {
+        guard !persistenceStoppedForRemoval else { return false }
+        guard store.save(next) else {
+            recordSaveFailure()
+            return false
+        }
+        saveIssue = nil
+        return true
+    }
+
+    private func recordSaveFailure() {
+        let issue: ScratchpadSaveIssue = document != nil && document != store.lastSavedDocument
+            ? .unsavedChanges : .operationFailed
+        if saveIssue != issue {
+            NSLog("Notes save failed; current content is retained in memory.")
+        }
+        saveIssue = issue
+    }
+
+    @discardableResult
+    func retrySave() -> Bool {
+        commitMarkedText()
+        return flushSave()
+    }
+
+    func prepareForTermination() -> Bool {
+        guard !persistenceStoppedForRemoval else { return true }
+        commitMarkedText()
+        return flushSave()
     }
 
     private func apply(_ document: ScratchpadDocument, focus: Bool = false) {
@@ -181,25 +302,75 @@ final class ScratchpadService: NSObject, ObservableObject, NSWindowDelegate {
     }
 
     func createPad(defaultName: String) {
-        guard let document, let next = document.addingPad(defaultName: defaultName), store.save(next) else { return }
+        commitMarkedText()
+        guard let document, let next = document.addingPad(defaultName: defaultName), saveDocument(next) else { return }
         apply(next, focus: true)
     }
 
     func selectPad(_ id: UUID) {
-        guard id != selectedPadID, let document, let next = document.selecting(id), store.save(next) else { return }
+        commitMarkedText()
+        guard id != selectedPadID, let document, let next = document.selecting(id), saveDocument(next) else { return }
         apply(next, focus: true)
     }
 
-    func renamePad(_ id: UUID, to name: String) {
-        guard let document, let next = document.renaming(id, to: name), store.save(next) else { return }
+    @discardableResult
+    func renamePad(_ id: UUID, to name: String) -> Bool {
+        commitMarkedText()
+        guard let document, let next = document.renaming(id, to: name), saveDocument(next) else { return false }
         apply(next, focus: id == selectedPadID)
+        return true
     }
 
     @discardableResult
     func closePad(_ id: UUID) -> Bool {
-        guard let document, let next = document.removing(id), store.save(next) else { return false }
+        commitMarkedText()
+        guard let document, let next = document.removing(id), saveDocument(next) else { return false }
         apply(next, focus: true)
         return true
+    }
+
+    func importPreviewDocument() throws -> ScratchpadDocument {
+        guard !persistenceStoppedForRemoval, fixture || AppFeature.scratchpad.isAvailable else {
+            throw ScratchpadImportActionError.unavailable
+        }
+        if hasLoaded {
+            guard let document else { throw ScratchpadImportActionError.unavailable }
+            return document
+        }
+        var previewStore = store
+        return try previewStore.loadForImport(defaultName: defaultPadName)
+    }
+
+    func importPads(_ selected: [ScratchpadPad], sourceURL: URL, replaceOnlyEmpty: Bool = false) throws -> Int {
+        guard !persistenceStoppedForRemoval, fixture || AppFeature.scratchpad.isAvailable else { throw ScratchpadImportActionError.unavailable }
+        guard !selected.isEmpty else { throw ScratchpadImportError.invalidSelection }
+        guard let directory = store.directoryURL else { throw ScratchpadImportActionError.unavailable }
+        try ScratchpadImportSupport.validateSource(sourceURL,
+            destination: directory.appendingPathComponent("Scratchpad.json"))
+        commitMarkedText()
+        var candidateStore = store
+        let current: ScratchpadDocument
+        if hasLoaded {
+            guard let document else { throw ScratchpadImportActionError.unavailable }
+            current = document
+        } else {
+            do {
+                current = try candidateStore.loadForImport(
+                    defaultName: defaultPadName)
+            } catch { throw ScratchpadImportActionError.unavailable }
+        }
+        let next = try ScratchpadImportSupport.merge(selected: selected, into: current, now: Date(), replaceOnlyEmpty: replaceOnlyEmpty)
+        guard candidateStore.save(next) else {
+            recordSaveFailure()
+            throw ScratchpadImportActionError.saveFailed
+        }
+        pendingSave?.cancel()
+        pendingSave = nil
+        store = candidateStore
+        hasLoaded = true
+        apply(next)
+        saveIssue = nil
+        return Set(selected.map(\.id)).count
     }
 
     func setModalInteractionActive(_ active: Bool) {
@@ -219,7 +390,8 @@ final class ScratchpadService: NSObject, ObservableObject, NSWindowDelegate {
         pendingSave = nil
         hasLoaded = false
         document = nil
-        store = ScratchpadStore(directoryURL: PrivateFileStore.containerURL, defaults: .standard)
+        saveIssue = nil
+        store = ScratchpadStore(directoryURL: store.directoryURL, defaults: store.defaults)
     }
 
     // MARK: - Actions
@@ -256,6 +428,7 @@ final class ScratchpadService: NSObject, ObservableObject, NSWindowDelegate {
     }
 
     func togglePreview() {
+        commitMarkedText()
         guard !text.isEmpty else { return }
         isPreviewing.toggle()
         if isPreviewing {
@@ -316,16 +489,30 @@ final class ScratchpadService: NSObject, ObservableObject, NSWindowDelegate {
         textView = view
     }
 
-    private func focusText() {
-        guard let panel else { return }
+    func unregisterTextView(_ view: NSTextView) {
+        if textView === view { textView = nil }
+    }
+
+    func restoreEditorFocus() {
+        guard !isPreviewing else { return }
+        focusText(preserveSelection: true)
+    }
+
+    private func focusText(preserveSelection: Bool = false) {
+        guard let panel, panel.isVisible, !modalInteractionActive else { return }
+        focusRequest &+= 1
+        let request = focusRequest
         panel.makeKey()
-        DispatchQueue.main.async { [weak self] in
-            guard let self, let panel = self.panel, panel.isVisible,
-                  let textView = self.textView else { return }
+        DispatchQueue.main.async { [weak self, weak panel] in
+            guard let self, let panel, self.focusRequest == request,
+                  self.panel === panel, panel.isVisible, !self.modalInteractionActive,
+                  let textView = self.textView, textView.window === panel else { return }
             panel.makeFirstResponder(textView)
-            let end = NSRange(location: (textView.string as NSString).length, length: 0)
-            textView.setSelectedRange(end)
-            textView.scrollRangeToVisible(end)
+            if !preserveSelection {
+                let end = NSRange(location: (textView.string as NSString).length, length: 0)
+                textView.setSelectedRange(end)
+                textView.scrollRangeToVisible(end)
+            }
         }
     }
 
@@ -343,7 +530,7 @@ final class ScratchpadService: NSObject, ObservableObject, NSWindowDelegate {
                                            styleMask: [.borderless, .nonactivatingPanel, .resizable],
                                            backing: .buffered,
                                            defer: false)
-        panel.title = "Vorssaint"
+        panel.title = FeatureStrings.scratchpad(L10n.shared.language).pageTitle
         panel.isReleasedWhenClosed = false
         // Dragging inside the pad must select text, never move the window;
         // the header strip is the handle.
@@ -428,7 +615,10 @@ final class ScratchpadService: NSObject, ObservableObject, NSWindowDelegate {
         }
         outsideClickMonitor = NSEvent.addGlobalMonitorForEvents(matching: mouseEvents) { [weak self, weak panel] event in
             guard let self, let panel, panel.isVisible, self.dismissesOnOutsideClick else { return }
-            if event.windowNumber != panel.windowNumber, !Self.mouseIsInside(panel) {
+            if event.windowNumber != panel.windowNumber, !Self.mouseIsInside(panel),
+               // Every key on the Accessibility Keyboard is a click outside this
+               // panel. Dismissing on those makes the panel impossible to type into.
+               !AssistiveKeyboard.ownsCocoaPoint(NSEvent.mouseLocation) {
                 self.hide()
             }
         }
@@ -453,4 +643,9 @@ final class ScratchpadService: NSObject, ObservableObject, NSWindowDelegate {
             self.outsideClickMonitor = nil
         }
     }
+}
+
+
+enum ScratchpadImportActionError: Error {
+    case unavailable, saveFailed
 }

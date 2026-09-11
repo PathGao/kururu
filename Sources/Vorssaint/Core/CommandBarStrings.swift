@@ -10,7 +10,7 @@ struct CommandBarFeatureStrings {
     var pageTitle: String = "Command Bar"
     var hubDescription: String = "One field that finds and runs everything the app does"
     var panelCaption: String = "Type to find and run anything"
-    var settingsCaption: String = "One shortcut opens a field over whatever you are doing. Type a few letters, press Return and it happens. Nothing you type is saved."
+    var settingsCaption: String = "Open the command bar, find a result, then press Return to run its main action."
     var openButton: String = "Open the bar now"
     var searchPlaceholder: String = "Type what you want to do"
     var suggestionsLabel: String = "Suggestions"
@@ -18,6 +18,7 @@ struct CommandBarFeatureStrings {
     var noResultsAction: String = "See suggestions"
     var argumentRangeFormat: String = "%d to %d"
     var argumentHint: String = "Return applies · Esc goes back"
+    var argumentInvalid: String = "Enter 1–4 digits with an optional percent sign."
     var confirmHint: String = "Return confirms · Esc cancels"
     var kindApp: String = "App"
     var kindClipboard: String = "Paste from history"
@@ -30,6 +31,13 @@ struct CommandBarFeatureStrings {
     var needsSetupFormat: String = "Turn on %@ in Settings"
     var needsPermissionHint: String = "Needs permission · Return asks"
     var actionCleanURL: String = "Clean the copied link"
+    var actionOpenFormat: String = "Open %@"
+    var actionEnterValue: String = "Enter a value…"
+    var actionReviewConfirmation: String = "Review confirmation…"
+    var actionApplyValueFormat: String = "Apply %d"
+    var actionSaveName: String = "Save name"
+    var actionInsert: String = "Insert"
+    var actionEnterText: String = "Enter text…"
     var actionOpenSettings: String = "Open Settings"
     var answerBatteryLabel: String = "Battery"
     var answerBatteryCharging: String = "charging"
@@ -38,6 +46,7 @@ struct CommandBarFeatureStrings {
     var answerMemoryFormat: String = "%@ of %@ in use"
     var answerStorageLabel: String = "Storage"
     var answerStorageFormat: String = "%@ available of %@"
+    var copyFailed: String = "Copy failed. Try again."
     var copyHint: String = "Return copies"
     var kindWindow: String = "Window"
     var quitFormat: String = "Quit %@"
@@ -55,7 +64,7 @@ struct CommandBarFeatureStrings {
     var aliasTakenFormat: String = "%@ already answers to that"
     var sourcesTitle: String = "What the bar searches"
     var sourcesCaption: String = "Turn off what you never want to see. Your own actions always stay."
-    var sourceActions: String = "Vorssaint actions"
+    var sourceActions: String = "\(AppInfo.name) actions"
     var sourceApps: String = "Apps"
     var sourceMenus: String = "Menu commands of the app in front"
     var sourceWindows: String = "Open windows"
@@ -74,6 +83,9 @@ struct CommandBarFeatureStrings {
     var hiddenTitle: String = "Never shown"
     var hiddenEmpty: String = "Nothing hidden."
     var forgetAllButton: String = "Forget what I use most"
+    var rankingTitle: String = "Search ranking"
+    var rankingCaption: String = "Results adapt to your usage. Clearing the records starts learning again and keeps pins, custom names, and shortcuts."
+    var rankingResetDone: String = "Ranking records cleared."
     var tryTheseLabel: String = "Try"
     var stillLooking: String = "Still looking"
     var removeButton: String = "Remove"
@@ -118,7 +130,7 @@ struct CommandBarFeatureStrings {
     var placeholderClipboard: String = "what you copied"
     var placeholderSelection: String = "what is selected"
     var placeholderDate: String = "today"
-    var privacyNote: String = "Everything happens on this Mac: no account, no cloud, nothing sent anywhere."
+    var privacyNote: String = "Local search and ranking stay on this Mac. Configured websites can receive query and placeholder values; scripts may run while you type."
     var actionShortcut: String = "Give it a shortcut"
     var actionShortcutChange: String = "Change the shortcut"
     var actionShortcutRemove: String = "Take the shortcut off"
@@ -164,6 +176,9 @@ struct CommandBarFeatureStrings {
     var filesIgnoreAdd: String = "Add"
     var compactModeToggle: String = "Compact mode"
     var compactModeCaption: String = "Bar opens without suggestions. Results appear as you type."
+    var destinationUnavailable: String = "The target could not be found or accessed. Check its location or change your search."
+    var destinationInvalid: String = "This address is invalid. Check the saved destination."
+    var destinationOpenFailed: String = "Could not open this target. Check its location or try again."
 }
 
 extension FeatureStrings {
@@ -193,7 +208,6 @@ extension CommandBarFeatureStrings {
         pageTitle: "Barra de comando",
         hubDescription: "Um campo que acha e executa tudo que o app faz",
         panelCaption: "Digite para achar e executar qualquer coisa",
-        settingsCaption: "Um atalho abre um campo por cima do que você estiver fazendo. Digite umas letras, aperte Return e pronto. Nada do que você digita fica salvo.",
         openButton: "Abrir a barra agora",
         searchPlaceholder: "Digite o que você quer fazer",
         suggestionsLabel: "Sugestões",
@@ -238,7 +252,7 @@ extension CommandBarFeatureStrings {
         aliasTakenFormat: "%@ já atende por esse nome",
         sourcesTitle: "O que a barra procura",
         sourcesCaption: "Desligue o que você nunca quer ver. Suas ações continuam sempre.",
-        sourceActions: "Ações do Vorssaint",
+        sourceActions: "Ações do \(AppInfo.name)",
         sourceApps: "Apps",
         sourceMenus: "Comandos de menu do app da frente",
         sourceWindows: "Janelas abertas",
@@ -301,7 +315,6 @@ extension CommandBarFeatureStrings {
         placeholderClipboard: "o que você copiou",
         placeholderSelection: "o que está selecionado",
         placeholderDate: "hoje",
-        privacyNote: "Tudo acontece neste Mac: sem conta, sem nuvem, nada sai daqui.",
         actionShortcut: "Dar um atalho",
         actionShortcutChange: "Trocar o atalho",
         actionShortcutRemove: "Tirar o atalho",
@@ -352,7 +365,6 @@ extension CommandBarFeatureStrings {
         pageTitle: "Komut çubuğu",
         hubDescription: "Uygulamanın yaptığı her şeyi bulup çalıştıran tek alan",
         panelCaption: "Yazın, bulun ve çalıştırın",
-        settingsCaption: "Tek bir kısayol, yaptığınız işin üstünde bir alan açar. Birkaç harf yazın, Return’e basın ve iş biter. Yazdıklarınız kaydedilmez.",
         openButton: "Çubuğu şimdi aç",
         searchPlaceholder: "Ne yapmak istediğinizi yazın",
         suggestionsLabel: "Öneriler",
@@ -397,7 +409,7 @@ extension CommandBarFeatureStrings {
         aliasTakenFormat: "%@ zaten bu ada yanıt veriyor",
         sourcesTitle: "Çubuğun aradıkları",
         sourcesCaption: "Hiç görmek istemediklerinizi kapatın. Kendi eylemleriniz hep kalır.",
-        sourceActions: "Vorssaint eylemleri",
+        sourceActions: "\(AppInfo.name) eylemleri",
         sourceApps: "Uygulamalar",
         sourceMenus: "Öndeki uygulamanın menü komutları",
         sourceWindows: "Açık pencereler",
@@ -460,7 +472,6 @@ extension CommandBarFeatureStrings {
         placeholderClipboard: "kopyaladığınız şey",
         placeholderSelection: "seçili olan",
         placeholderDate: "bugün",
-        privacyNote: "Her şey bu Mac’te olur: hesap yok, bulut yok, hiçbir şey dışarı gitmez.",
         actionShortcut: "Kısayol ver",
         actionShortcutChange: "Kısayolu değiştir",
         actionShortcutRemove: "Kısayolu kaldır",
@@ -511,7 +522,6 @@ extension CommandBarFeatureStrings {
         pageTitle: "Командная панель",
         hubDescription: "Одно поле, которое находит и запускает всё в приложении",
         panelCaption: "Введите, чтобы найти и запустить что угодно",
-        settingsCaption: "Одно сочетание клавиш открывает поле поверх того, чем вы заняты. Наберите пару букв, нажмите Return, и готово. Введённое нигде не сохраняется.",
         openButton: "Открыть панель сейчас",
         searchPlaceholder: "Наберите, что нужно сделать",
         suggestionsLabel: "Предложения",
@@ -556,7 +566,7 @@ extension CommandBarFeatureStrings {
         aliasTakenFormat: "На это имя уже откликается %@",
         sourcesTitle: "Что ищет панель",
         sourcesCaption: "Выключите то, что не хотите видеть. Ваши действия остаются всегда.",
-        sourceActions: "Действия Vorssaint",
+        sourceActions: "Действия \(AppInfo.name)",
         sourceApps: "Приложения",
         sourceMenus: "Команды меню активного приложения",
         sourceWindows: "Открытые окна",
@@ -619,7 +629,6 @@ extension CommandBarFeatureStrings {
         placeholderClipboard: "то, что вы скопировали",
         placeholderSelection: "то, что выделено",
         placeholderDate: "сегодня",
-        privacyNote: "Всё происходит на этом Mac: без аккаунта, без облака, ничего не уходит наружу.",
         actionShortcut: "Назначить сочетание",
         actionShortcutChange: "Изменить сочетание",
         actionShortcutRemove: "Убрать сочетание",
@@ -670,7 +679,7 @@ extension CommandBarFeatureStrings {
         pageTitle: "Barra de comandos",
         hubDescription: "Un campo que encuentra y ejecuta todo lo que hace la app",
         panelCaption: "Escribe para encontrar y ejecutar lo que sea",
-        settingsCaption: "Un atajo abre un campo sobre lo que estés haciendo. Escribe unas letras, pulsa Retorno y listo. Nada de lo que escribes se guarda.",
+        settingsCaption: "Abre la barra, busca un resultado y pulsa Retorno para ejecutar su acción principal.",
         openButton: "Abrir la barra ahora",
         searchPlaceholder: "Escribe lo que quieres hacer",
         suggestionsLabel: "Sugerencias",
@@ -678,6 +687,7 @@ extension CommandBarFeatureStrings {
         noResultsAction: "Ver sugerencias",
         argumentRangeFormat: "%d a %d",
         argumentHint: "Retorno aplica · Esc vuelve",
+        argumentInvalid: "Introduce de 1 a 4 dígitos, con signo de porcentaje opcional.",
         confirmHint: "Retorno confirma · Esc cancela",
         kindApp: "App",
         kindClipboard: "Pegar del historial",
@@ -690,6 +700,13 @@ extension CommandBarFeatureStrings {
         needsSetupFormat: "Activa %@ en Ajustes",
         needsPermissionHint: "Necesita un permiso · Retorno lo pide",
         actionCleanURL: "Limpiar el enlace copiado",
+        actionOpenFormat: "Abrir %@",
+        actionEnterValue: "Introducir un valor…",
+        actionReviewConfirmation: "Revisar confirmación…",
+        actionApplyValueFormat: "Aplicar %d",
+        actionSaveName: "Guardar nombre",
+        actionInsert: "Insertar",
+        actionEnterText: "Introducir texto…",
         actionOpenSettings: "Abrir Ajustes",
         answerBatteryLabel: "Batería",
         answerBatteryCharging: "cargando",
@@ -698,6 +715,7 @@ extension CommandBarFeatureStrings {
         answerMemoryFormat: "%@ de %@ en uso",
         answerStorageLabel: "Almacenamiento",
         answerStorageFormat: "%@ disponibles de %@",
+        copyFailed: "No se pudo copiar. Inténtalo de nuevo.",
         copyHint: "Retorno copia",
         kindWindow: "Ventana",
         quitFormat: "Salir de %@",
@@ -715,7 +733,7 @@ extension CommandBarFeatureStrings {
         aliasTakenFormat: "%@ ya responde a ese nombre",
         sourcesTitle: "Lo que busca la barra",
         sourcesCaption: "Desactiva lo que nunca quieras ver. Tus acciones se quedan siempre.",
-        sourceActions: "Acciones de Vorssaint",
+        sourceActions: "Acciones de \(AppInfo.name)",
         sourceApps: "Apps",
         sourceMenus: "Comandos de menú de la app al frente",
         sourceWindows: "Ventanas abiertas",
@@ -734,6 +752,9 @@ extension CommandBarFeatureStrings {
         hiddenTitle: "No mostrar nunca",
         hiddenEmpty: "No hay nada oculto.",
         forgetAllButton: "Olvidar lo que más uso",
+        rankingTitle: "Orden de búsqueda",
+        rankingCaption: "El orden se adapta a tu uso. Borrar los datos reinicia el aprendizaje y conserva los elementos fijados, nombres y atajos.",
+        rankingResetDone: "Datos de orden borrados.",
         tryTheseLabel: "Prueba",
         stillLooking: "Aún buscando",
         removeButton: "Quitar",
@@ -778,7 +799,7 @@ extension CommandBarFeatureStrings {
         placeholderClipboard: "lo que copiaste",
         placeholderSelection: "lo que está seleccionado",
         placeholderDate: "hoy",
-        privacyNote: "Todo ocurre en este Mac: sin cuenta, sin nube, nada sale de aquí.",
+        privacyNote: "La búsqueda y el orden locales permanecen en este Mac. Los sitios configurados pueden recibir la consulta y los valores de variables; los scripts pueden ejecutarse al escribir.",
         actionShortcut: "Darle un atajo",
         actionShortcutChange: "Cambiar el atajo",
         actionShortcutRemove: "Quitar el atajo",
@@ -823,13 +844,16 @@ extension CommandBarFeatureStrings {
         filesIgnorePlaceholder: "Nombre de carpeta o archivo",
         filesIgnoreAdd: "Añadir",
         compactModeToggle: "Modo compacto",
-        compactModeCaption: "La barra se abre sin sugerencias. Los resultados aparecen mientras escribes.")
+        compactModeCaption: "La barra se abre sin sugerencias. Los resultados aparecen mientras escribes.",
+        destinationUnavailable: "No se encuentra el destino o no se puede acceder a él. Comprueba su ubicación o cambia la búsqueda.",
+        destinationInvalid: "Esta dirección no es válida. Comprueba el destino guardado.",
+        destinationOpenFailed: "No se pudo abrir el destino. Comprueba su ubicación o vuelve a intentarlo.")
 
     static let de = CommandBarFeatureStrings(
         pageTitle: "Befehlsleiste",
         hubDescription: "Ein Feld, das alles findet und ausführt, was die App kann",
         panelCaption: "Tippen, finden, ausführen",
-        settingsCaption: "Ein Kurzbefehl öffnet ein Feld über dem, was du gerade tust. Ein paar Buchstaben tippen, Return drücken, fertig. Nichts von dem, was du tippst, wird gespeichert.",
+        settingsCaption: "Öffne die Befehlsleiste, finde ein Ergebnis und drücke Return für dessen Hauptaktion.",
         openButton: "Leiste jetzt öffnen",
         searchPlaceholder: "Tippe, was du tun möchtest",
         suggestionsLabel: "Vorschläge",
@@ -837,6 +861,7 @@ extension CommandBarFeatureStrings {
         noResultsAction: "Vorschläge ansehen",
         argumentRangeFormat: "%d bis %d",
         argumentHint: "Return übernimmt · Esc geht zurück",
+        argumentInvalid: "Gib 1–4 Ziffern ein, optional mit Prozentzeichen.",
         confirmHint: "Return bestätigt · Esc bricht ab",
         kindApp: "App",
         kindClipboard: "Aus dem Verlauf einsetzen",
@@ -849,6 +874,13 @@ extension CommandBarFeatureStrings {
         needsSetupFormat: "Aktiviere %@ in den Einstellungen",
         needsPermissionHint: "Braucht eine Berechtigung · Return fragt nach",
         actionCleanURL: "Kopierten Link bereinigen",
+        actionOpenFormat: "%@ öffnen",
+        actionEnterValue: "Wert eingeben…",
+        actionReviewConfirmation: "Bestätigung prüfen…",
+        actionApplyValueFormat: "%d anwenden",
+        actionSaveName: "Namen speichern",
+        actionInsert: "Einfügen",
+        actionEnterText: "Text eingeben…",
         actionOpenSettings: "Einstellungen öffnen",
         answerBatteryLabel: "Batterie",
         answerBatteryCharging: "lädt",
@@ -857,6 +889,7 @@ extension CommandBarFeatureStrings {
         answerMemoryFormat: "%@ von %@ belegt",
         answerStorageLabel: "Speicherplatz",
         answerStorageFormat: "%@ verfügbar von %@",
+        copyFailed: "Kopieren fehlgeschlagen. Erneut versuchen.",
         copyHint: "Return kopiert",
         kindWindow: "Fenster",
         quitFormat: "%@ beenden",
@@ -874,7 +907,7 @@ extension CommandBarFeatureStrings {
         aliasTakenFormat: "%@ hört bereits auf diesen Namen",
         sourcesTitle: "Was die Leiste durchsucht",
         sourcesCaption: "Schalte aus, was du nie sehen willst. Deine Aktionen bleiben immer.",
-        sourceActions: "Vorssaint-Aktionen",
+        sourceActions: "\(AppInfo.name)-Aktionen",
         sourceApps: "Apps",
         sourceMenus: "Menübefehle der App im Vordergrund",
         sourceWindows: "Offene Fenster",
@@ -893,6 +926,9 @@ extension CommandBarFeatureStrings {
         hiddenTitle: "Nie anzeigen",
         hiddenEmpty: "Nichts ausgeblendet.",
         forgetAllButton: "Vergessen, was ich am meisten nutze",
+        rankingTitle: "Suchreihenfolge",
+        rankingCaption: "Die Reihenfolge passt sich deiner Nutzung an. Nach dem Löschen lernt sie neu. Pins, eigene Namen und Kurzbefehle bleiben erhalten.",
+        rankingResetDone: "Sortierdaten gelöscht.",
         tryTheseLabel: "Probier",
         stillLooking: "Suche noch",
         removeButton: "Entfernen",
@@ -937,7 +973,7 @@ extension CommandBarFeatureStrings {
         placeholderClipboard: "was Sie kopiert haben",
         placeholderSelection: "was ausgewählt ist",
         placeholderDate: "heute",
-        privacyNote: "Alles passiert auf diesem Mac: kein Konto, keine Cloud, nichts verlässt ihn.",
+        privacyNote: "Lokale Suche und Sortierung bleiben auf diesem Mac. Eingerichtete Websites können Suchtext und Platzhalterwerte erhalten; Skripte können während der Eingabe laufen.",
         actionShortcut: "Kurzbefehl geben",
         actionShortcutChange: "Kurzbefehl ändern",
         actionShortcutRemove: "Kurzbefehl entfernen",
@@ -982,13 +1018,16 @@ extension CommandBarFeatureStrings {
         filesIgnorePlaceholder: "Ordner- oder Dateiname",
         filesIgnoreAdd: "Hinzufügen",
         compactModeToggle: "Kompaktmodus",
-        compactModeCaption: "Die Leiste öffnet sich ohne Vorschläge. Die Ergebnisse erscheinen beim Tippen.")
+        compactModeCaption: "Die Leiste öffnet sich ohne Vorschläge. Die Ergebnisse erscheinen beim Tippen.",
+        destinationUnavailable: "Das Ziel wurde nicht gefunden oder ist nicht zugänglich. Prüfe den Speicherort oder ändere die Suche.",
+        destinationInvalid: "Diese Adresse ist ungültig. Prüfe das gespeicherte Ziel.",
+        destinationOpenFailed: "Das Ziel konnte nicht geöffnet werden. Prüfe den Speicherort oder versuche es erneut.")
 
     static let fr = CommandBarFeatureStrings(
         pageTitle: "Barre de commande",
         hubDescription: "Un champ qui trouve et lance tout ce que fait l’app",
         panelCaption: "Tapez pour trouver et lancer ce que vous voulez",
-        settingsCaption: "Un raccourci ouvre un champ par-dessus ce que vous faites. Tapez quelques lettres, appuyez sur Retour, c’est fait. Rien de ce que vous tapez n’est enregistré.",
+        settingsCaption: "Ouvrez la barre, trouvez un résultat, puis appuyez sur Retour pour lancer son action principale.",
         openButton: "Ouvrir la barre maintenant",
         searchPlaceholder: "Tapez ce que vous voulez faire",
         suggestionsLabel: "Suggestions",
@@ -996,6 +1035,7 @@ extension CommandBarFeatureStrings {
         noResultsAction: "Voir les suggestions",
         argumentRangeFormat: "%d à %d",
         argumentHint: "Retour applique · Échap revient",
+        argumentInvalid: "Saisissez 1 à 4 chiffres, avec un signe de pourcentage facultatif.",
         confirmHint: "Retour confirme · Échap annule",
         kindApp: "App",
         kindClipboard: "Coller depuis l’historique",
@@ -1008,6 +1048,13 @@ extension CommandBarFeatureStrings {
         needsSetupFormat: "Activez %@ dans les Réglages",
         needsPermissionHint: "Autorisation nécessaire · Retour la demande",
         actionCleanURL: "Nettoyer le lien copié",
+        actionOpenFormat: "Ouvrir %@",
+        actionEnterValue: "Saisir une valeur…",
+        actionReviewConfirmation: "Vérifier la confirmation…",
+        actionApplyValueFormat: "Appliquer %d",
+        actionSaveName: "Enregistrer le nom",
+        actionInsert: "Insérer",
+        actionEnterText: "Saisir du texte…",
         actionOpenSettings: "Ouvrir les Réglages",
         answerBatteryLabel: "Batterie",
         answerBatteryCharging: "en charge",
@@ -1016,6 +1063,7 @@ extension CommandBarFeatureStrings {
         answerMemoryFormat: "%@ sur %@ utilisés",
         answerStorageLabel: "Stockage",
         answerStorageFormat: "%@ disponibles sur %@",
+        copyFailed: "Échec de la copie. Réessayez.",
         copyHint: "Retour copie",
         kindWindow: "Fenêtre",
         quitFormat: "Quitter %@",
@@ -1033,7 +1081,7 @@ extension CommandBarFeatureStrings {
         aliasTakenFormat: "%@ répond déjà à ce nom",
         sourcesTitle: "Ce que la barre cherche",
         sourcesCaption: "Désactivez ce que vous ne voulez jamais voir. Vos actions restent toujours.",
-        sourceActions: "Actions Vorssaint",
+        sourceActions: "Actions \(AppInfo.name)",
         sourceApps: "Apps",
         sourceMenus: "Commandes de menu de l’app au premier plan",
         sourceWindows: "Fenêtres ouvertes",
@@ -1052,6 +1100,9 @@ extension CommandBarFeatureStrings {
         hiddenTitle: "Ne jamais montrer",
         hiddenEmpty: "Rien de masqué.",
         forgetAllButton: "Oublier ce que j’utilise le plus",
+        rankingTitle: "Classement des résultats",
+        rankingCaption: "Les résultats suivent vos habitudes. Effacer les données relance cet apprentissage et conserve les éléments épinglés, noms et raccourcis.",
+        rankingResetDone: "Données de classement effacées.",
         tryTheseLabel: "Essayez",
         stillLooking: "Recherche en cours",
         removeButton: "Retirer",
@@ -1096,7 +1147,7 @@ extension CommandBarFeatureStrings {
         placeholderClipboard: "ce que vous avez copié",
         placeholderSelection: "ce qui est sélectionné",
         placeholderDate: "aujourd’hui",
-        privacyNote: "Tout se passe sur ce Mac\u{00A0}: pas de compte, pas de cloud, rien ne sort.",
+        privacyNote: "La recherche et le classement restent sur ce Mac. Les sites configurés peuvent recevoir la requête et les valeurs des variables ; les scripts peuvent agir pendant la saisie.",
         actionShortcut: "Lui donner un raccourci",
         actionShortcutChange: "Changer le raccourci",
         actionShortcutRemove: "Retirer le raccourci",
@@ -1141,13 +1192,15 @@ extension CommandBarFeatureStrings {
         filesIgnorePlaceholder: "Nom de dossier ou de fichier",
         filesIgnoreAdd: "Ajouter",
         compactModeToggle: "Mode compact",
-        compactModeCaption: "La barre s’ouvre sans suggestions. Les résultats apparaissent à mesure que vous tapez.")
+        compactModeCaption: "La barre s’ouvre sans suggestions. Les résultats apparaissent à mesure que vous tapez.",
+        destinationUnavailable: "La cible est introuvable ou inaccessible. Vérifiez son emplacement ou modifiez la recherche.",
+        destinationInvalid: "Cette adresse est invalide. Vérifiez la destination enregistrée.",
+        destinationOpenFailed: "Impossible d’ouvrir cette cible. Vérifiez son emplacement ou réessayez.")
 
     static let it = CommandBarFeatureStrings(
         pageTitle: "Barra dei comandi",
         hubDescription: "Un campo che trova ed esegue tutto ciò che fa l’app",
         panelCaption: "Scrivi per trovare ed eseguire qualsiasi cosa",
-        settingsCaption: "Una scorciatoia apre un campo sopra quello che stai facendo. Scrivi qualche lettera, premi Invio e via. Niente di ciò che scrivi viene salvato.",
         openButton: "Apri la barra adesso",
         searchPlaceholder: "Scrivi cosa vuoi fare",
         suggestionsLabel: "Suggerimenti",
@@ -1192,7 +1245,7 @@ extension CommandBarFeatureStrings {
         aliasTakenFormat: "%@ risponde già a questo nome",
         sourcesTitle: "Cosa cerca la barra",
         sourcesCaption: "Disattiva ciò che non vuoi mai vedere. Le tue azioni restano sempre.",
-        sourceActions: "Azioni di Vorssaint",
+        sourceActions: "Azioni di \(AppInfo.name)",
         sourceApps: "App",
         sourceMenus: "Comandi di menu dell’app in primo piano",
         sourceWindows: "Finestre aperte",
@@ -1255,7 +1308,6 @@ extension CommandBarFeatureStrings {
         placeholderClipboard: "quello che hai copiato",
         placeholderSelection: "quello che è selezionato",
         placeholderDate: "oggi",
-        privacyNote: "Tutto avviene su questo Mac: nessun account, nessun cloud, niente esce di qui.",
         actionShortcut: "Dagli una scorciatoia",
         actionShortcutChange: "Cambia la scorciatoia",
         actionShortcutRemove: "Togli la scorciatoia",
@@ -1306,7 +1358,7 @@ extension CommandBarFeatureStrings {
         pageTitle: "コマンドバー",
         hubDescription: "アプリのすべての機能を見つけて実行できる入力欄",
         panelCaption: "入力するだけで見つけて実行",
-        settingsCaption: "ショートカットひとつで、作業中の画面の上に入力欄が開きます。数文字入力して Return を押すだけ。入力した内容は保存されません。",
+        settingsCaption: "コマンドバーを開き、結果を選んで Return を押すと主な操作を実行します。",
         openButton: "今すぐバーを開く",
         searchPlaceholder: "やりたいことを入力",
         suggestionsLabel: "候補",
@@ -1314,6 +1366,7 @@ extension CommandBarFeatureStrings {
         noResultsAction: "候補を見る",
         argumentRangeFormat: "%d〜%d",
         argumentHint: "Return で適用 · Esc で戻る",
+        argumentInvalid: "1〜4 桁の数字を入力してください。末尾のパーセント記号は任意です。",
         confirmHint: "Return で実行 · Esc でキャンセル",
         kindApp: "アプリ",
         kindClipboard: "履歴からペースト",
@@ -1326,6 +1379,13 @@ extension CommandBarFeatureStrings {
         needsSetupFormat: "設定で「%@」をオンにしてください",
         needsPermissionHint: "許可が必要です · Return で要求",
         actionCleanURL: "コピーした URL をクリーン",
+        actionOpenFormat: "%@を開く",
+        actionEnterValue: "値を入力…",
+        actionReviewConfirmation: "確認内容を表示…",
+        actionApplyValueFormat: "%d を適用",
+        actionSaveName: "名前を保存",
+        actionInsert: "挿入",
+        actionEnterText: "テキストを入力…",
         actionOpenSettings: "設定を開く",
         answerBatteryLabel: "バッテリー",
         answerBatteryCharging: "充電中",
@@ -1334,6 +1394,7 @@ extension CommandBarFeatureStrings {
         answerMemoryFormat: "%@ / %@ を使用中",
         answerStorageLabel: "ストレージ",
         answerStorageFormat: "利用可能 %@ / %@",
+        copyFailed: "コピーできませんでした。再試行してください。",
         copyHint: "Return でコピー",
         kindWindow: "ウインドウ",
         quitFormat: "%@を終了",
@@ -1351,7 +1412,7 @@ extension CommandBarFeatureStrings {
         aliasTakenFormat: "%@ がすでにその名前です",
         sourcesTitle: "バーが探すもの",
         sourcesCaption: "見たくないものはオフに。自分のアクションは常に残ります。",
-        sourceActions: "Vorssaint のアクション",
+        sourceActions: "\(AppInfo.name) のアクション",
         sourceApps: "アプリ",
         sourceMenus: "最前面のアプリのメニュー項目",
         sourceWindows: "開いているウインドウ",
@@ -1370,6 +1431,9 @@ extension CommandBarFeatureStrings {
         hiddenTitle: "表示しない",
         hiddenEmpty: "非表示のものはありません。",
         forgetAllButton: "よく使うものを忘れる",
+        rankingTitle: "検索結果の順序",
+        rankingCaption: "使用状況に合わせて結果を並べます。記録を消すと学習をやり直します。固定項目、独自の名前、ショートカットは残ります。",
+        rankingResetDone: "並び順の記録を消去しました。",
         tryTheseLabel: "お試し",
         stillLooking: "検索中",
         removeButton: "削除",
@@ -1414,7 +1478,7 @@ extension CommandBarFeatureStrings {
         placeholderClipboard: "コピーした内容",
         placeholderSelection: "選択されているもの",
         placeholderDate: "今日",
-        privacyNote: "すべてこの Mac の中で完結します。アカウントもクラウドもなく、外には何も送りません。",
+        privacyNote: "ローカル検索と並び順の情報はこの Mac に残ります。設定したサイトに検索語や変数の値が送られる場合があります。スクリプトは入力中にも実行されます。",
         actionShortcut: "ショートカットを設定",
         actionShortcutChange: "ショートカットを変更",
         actionShortcutRemove: "ショートカットを外す",
@@ -1459,13 +1523,15 @@ extension CommandBarFeatureStrings {
         filesIgnorePlaceholder: "フォルダまたはファイルの名前",
         filesIgnoreAdd: "追加",
         compactModeToggle: "コンパクトモード",
-        compactModeCaption: "バーは候補なしで開きます。入力すると結果が現れます。")
+        compactModeCaption: "バーは候補なしで開きます。入力すると結果が現れます。",
+        destinationUnavailable: "対象が見つからないか、アクセスできません。場所を確認するか、検索を変更してください。",
+        destinationInvalid: "このアドレスは無効です。保存したリンク先を確認してください。",
+        destinationOpenFailed: "対象を開けませんでした。場所を確認するか、もう一度お試しください。")
 
     static let ko = CommandBarFeatureStrings(
         pageTitle: "명령 막대",
         hubDescription: "앱의 모든 기능을 찾아서 실행하는 하나의 입력란",
         panelCaption: "입력해서 찾고 바로 실행",
-        settingsCaption: "단축키 하나로 지금 하던 작업 위에 입력란이 열립니다. 몇 글자 입력하고 Return을 누르면 끝. 입력한 내용은 저장되지 않습니다.",
         openButton: "지금 막대 열기",
         searchPlaceholder: "하고 싶은 일을 입력",
         suggestionsLabel: "제안",
@@ -1510,7 +1576,7 @@ extension CommandBarFeatureStrings {
         aliasTakenFormat: "%@이(가) 이미 그 이름을 씁니다",
         sourcesTitle: "막대가 찾는 것",
         sourcesCaption: "보고 싶지 않은 것은 끄세요. 내 동작은 항상 남습니다.",
-        sourceActions: "Vorssaint 동작",
+        sourceActions: "\(AppInfo.name) 동작",
         sourceApps: "앱",
         sourceMenus: "맨 앞 앱의 메뉴 명령",
         sourceWindows: "열린 윈도우",
@@ -1573,7 +1639,6 @@ extension CommandBarFeatureStrings {
         placeholderClipboard: "복사한 내용",
         placeholderSelection: "선택한 내용",
         placeholderDate: "오늘",
-        privacyNote: "모두 이 Mac 안에서 처리됩니다. 계정도 클라우드도 없고 밖으로 나가는 것도 없습니다.",
         actionShortcut: "단축키 지정",
         actionShortcutChange: "단축키 변경",
         actionShortcutRemove: "단축키 해제",
@@ -1624,7 +1689,7 @@ extension CommandBarFeatureStrings {
         pageTitle: "命令栏",
         hubDescription: "一个输入框，找到并执行 App 的所有功能",
         panelCaption: "输入即可找到并执行任何功能",
-        settingsCaption: "一个快捷键就能在当前屏幕上打开输入框。输入几个字母，按下 Return 即可完成。输入的内容不会保存。",
+        settingsCaption: "打开命令栏，找到结果后按 Return 执行其主动作。",
         openButton: "立即打开命令栏",
         searchPlaceholder: "输入你想做的事",
         suggestionsLabel: "建议",
@@ -1632,6 +1697,7 @@ extension CommandBarFeatureStrings {
         noResultsAction: "查看建议",
         argumentRangeFormat: "%d 到 %d",
         argumentHint: "Return 确定 · Esc 返回",
+        argumentInvalid: "请输入 1–4 位数字，末尾可加百分号。",
         confirmHint: "Return 确认 · Esc 取消",
         kindApp: "App",
         kindClipboard: "从历史记录粘贴",
@@ -1644,6 +1710,13 @@ extension CommandBarFeatureStrings {
         needsSetupFormat: "请在设置中开启%@",
         needsPermissionHint: "需要权限 · 按 Return 请求",
         actionCleanURL: "清理拷贝的链接",
+        actionOpenFormat: "打开 %@",
+        actionEnterValue: "输入数值…",
+        actionReviewConfirmation: "查看确认…",
+        actionApplyValueFormat: "应用 %d",
+        actionSaveName: "保存名称",
+        actionInsert: "插入",
+        actionEnterText: "输入文字…",
         actionOpenSettings: "打开设置",
         answerBatteryLabel: "电池",
         answerBatteryCharging: "充电中",
@@ -1652,6 +1725,7 @@ extension CommandBarFeatureStrings {
         answerMemoryFormat: "已用 %@ / %@",
         answerStorageLabel: "存储空间",
         answerStorageFormat: "可用 %@ / %@",
+        copyFailed: "复制失败，请重试。",
         copyHint: "Return 拷贝",
         kindWindow: "窗口",
         quitFormat: "退出“%@”",
@@ -1669,7 +1743,7 @@ extension CommandBarFeatureStrings {
         aliasTakenFormat: "%@ 已经使用这个名字",
         sourcesTitle: "命令栏搜索的内容",
         sourcesCaption: "关掉你不想看到的。你自己的操作始终保留。",
-        sourceActions: "Vorssaint 操作",
+        sourceActions: "\(AppInfo.name) 操作",
         sourceApps: "App",
         sourceMenus: "最前面 App 的菜单命令",
         sourceWindows: "打开的窗口",
@@ -1688,6 +1762,9 @@ extension CommandBarFeatureStrings {
         hiddenTitle: "从不显示",
         hiddenEmpty: "没有隐藏任何内容。",
         forgetAllButton: "忘记我最常用的",
+        rankingTitle: "搜索排序",
+        rankingCaption: "根据使用习惯调整结果顺序。清除后会重新学习，固定项、自定义名称和快捷键保持不变。",
+        rankingResetDone: "已清除排序记录。",
         tryTheseLabel: "试试",
         stillLooking: "仍在查找",
         removeButton: "移除",
@@ -1732,7 +1809,7 @@ extension CommandBarFeatureStrings {
         placeholderClipboard: "你拷贝的内容",
         placeholderSelection: "选中的内容",
         placeholderDate: "今天",
-        privacyNote: "一切都在这台 Mac 上完成：不需要账户，不上云，什么都不外传。",
+        privacyNote: "本地搜索和排序留在这台 Mac 上。你配置的网站可以收到查询和占位符内容，脚本可能在输入时运行。",
         actionShortcut: "设置快捷键",
         actionShortcutChange: "更改快捷键",
         actionShortcutRemove: "取消快捷键",
@@ -1777,13 +1854,15 @@ extension CommandBarFeatureStrings {
         filesIgnorePlaceholder: "文件夹或文件名",
         filesIgnoreAdd: "添加",
         compactModeToggle: "紧凑模式",
-        compactModeCaption: "命令栏打开时不显示建议，输入时才显示结果。")
+        compactModeCaption: "命令栏打开时不显示建议，输入时才显示结果。",
+        destinationUnavailable: "找不到或无法访问该目标。请检查位置或修改搜索。",
+        destinationInvalid: "地址无效，请检查保存的目标地址。",
+        destinationOpenFailed: "无法打开该目标。请检查位置或重试。")
 
     static let zhTW = CommandBarFeatureStrings(
         pageTitle: "指令列",
         hubDescription: "一個輸入欄位，找到並執行 App 的所有功能",
         panelCaption: "輸入即可找到並執行任何功能",
-        settingsCaption: "一個快速鍵就能在目前畫面上打開輸入欄位。輸入幾個字母，按下 Return 就完成。輸入的內容不會儲存。",
         openButton: "立即打開指令列",
         searchPlaceholder: "輸入你想做的事",
         suggestionsLabel: "建議",
@@ -1828,7 +1907,7 @@ extension CommandBarFeatureStrings {
         aliasTakenFormat: "%@ 已經使用這個名稱",
         sourcesTitle: "指令列搜尋的內容",
         sourcesCaption: "關掉你不想看到的。你自己的動作永遠保留。",
-        sourceActions: "Vorssaint 動作",
+        sourceActions: "\(AppInfo.name) 動作",
         sourceApps: "App",
         sourceMenus: "最前面 App 的選單指令",
         sourceWindows: "打開的視窗",
@@ -1891,7 +1970,6 @@ extension CommandBarFeatureStrings {
         placeholderClipboard: "你複製的內容",
         placeholderSelection: "選取的內容",
         placeholderDate: "今天",
-        privacyNote: "一切都在這台 Mac 上完成：不需要帳號，不上雲，什麼都不外傳。",
         actionShortcut: "設定快速鍵",
         actionShortcutChange: "更改快速鍵",
         actionShortcutRemove: "取消快速鍵",
@@ -1942,7 +2020,6 @@ extension CommandBarFeatureStrings {
         pageTitle: "指令列",
         hubDescription: "一個輸入欄位，找到並執行 App 的所有功能",
         panelCaption: "輸入即可找到並執行任何功能",
-        settingsCaption: "一個快捷鍵就能在目前螢幕上打開輸入欄位。輸入幾個字母，按下 Return 就完成。輸入的內容不會儲存。",
         openButton: "立即打開指令列",
         searchPlaceholder: "輸入你想做的事",
         suggestionsLabel: "建議",
@@ -1987,7 +2064,7 @@ extension CommandBarFeatureStrings {
         aliasTakenFormat: "%@ 已經使用這個名稱",
         sourcesTitle: "指令列搜尋的內容",
         sourcesCaption: "關掉你不想看到的。你自己的動作永遠保留。",
-        sourceActions: "Vorssaint 動作",
+        sourceActions: "\(AppInfo.name) 動作",
         sourceApps: "App",
         sourceMenus: "最前面 App 的選單指令",
         sourceWindows: "打開的視窗",
@@ -2050,7 +2127,6 @@ extension CommandBarFeatureStrings {
         placeholderClipboard: "你複製的內容",
         placeholderSelection: "選取的內容",
         placeholderDate: "今天",
-        privacyNote: "一切都在這台 Mac 上完成：不需要帳號，不上雲，什麼都不外傳。",
         actionShortcut: "設定快速鍵",
         actionShortcutChange: "更改快速鍵",
         actionShortcutRemove: "取消快速鍵",

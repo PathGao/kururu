@@ -14,6 +14,11 @@ private func requestDockPreviewApplicationQuit(_ item: SwitcherItem) -> Bool {
     return app.terminate()
 }
 
+private func reportDockPreviewApplicationQuitFailure(_ item: SwitcherItem) {
+    QuickToolHUD.show(icon: "exclamationmark.triangle",
+                      message: String(format: L10n.shared.s.appQuitFailedFormat, item.appName))
+}
+
 final class DockPreviewService: ObservableObject {
     static let shared = DockPreviewService()
 
@@ -195,6 +200,7 @@ final class DockPreviewService: ObservableObject {
                 if accepted { self?.endSession() }
                 return accepted
             },
+            quitFailed: { reportDockPreviewApplicationQuitFailure(item) },
             closeWindow: {
                 WindowActivator.closeWindowIncludingHiddenState(item) { [weak self] didClose in
                     guard didClose, let self else { return }
@@ -1492,6 +1498,7 @@ final class DockPreviewPinnedPanel: ObservableObject, Identifiable {
                 if accepted { self?.closePreviewPanel() }
                 return accepted
             },
+            quitFailed: { reportDockPreviewApplicationQuitFailure(item) },
             closeWindow: {
                 WindowActivator.closeWindowIncludingHiddenState(item) { [weak self] didClose in
                     guard didClose else { return }

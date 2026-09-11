@@ -74,7 +74,7 @@ struct SuperKeyMapping: Equatable {
     let destination: UInt64
 }
 
-/// Why the key mapping could not be applied. Every refusal carries one, so
+/// Why input monitoring or key mapping could not start. Every refusal carries one, so
 /// the feature can say what stopped it instead of switching itself back off
 /// with nothing on screen.
 enum SuperKeyMappingFailure: Equatable, CaseIterable {
@@ -82,6 +82,8 @@ enum SuperKeyMappingFailure: Equatable, CaseIterable {
     case foreignMapping
     /// hidutil refused the read, the write, or the readback.
     case systemRefused
+    /// The keyboard event tap could not be created.
+    case inputMonitoringUnavailable
 }
 
 /// The pure half of the super key: which keys are involved, how the mapping

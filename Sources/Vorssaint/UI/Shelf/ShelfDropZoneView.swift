@@ -4,7 +4,7 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// The shelf docked under the menu bar icon. It is a single thing in one place:
+/// The shelf at its selected docked position. It is a single thing in one place:
 /// a small pill when idle, the full shelf card when opened or when a drag needs
 /// a target. It shrinks and grows in place, never a second window and never a
 /// new menu bar icon. Shown and hidden by ShelfService.
@@ -36,12 +36,32 @@ private struct ShelfPill: View {
     @EnvironmentObject private var shelf: ShelfService
     @ObservedObject private var l10n = L10n.shared
     @Environment(\.colorScheme) private var colorScheme
+    @AppStorage(DefaultsKey.shelfDockPlacement) private var placement = "menuBar"
     @State private var targeted = false
     @State private var hovered = false
 
     private static let dropTypes: [UTType] = [.fileURL, .image, .url, .text, .plainText]
 
     var body: some View {
+        if ShelfDockPlacement.normalized(placement) == .topCenter {
+            ShelfTopCenterEntry(
+                title: l10n.s.shelfTitle, count: shelf.itemCount,
+                hovered: hovered, targeted: targeted, expandLabel: l10n.s.shelfOpenNow,
+                notesTitle: shelf.dockedNotesAvailable ? FeatureStrings.scratchpad(l10n.language).pageTitle : nil,
+                onExpand: { shelf.expandDocked() }, onNotes: { shelf.openDockedNotes() },
+                onHoverChange: { hovered = $0 }, onTargetChange: { targeted = $0 },
+                onDropProviders: { providers in
+                    let accepted = shelf.accept(providers: providers)
+                    if accepted { shelf.dockDidAccept() }
+                    return accepted
+                })
+            .padding(8)
+        } else {
+            menuBarBody
+        }
+    }
+
+    private var menuBarBody: some View {
         HStack(spacing: 7) {
             leadingGlyph
             if shelf.itemCount > 0 {

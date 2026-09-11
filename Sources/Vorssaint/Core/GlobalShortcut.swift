@@ -132,6 +132,10 @@ struct GlobalShortcut: Equatable, Hashable {
         keyCode: Int64(kVK_ANSI_Minus), modifiers: [.option, .command])
     static let keyboardBrightnessIncreaseDefault = GlobalShortcut(
         keyCode: Int64(kVK_ANSI_Equal), modifiers: [.option, .command])
+    static let displayBrightnessDecreaseDefault = GlobalShortcut(
+        keyCode: Int64(kVK_ANSI_LeftBracket), modifiers: [.control, .option, .command])
+    static let displayBrightnessIncreaseDefault = GlobalShortcut(
+        keyCode: Int64(kVK_ANSI_RightBracket), modifiers: [.control, .option, .command])
     // Quick tools. Paste plain follows the universal "Paste and Match Style"
     // combination; the others use the free ⌃⌥⌘ letters.
     static let pastePlainDefault = GlobalShortcut(keyCode: Int64(kVK_ANSI_V),
@@ -630,6 +634,8 @@ enum GlobalShortcutRole: CaseIterable, Identifiable {
     case screenRecorder
     case keyboardBrightnessDecrease
     case keyboardBrightnessIncrease
+    case displayBrightnessDecrease
+    case displayBrightnessIncrease
 
     var id: String { storageKey }
 
@@ -658,6 +664,8 @@ enum GlobalShortcutRole: CaseIterable, Identifiable {
         case .screenRecorder: return DefaultsKey.recorderShortcut
         case .keyboardBrightnessDecrease: return DefaultsKey.keyboardBrightnessDecreaseShortcut
         case .keyboardBrightnessIncrease: return DefaultsKey.keyboardBrightnessIncreaseShortcut
+        case .displayBrightnessDecrease: return BrightnessShortcutPreferenceKey.decrease
+        case .displayBrightnessIncrease: return BrightnessShortcutPreferenceKey.increase
         }
     }
 
@@ -686,11 +694,27 @@ enum GlobalShortcutRole: CaseIterable, Identifiable {
         case .screenRecorder: return .screenRecorderDefault
         case .keyboardBrightnessDecrease: return .keyboardBrightnessDecreaseDefault
         case .keyboardBrightnessIncrease: return .keyboardBrightnessIncreaseDefault
+        case .displayBrightnessDecrease: return .displayBrightnessDecreaseDefault
+        case .displayBrightnessIncrease: return .displayBrightnessIncreaseDefault
         }
     }
 
     var savedShortcut: GlobalShortcut {
         GlobalShortcut.saved(for: storageKey, fallback: defaultShortcut)
+    }
+
+    var startsUnassigned: Bool {
+        self == .displayBrightnessDecrease || self == .displayBrightnessIncrease
+    }
+
+    func configuredShortcut(
+        read: (String) -> String? = { UserDefaults.standard.string(forKey: $0) }
+    ) -> GlobalShortcut? {
+        if startsUnassigned {
+            guard let raw = read(storageKey) else { return nil }
+            return GlobalShortcut(storageValue: raw)
+        }
+        return read(storageKey).flatMap(GlobalShortcut.init(storageValue:)) ?? defaultShortcut
     }
 
     /// The switcher's event tap can handle its native combinations without
@@ -740,6 +764,10 @@ enum GlobalShortcutRole: CaseIterable, Identifiable {
             return FeatureStrings.brightness(L10n.shared.language).keyboardBrightnessDecrease
         case .keyboardBrightnessIncrease:
             return FeatureStrings.brightness(L10n.shared.language).keyboardBrightnessIncrease
+        case .displayBrightnessDecrease:
+            return BrightnessShortcutStrings.localized(L10n.shared.language).decrease
+        case .displayBrightnessIncrease:
+            return BrightnessShortcutStrings.localized(L10n.shared.language).increase
         }
     }
 
@@ -747,12 +775,18 @@ enum GlobalShortcutRole: CaseIterable, Identifiable {
                          excluding role: GlobalShortcutRole?,
                          isOn: (String) -> Bool = { UserDefaults.standard.bool(forKey: $0) },
                          isAvailable: (AppFeature) -> Bool = { $0.isAvailable },
-                         includeInactive: Bool = false) -> GlobalShortcutRole? {
+                         includeInactive: Bool = false,
+                         hasClipboardHistory: () -> Bool = { false },
+                         shortcutValue: (String) -> String? = {
+                             UserDefaults.standard.string(forKey: $0)
+                         }) -> GlobalShortcutRole? {
         let candidates = includeInactive
             ? availableRoles(isAvailable: isAvailable)
-            : activeRoles(isOn: isOn, isAvailable: isAvailable)
+            : activeRoles(isOn: isOn, isAvailable: isAvailable,
+                          hasClipboardHistory: hasClipboardHistory,
+                          shortcutValue: shortcutValue)
         return candidates.first { candidate in
-            candidate != role && candidate.savedShortcut == shortcut
+            candidate != role && candidate.configuredShortcut(read: shortcutValue) == shortcut
         }
     }
 
@@ -785,6 +819,8 @@ enum GlobalShortcutRole: CaseIterable, Identifiable {
         case .screenRecorder: return [DefaultsKey.recorderShortcutEnabled]
         case .keyboardBrightnessDecrease, .keyboardBrightnessIncrease:
             return [DefaultsKey.keyboardBrightnessShortcutsEnabled]
+        case .displayBrightnessDecrease, .displayBrightnessIncrease:
+            return [DefaultsKey.brightnessControlEnabled, BrightnessShortcutPreferenceKey.enabled]
         }
     }
 
@@ -811,7 +847,8 @@ enum GlobalShortcutRole: CaseIterable, Identifiable {
         case .snippetLibrary: return .textSnippets
         case .commandBar: return .commandBar
         case .screenRecorder: return .screenRecorder
-        case .keyboardBrightnessDecrease, .keyboardBrightnessIncrease: return .brightness
+        case .keyboardBrightnessDecrease, .keyboardBrightnessIncrease,
+             .displayBrightnessDecrease, .displayBrightnessIncrease: return .brightness
         }
     }
 
@@ -821,6 +858,7 @@ enum GlobalShortcutRole: CaseIterable, Identifiable {
     var group: FeatureGroup {
         switch self {
         case .keyboardBrightnessDecrease, .keyboardBrightnessIncrease: return .inputDevices
+        case .displayBrightnessDecrease, .displayBrightnessIncrease: return feature.group
         default: return feature.group
         }
     }
@@ -856,11 +894,30 @@ enum GlobalShortcutRole: CaseIterable, Identifiable {
     /// Roles whose shortcut is live given a defaults reader, for the keyboard
     /// shortcuts overview page. Injected readers so the harness can test the
     /// gating without touching real defaults.
-    static func activeRoles(isOn: (String) -> Bool,
-                            isAvailable: (AppFeature) -> Bool = { _ in true }) -> [GlobalShortcutRole] {
-        allCases.filter { role in
-            role.isAvailable(using: isAvailable) && role.requiredEnableKeys.allSatisfy(isOn)
+    func isActive(isOn: (String) -> Bool,
+                  isAvailable: (AppFeature) -> Bool = { _ in true },
+                  hasClipboardHistory: () -> Bool = { false },
+                  shortcutValue: (String) -> String? = {
+                      UserDefaults.standard.string(forKey: $0)
+                  }) -> Bool {
+        guard self.isAvailable(using: isAvailable) else { return false }
+        if startsUnassigned, configuredShortcut(read: shortcutValue) == nil { return false }
+        if self == .clipboard {
+            return isOn(DefaultsKey.clipboardHistoryShortcutEnabled)
+                && (isOn(DefaultsKey.clipboardHistoryEnabled) || hasClipboardHistory())
         }
+        return requiredEnableKeys.allSatisfy(isOn)
+    }
+
+    static func activeRoles(isOn: (String) -> Bool,
+                            isAvailable: (AppFeature) -> Bool = { _ in true },
+                            hasClipboardHistory: () -> Bool = { false },
+                            shortcutValue: (String) -> String? = {
+                                UserDefaults.standard.string(forKey: $0)
+                            }) -> [GlobalShortcutRole] {
+        allCases.filter { $0.isActive(isOn: isOn, isAvailable: isAvailable,
+                                     hasClipboardHistory: hasClipboardHistory,
+                                     shortcutValue: shortcutValue) }
     }
 
     /// Every shortcut belonging to an installed feature, including choices

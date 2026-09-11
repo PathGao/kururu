@@ -10,7 +10,7 @@ import Foundation
 struct PermissionGuideStrings {
     var title: String = "One step left"
     var stepOpen: String = "macOS opened System Settings on the right list."
-    var stepToggle: String = "Turn Vorssaint on in that list."
+    var stepToggle: String = "Turn \(AppInfo.name) on in that list."
     var stepReturn: String = "Come back. This card notices by itself."
     var waiting: String = "Waiting for the permission…"
     var granted: String = "Permission granted!"
@@ -47,7 +47,7 @@ extension PermissionGuideStrings {
     static let ko = PermissionGuideStrings(
         title: "한 단계만 남았습니다",
         stepOpen: "macOS가 시스템 설정의 올바른 목록을 열었습니다.",
-        stepToggle: "그 목록에서 Vorssaint를 켜세요.",
+        stepToggle: "그 목록에서 \(AppInfo.name)를 켜세요.",
         stepReturn: "여기로 돌아오세요. 이 카드가 자동으로 확인합니다.",
         waiting: "권한을 기다리는 중…",
         granted: "권한이 허용되었습니다!",
@@ -64,7 +64,7 @@ extension PermissionGuideStrings {
     static let ptBR = PermissionGuideStrings(
         title: "Falta um passo",
         stepOpen: "O macOS abriu os Ajustes do Sistema na lista certa.",
-        stepToggle: "Ligue o Vorssaint nessa lista.",
+        stepToggle: "Ligue o \(AppInfo.name) nessa lista.",
         stepReturn: "Volte para cá. Este cartão percebe sozinho.",
         waiting: "Esperando a permissão…",
         granted: "Permissão concedida!",
@@ -77,7 +77,7 @@ extension PermissionGuideStrings {
     static let tr = PermissionGuideStrings(
         title: "Bir adım kaldı",
         stepOpen: "macOS, Sistem Ayarları’nı doğru listede açtı.",
-        stepToggle: "O listede Vorssaint’i açın.",
+        stepToggle: "O listede \(AppInfo.name)’i açın.",
         stepReturn: "Buraya dönün. Bu kart kendiliğinden fark eder.",
         waiting: "İzin bekleniyor…",
         granted: "İzin verildi!",
@@ -90,7 +90,7 @@ extension PermissionGuideStrings {
     static let ru = PermissionGuideStrings(
         title: "Остался один шаг",
         stepOpen: "macOS открыл Системные настройки на нужном списке.",
-        stepToggle: "Включите Vorssaint в этом списке.",
+        stepToggle: "Включите \(AppInfo.name) в этом списке.",
         stepReturn: "Вернитесь сюда. Карточка заметит сама.",
         waiting: "Ожидание разрешения…",
         granted: "Разрешение получено!",
@@ -103,7 +103,7 @@ extension PermissionGuideStrings {
     static let es = PermissionGuideStrings(
         title: "Falta un paso",
         stepOpen: "macOS abrió los Ajustes del Sistema en la lista correcta.",
-        stepToggle: "Activa Vorssaint en esa lista.",
+        stepToggle: "Activa \(AppInfo.name) en esa lista.",
         stepReturn: "Vuelve aquí. Esta tarjeta lo nota sola.",
         waiting: "Esperando el permiso…",
         granted: "¡Permiso concedido!",
@@ -116,7 +116,7 @@ extension PermissionGuideStrings {
     static let de = PermissionGuideStrings(
         title: "Ein Schritt fehlt",
         stepOpen: "macOS hat die Systemeinstellungen mit der richtigen Liste geöffnet.",
-        stepToggle: "Schalte Vorssaint in dieser Liste ein.",
+        stepToggle: "Schalte \(AppInfo.name) in dieser Liste ein.",
         stepReturn: "Komm zurück. Diese Karte merkt es von selbst.",
         waiting: "Warten auf die Berechtigung…",
         granted: "Berechtigung erteilt!",
@@ -129,7 +129,7 @@ extension PermissionGuideStrings {
     static let fr = PermissionGuideStrings(
         title: "Plus qu’une étape",
         stepOpen: "macOS a ouvert les Réglages Système sur la bonne liste.",
-        stepToggle: "Activez Vorssaint dans cette liste.",
+        stepToggle: "Activez \(AppInfo.name) dans cette liste.",
         stepReturn: "Revenez ici. Cette carte le remarque toute seule.",
         waiting: "En attente de l’autorisation…",
         granted: "Autorisation accordée\u{00A0}!",
@@ -142,7 +142,7 @@ extension PermissionGuideStrings {
     static let it = PermissionGuideStrings(
         title: "Manca un passo",
         stepOpen: "macOS ha aperto le Impostazioni di Sistema sull’elenco giusto.",
-        stepToggle: "Attiva Vorssaint in quell’elenco.",
+        stepToggle: "Attiva \(AppInfo.name) in quell’elenco.",
         stepReturn: "Torna qui. Questa scheda se ne accorge da sola.",
         waiting: "In attesa del permesso…",
         granted: "Permesso concesso!",
@@ -155,7 +155,7 @@ extension PermissionGuideStrings {
     static let ja = PermissionGuideStrings(
         title: "あと一歩",
         stepOpen: "macOSがシステム設定の該当リストを開きました。",
-        stepToggle: "そのリストでVorssaintをオンにしてください。",
+        stepToggle: "そのリストで\(AppInfo.name)をオンにしてください。",
         stepReturn: "ここに戻ってください。このカードが自動で気づきます。",
         waiting: "許可を待っています…",
         granted: "許可されました！",
@@ -168,7 +168,7 @@ extension PermissionGuideStrings {
     static let zhHans = PermissionGuideStrings(
         title: "还差一步",
         stepOpen: "macOS 已打开系统设置的对应列表。",
-        stepToggle: "在列表中开启 Vorssaint。",
+        stepToggle: "在列表中开启 \(AppInfo.name)。",
         stepReturn: "回到这里，本卡片会自动察觉。",
         waiting: "正在等待权限…",
         granted: "权限已授予！",
@@ -181,7 +181,7 @@ extension PermissionGuideStrings {
     static let zhTW = PermissionGuideStrings(
         title: "只差一步",
         stepOpen: "macOS 已開啟系統設定的對應清單。",
-        stepToggle: "在清單中開啟 Vorssaint。",
+        stepToggle: "在清單中開啟 \(AppInfo.name)。",
         stepReturn: "回到這裡，本卡片會自動察覺。",
         waiting: "正在等待權限…",
         granted: "已授予權限！",
@@ -194,7 +194,7 @@ extension PermissionGuideStrings {
     static let zhHK = PermissionGuideStrings(
         title: "只差一步",
         stepOpen: "macOS 已開啟系統設定的對應清單。",
-        stepToggle: "在清單中開啟 Vorssaint。",
+        stepToggle: "在清單中開啟 \(AppInfo.name)。",
         stepReturn: "回到這裡，本卡片會自動察覺。",
         waiting: "正在等待權限…",
         granted: "已授予權限！",

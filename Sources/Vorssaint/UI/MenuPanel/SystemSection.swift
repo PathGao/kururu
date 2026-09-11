@@ -23,6 +23,7 @@ enum BreakdownKind {
 struct SystemSection: View {
     @ObservedObject private var l10n = L10n.shared
     @ObservedObject private var monitor = SystemMonitor.shared
+    @ObservedObject private var themePreferences = ThemePreferences.shared
     @Environment(\.colorScheme) private var colorScheme
     var collapsible = true
     @State private var expanded: BreakdownKind?
@@ -354,7 +355,7 @@ struct SystemSection: View {
                 if editing { PanelInlineHideButton(isVisible: visible) }
             }
             if kind == .cpu {
-                CPUCoreMatrix(usage: monitor.snapshot.cpuCoreUsage)
+                CPUCoreMatrix(usage: monitor.snapshot.cpuCoreUsage, palette: themePreferences.applied)
             }
             if !editing {
                 MonitorTrendView(metrics: [kind == .cpu ? .cpu : .gpu], embedded: true)

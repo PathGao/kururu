@@ -3,6 +3,7 @@
 
 import AppKit
 import Carbon.HIToolbox
+import Combine
 import SwiftUI
 
 /// The command bar: one floating field, summoned by a global shortcut, that
@@ -29,30 +30,13 @@ final class CommandBarService: ObservableObject {
         case capturingShortcut(entryID: String)
     }
 
-    /// One line in the actions list.
-    struct RowAction: Identifiable {
-        let id: String
-        let title: String
-        let symbolName: String
-        let isDestructive: Bool
-        let run: () -> Void
-
-        init(id: String,
-             title: String,
-             symbolName: String,
-             isDestructive: Bool = false,
-             run: @escaping () -> Void) {
-            self.id = id
-            self.title = title
-            self.symbolName = symbolName
-            self.isDestructive = isDestructive
-            self.run = run
-        }
-    }
+    typealias RowAction = CommandBarRowAction
 
     @Published var query = "" {
         didSet {
             guard query != oldValue else { return }
+            argumentSubmission.reset()
+            invalidateDestinationAttempt()
             // The argument field is temporary. Keep the completed search and
             // its original spelling intact until returning to search mode.
             if case .argument = mode {
@@ -64,9 +48,11 @@ final class CommandBarService: ObservableObject {
                 completedValue: completedQuery,
                 afterChangingTo: query)
             if queryBeforeCompletion == nil { completedQuery = nil }
+            if LocalPortSupport.commandPort(query) == nil { lastPortQuery = nil }
             refreshResults()
         }
     }
+    private var lastPortQuery: Int?
     @Published private(set) var rows: [CommandBarEntry] = []
     @Published private(set) var isShowingSuggestions = false
     /// The heading that belongs above a row, by its position. What was pinned
@@ -78,7 +64,15 @@ final class CommandBarService: ObservableObject {
     /// above the list are about to act on.
     @Published private(set) var selectionPreview = ""
     @Published private(set) var selectedIndex = 0
-    @Published private(set) var mode: Mode = .search
+    @Published private(set) var mode: Mode = .search {
+        didSet {
+            argumentSubmission.reset()
+            invalidateDestinationAttempt()
+        }
+    }
+    @Published private(set) var argumentSubmission = CommandBarArgumentSubmission()
+    @Published private(set) var destinationFailure: CommandBarDestinationFailure?
+    private var destinationRequests = CommandBarDestinationRequests()
     @Published private(set) var presentationID = UUID()
     @Published private(set) var shortcutRegistrationFailed = false
     /// Rows whose own combination the system refused, because another app got
@@ -115,6 +109,8 @@ final class CommandBarService: ObservableObject {
     private var localClickMonitor: Any?
     private var flagsMonitor: Any?
     private var activationObserver: NSObjectProtocol?
+    private var micStateSubscription: AnyCancellable?
+    private var micCatalogRefreshQueued = false
 
     private var catalog: [CommandBarEntry] = [] { didSet { foldedSections[.catalog] = nil } }
     let scriptRunner = CommandBarScriptRunner()
@@ -174,8 +170,6 @@ final class CommandBarService: ObservableObject {
     /// title is what app-choice learning should remember.
     private var queryBeforeCompletion: String?
     private var completedQuery: String?
-    /// The last thing typed, kept only in memory so reopening can offer it.
-    private var lastQuery = ""
     /// Where the pointer sat when the bar opened. A row under a pointer that
     /// has not moved must not steal the selection from the keyboard.
     private var lastPointerLocation = NSPoint.zero
@@ -305,6 +299,7 @@ final class CommandBarService: ObservableObject {
 
     @discardableResult
     private func beginPresentation() -> UUID {
+        invalidateDestinationAttempt()
         deferredRowShortcut.cancel()
         scriptRunner.reset()
         fileSearch.reset()
@@ -369,6 +364,7 @@ final class CommandBarService: ObservableObject {
     }
 
     func hide() {
+        invalidateDestinationAttempt()
         if AppFeature.textSnippets.isAvailable {
             TextSnippetService.shared.setCommandBarVisible(false)
         }
@@ -401,10 +397,6 @@ final class CommandBarService: ObservableObject {
             killProcessEntries = []
             indexEntries()
         }
-        // What was typed is remembered for the next opening, where the first
-        // keystroke replaces it. It never reaches disk: the promise is that
-        // nothing typed here is saved, and memory is not saving.
-        lastQuery = query
         query = ""
         presentationLifecycle.hide()
         clearIndex()
@@ -433,11 +425,13 @@ final class CommandBarService: ObservableObject {
 
     // MARK: - Results
 
-    /// The number typed after the verb ("brilho 40"), read from the field at
-    /// the moment it is used. Never stored: a value cached during a search
-    /// pass outlives the text it came from.
-    private var typedNumber: Int? {
-        CommandBarSearch.splitTrailingNumber(query.trimmingCharacters(in: .whitespaces)).number
+    private func runDecision(for entry: CommandBarEntry, query: String) -> CommandBarRunDecision {
+        let needsSetup: Bool
+        if case .needsSetup = entry.trouble { needsSetup = true } else { needsSetup = false }
+        return CommandBarRunDecision.resolve(needsSetup: needsSetup,
+            needsConfirmation: entry.confirmationPrompt != nil, numericRange: entry.numericRange,
+            numericIsOptional: entry.numericIsOptional,
+            typedNumber: CommandBarSearch.splitTrailingNumber(query.trimmingCharacters(in: .whitespaces)).number)
     }
 
     // MARK: - What the person decided
@@ -492,7 +486,8 @@ final class CommandBarService: ObservableObject {
         case .full: return String(format: text.rowShortcutsLimitFormat, CommandBarRowShortcuts.limit)
         case nil: break
         }
-        if let role = GlobalShortcutRole.conflict(for: shortcut, excluding: nil) {
+        if let role = GlobalShortcutRole.conflict(for: shortcut, excluding: nil,
+                                                  hasClipboardHistory: { !ClipboardHistoryService.shared.entries.isEmpty }) {
             return String(format: strings.shortcutConflictFormat, role.title(strings))
         }
         if shortcut.conflictsWithSystemShortcut {
@@ -1019,6 +1014,32 @@ final class CommandBarService: ObservableObject {
         if index { indexEntries() }
     }
 
+    private func localPortEntries(port: Int) -> [CommandBarEntry] {
+        let service = LocalPortService.shared
+        let strings = LocalPortStrings.text(L10n.shared.language)
+        if lastPortQuery != port {
+            lastPortQuery = port
+            service.refresh { [weak self] in
+                guard let self, LocalPortSupport.commandPort(self.query) != nil else { return }
+                self.refreshResults()
+            }
+        }
+        let matches = service.rows.filter { $0.port == port }
+        var entries = matches.map { row in
+            CommandBarEntry(id: "port.\(row.id)", title: "\(row.transport) \(row.endpoint) · \(row.name ?? strings.restricted)",
+                            subtitle: "PID \(row.pid) · \(strings.title)", icon: .symbol("network"),
+                            countsUsage: false, run: { _ in service.showActions(row) })
+        }
+        let status = service.isLoading ? strings.loading : service.failed ? strings.failed
+            : matches.isEmpty ? strings.empty : strings.scope
+        entries.append(CommandBarEntry(id: "port.refresh", title: strings.refresh + " · \(port)",
+                                       subtitle: status, icon: .symbol("arrow.clockwise"), countsUsage: false,
+                                       keepsBarOpen: true, run: { [weak self] _ in
+            service.refresh { self?.refreshResults() }
+        }))
+        return entries
+    }
+
     private func refreshResults() {
         guard !isTearingDown else { return }
         if presentationLifecycle.isLoadingHome {
@@ -1526,6 +1547,10 @@ final class CommandBarService: ObservableObject {
 
         var counts: [String: Int] = [:]
         var result: [CommandBarEntry] = []
+        if activeCategory == nil, AppFeature.monitorNetwork.isAvailable,
+           isEnabled(.actions), let port = LocalPortSupport.commandPort(trimmed) {
+            result.append(contentsOf: localPortEntries(port: port))
+        }
         if let answer { result.append(answer) }
         if let openURL { result.append(openURL) }
         if let scriptAnswer { result.append(scriptAnswer) }
@@ -1634,25 +1659,25 @@ final class CommandBarService: ObservableObject {
             if let running = runningApplication(for: app) {
                 actions.append(RowAction(id: "quitApp",
                                          title: String(format: bar.quitFormat, app.name),
-                                         symbolName: "xmark.circle") { [weak self] in
+                                         symbolName: "xmark.circle", group: .operation) { [weak self] in
                     self?.quit(running)
                 })
                 actions.append(RowAction(id: "restartApp",
                                          title: String(format: bar.restartAppFormat, app.name),
-                                         symbolName: "arrow.clockwise") { [weak self] in
+                                         symbolName: "arrow.clockwise", group: .operation) { [weak self] in
                     self?.restart(running, at: app.url)
                 })
                 actions.append(RowAction(id: "forceQuitApp",
                                          title: String(format: bar.forceQuitAppFormat, app.name),
                                          symbolName: "exclamationmark.octagon",
-                                         isDestructive: true) { [weak self] in
+                                         isDestructive: true, group: .operation) { [weak self] in
                     self?.confirmForceQuit(running, name: app.name)
                 })
             }
             if AppFeature.uninstaller.isAvailable, !app.isSystem {
                 actions.append(RowAction(id: "uninstallApp",
                                          title: String(format: bar.uninstallAppFormat, app.name),
-                                         symbolName: "trash") { [weak self] in
+                                         symbolName: "trash", group: .operation) { [weak self] in
                     self?.openUninstaller(for: app.url)
                 })
             }
@@ -1669,25 +1694,25 @@ final class CommandBarService: ObservableObject {
             actions.append(RowAction(id: "forceKillProcess",
                                      title: killStrings.forceKillButton,
                                      symbolName: "exclamationmark.octagon",
-                                     isDestructive: true) { [weak self] in
+                                     isDestructive: true, group: .operation) { [weak self] in
                 self?.confirmForceKillProcess(process)
             })
             actions.append(RowAction(id: "killAllProcess",
                                      title: String(format: killStrings.killAllFormat, process.name),
                                      symbolName: "xmark.octagon",
-                                     isDestructive: true) { [weak self] in
+                                     isDestructive: true, group: .operation) { [weak self] in
                 self?.confirmKillAllProcesses(process)
             })
             actions.append(RowAction(id: "killProcessTree",
                                      title: killStrings.killTreeButton,
                                      symbolName: "xmark.octagon",
-                                     isDestructive: true) { [weak self] in
+                                     isDestructive: true, group: .operation) { [weak self] in
                 self?.confirmKillProcessTree(process)
             })
             if KillProcessService.shared.canRestart(process) {
                 actions.append(RowAction(id: "restartProcess",
                                          title: killStrings.restartButton,
-                                         symbolName: "arrow.clockwise") { [weak self] in
+                                         symbolName: "arrow.clockwise", group: .operation) { [weak self] in
                     self?.hide()
                     KillProcessService.shared.restart(process)
                 })
@@ -1737,7 +1762,45 @@ final class CommandBarService: ObservableObject {
                 self?.leaveActions()
             })
         }
-        return actions
+        let primary = RowAction.primary(title: primaryActionTitle(for: entry), restoreSearch: { [weak self] in
+            self?.leaveActions()
+        }, run: { [weak self] in
+            self?.run(entry)
+        })
+        return RowAction.menu(primary: primary, additional: actions)
+    }
+
+    private func primaryActionTitle(for entry: CommandBarEntry) -> String {
+        // Actions may have cleared the field after naming; running first restores this search.
+        let effectiveQuery: String
+        if case .actions = mode { effectiveQuery = savedQuery } else { effectiveQuery = query }
+        let needsText = entry.id.hasPrefix("link.") && entry.waitsForOpenResult && entry.takesArgument
+            && (CommandBarLinks.trailingArgument(query: effectiveQuery.trimmingCharacters(in: .whitespaces), name: entry.title) ?? "").isEmpty
+        return CommandBarActionPresentation.title(id: entry.id, title: entry.title, isAnswer: entry.isAnswer,
+            decision: runDecision(for: entry, query: effectiveQuery), opensDestination: entry.waitsForOpenResult,
+            needsTextArgument: needsText, strings: FeatureStrings.commandBar(L10n.shared.language))
+    }
+
+    var returnActionTitle: String? {
+        let bar = FeatureStrings.commandBar(L10n.shared.language)
+        switch mode {
+        case .search:
+            guard let entry = selectedEntry else { return query.isEmpty ? nil : bar.noResultsAction }
+            return primaryActionTitle(for: entry)
+        case .actions:
+            let actions = actionRows
+            return actions.indices.contains(actionIndex) ? actions[actionIndex].title : nil
+        case .confirm(let id):
+            return entry(withID: id) == nil ? nil : bar.confirmButton
+        case .argument(let id):
+            guard let range = entry(withID: id)?.numericRange,
+                  let value = CommandBarSearch.argumentValue(query, in: range) else { return nil }
+            return String(format: bar.actionApplyValueFormat, value)
+        case .naming(let id):
+            return entry(withID: id) == nil ? nil : bar.actionSaveName
+        case .capturingShortcut:
+            return nil
+        }
     }
 
     /// Shows a row where it lives instead of running it. An app that was
@@ -1748,13 +1811,77 @@ final class CommandBarService: ObservableObject {
             NSSound.beep()
             return
         }
+        if case .actions = mode { leaveActions() }
+        let attempt = beginDestinationAttempt()
         guard FileManager.default.fileExists(atPath: path) else {
-            hide()
-            QuickToolHUD.show(icon: "folder.badge.questionmark", message: entry.title)
+            completeDestinationAttempt(attempt, result: .unavailable, title: entry.title)
             return
         }
         hide()
         NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)])
+    }
+
+    func beginDestinationAttempt() -> CommandBarDestinationAttempt {
+        invalidateDestinationAttempt()
+        return destinationRequests.begin(presentationID: presentationID, query: query, isVisible: isVisible)
+    }
+
+    func acceptsDestinationAttempt(_ attempt: CommandBarDestinationAttempt) -> Bool {
+        destinationRequests.accepts(attempt, presentationID: presentationID, query: query, isVisible: isVisible)
+    }
+
+    private func invalidateDestinationAttempt() {
+        destinationRequests.invalidate()
+        guard destinationFailure != nil else { return }
+        destinationFailure = nil
+        refreshPanelLayout()
+    }
+
+    func openDestination(_ url: URL?, title: String, attempt: CommandBarDestinationAttempt? = nil) {
+        let attempt = attempt ?? beginDestinationAttempt()
+        guard acceptsDestinationAttempt(attempt) else { return }
+        let result = CommandBarDestinationOpening.open(url: url,
+            exists: { FileManager.default.fileExists(atPath: $0) },
+            open: { NSWorkspace.shared.open($0) })
+        completeDestinationAttempt(attempt, result: result, title: title)
+    }
+
+    func openApplicationDestination(at url: URL, title: String) {
+        let attempt = beginDestinationAttempt()
+        Self.launchApplication(at: url) { [weak self] succeeded in
+            self?.completeDestinationAttempt(attempt, result: succeeded ? .opened : .failed, title: title)
+        }
+    }
+
+    /// AppKit delivers this completion on a concurrent queue. Both search
+    /// launches and an already requested restart report their result on main.
+    private static func launchApplication(at url: URL, completion: @escaping (Bool) -> Void) {
+        NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration()) { app, error in
+            let succeeded = app != nil && error == nil
+            DispatchQueue.main.async { completion(succeeded) }
+        }
+    }
+
+    private func completeDestinationAttempt(_ attempt: CommandBarDestinationAttempt,
+                                            result: CommandBarDestinationOpening.Result, title: String) {
+        guard acceptsDestinationAttempt(attempt) else { return }
+        destinationRequests.invalidate()
+        let text = FeatureStrings.commandBar(L10n.shared.language)
+        let message: String
+        switch result {
+        case .opened:
+            if isVisible { hide() }
+            return
+        case .unavailable: message = text.destinationUnavailable
+        case .invalid: message = text.destinationInvalid
+        case .failed: message = text.destinationOpenFailed
+        }
+        if isVisible {
+            destinationFailure = CommandBarDestinationFailure(target: title, message: message)
+            refreshPanelLayout()
+        } else {
+            QuickToolHUD.show(icon: "exclamationmark.triangle", message: title + ": " + message)
+        }
     }
 
     private func installedApp(for entry: CommandBarEntry) -> InstalledApps.InstalledApp? {
@@ -1835,10 +1962,13 @@ final class CommandBarService: ObservableObject {
         }
         cancelPendingRestart()
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
-            NSWorkspace.shared.openApplication(at: url,
-                                               configuration: NSWorkspace.OpenConfiguration()) {
-                _, error in
-                if error != nil { DispatchQueue.main.async { NSSound.beep() } }
+            // The app already quit: finish its restart even if another search
+            // began. This result must not consume that search's request token.
+            Self.launchApplication(at: url) { succeeded in
+                guard !succeeded else { return }
+                let text = FeatureStrings.commandBar(L10n.shared.language)
+                QuickToolHUD.show(icon: "exclamationmark.triangle",
+                                  message: url.deletingPathExtension().lastPathComponent + ": " + text.destinationOpenFailed)
             }
         }
     }
@@ -2046,7 +2176,7 @@ final class CommandBarService: ObservableObject {
             finish(entry, value: nil)
         case .argument(let id):
             guard let entry = entry(withID: id), let range = entry.numericRange,
-                  let value = CommandBarSearch.argumentValue(query, in: range) else {
+                  let value = argumentSubmission.submit(query, in: range) else {
                 NSSound.beep()
                 return
             }
@@ -2075,32 +2205,25 @@ final class CommandBarService: ObservableObject {
     }
 
     private func run(_ entry: CommandBarEntry) {
-        if case .needsSetup(_, let page) = entry.trouble {
+        invalidateDestinationAttempt()
+        switch runDecision(for: entry, query: query) {
+        case .setup:
+            guard case .needsSetup(_, let page) = entry.trouble else { return }
             hide()
             SettingsRouter.shared.page = page
             appDelegate()?.openSettingsWindow()
-            return
-        }
-        if entry.confirmationPrompt != nil {
+        case .confirm:
             savedQuery = query
             mode = .confirm(entryID: entry.id)
             refreshPanelLayout()
-            return
+        case .argument:
+            savedQuery = query
+            mode = .argument(entryID: entry.id)
+            query = ""
+            refreshPanelLayout()
+        case .execute(let value):
+            finish(entry, value: value)
         }
-        if let range = entry.numericRange {
-            if let typedNumber {
-                finish(entry, value: min(max(typedNumber, range.lowerBound), range.upperBound))
-            } else if entry.numericIsOptional {
-                finish(entry, value: nil)
-            } else {
-                savedQuery = query
-                mode = .argument(entryID: entry.id)
-                query = ""
-                refreshPanelLayout()
-            }
-            return
-        }
-        finish(entry, value: nil)
     }
 
     /// Esc in argument or confirm mode returns to the search as it was; in
@@ -2188,7 +2311,7 @@ final class CommandBarService: ObservableObject {
         // Handed over before hiding, which wipes the field and the selection.
         queryWhenRun = query
         selectionWhenRun = selectedText
-        guard !entry.keepsBarOpen else {
+        guard !entry.keepsBarOpen, !entry.waitsForOpenResult else {
             entry.run(value)
             return
         }
@@ -2633,7 +2756,7 @@ final class CommandBarService: ObservableObject {
                                     styleMask: [.borderless, .nonactivatingPanel],
                                     backing: .buffered,
                                     defer: false)
-        panel.title = "Vorssaint"
+        panel.title = AppInfo.name
         panel.isReleasedWhenClosed = false
         panel.isMovableByWindowBackground = false
         panel.hidesOnDeactivate = false
@@ -2714,6 +2837,21 @@ final class CommandBarService: ObservableObject {
 
     private func installMonitors(for panel: NSPanel) {
         removeMonitors()
+        let micPresentationID = presentationID
+        micStateSubscription = MicMuteService.shared.objectWillChange.sink { [weak self] _ in
+            guard let self, !self.micCatalogRefreshQueued else { return }
+            self.micCatalogRefreshQueued = true
+            // Published emits before assignment. Coalesce this sweep's fields
+            // and rebuild on the next main turn, after their values are stored.
+            DispatchQueue.main.async { [weak self] in
+                guard let self, self.presentationID == micPresentationID else { return }
+                self.micCatalogRefreshQueued = false
+                guard self.isVisible, !self.isTearingDown,
+                      self.micStateSubscription != nil else { return }
+                self.rebuildCatalog()
+                self.refreshResults()
+            }
+        }
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self, weak panel] event in
             guard let self, let panel, event.window === panel else { return event }
 
@@ -2867,7 +3005,10 @@ final class CommandBarService: ObservableObject {
         }
         outsideClickMonitor = NSEvent.addGlobalMonitorForEvents(matching: mouseEvents) { [weak self, weak panel] event in
             guard let self, let panel, panel.isVisible else { return }
-            if event.windowNumber != panel.windowNumber, !Self.mouseIsInside(panel) {
+            if event.windowNumber != panel.windowNumber, !Self.mouseIsInside(panel),
+               // Every key on the Accessibility Keyboard is a click outside this
+               // panel. Dismissing on those makes the panel impossible to type into.
+               !AssistiveKeyboard.ownsCocoaPoint(NSEvent.mouseLocation) {
                 self.hide()
             }
         }
@@ -2878,13 +3019,17 @@ final class CommandBarService: ObservableObject {
         ) { [weak self] notification in
             guard let self,
                   let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication,
-                  app.bundleIdentifier != Bundle.main.bundleIdentifier
+                  app.bundleIdentifier != Bundle.main.bundleIdentifier,
+                  app.bundleIdentifier != AssistiveKeyboard.bundleID
             else { return }
             self.hide()
         }
     }
 
     private func removeMonitors() {
+        micStateSubscription?.cancel()
+        micStateSubscription = nil
+        micCatalogRefreshQueued = false
         if let keyMonitor {
             NSEvent.removeMonitor(keyMonitor)
             self.keyMonitor = nil

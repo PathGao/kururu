@@ -845,7 +845,7 @@ enum CommandBarQueryHabits {
     }
 
     private static let keyService = installationKeyService(
-        bundleID: Bundle.main.bundleIdentifier ?? "com.vorssaint.utils")
+        bundleID: Bundle.main.bundleIdentifier ?? ProductIdentity.unbundledStorageID)
     private static let keyAccount = "hmac-key"
 
     private static let installationKeyCache = CommandBarQueryHabitKeyCache {

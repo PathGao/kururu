@@ -3,7 +3,7 @@
 
 import SwiftUI
 
-/// The key debounce half of the keyboard page; its switch is the page's own.
+/// Debounce settings and their runtime switch.
 struct KeyboardDebounceSections: View {
     private struct KeyWindowRow: Identifiable {
         let keyCode: Int64
@@ -22,13 +22,17 @@ struct KeyboardDebounceSections: View {
 
     var body: some View {
         Group {
-            Section(AppFeature.keyboardDebounce.name(l10n.s, language: l10n.language)) {
-                Text(l10n.s.keyDebounceCaption)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            SettingsSection {
+                VStack(alignment: .leading, spacing: 4) {
+                    FeatureSwitchRow(feature: .keyboardDebounce)
+                    SettingsCaptionText(l10n.s.keyDebounceCaption)
+                }
+                if enabled, !permissions.accessibility {
+                    PermissionRow(kind: .accessibility)
+                }
                 if enabled, debounce.isRunning {
                     Label(l10n.s.keyDebounceActiveNow, systemImage: "checkmark.circle.fill")
-                        .font(.caption)
+                        .font(SettingsTypography.caption)
                         .foregroundStyle(.green)
                 }
                 Stepper(value: globalWindowBinding, in: Defaults.allowedKeyboardDebounceWindowRange, step: 5) {
@@ -40,12 +44,11 @@ struct KeyboardDebounceSections: View {
                             .monospacedDigit()
                     }
                 }
-                .disabled(!enabled)
-            }
-
-            Section(l10n.s.keyDebouncePerKeySection) {
+                Divider()
+                Text(l10n.s.keyDebouncePerKeySection).font(SettingsTypography.sectionTitle)
+                    .accessibilityAddTraits(.isHeader)
                 Text(l10n.s.keyDebouncePerKeyCaption)
-                    .font(.caption)
+                    .font(SettingsTypography.caption)
                     .foregroundStyle(.secondary)
                 HStack(spacing: 8) {
                     Picker(l10n.s.keyDebounceKeyLabel, selection: $selectedKeyCode) {
@@ -64,12 +67,12 @@ struct KeyboardDebounceSections: View {
                             setWindow(selectedWindow, for: selectedKeyCode)
                         }
                     }
-                    .disabled(!enabled || selectedKeyCode == nil)
+                    .disabled(selectedKeyCode == nil)
                 }
 
                 if keyWindows.isEmpty {
                     Text(l10n.s.keyDebounceNoOverrides)
-                        .font(.caption)
+                        .font(SettingsTypography.caption)
                         .foregroundStyle(.tertiary)
                 } else {
                     ForEach(keyWindows) { row in
@@ -93,13 +96,6 @@ struct KeyboardDebounceSections: View {
                             .help(l10n.s.keyDebounceRemoveKey)
                         }
                     }
-                }
-            }
-            .disabled(!enabled)
-
-            if enabled, !permissions.accessibility {
-                Section(l10n.s.permissionRequired) {
-                    PermissionRow(kind: .accessibility)
                 }
             }
         }

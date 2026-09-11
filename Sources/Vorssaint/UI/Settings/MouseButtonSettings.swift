@@ -35,9 +35,23 @@ struct MouseButtonShortcutsSection: View {
 
     private var text: MouseButtonFeatureStrings { FeatureStrings.mouseButtons(l10n.language) }
 
+    private var spacesReservationMessage: String {
+        l10n.language == .zhHans
+            ? "此按键已分配给 Spaces 手势，暂停时也会保留。请先移除下方的 Spaces 按键，再重新分配。"
+            : "This button is assigned to the Spaces gesture, even while paused. Remove the Spaces button below before reassigning it."
+    }
+
+    private var captureRequiresEnabled: String {
+        l10n.language == .zhHans
+            ? "请先启用对应功能，再按下要添加的鼠标按钮。已有配置可在关闭时编辑。"
+            : "Enable this behavior before capturing a new mouse button. Existing bindings remain editable while it is off."
+    }
+
     var body: some View {
-        Section(AppFeature.mouseButtonShortcuts.name(l10n.s, language: l10n.language)) {
-            Toggle(text.enableLabel, isOn: $enabled)
+        SettingsSection(AppFeature.mouseButtonShortcuts.name(l10n.s, language: l10n.language)) {
+            SettingsToggleWithCaption(title: text.enableLabel,
+                                      caption: text.enableCaption,
+                                      isOn: $enabled)
                 .onChange(of: enabled) { _, on in
                     if !on { stopCapture() }
                     MouseButtonShortcutService.shared.syncWithPreferences()
@@ -45,13 +59,10 @@ struct MouseButtonShortcutsSection: View {
                         permissions.requestAccessibility()
                     }
                 }
-            Text(text.enableCaption)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            if enabled {
+            Group {
                 if mappings.isEmpty, pendingButton == nil {
                     Text(text.emptyCaption)
-                        .font(.caption)
+                        .font(SettingsTypography.caption)
                         .foregroundStyle(.secondary)
                 }
                 ForEach(MouseButtonShortcutSupport.sortedButtons(mappings), id: \.self) { button in
@@ -61,43 +72,37 @@ struct MouseButtonShortcutsSection: View {
                     mappingRow(pendingButton, shortcut: nil)
                 }
                 captureRow
+                    .disabled(!enabled)
+                    .help(enabled ? text.captureHint : captureRequiresEnabled)
             }
-            Toggle(text.spacesEnableLabel, isOn: $spacesEnabled)
+            Divider()
+            SettingsToggleWithCaption(title: text.spacesEnableLabel,
+                                      caption: text.spacesEnableCaption,
+                                      isOn: $spacesEnabled)
                 .onChange(of: spacesEnabled) { _, on in
                     if !on {
                         stopSpacesCapture()
-                        // The row is gone while this switch is off, so a kept
-                        // binding could only act invisibly: it would refuse
-                        // the button to shortcut capture, then come back dead
-                        // under a shortcut recorded meanwhile.
-                        spacesButton = 0
                     }
+                    spacesButton = MouseButtonConfigurationSupport.spacesButtonAfterToggle(
+                        enabled: on, savedButton: spacesButton)
                     MouseButtonShortcutService.shared.syncWithPreferences()
                     if on, !permissions.accessibility {
                         permissions.requestAccessibility()
                     }
                 }
-            Text(text.spacesEnableCaption)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            if spacesEnabled {
+            Group {
                 spacesRow
-                Toggle(text.spacesFollowsDragLabel, isOn: $spacesFollowsDrag)
-                Text(text.spacesFollowsDragCaption)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                if !spacesCommandsAreReachable {
-                    Text(text.spacesShortcutsOffNote)
-                        .font(.caption)
+                SettingsToggleWithCaption(title: text.spacesFollowsDragLabel,
+                                          caption: text.spacesFollowsDragCaption,
+                                          isOn: $spacesFollowsDrag)
+                if spacesEnabled, let warning = spacesShortcutWarning {
+                    Text(warning)
+                        .font(SettingsTypography.caption)
                         .foregroundStyle(.orange)
                 }
             }
-            // One exception list for one tap: the service checks these apps
-            // before both the shortcut and the drag branch, so the list must
-            // be reachable while either switch keeps that check deciding.
-            if enabled || spacesEnabled {
-                MouseExceptionsList(scope: .buttonShortcuts)
-            }
+            Divider()
+            MouseExceptionsList(scope: .buttonShortcuts)
         }
         .settingsSectionAnchor(.mouseButtonShortcuts)
         .onDisappear {
@@ -138,16 +143,16 @@ struct MouseButtonShortcutsSection: View {
             }
             if let recordError, recordErrorButton == button {
                 Text(recordError)
-                    .font(.caption)
+                    .font(SettingsTypography.caption)
                     .foregroundStyle(.orange)
             } else if recordingButton == button {
                 Text(ShortcutRecordingCaption.text(l10n.s, canClear: false))
-                    .font(.caption)
+                    .font(SettingsTypography.caption)
                     .foregroundStyle(.secondary)
             }
             if shortcut != nil, RadialMenuSupport.claimsMouseButton(button) {
                 Text(text.rowWheelNote)
-                    .font(.caption)
+                    .font(SettingsTypography.caption)
                     .foregroundStyle(.orange)
             }
         }
@@ -172,11 +177,11 @@ struct MouseButtonShortcutsSection: View {
                 }
                 if let captureFeedback {
                     Text(captureFeedback)
-                        .font(.caption)
+                        .font(SettingsTypography.caption)
                         .foregroundStyle(.orange)
                 }
                 Text(text.captureHint)
-                    .font(.caption)
+                    .font(SettingsTypography.caption)
                     .foregroundStyle(.secondary)
             }
             .onReceive(service.$lastInputSeen) { seen in
@@ -213,7 +218,7 @@ struct MouseButtonShortcutsSection: View {
                 }
                 if let spacesFeedback {
                     Text(spacesFeedback)
-                        .font(.caption)
+                        .font(SettingsTypography.caption)
                         .foregroundStyle(.orange)
                 }
             }
@@ -242,22 +247,37 @@ struct MouseButtonShortcutsSection: View {
             } label: {
                 Label(text.spacesPickButton, systemImage: "plus")
             }
+            .disabled(!spacesEnabled)
+            .help(spacesEnabled ? text.captureHint : captureRequiresEnabled)
         }
     }
 
-    /// Whether the system still has a combination registered for any of the
-    /// four commands the drag asks for. With all four switched off there is
-    /// nothing left to press, which is worth saying out loud.
-    private var spacesCommandsAreReachable: Bool {
-        SpaceWindowBridge.spaceShortcut(.left) != nil
-            || SpaceWindowBridge.spaceShortcut(.right) != nil
-            || SpaceWindowBridge.overviewShortcut(.missionControl) != nil
-            || SpaceWindowBridge.overviewShortcut(.appExpose) != nil
+    /// Report the directions whose actual system command has no shortcut.
+    /// The horizontal arrows follow the same preference as the drag resolver.
+    private var spacesShortcutWarning: String? {
+        var missing: [String] = []
+        if SpaceWindowBridge.spaceShortcut(.left) == nil {
+            missing.append("\(spacesFollowsDrag ? "→" : "←") \(text.spacesMoveLeft)")
+        }
+        if SpaceWindowBridge.spaceShortcut(.right) == nil {
+            missing.append("\(spacesFollowsDrag ? "←" : "→") \(text.spacesMoveRight)")
+        }
+        if SpaceWindowBridge.overviewShortcut(.missionControl) == nil {
+            missing.append("↑ \(text.spacesMissionControl)")
+        }
+        if SpaceWindowBridge.overviewShortcut(.appExpose) == nil {
+            missing.append("↓ \(text.spacesAppExpose)")
+        }
+        guard !missing.isEmpty else { return nil }
+        let actions = missing.joined(separator: "; ")
+        if missing.count == 4 { return text.spacesShortcutsOffNote + "\n" + actions }
+        return String(format: text.spacesShortcutsPartialFormat, actions)
     }
 
     // MARK: - Capture
 
     private func startCapture() {
+        guard enabled, AppFeature.mouseButtonShortcuts.isAvailable else { return }
         stopSpacesCapture()
         captureFeedback = nil
         capturing = true
@@ -280,8 +300,9 @@ struct MouseButtonShortcutsSection: View {
             captureFeedback = text.captureUnsupported
         } else if RadialMenuSupport.claimsMouseButton(seen) {
             captureFeedback = text.captureWheel
-        } else if mappings[seen] != nil || pendingButton == seen
-                    || (spacesEnabled && Int64(spacesButton) == seen) {
+        } else if MouseButtonConfigurationSupport.conflictsWithSpaces(seen, savedButton: spacesButton) {
+            captureFeedback = spacesReservationMessage
+        } else if mappings[seen] != nil || pendingButton == seen {
             captureFeedback = text.captureExists
         } else {
             pendingButton = seen
@@ -291,6 +312,7 @@ struct MouseButtonShortcutsSection: View {
     }
 
     private func startSpacesCapture() {
+        guard spacesEnabled, AppFeature.mouseButtonShortcuts.isAvailable else { return }
         stopCapture()
         spacesFeedback = nil
         spacesCapturing = true
@@ -334,6 +356,10 @@ struct MouseButtonShortcutsSection: View {
     }
 
     private func save(button: Int64, shortcut: GlobalShortcut) {
+        guard !MouseButtonConfigurationSupport.conflictsWithSpaces(button, savedButton: spacesButton) else {
+            setRecordError(spacesReservationMessage, button)
+            return
+        }
         mappings[button] = shortcut
         if pendingButton == button { pendingButton = nil }
         setRecordError(nil, button)

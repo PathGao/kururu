@@ -9,10 +9,10 @@ import Foundation
 struct FeatureHubStrings {
     // Page chrome
     var pageTitle: String = "Features"
-    var intro: String = "Install only what you use. Whatever you uninstall disappears from the whole app and stops loading."
+    var intro: String = "Enable the modules you need. Background behavior and shortcuts follow their saved settings. Enabling a module does not turn on every behavior. Adjust those switches in each module’s settings."
     var tabFeatures: String = "Features"
     var tabPermissions: String = "Permissions"
-    var activeCountFormat: String = "%1$d of %2$d features installed"      // "%1$d of %2$d features on"
+    var activeCountFormat: String = "%1$d of %2$d modules enabled"      // "%1$d of %2$d features on"
     var monitorAllOffNote: String = "With everything off, the Monitor leaves the panel and the menu bar."
     var titleMouseNavigation: String = "Side buttons"
     // Group headers
@@ -70,12 +70,12 @@ struct FeatureHubStrings {
     var descMixer: String = "A volume slider for each app"
     var descSoundOutputSwitcher: String = "Cycle sound outputs with a shortcut"
     var descMicMute: String = "Mute the microphone from anywhere"
-    var descMusicBlock: String = "Stop the Music app from launching itself"
+    var descMusicBlock: String = "Block selected app launches after media keys"
     var descKeepAwake: String = "Keep the Mac awake on demand"
     var descColorPicker: String = "Pick any color on screen"
     var descScreenOCR: String = "Copy text or QR codes from anything on screen"
     var descCleaningMode: String = "Lock keyboard and screen for cleaning"
-    var descMediaTools: String = "Compress videos, images and GIFs"
+    var descMediaTools: String = "Convert media and merge PDF files"
     var descCleaner: String = "Clear caches and junk files"
     var descUninstaller: String = "Remove apps and their leftovers"
     var descHomebrew: String = "Keep Homebrew packages up to date"
@@ -85,33 +85,21 @@ struct FeatureHubStrings {
     var descMonitorNetwork: String = "Network speed and usage"
     var descMonitorDisk: String = "Disk space and activity"
     var descMonitorPower: String = "Battery, power and charging"
-    // Install metaphor and the restart-to-unload card
-    var installButton: String = "Install"
-    var uninstallButton: String = "Uninstall"
-    var footerNote: String = "Uninstalling deletes nothing: the feature just leaves the app and stops loading. Install it again anytime and everything returns as it was."
-    var restartNote: String = "Features uninstalled in this session stay loaded until the app restarts. Restart to unload them from memory now."
+    // Availability controls and the restart-to-unload card
+    var installButton: String = "Enable"
+    var uninstallButton: String = "Disable"
+    var footerNote: String = "Disabling a module stops its background behavior and shortcuts and keeps its data and preferences. Saved behavior settings and key combinations remain readable here. Enable it again to edit all settings."
+    var restartNote: String = "Disabled modules may still hold resources in memory. Restart the app to release them."
     var restartButton: String = "Restart now"
-    var installAllButton: String = "Install all"
-    var uninstallAllButton: String = "Uninstall all"
-    var presetsTitle: String = "Start with a bundle"
-    var presetsCaption: String = "One click sets the app up for how you use your Mac. Everything else stays one click away."
-    var presetEssentialName: String = "Essentials"
-    var presetEssentialDesc: String = "Volume mixer, system monitor and keep awake."
-    var presetWindowsName: String = "Windows"
-    var presetWindowsDesc: String = "App switcher, window layout and the Dock features."
-    var presetBatteryName: String = "Battery and quiet"
-    var presetBatteryDesc: String = "A lean monitor with battery, memory and processor. Nothing listens to input."
-    var presetApplyButton: String = "Apply"
-    var presetConfirmFormat: String = "Install the %1$@ bundle and uninstall the rest? Nothing is deleted, and everything comes back with one click."
-    var presetConfirmApply: String = "Apply bundle"
-    var presetConfirmCancel: String = "Cancel"
+    var installAllButton: String = "Enable all"
+    var uninstallAllButton: String = "Disable all"
     var energyIdle: String = "Nothing at rest"
     var energyMouse: String = "Listens to the mouse"
     var energyPointer: String = "Listens to pointer input"
     var energyKeyboard: String = "Listens to the keyboard"
     var energyInputs: String = "Listens to mouse and keyboard"
     var energyPeriodic: String = "Checks on an interval"
-    var energyHelp: String = "What the feature keeps alive while it is on. Uninstalled features load nothing at all."
+    var energyHelp: String = "Background activity while the feature is running. Disabled features do not run."
     var explainAppManagement: String = "Lets updates replace or remove apps installed by the package manager."
     var onboardingSelectedPermissionsTitle: String = "Permissions for your choices"
     var onboardingNoSelectedPermissions: String = "You do not need to grant any permission to finish setup."
@@ -142,7 +130,7 @@ extension FeatureStrings {
 extension FeatureHubStrings {
     static let ko = FeatureHubStrings(
         pageTitle: "기능",
-        intro: "사용하는 기능만 설치하세요. 제거한 기능은 앱 전체에서 사라지고 더 이상 불러오지 않습니다.",
+        intro: "작업 공간에 추가할 도구를 선택하세요. 제거한 도구는 실행을 멈추고 실행 항목이 숨겨집니다. 저장된 설정은 유지되며 기능에서 요약을 확인할 수 있습니다.",
         tabFeatures: "기능",
         tabPermissions: "권한",
         activeCountFormat: "기능 %1$d개 / %2$d개 설치됨",
@@ -200,7 +188,6 @@ extension FeatureHubStrings {
         descMixer: "앱별 볼륨 슬라이더",
         descSoundOutputSwitcher: "단축키로 사운드 출력 순환",
         descMicMute: "어디서나 마이크 음소거",
-        descMusicBlock: "음악 앱이 저절로 실행되지 않게 차단",
         descKeepAwake: "필요할 때 Mac을 깨운 상태로 유지",
         descColorPicker: "화면의 모든 색상 선택",
         descScreenOCR: "화면의 모든 텍스트 또는 QR 코드 복사",
@@ -222,18 +209,6 @@ extension FeatureHubStrings {
         restartButton: "지금 다시 시작",
         installAllButton: "모두 설치",
         uninstallAllButton: "모두 제거",
-        presetsTitle: "묶음으로 시작하기",
-        presetsCaption: "한 번의 클릭으로 Mac 사용 방식에 맞게 앱을 설정합니다. 나머지 기능도 한 번의 클릭으로 사용할 수 있습니다.",
-        presetEssentialName: "기본 기능",
-        presetEssentialDesc: "볼륨 믹서, 시스템 모니터 및 절전 방지.",
-        presetWindowsName: "윈도우",
-        presetWindowsDesc: "앱 전환기, 윈도우 정렬 및 Dock 기능.",
-        presetBatteryName: "배터리 및 조용함",
-        presetBatteryDesc: "배터리, 메모리 및 프로세서를 표시하는 간결한 모니터입니다. 어떤 입력도 감시하지 않습니다.",
-        presetApplyButton: "적용",
-        presetConfirmFormat: "%1$@ 묶음을 설치하고 나머지는 제거할까요? 아무것도 삭제되지 않으며 한 번의 클릭으로 모두 되돌릴 수 있습니다.",
-        presetConfirmApply: "묶음 적용",
-        presetConfirmCancel: "취소",
         energyIdle: "대기 중에도 작업 없음",
         energyMouse: "마우스 감시",
         energyPointer: "포인터 입력 감지",
@@ -254,7 +229,7 @@ extension FeatureHubStrings {
 
     static let ptBR = FeatureHubStrings(
         pageTitle: "Recursos",
-        intro: "Instale só o que você usa. O que você desinstalar some do app inteiro e deixa de carregar.",
+        intro: "Escolha as ferramentas para adicionar ao espaço de trabalho. As ferramentas removidas param de funcionar e seus acessos ficam ocultos. As configurações salvas são mantidas, com um resumo disponível em Recursos.",
         tabFeatures: "Recursos",
         tabPermissions: "Permissões",
         activeCountFormat: "%1$d de %2$d recursos instalados",
@@ -312,7 +287,6 @@ extension FeatureHubStrings {
         descMixer: "Um controle de volume para cada app",
         descSoundOutputSwitcher: "Troque a saída de som com um atalho",
         descMicMute: "Silencie o microfone de qualquer lugar",
-        descMusicBlock: "Impede o app Música de abrir sozinho",
         descKeepAwake: "Mantenha o Mac acordado quando quiser",
         descColorPicker: "Capture qualquer cor da tela",
         descScreenOCR: "Copie texto ou QR codes de qualquer coisa na tela",
@@ -334,18 +308,6 @@ extension FeatureHubStrings {
         restartButton: "Reiniciar agora",
         installAllButton: "Instalar tudo",
         uninstallAllButton: "Desinstalar tudo",
-        presetsTitle: "Comece por um pacote",
-        presetsCaption: "Um clique deixa o app do jeito que você usa o Mac. O resto fica a um clique.",
-        presetEssentialName: "Essencial",
-        presetEssentialDesc: "Mixer de volume, monitor do sistema e manter acordado.",
-        presetWindowsName: "Janelas",
-        presetWindowsDesc: "Alternador de apps, layout de janelas e os recursos do Dock.",
-        presetBatteryName: "Bateria e silêncio",
-        presetBatteryDesc: "Monitor enxuto com bateria, memória e processador. Nada escuta o teclado ou o mouse.",
-        presetApplyButton: "Aplicar",
-        presetConfirmFormat: "Instalar o pacote %1$@ e desinstalar o resto? Nada é apagado e tudo volta com um clique.",
-        presetConfirmApply: "Aplicar pacote",
-        presetConfirmCancel: "Cancelar",
         energyIdle: "Nada em repouso",
         energyMouse: "Escuta o mouse",
         energyPointer: "Escuta o ponteiro",
@@ -362,7 +324,7 @@ extension FeatureHubStrings {
 
     static let tr = FeatureHubStrings(
         pageTitle: "Özellikler",
-        intro: "Yalnızca kullandıklarınızı yükleyin. Kaldırdıklarınız uygulamanın tamamından kaybolur ve yüklenmeyi bırakır.",
+        intro: "Çalışma alanınıza eklenecek araçları seçin. Çıkarılan araçlar çalışmayı durdurur ve işlem girişleri gizlenir. Kayıtlı ayarlar korunur. Özetini Özellikler bölümünde görebilirsiniz.",
         tabFeatures: "Özellikler",
         tabPermissions: "İzinler",
         activeCountFormat: "%2$d özellikten %1$d tanesi yüklü",
@@ -420,7 +382,6 @@ extension FeatureHubStrings {
         descMixer: "Her uygulama için ayrı ses düzeyi",
         descSoundOutputSwitcher: "Kısayolla ses çıkışları arasında geçin",
         descMicMute: "Mikrofonu her yerden sessize alın",
-        descMusicBlock: "Müzik uygulamasının kendiliğinden açılmasını engeller",
         descKeepAwake: "Mac’i istediğinizde uyanık tutun",
         descColorPicker: "Ekrandaki herhangi bir rengi alın",
         descScreenOCR: "Ekrandaki her şeyden metin veya QR kodu kopyalayın",
@@ -442,18 +403,6 @@ extension FeatureHubStrings {
         restartButton: "Şimdi yeniden başlat",
         installAllButton: "Tümünü yükle",
         uninstallAllButton: "Tümünü kaldır",
-        presetsTitle: "Bir paketle başlayın",
-        presetsCaption: "Tek tıkla uygulama Mac kullanımınıza göre kurulur. Gerisi bir tık uzakta kalır.",
-        presetEssentialName: "Temel",
-        presetEssentialDesc: "Ses karıştırıcı, sistem monitörü ve uyanık tutma.",
-        presetWindowsName: "Pencereler",
-        presetWindowsDesc: "Uygulama değiştirici, pencere düzeni ve Dock özellikleri.",
-        presetBatteryName: "Pil ve sessizlik",
-        presetBatteryDesc: "Pil, bellek ve işlemciyle yalın bir monitör. Hiçbir şey girişleri dinlemez.",
-        presetApplyButton: "Uygula",
-        presetConfirmFormat: "%1$@ paketi yüklensin ve gerisi kaldırılsın mı? Hiçbir şey silinmez, hepsi tek tıkla geri gelir.",
-        presetConfirmApply: "Paketi uygula",
-        presetConfirmCancel: "Vazgeç",
         energyIdle: "Boşta hiçbir şey",
         energyMouse: "Fareyi dinler",
         energyPointer: "İşaretçi girişini dinler",
@@ -470,7 +419,7 @@ extension FeatureHubStrings {
 
     static let ru = FeatureHubStrings(
         pageTitle: "Функции",
-        intro: "Устанавливайте только то, чем пользуетесь. Всё удалённое исчезает из всего приложения и перестаёт загружаться.",
+        intro: "Выберите инструменты для рабочего пространства. Удалённые из него инструменты перестают работать, а пункты их запуска скрываются. Сохранённые настройки остаются доступны в виде сводки в разделе «Функции».",
         tabFeatures: "Функции",
         tabPermissions: "Разрешения",
         activeCountFormat: "Установлено %1$d из %2$d функций",
@@ -528,7 +477,6 @@ extension FeatureHubStrings {
         descMixer: "Отдельная громкость для каждого приложения",
         descSoundOutputSwitcher: "Переключайте выходы звука сочетанием клавиш",
         descMicMute: "Отключайте микрофон откуда угодно",
-        descMusicBlock: "Не даёт приложению Музыка запускаться самому",
         descKeepAwake: "Не давайте Mac засыпать, когда нужно",
         descColorPicker: "Возьмите любой цвет с экрана",
         descScreenOCR: "Копируйте текст или QR-коды с чего угодно на экране",
@@ -550,18 +498,6 @@ extension FeatureHubStrings {
         restartButton: "Перезапустить сейчас",
         installAllButton: "Установить все",
         uninstallAllButton: "Удалить все",
-        presetsTitle: "Начните с набора",
-        presetsCaption: "Один клик настраивает приложение под ваш стиль работы. Остальное в одном клике.",
-        presetEssentialName: "Основное",
-        presetEssentialDesc: "Микшер громкости, системный монитор и режим без сна.",
-        presetWindowsName: "Окна",
-        presetWindowsDesc: "Переключатель приложений, раскладка окон и функции Dock.",
-        presetBatteryName: "Батарея и тишина",
-        presetBatteryDesc: "Компактный монитор с батареей, памятью и процессором. Ничто не слушает ввод.",
-        presetApplyButton: "Применить",
-        presetConfirmFormat: "Установить набор %1$@ и удалить остальное? Ничего не стирается, всё возвращается одним кликом.",
-        presetConfirmApply: "Применить набор",
-        presetConfirmCancel: "Отмена",
         energyIdle: "Ничего в покое",
         energyMouse: "Слушает мышь",
         energyPointer: "Отслеживает указатель",
@@ -578,10 +514,10 @@ extension FeatureHubStrings {
 
     static let es = FeatureHubStrings(
         pageTitle: "Funciones",
-        intro: "Instala solo lo que usas. Lo que desinstales desaparece de toda la app y deja de cargarse.",
+        intro: "Activa los módulos que necesites. El funcionamiento en segundo plano y los atajos siguen los ajustes guardados. Activar un módulo no activa todos sus comportamientos. Ajusta cada interruptor en los ajustes del módulo.",
         tabFeatures: "Funciones",
         tabPermissions: "Permisos",
-        activeCountFormat: "%1$d de %2$d funciones instaladas",
+        activeCountFormat: "%1$d de %2$d módulos activados",
         monitorAllOffNote: "Con todo apagado, el Monitor desaparece del panel y de la barra de menús.",
         titleMouseNavigation: "Botones laterales",
         groupMonitor: "Monitor del sistema",
@@ -636,7 +572,7 @@ extension FeatureHubStrings {
         descMixer: "Un control de volumen para cada app",
         descSoundOutputSwitcher: "Cambia la salida de sonido con un atajo",
         descMicMute: "Silencia el micrófono desde cualquier lugar",
-        descMusicBlock: "Evita que la app Música se abra sola",
+        descMusicBlock: "Bloquear el inicio de apps elegidas tras las teclas multimedia",
         descKeepAwake: "Mantén el Mac despierto cuando quieras",
         descColorPicker: "Toma cualquier color de la pantalla",
         descScreenOCR: "Copia texto o códigos QR de cualquier cosa en pantalla",
@@ -651,32 +587,20 @@ extension FeatureHubStrings {
         descMonitorNetwork: "Velocidad y uso de la red",
         descMonitorDisk: "Espacio y actividad del disco",
         descMonitorPower: "Batería, energía y carga",
-        installButton: "Instalar",
-        uninstallButton: "Desinstalar",
-        footerNote: "Desinstalar no borra nada: la función solo desaparece de la app y deja de cargarse. Instálala de nuevo cuando quieras y todo vuelve como estaba.",
-        restartNote: "Las funciones desinstaladas en esta sesión siguen cargadas hasta reiniciar la app. Reinicia para sacarlas de la memoria ahora.",
+        installButton: "Activar",
+        uninstallButton: "Desactivar",
+        footerNote: "Desactivar un módulo detiene su funcionamiento en segundo plano y sus atajos. Sus datos y ajustes se conservan. Los ajustes de comportamiento y las combinaciones de teclas guardados siguen disponibles aquí. Vuelve a activarlo para editar todos sus ajustes.",
+        restartNote: "Los módulos desactivados pueden conservar recursos en memoria. Reinicia la app para liberarlos.",
         restartButton: "Reiniciar ahora",
-        installAllButton: "Instalar todo",
-        uninstallAllButton: "Desinstalar todo",
-        presetsTitle: "Empieza con un paquete",
-        presetsCaption: "Un clic deja la app a tu manera de usar el Mac. El resto queda a un clic.",
-        presetEssentialName: "Esencial",
-        presetEssentialDesc: "Mezclador de volumen, monitor del sistema y mantener despierto.",
-        presetWindowsName: "Ventanas",
-        presetWindowsDesc: "Selector de apps, disposición de ventanas y las funciones del Dock.",
-        presetBatteryName: "Batería y silencio",
-        presetBatteryDesc: "Un monitor ligero con batería, memoria y procesador. Nada escucha el teclado ni el ratón.",
-        presetApplyButton: "Aplicar",
-        presetConfirmFormat: "¿Instalar el paquete %1$@ y desinstalar el resto? No se borra nada y todo vuelve con un clic.",
-        presetConfirmApply: "Aplicar paquete",
-        presetConfirmCancel: "Cancelar",
+        installAllButton: "Activar todos",
+        uninstallAllButton: "Desactivar todos",
         energyIdle: "Nada en reposo",
         energyMouse: "Escucha el ratón",
         energyPointer: "Escucha el puntero",
         energyKeyboard: "Escucha el teclado",
         energyInputs: "Escucha ratón y teclado",
         energyPeriodic: "Comprueba a intervalos",
-        energyHelp: "El coste mientras la función está activada. Desinstalada, no carga nada.",
+        energyHelp: "Actividad en segundo plano mientras funciona. Las funciones desactivadas no se ejecutan.",
         explainAppManagement: "Permite que las actualizaciones sustituyan o eliminen apps instaladas con el gestor de paquetes.",
         onboardingSelectedPermissionsTitle: "Permisos para tus elecciones",
         onboardingNoSelectedPermissions: "No necesitas conceder permisos para terminar la configuración.",
@@ -686,10 +610,10 @@ extension FeatureHubStrings {
 
     static let de = FeatureHubStrings(
         pageTitle: "Funktionen",
-        intro: "Installiere nur, was du nutzt. Alles Deinstallierte verschwindet aus der ganzen App und lädt nicht mehr.",
+        intro: "Aktiviere die benötigten Module. Hintergrundverhalten und Kurzbefehle folgen den gespeicherten Einstellungen. Das Aktivieren eines Moduls schaltet nicht jedes Verhalten ein. Passe diese Schalter in den Moduleinstellungen einzeln an.",
         tabFeatures: "Funktionen",
         tabPermissions: "Berechtigungen",
-        activeCountFormat: "%1$d von %2$d Funktionen installiert",
+        activeCountFormat: "%1$d von %2$d Modulen aktiviert",
         monitorAllOffNote: "Ist alles aus, verschwindet der Monitor aus dem Panel und der Menüleiste.",
         titleMouseNavigation: "Seitentasten",
         groupMonitor: "Systemmonitor",
@@ -744,7 +668,7 @@ extension FeatureHubStrings {
         descMixer: "Ein Lautstärkeregler für jede App",
         descSoundOutputSwitcher: "Tonausgänge per Kurzbefehl durchschalten",
         descMicMute: "Das Mikrofon von überall stummschalten",
-        descMusicBlock: "Hindert die Musik-App am Selbststart",
+        descMusicBlock: "Starts ausgewählter Apps nach Medientasten blockieren",
         descKeepAwake: "Hält den Mac wach, wann immer du willst",
         descColorPicker: "Jede Farbe vom Bildschirm aufnehmen",
         descScreenOCR: "Text oder QR-Codes von allem auf dem Bildschirm kopieren",
@@ -759,32 +683,20 @@ extension FeatureHubStrings {
         descMonitorNetwork: "Netzwerkgeschwindigkeit und Verbrauch",
         descMonitorDisk: "Speicherplatz und Festplattenaktivität",
         descMonitorPower: "Batterie, Strom und Laden",
-        installButton: "Installieren",
-        uninstallButton: "Deinstallieren",
-        footerNote: "Deinstallieren löscht nichts: Die Funktion verschwindet nur aus der App und lädt nicht mehr. Installiere sie jederzeit wieder, alles kommt zurück wie es war.",
-        restartNote: "In dieser Sitzung deinstallierte Funktionen bleiben bis zum Neustart der App geladen. Starte neu, um sie jetzt aus dem Speicher zu nehmen.",
+        installButton: "Aktivieren",
+        uninstallButton: "Deaktivieren",
+        footerNote: "Das Deaktivieren eines Moduls stoppt sein Hintergrundverhalten und seine Kurzbefehle. Daten und Einstellungen bleiben erhalten. Gespeicherte Verhaltenseinstellungen und Tastenkombinationen bleiben hier einsehbar. Aktiviere es erneut, um alle Einstellungen zu bearbeiten.",
+        restartNote: "Deaktivierte Module können weiterhin Ressourcen im Speicher halten. Starte die App neu, um sie freizugeben.",
         restartButton: "Jetzt neu starten",
-        installAllButton: "Alle installieren",
-        uninstallAllButton: "Alle deinstallieren",
-        presetsTitle: "Mit einem Paket starten",
-        presetsCaption: "Ein Klick richtet die App nach deiner Arbeitsweise ein. Der Rest bleibt einen Klick entfernt.",
-        presetEssentialName: "Essentials",
-        presetEssentialDesc: "Lautstärkemixer, Systemmonitor und Wachhalten.",
-        presetWindowsName: "Fenster",
-        presetWindowsDesc: "App-Umschalter, Fensterlayout und die Dock-Funktionen.",
-        presetBatteryName: "Batterie und Ruhe",
-        presetBatteryDesc: "Ein schlanker Monitor mit Batterie, Speicher und Prozessor. Nichts hört auf Eingaben.",
-        presetApplyButton: "Anwenden",
-        presetConfirmFormat: "Paket %1$@ installieren und den Rest deinstallieren? Nichts wird gelöscht, alles kommt mit einem Klick zurück.",
-        presetConfirmApply: "Paket anwenden",
-        presetConfirmCancel: "Abbrechen",
+        installAllButton: "Alle aktivieren",
+        uninstallAllButton: "Alle deaktivieren",
         energyIdle: "Nichts im Ruhezustand",
         energyMouse: "Hört auf die Maus",
         energyPointer: "Hört auf Zeigereingaben",
         energyKeyboard: "Hört auf die Tastatur",
         energyInputs: "Hört auf Maus und Tastatur",
         energyPeriodic: "Prüft in Intervallen",
-        energyHelp: "Die Kosten, solange die Funktion an ist. Deinstalliert lädt sie gar nichts.",
+        energyHelp: "Hintergrundaktivität während die Funktion läuft. Deaktivierte Funktionen laufen nicht.",
         explainAppManagement: "Erlaubt App-Updates, vom Paketmanager installierte Apps zu ersetzen oder zu entfernen.",
         onboardingSelectedPermissionsTitle: "Berechtigungen für deine Auswahl",
         onboardingNoSelectedPermissions: "Zum Abschließen der Einrichtung ist keine Berechtigung nötig.",
@@ -794,10 +706,10 @@ extension FeatureHubStrings {
 
     static let fr = FeatureHubStrings(
         pageTitle: "Fonctions",
-        intro: "N’installez que ce que vous utilisez. Tout ce qui est désinstallé disparaît de toute l’app et ne se charge plus.",
+        intro: "Activez les modules nécessaires. Le fonctionnement en arrière-plan et les raccourcis suivent les réglages enregistrés. Activer un module n’active pas tous ses comportements. Réglez chaque interrupteur dans les réglages du module.",
         tabFeatures: "Fonctions",
         tabPermissions: "Autorisations",
-        activeCountFormat: "%1$d fonctions sur %2$d installées",
+        activeCountFormat: "%1$d modules sur %2$d activés",
         monitorAllOffNote: "Tout éteint, le Moniteur disparaît du panneau et de la barre des menus.",
         titleMouseNavigation: "Boutons latéraux",
         groupMonitor: "Moniteur système",
@@ -852,7 +764,7 @@ extension FeatureHubStrings {
         descMixer: "Un volume pour chaque app",
         descSoundOutputSwitcher: "Changez de sortie audio avec un raccourci",
         descMicMute: "Coupez le micro depuis n’importe où",
-        descMusicBlock: "Empêche l’app Musique de se lancer toute seule",
+        descMusicBlock: "Bloquer le lancement des apps choisies après les touches multimédias",
         descKeepAwake: "Gardez le Mac éveillé à la demande",
         descColorPicker: "Prélevez n’importe quelle couleur à l’écran",
         descScreenOCR: "Copiez le texte ou les codes QR de tout ce qui s’affiche",
@@ -867,32 +779,20 @@ extension FeatureHubStrings {
         descMonitorNetwork: "Vitesse et usage du réseau",
         descMonitorDisk: "Espace et activité du disque",
         descMonitorPower: "Batterie, alimentation et charge",
-        installButton: "Installer",
-        uninstallButton: "Désinstaller",
-        footerNote: "Désinstaller n’efface rien\u{00A0}: la fonction disparaît simplement de l’app et ne se charge plus. Réinstallez-la quand vous voulez, tout revient comme avant.",
-        restartNote: "Les fonctions désinstallées pendant cette session restent chargées jusqu’au redémarrage de l’app. Redémarrez pour les décharger maintenant.",
+        installButton: "Activer",
+        uninstallButton: "Désactiver",
+        footerNote: "Désactiver un module arrête son fonctionnement en arrière-plan et ses raccourcis. Ses données et réglages sont conservés. Les réglages de comportement et combinaisons de touches enregistrés restent consultables ici. Réactivez-le pour modifier tous ses réglages.",
+        restartNote: "Les modules désactivés peuvent conserver des ressources en mémoire. Redémarrez l’app pour les libérer.",
         restartButton: "Redémarrer maintenant",
-        installAllButton: "Tout installer",
-        uninstallAllButton: "Tout désinstaller",
-        presetsTitle: "Commencez par un pack",
-        presetsCaption: "Un clic règle l’app selon votre façon d’utiliser le Mac. Le reste demeure à un clic.",
-        presetEssentialName: "Essentiel",
-        presetEssentialDesc: "Mixeur de volume, moniteur système et maintien éveillé.",
-        presetWindowsName: "Fenêtres",
-        presetWindowsDesc: "Sélecteur d’apps, disposition des fenêtres et les fonctions du Dock.",
-        presetBatteryName: "Batterie et silence",
-        presetBatteryDesc: "Un moniteur léger avec batterie, mémoire et processeur. Rien n’écoute les saisies.",
-        presetApplyButton: "Appliquer",
-        presetConfirmFormat: "Installer le pack %1$@ et désinstaller le reste\u{00A0}? Rien n’est effacé et tout revient en un clic.",
-        presetConfirmApply: "Appliquer le pack",
-        presetConfirmCancel: "Annuler",
+        installAllButton: "Tout activer",
+        uninstallAllButton: "Tout désactiver",
         energyIdle: "Rien au repos",
         energyMouse: "Écoute la souris",
         energyPointer: "Écoute le pointeur",
         energyKeyboard: "Écoute le clavier",
         energyInputs: "Écoute souris et clavier",
         energyPeriodic: "Vérifie par intervalles",
-        energyHelp: "Le coût quand la fonction est active. Désinstallée, elle ne charge rien.",
+        energyHelp: "Activité en arrière-plan pendant le fonctionnement. Les fonctions désactivées ne s’exécutent pas.",
         explainAppManagement: "Permet aux mises à jour de remplacer ou supprimer les apps installées par le gestionnaire de paquets.",
         onboardingSelectedPermissionsTitle: "Autorisations pour vos choix",
         onboardingNoSelectedPermissions: "Aucune autorisation n’est nécessaire pour terminer la configuration.",
@@ -902,7 +802,7 @@ extension FeatureHubStrings {
 
     static let it = FeatureHubStrings(
         pageTitle: "Funzioni",
-        intro: "Installa solo ciò che usi. Ciò che disinstalli sparisce dall’intera app e smette di caricarsi.",
+        intro: "Scegli gli strumenti da aggiungere all’area di lavoro. Gli strumenti rimossi smettono di funzionare e i relativi comandi vengono nascosti. Le impostazioni salvate vengono conservate e puoi consultarne il riepilogo in Funzioni.",
         tabFeatures: "Funzioni",
         tabPermissions: "Permessi",
         activeCountFormat: "%1$d funzioni installate su %2$d",
@@ -960,7 +860,6 @@ extension FeatureHubStrings {
         descMixer: "Un volume per ogni app",
         descSoundOutputSwitcher: "Cambia uscita audio con una scorciatoia",
         descMicMute: "Silenzia il microfono da ovunque",
-        descMusicBlock: "Impedisce all’app Musica di aprirsi da sola",
         descKeepAwake: "Tieni il Mac sveglio quando serve",
         descColorPicker: "Preleva qualsiasi colore dallo schermo",
         descScreenOCR: "Copia testo o codici QR da qualsiasi cosa sullo schermo",
@@ -982,18 +881,6 @@ extension FeatureHubStrings {
         restartButton: "Riavvia ora",
         installAllButton: "Installa tutto",
         uninstallAllButton: "Disinstalla tutto",
-        presetsTitle: "Inizia da un pacchetto",
-        presetsCaption: "Un clic prepara l’app per come usi il Mac. Il resto rimane a un clic.",
-        presetEssentialName: "Essenziale",
-        presetEssentialDesc: "Mixer del volume, monitor di sistema e mantieni sveglio.",
-        presetWindowsName: "Finestre",
-        presetWindowsDesc: "Selettore di app, layout delle finestre e le funzioni del Dock.",
-        presetBatteryName: "Batteria e silenzio",
-        presetBatteryDesc: "Un monitor essenziale con batteria, memoria e processore. Nulla ascolta gli input.",
-        presetApplyButton: "Applica",
-        presetConfirmFormat: "Installare il pacchetto %1$@ e disinstallare il resto? Nulla viene cancellato e tutto torna con un clic.",
-        presetConfirmApply: "Applica pacchetto",
-        presetConfirmCancel: "Annulla",
         energyIdle: "Niente a riposo",
         energyMouse: "Ascolta il mouse",
         energyPointer: "Ascolta il puntatore",
@@ -1010,10 +897,10 @@ extension FeatureHubStrings {
 
     static let ja = FeatureHubStrings(
         pageTitle: "機能",
-        intro: "使う機能だけをインストール。アンインストールしたものはアプリ全体から消え、読み込まれなくなります。",
+        intro: "必要なモジュールを有効にしてください。バックグラウンド動作とショートカットは保存済みの設定に従います。モジュールを有効にしても、すべての動作がオンになるわけではありません。各動作のスイッチはモジュールの設定で個別に調整できます。",
         tabFeatures: "機能",
         tabPermissions: "権限",
-        activeCountFormat: "%2$d 個中 %1$d 個の機能をインストール済み",
+        activeCountFormat: "%2$d 件中 %1$d 件のモジュールが有効",
         monitorAllOffNote: "すべてオフにすると、モニタはパネルとメニューバーから消えます。",
         titleMouseNavigation: "サイドボタン",
         groupMonitor: "システムモニタ",
@@ -1068,7 +955,7 @@ extension FeatureHubStrings {
         descMixer: "アプリごとの音量スライダ",
         descSoundOutputSwitcher: "ショートカットで出力先を切り替え",
         descMicMute: "どこからでもマイクをミュート",
-        descMusicBlock: "ミュージックアプリの勝手な起動を防止",
+        descMusicBlock: "メディアキーによる選択したアプリの起動を防ぐ",
         descKeepAwake: "必要なときにMacをスリープさせない",
         descColorPicker: "画面上のどんな色も取得",
         descScreenOCR: "画面上のあらゆる文字やQRコードをコピー",
@@ -1083,32 +970,20 @@ extension FeatureHubStrings {
         descMonitorNetwork: "ネットワークの速度と使用量",
         descMonitorDisk: "ディスクの空きとアクティビティ",
         descMonitorPower: "バッテリー、電力、充電",
-        installButton: "インストール",
-        uninstallButton: "アンインストール",
-        footerNote: "アンインストールしても何も消えません。機能がアプリから消えて読み込まれなくなるだけです。いつでもインストールし直せば、すべて元どおりに戻ります。",
-        restartNote: "このセッションでアンインストールした機能は、アプリを再起動するまで読み込まれたままです。今すぐメモリから外すには再起動してください。",
+        installButton: "有効にする",
+        uninstallButton: "無効にする",
+        footerNote: "モジュールを無効にするとバックグラウンド動作とショートカットが停止し、データと設定は保持されます。保存済みの動作設定とキーの組み合わせはここで確認できます。すべての設定を編集するには再度有効にしてください。",
+        restartNote: "無効にしたモジュールのリソースがメモリに残る場合があります。解放するには、アプリを再起動してください。",
         restartButton: "今すぐ再起動",
-        installAllButton: "すべてインストール",
-        uninstallAllButton: "すべてアンインストール",
-        presetsTitle: "パックから始める",
-        presetsCaption: "ワンクリックで使い方に合わせた構成に。残りもワンクリックで戻せます。",
-        presetEssentialName: "エッセンシャル",
-        presetEssentialDesc: "音量ミキサー、システムモニタ、スリープ防止。",
-        presetWindowsName: "ウインドウ",
-        presetWindowsDesc: "アプリスイッチャー、ウインドウレイアウト、Dockの機能。",
-        presetBatteryName: "バッテリーと静けさ",
-        presetBatteryDesc: "バッテリー、メモリ、プロセッサだけの軽量モニタ。入力を監視するものはありません。",
-        presetApplyButton: "適用",
-        presetConfirmFormat: "パック「%1$@」をインストールして残りをアンインストールしますか？何も削除されず、すべてワンクリックで戻ります。",
-        presetConfirmApply: "パックを適用",
-        presetConfirmCancel: "キャンセル",
+        installAllButton: "すべて有効にする",
+        uninstallAllButton: "すべて無効にする",
         energyIdle: "待機中は何もなし",
         energyMouse: "マウスを監視",
         energyPointer: "ポインタ入力を監視",
         energyKeyboard: "キーボードを監視",
         energyInputs: "マウスとキーボードを監視",
         energyPeriodic: "一定間隔で確認",
-        energyHelp: "オンの間のコストです。アンインストールすれば何も読み込みません。",
+        energyHelp: "機能の実行中に行うバックグラウンド動作です。無効にした機能は動作しません。",
         explainAppManagement: "パッケージマネージャでインストールしたAppをアップデートで置き換えたり削除したりできるようにします。",
         onboardingSelectedPermissionsTitle: "選んだ機能に必要な許可",
         onboardingNoSelectedPermissions: "設定を完了するための許可は必要ありません。",
@@ -1118,13 +993,13 @@ extension FeatureHubStrings {
 
     static let zhHans = FeatureHubStrings(
         pageTitle: "功能",
-        intro: "只安装你会用到的功能。卸载的功能会从整个 App 中消失，不再加载。",
+        intro: "按需启用模块。后台行为和快捷键按已保存的设置运行，启用模块不会打开其中所有行为。各项行为开关可在模块设置中单独调整。",
         tabFeatures: "功能",
         tabPermissions: "权限",
-        activeCountFormat: "已安装 %1$d 项，共 %2$d 项",
-        monitorAllOffNote: "全部关闭后，监视器会从面板和菜单栏中消失。",
+        activeCountFormat: "已启用 %1$d 项，共 %2$d 项",
+        monitorAllOffNote: "全部关闭后，系统监控会从面板和菜单栏中消失。",
         titleMouseNavigation: "侧键",
-        groupMonitor: "系统监视器",
+        groupMonitor: "系统监控",
         groupWindowsDesktop: "窗口与桌面",
         groupInputDevices: "输入设备",
         groupGlobalEntry: "全局入口",
@@ -1176,12 +1051,12 @@ extension FeatureHubStrings {
         descMixer: "每个 App 独立的音量滑块",
         descSoundOutputSwitcher: "用快捷键切换声音输出",
         descMicMute: "随时随地静音麦克风",
-        descMusicBlock: "阻止「音乐」App 自动启动",
+        descMusicBlock: "阻止媒体键触发所选 App 启动",
         descKeepAwake: "需要时让 Mac 保持唤醒",
         descColorPicker: "拾取屏幕上的任何颜色",
         descScreenOCR: "拷贝屏幕上任何内容的文字或二维码",
         descCleaningMode: "锁定键盘和屏幕以便清洁",
-        descMediaTools: "压缩视频、图片和 GIF",
+        descMediaTools: "转换媒体与合并 PDF 文件",
         descCleaner: "清理缓存和垃圾文件",
         descUninstaller: "卸载 App 并清除残留",
         descHomebrew: "保持 Homebrew 软件包最新",
@@ -1191,32 +1066,20 @@ extension FeatureHubStrings {
         descMonitorNetwork: "网络速度与用量",
         descMonitorDisk: "磁盘空间与活动",
         descMonitorPower: "电池、功耗与充电",
-        installButton: "安装",
-        uninstallButton: "卸载",
-        footerNote: "卸载不会删除任何数据：功能只是从 App 中消失并不再加载。随时重新安装，一切都会原样恢复。",
-        restartNote: "本次会话中卸载的功能在 App 重启前仍会驻留。立即重启即可把它们从内存中卸下。",
+        installButton: "启用",
+        uninstallButton: "关闭",
+        footerNote: "关闭模块会停止其后台行为和快捷键，并保留数据与设置。仍可在这里查看已保存的运行设置与按键组合，重新启用后可编辑完整设置。",
+        restartNote: "关闭的模块可能仍有资源驻留在内存中。重启 App 可释放这些资源。",
         restartButton: "立即重启",
-        installAllButton: "全部安装",
-        uninstallAllButton: "全部卸载",
-        presetsTitle: "从一个套装开始",
-        presetsCaption: "一键按你的使用方式配置 App。其余功能一键即可装回。",
-        presetEssentialName: "基础",
-        presetEssentialDesc: "音量混音器、系统监视器和保持唤醒。",
-        presetWindowsName: "窗口",
-        presetWindowsDesc: "App 切换器、窗口布局和 Dock 功能。",
-        presetBatteryName: "电池与安静",
-        presetBatteryDesc: "只保留电池、内存和处理器的轻量监视器。没有任何输入监听。",
-        presetApplyButton: "使用套装",
-        presetConfirmFormat: "安装“%1$@”套装并卸载其余功能？不会删除任何内容，一键即可全部恢复。",
-        presetConfirmApply: "使用套装",
-        presetConfirmCancel: "取消",
+        installAllButton: "全部启用",
+        uninstallAllButton: "全部关闭",
         energyIdle: "空闲时无任何开销",
         energyMouse: "监听鼠标",
         energyPointer: "监听指针输入",
         energyKeyboard: "监听键盘",
         energyInputs: "监听鼠标和键盘",
         energyPeriodic: "按间隔检查",
-        energyHelp: "功能开启期间的开销。卸载后完全不加载。",
+        energyHelp: "功能运行时的后台活动。关闭的功能不运行。",
         explainAppManagement: "允许更新替换或移除通过软件包管理器安装的 App。",
         onboardingSelectedPermissionsTitle: "所选功能需要的权限",
         onboardingNoSelectedPermissions: "完成设置无需授予任何权限。",
@@ -1226,7 +1089,7 @@ extension FeatureHubStrings {
 
     static let zhTW = FeatureHubStrings(
         pageTitle: "功能",
-        intro: "只安裝你會用到的功能。解除安裝的功能會從整個 App 中消失，不再載入。",
+        intro: "選擇要加入工作區的工具。移出後工具停止執行，操作入口隱藏。已儲存的設定會保留，仍可在「功能」中查看摘要。",
         tabFeatures: "功能",
         tabPermissions: "權限",
         activeCountFormat: "已安裝 %1$d 項，共 %2$d 項",
@@ -1284,12 +1147,11 @@ extension FeatureHubStrings {
         descMixer: "每個 App 獨立的音量滑桿",
         descSoundOutputSwitcher: "用快速鍵切換聲音輸出",
         descMicMute: "隨時隨地將麥克風靜音",
-        descMusicBlock: "阻止音樂 App 自行啟動",
         descKeepAwake: "需要時讓 Mac 保持喚醒",
         descColorPicker: "擷取螢幕上的任何顏色",
         descScreenOCR: "拷貝螢幕上任何內容的文字或 QR 碼",
         descCleaningMode: "鎖定鍵盤和螢幕以便清潔",
-        descMediaTools: "壓縮影片、圖片和 GIF",
+        descMediaTools: "轉換媒體與合併 PDF 檔案",
         descCleaner: "清理快取和垃圾檔案",
         descUninstaller: "移除 App 並清除殘留",
         descHomebrew: "讓 Homebrew 套件保持最新",
@@ -1306,18 +1168,6 @@ extension FeatureHubStrings {
         restartButton: "立即重新啟動",
         installAllButton: "全部安裝",
         uninstallAllButton: "全部解除安裝",
-        presetsTitle: "從一個套組開始",
-        presetsCaption: "一鍵依你的使用方式設定 App。其餘功能一鍵即可裝回。",
-        presetEssentialName: "基本",
-        presetEssentialDesc: "音量混音器、系統監視器與保持喚醒。",
-        presetWindowsName: "視窗",
-        presetWindowsDesc: "App 切換器、視窗排列與 Dock 功能。",
-        presetBatteryName: "電池與安靜",
-        presetBatteryDesc: "只留電池、記憶體與處理器的精簡監視器。沒有任何輸入監聽。",
-        presetApplyButton: "套用",
-        presetConfirmFormat: "安裝「%1$@」套組並解除安裝其餘功能？不會刪除任何內容，一鍵即可全部復原。",
-        presetConfirmApply: "套用套組",
-        presetConfirmCancel: "取消",
         energyIdle: "閒置時零負擔",
         energyMouse: "監聽滑鼠",
         energyPointer: "監聽游標輸入",
@@ -1334,7 +1184,7 @@ extension FeatureHubStrings {
 
     static let zhHK = FeatureHubStrings(
         pageTitle: "功能",
-        intro: "只安裝你會用到的功能。解除安裝的功能會從整個 App 消失，不再載入。",
+        intro: "選擇要加入工作區的工具。移出後工具會停止運作，操作入口會隱藏。已儲存的設定會保留，仍可在「功能」查看摘要。",
         tabFeatures: "功能",
         tabPermissions: "權限",
         activeCountFormat: "已安裝 %1$d 項，共 %2$d 項",
@@ -1392,12 +1242,11 @@ extension FeatureHubStrings {
         descMixer: "每個 App 獨立的音量滑桿",
         descSoundOutputSwitcher: "用快速鍵切換聲音輸出",
         descMicMute: "隨時隨地將咪高風靜音",
-        descMusicBlock: "阻止音樂 App 自行啟動",
         descKeepAwake: "需要時讓 Mac 保持喚醒",
         descColorPicker: "擷取螢幕上的任何顏色",
         descScreenOCR: "複製螢幕上任何內容的文字或 QR 碼",
         descCleaningMode: "鎖定鍵盤和螢幕以便清潔",
-        descMediaTools: "壓縮影片、圖片和 GIF",
+        descMediaTools: "轉換媒體與合併 PDF 檔案",
         descCleaner: "清理快取和垃圾檔案",
         descUninstaller: "移除 App 並清除殘留",
         descHomebrew: "讓 Homebrew 套件保持最新",
@@ -1414,18 +1263,6 @@ extension FeatureHubStrings {
         restartButton: "立即重新啟動",
         installAllButton: "全部安裝",
         uninstallAllButton: "全部解除安裝",
-        presetsTitle: "從一個套組開始",
-        presetsCaption: "一鍵依你的使用方式設定 App。其餘功能一鍵即可裝回。",
-        presetEssentialName: "基本",
-        presetEssentialDesc: "音量混音器、系統監視器與保持喚醒。",
-        presetWindowsName: "視窗",
-        presetWindowsDesc: "App 切換器、視窗排列與 Dock 功能。",
-        presetBatteryName: "電池與安靜",
-        presetBatteryDesc: "只留電池、記憶體與處理器的精簡監視器。沒有任何輸入監聽。",
-        presetApplyButton: "套用",
-        presetConfirmFormat: "安裝「%1$@」套組並解除安裝其餘功能？不會刪除任何內容，一鍵即可全部復原。",
-        presetConfirmApply: "套用套組",
-        presetConfirmCancel: "取消",
         energyIdle: "閒置時零負擔",
         energyMouse: "監聽滑鼠",
         energyPointer: "監聽游標輸入",
@@ -1439,4 +1276,162 @@ extension FeatureHubStrings {
         onboardingOtherPermissionsTitle: "其他權限",
         onboardingOtherPermissionsCaption: "可選。你可以而家授予，亦可以等功能需要時再授予。"
     )
+}
+
+/// Module availability is separate from a feature's saved behavior and hotkey switches.
+struct ModuleWorkspaceStrings {
+    var intro = "Enable the modules you need. Background behavior and shortcuts follow their saved settings. Enabling a module does not turn on every behavior. Adjust those switches in each module’s settings."
+    var add = "Enable"
+    var remove = "Disable"
+    var addAll = "Enable all"
+    var removeAll = "Disable all"
+    var footer = "Disabling a module stops its background behavior and shortcuts and keeps its data and preferences. Saved behavior settings and key combinations remain readable here. Enable it again to edit all settings."
+    var activeFormat = "%1$d of %2$d modules enabled"
+    var inactiveTitle = "Disabled"
+    var inactiveNote = "This module is disabled. Its background behavior and shortcuts are stopped, and its data and settings are kept. Below is a read-only summary of saved behavior settings and key combinations. Enable it to edit all settings."
+    var savedBehaviors = "Saved behavior and action settings"
+    var savedShortcuts = "Saved key combinations"
+    var on = "On (saved)"
+    var off = "Off (saved)"
+    var noSeparateSwitch = "No separate behavior switch"
+    var noMetrics = "No metrics shown in the menu bar"
+    var addMetrics = "Add metrics…"
+    var metricSetup = "Add metrics to the menu bar"
+    var inactiveMonitor = "System monitoring is disabled. Enable it, then choose which metrics to show."
+    var deferredAppearance = "Appearance choices below are saved and take effect after you add a metric."
+    var showMenuBarMetric = "Show in menu bar"
+    var hideMenuBarMetric = "Hide from menu bar"
+    var done = "Done"
+    private var actionCountFormat = "Saved: %1$d of %2$d actions on"
+
+    func actionCount(_ enabled: Int, _ total: Int) -> String {
+        String(format: actionCountFormat, enabled, total)
+    }
+
+    init(_ language: AppLanguage) {
+        switch language {
+        case .zhHans:
+            showMenuBarMetric = "在菜单栏中显示"
+            hideMenuBarMetric = "从菜单栏隐藏"
+            intro = "按需启用模块。后台行为和快捷键按已保存的设置运行，启用模块不会打开其中所有行为。各项行为开关可在模块设置中单独调整。"
+            add = "启用"
+            remove = "关闭"
+            addAll = "全部启用"
+            removeAll = "全部关闭"
+            footer = "关闭模块会停止其后台行为和快捷键，并保留数据与设置。仍可在这里查看已保存的运行设置与按键组合，重新启用后可编辑完整设置。"
+            activeFormat = "已启用 %1$d 项，共 %2$d 项"
+            inactiveTitle = "已关闭"
+            inactiveNote = "此模块已关闭，后台行为和快捷键已停止，数据与设置仍保留。以下为已保存的运行设置与按键组合的只读摘要。启用后可编辑完整设置。"
+            savedBehaviors = "已保存的运行与动作设置"
+            savedShortcuts = "已保存的按键组合"
+            on = "开启（保存值）"
+            off = "关闭（保存值）"
+            noSeparateSwitch = "没有独立运行开关"
+            noMetrics = "尚未在菜单栏显示指标"
+            addMetrics = "添加指标…"
+            metricSetup = "添加指标到菜单栏"
+            inactiveMonitor = "系统监控已关闭。请先启用，再选择要显示的指标。"
+            deferredAppearance = "以下外观选项会保留，在添加指标后生效。"
+            done = "完成"
+            actionCountFormat = "已保存：%2$d 项动作中 %1$d 项开启"
+        case .de:
+            showMenuBarMetric = "In Menüleiste anzeigen"
+            hideMenuBarMetric = "Aus Menüleiste ausblenden"
+            intro = "Aktiviere die benötigten Module. Hintergrundverhalten und Kurzbefehle folgen den gespeicherten Einstellungen. Das Aktivieren eines Moduls schaltet nicht jedes Verhalten ein. Passe diese Schalter in den Moduleinstellungen einzeln an."
+            add = "Aktivieren"
+            remove = "Deaktivieren"
+            addAll = "Alle aktivieren"
+            removeAll = "Alle deaktivieren"
+            footer = "Das Deaktivieren eines Moduls stoppt sein Hintergrundverhalten und seine Kurzbefehle. Daten und Einstellungen bleiben erhalten. Gespeicherte Verhaltenseinstellungen und Tastenkombinationen bleiben hier einsehbar. Aktiviere es erneut, um alle Einstellungen zu bearbeiten."
+            activeFormat = "%1$d von %2$d Modulen aktiviert"
+            inactiveTitle = "Deaktiviert"
+            inactiveNote = "Dieses Modul ist deaktiviert. Hintergrundverhalten und Kurzbefehle sind gestoppt, Daten und Einstellungen bleiben erhalten. Unten steht eine schreibgeschützte Übersicht der gespeicherten Verhaltenseinstellungen und Tastenkombinationen. Aktiviere es, um alle Einstellungen zu bearbeiten."
+            savedBehaviors = "Gespeichertes Verhalten und Aktionen"
+            savedShortcuts = "Gespeicherte Tastenkombinationen"
+            on = "Ein (gespeichert)"
+            off = "Aus (gespeichert)"
+            noSeparateSwitch = "Kein separater Betriebsschalter"
+            noMetrics = "Keine Messwerte in der Menüleiste"
+            addMetrics = "Messwerte hinzufügen…"
+            metricSetup = "Messwerte zur Menüleiste hinzufügen"
+            inactiveMonitor = "Die Systemüberwachung ist deaktiviert. Aktiviere sie und wähle dann die anzuzeigenden Messwerte."
+            deferredAppearance = "Die folgenden Darstellungsoptionen werden gespeichert und nach dem Hinzufügen eines Messwerts angewendet."
+            done = "Fertig"
+            actionCountFormat = "Gespeichert: %1$d von %2$d Aktionen ein"
+        case .fr:
+            showMenuBarMetric = "Afficher dans la barre des menus"
+            hideMenuBarMetric = "Masquer dans la barre des menus"
+            intro = "Activez les modules nécessaires. Le fonctionnement en arrière-plan et les raccourcis suivent les réglages enregistrés. Activer un module n’active pas tous ses comportements. Réglez chaque interrupteur dans les réglages du module."
+            add = "Activer"
+            remove = "Désactiver"
+            addAll = "Tout activer"
+            removeAll = "Tout désactiver"
+            footer = "Désactiver un module arrête son fonctionnement en arrière-plan et ses raccourcis. Ses données et réglages sont conservés. Les réglages de comportement et combinaisons de touches enregistrés restent consultables ici. Réactivez-le pour modifier tous ses réglages."
+            activeFormat = "%1$d modules sur %2$d activés"
+            inactiveTitle = "Désactivé"
+            inactiveNote = "Ce module est désactivé. Son fonctionnement en arrière-plan et ses raccourcis sont arrêtés. Ses données et réglages sont conservés. Le résumé ci-dessous présente en lecture seule les réglages de comportement et combinaisons de touches enregistrés. Activez-le pour modifier tous ses réglages."
+            savedBehaviors = "Comportement et actions enregistrés"
+            savedShortcuts = "Combinaisons de touches enregistrées"
+            on = "Activé (enregistré)"
+            off = "Désactivé (enregistré)"
+            noSeparateSwitch = "Aucun interrupteur de fonctionnement distinct"
+            noMetrics = "Aucune mesure affichée dans la barre des menus"
+            addMetrics = "Ajouter des mesures…"
+            metricSetup = "Ajouter des mesures à la barre des menus"
+            inactiveMonitor = "La surveillance du système est désactivée. Activez-la, puis choisissez les mesures à afficher."
+            deferredAppearance = "Les options d’apparence ci-dessous sont enregistrées et prendront effet après l’ajout d’une mesure."
+            done = "Terminé"
+            actionCountFormat = "Enregistré : %1$d actions sur %2$d activées"
+        case .es:
+            showMenuBarMetric = "Mostrar en la barra de menús"
+            hideMenuBarMetric = "Ocultar de la barra de menús"
+            intro = "Activa los módulos que necesites. El funcionamiento en segundo plano y los atajos siguen los ajustes guardados. Activar un módulo no activa todos sus comportamientos. Ajusta cada interruptor en los ajustes del módulo."
+            add = "Activar"
+            remove = "Desactivar"
+            addAll = "Activar todos"
+            removeAll = "Desactivar todos"
+            footer = "Desactivar un módulo detiene su funcionamiento en segundo plano y sus atajos. Sus datos y ajustes se conservan. Los ajustes de comportamiento y las combinaciones de teclas guardados siguen disponibles aquí. Vuelve a activarlo para editar todos sus ajustes."
+            activeFormat = "%1$d de %2$d módulos activados"
+            inactiveTitle = "Desactivado"
+            inactiveNote = "Este módulo está desactivado. Su funcionamiento en segundo plano y sus atajos están detenidos, y sus datos y ajustes se conservan. Abajo se muestra un resumen de solo lectura de los ajustes de comportamiento y las combinaciones de teclas guardados. Actívalo para editar todos sus ajustes."
+            savedBehaviors = "Comportamiento y acciones guardados"
+            savedShortcuts = "Combinaciones de teclas guardadas"
+            on = "Activado (guardado)"
+            off = "Desactivado (guardado)"
+            noSeparateSwitch = "Sin interruptor de funcionamiento independiente"
+            noMetrics = "No se muestran métricas en la barra de menús"
+            addMetrics = "Añadir métricas…"
+            metricSetup = "Añadir métricas a la barra de menús"
+            inactiveMonitor = "La monitorización del sistema está desactivada. Actívala y elige las métricas que quieres mostrar."
+            deferredAppearance = "Las opciones de apariencia siguientes se guardan y se aplicarán cuando añadas una métrica."
+            done = "Listo"
+            actionCountFormat = "Guardado: %1$d de %2$d acciones activadas"
+        case .ja:
+            showMenuBarMetric = "メニューバーに表示"
+            hideMenuBarMetric = "メニューバーから非表示"
+            intro = "必要なモジュールを有効にしてください。バックグラウンド動作とショートカットは保存済みの設定に従います。モジュールを有効にしても、すべての動作がオンになるわけではありません。各動作のスイッチはモジュールの設定で個別に調整できます。"
+            add = "有効にする"
+            remove = "無効にする"
+            addAll = "すべて有効にする"
+            removeAll = "すべて無効にする"
+            footer = "モジュールを無効にするとバックグラウンド動作とショートカットが停止し、データと設定は保持されます。保存済みの動作設定とキーの組み合わせはここで確認できます。すべての設定を編集するには再度有効にしてください。"
+            activeFormat = "%2$d 件中 %1$d 件のモジュールが有効"
+            inactiveTitle = "無効"
+            inactiveNote = "このモジュールは無効です。バックグラウンド動作とショートカットは停止し、データと設定は保持されています。以下は保存済みの動作設定とキーの組み合わせの読み取り専用の概要です。すべての設定を編集するには有効にしてください。"
+            savedBehaviors = "保存済みの動作とアクション"
+            savedShortcuts = "保存済みのキーの組み合わせ"
+            on = "オン（保存済み）"
+            off = "オフ（保存済み）"
+            noSeparateSwitch = "個別の動作スイッチなし"
+            noMetrics = "メニューバーに指標が表示されていません"
+            addMetrics = "指標を追加…"
+            metricSetup = "メニューバーに指標を追加"
+            inactiveMonitor = "システム監視は無効です。有効にしてから、表示する指標を選んでください。"
+            deferredAppearance = "以下の表示設定は保存され、指標を追加すると適用されます。"
+            done = "完了"
+            actionCountFormat = "保存済み：%2$d 件中 %1$d 件のアクションがオン"
+        default:
+            break
+        }
+    }
 }

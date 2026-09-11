@@ -7,8 +7,7 @@ import SwiftUI
 /// abbreviations that expand, and a held key that becomes a modifier layer.
 struct KeyboardSettings: View {
     var body: some View {
-        Form {
-            FeatureSwitchSection(unit: .keyboard)
+        SettingsForm {
             if AppFeature.keyboardDebounce.isAvailable {
                 KeyboardDebounceSections()
             }

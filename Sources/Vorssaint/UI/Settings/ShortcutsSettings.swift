@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Vorssaint
 
 import SwiftUI
+import Combine
 
 /// The central editor for every global shortcut belonging to an installed
 /// feature. It writes the same preferences as each feature page, so there is
@@ -11,8 +12,11 @@ struct ShortcutsSettings: View {
     @ObservedObject private var features = FeatureRuntime.shared
     @ObservedObject private var superKey = SuperKeyService.shared
     @AppStorage(DefaultsKey.keyboardBrightnessShortcutsEnabled) private var keyboardBrightnessShortcutsEnabled = false
+    @AppStorage(BrightnessShortcutPreferenceKey.enabled) private var displayBrightnessShortcutsEnabled = false
     @State private var expandedFeatures: Set<AppFeature> = [.screenshot]
     @State private var showsAppShortcuts = false
+    @State private var historyRevision = 0
+    @State private var failedRoles: Set<GlobalShortcutRole> = []
 
     private var text: ShortcutSettingsStrings { FeatureStrings.shortcuts(l10n.language) }
     private var hub: FeatureHubStrings { FeatureStrings.hub(l10n.language) }
@@ -33,16 +37,30 @@ struct ShortcutsSettings: View {
         }
     }
 
+    private var historyChanges: AnyPublisher<Void, Never> {
+        guard AppFeature.clipboardHistory.isAvailable else {
+            return Empty().eraseToAnyPublisher()
+        }
+        return ClipboardHistoryService.shared.objectWillChange.eraseToAnyPublisher()
+    }
+
+    private var registrationChanges: AnyPublisher<(GlobalShortcutRole, Bool), Never> {
+        Publishers.MergeMany(availableRoles.map { role in
+            role.registrationFailurePublisher.map { (role, $0) }.eraseToAnyPublisher()
+        }).eraseToAnyPublisher()
+    }
+
     var body: some View {
-        Form {
-            Section {
+        let _ = historyRevision
+        SettingsForm {
+            SettingsSection {
                 Text(l10n.s.shortcutsPageCaption)
-                    .font(.caption)
+                    .font(SettingsTypography.caption)
                     .foregroundStyle(.secondary)
             }
 
             ForEach(visibleGroups, id: \.self) { group in
-                Section(group.title(hub)) {
+                SettingsSection(group.title(hub)) {
                     ForEach(featuresWithShortcuts(in: group), id: \.self) { feature in
                         if feature == .screenshot {
                             captureGroupRows
@@ -54,7 +72,7 @@ struct ShortcutsSettings: View {
             }
 
             if AppFeature.commandBar.isAvailable {
-                Section {
+                SettingsSection {
                     Button {
                         showsAppShortcuts = true
                     } label: {
@@ -62,12 +80,18 @@ struct ShortcutsSettings: View {
                               systemImage: "app.badge")
                     }
                     Text(FeatureStrings.commandBar(l10n.language).appCenterCaption)
-                        .font(.caption)
+                        .font(SettingsTypography.caption)
                         .foregroundStyle(.secondary)
                 }
             }
         }
         .formStyle(.grouped)
+        .onReceive(historyChanges) { historyRevision &+= 1 }
+        .onReceive(registrationChanges) { role, failed in
+            if failed != failedRoles.contains(role) {
+                if failed { failedRoles.insert(role) } else { failedRoles.remove(role) }
+            }
+        }
         .sheet(isPresented: $showsAppShortcuts) {
             CommandBarAppShortcutsView()
         }
@@ -115,8 +139,13 @@ struct ShortcutsSettings: View {
                 isExpanded: expansionBinding(for: feature))
             if expandedFeatures.contains(feature) {
                 if feature == .brightness {
-                    KeyboardBrightnessShortcutToggle(isEnabled: $keyboardBrightnessShortcutsEnabled)
-                        .disclosureIndent()
+                    if roles.allSatisfy(\.isKeyboardBrightness) {
+                        KeyboardBrightnessShortcutToggle(isEnabled: $keyboardBrightnessShortcutsEnabled)
+                            .disclosureIndent()
+                    } else {
+                        DisplayBrightnessShortcutToggle(isEnabled: $displayBrightnessShortcutsEnabled)
+                            .disclosureIndent()
+                    }
                 }
                 ForEach(roles) { role in
                     roleRow(role, showsFeatureContext: false)
@@ -151,11 +180,11 @@ struct ShortcutsSettings: View {
                 symbolName: symbolName,
                 contextLabel: nil,
                 statusText: isActive ? text.active : text.inactive,
-                statusIsActive: isActive
+                statusIsActive: false
             )
             Spacer()
             Text("\(count)")
-                .font(.caption.monospacedDigit())
+                .font(SettingsTypography.caption.monospacedDigit())
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 7)
                 .padding(.vertical, 2)
@@ -167,17 +196,24 @@ struct ShortcutsSettings: View {
                          showsFeatureContext: Bool = true) -> some View {
         let title = role.title(l10n.s)
         let featureTitle = role.feature.name(l10n.s, language: l10n.language)
-        let active = role.requiredEnableKeys.allSatisfy {
-            UserDefaults.standard.bool(forKey: $0)
-        }
+        let active = role.isActive(isOn: { UserDefaults.standard.bool(forKey: $0) },
+                                   isAvailable: { $0.isAvailable },
+                                   hasClipboardHistory: { !ClipboardHistoryService.shared.entries.isEmpty })
+        let failed = active && failedRoles.contains(role)
+        let needsMixer = active && role == .soundOutputSwitcher && !AppFeature.mixer.isAvailable
+        let status = failed
+            ? ShortcutSettingsStrings.registrationIssue(l10n.language,
+                multiple: role == .radialMenu || role.isKeyboardBrightness || role == .displayBrightnessDecrease || role == .displayBrightnessIncrease)
+            : needsMixer ? UXEntryStrings(l10n.language).outputDevicesNeedMixer
+            : active ? text.active : text.inactive
         return ShortcutPreferenceRow(
             role: role,
-            isEnabled: !role.isKeyboardBrightness || keyboardBrightnessShortcutsEnabled,
+            isEnabled: true,
             label: title,
             symbolName: role.isKeyboardBrightness ? "keyboard" : role.feature.symbolName,
             contextLabel: showsFeatureContext && title != featureTitle ? featureTitle : nil,
-            statusText: active ? text.active : text.inactive,
-            statusIsActive: active,
+            statusText: status,
+            statusIsActive: false,
             showsSuperKeyAlternative: superKey.isRunning,
             superKeyModifiers: superKey.modifiers,
             includeInactiveConflicts: true,
@@ -202,7 +238,9 @@ struct ShortcutsSettings: View {
     private func featureHasActiveShortcut(_ feature: AppFeature,
                                           roles: [GlobalShortcutRole]) -> Bool {
         return roles.contains { role in
-            role.requiredEnableKeys.allSatisfy { UserDefaults.standard.bool(forKey: $0) }
+            role.isActive(isOn: { UserDefaults.standard.bool(forKey: $0) },
+                          isAvailable: { $0.isAvailable },
+                          hasClipboardHistory: { !ClipboardHistoryService.shared.entries.isEmpty })
         }
     }
 }
@@ -220,9 +258,52 @@ private struct KeyboardBrightnessShortcutToggle: View {
             }
         if isEnabled, brightness.keyboardBrightnessShortcutRegistrationFailed {
             Text(l10n.s.shortcutUnavailable)
-                .font(.caption)
+                .font(SettingsTypography.caption)
                 .foregroundStyle(.orange)
         }
     }
 }
 
+private struct DisplayBrightnessShortcutToggle: View {
+    @ObservedObject private var l10n = L10n.shared
+    @ObservedObject private var brightness = BrightnessService.shared
+    @Binding var isEnabled: Bool
+
+    var body: some View {
+        Toggle(BrightnessShortcutStrings.localized(l10n.language).toggle, isOn: $isEnabled)
+            .onChange(of: isEnabled) { _, _ in brightness.syncWithPreferences() }
+        if isEnabled, brightness.displayBrightnessShortcutRegistrationFailed {
+            Text(l10n.s.shortcutUnavailable)
+                .font(SettingsTypography.caption)
+                .foregroundStyle(.orange)
+        }
+    }
+}
+
+private extension GlobalShortcutRole {
+    // Published values deliver registration outcomes after the service changes them.
+    var registrationFailurePublisher: AnyPublisher<Bool, Never> {
+        switch self {
+        case .keepAwake: return HotkeyManager.shared.$registrationFailed.eraseToAnyPublisher()
+        case .shelf: return ShelfService.shared.$hotkeyRegistrationFailed.eraseToAnyPublisher()
+        case .clipboard: return ClipboardHistoryService.shared.$shortcutRegistrationFailed.eraseToAnyPublisher()
+        case .soundOutputSwitcher: return SoundOutputSwitcher.shared.$registrationFailed.eraseToAnyPublisher()
+        case .pastePlain: return PastePlainService.shared.$shortcutRegistrationFailed.eraseToAnyPublisher()
+        case .micMute: return MicMuteService.shared.$shortcutRegistrationFailed.eraseToAnyPublisher()
+        case .screenshotFullScreen: return ScreenshotService.shared.$fullScreenShortcutRegistrationFailed.eraseToAnyPublisher()
+        case .screenshotLastCapture: return ScreenshotService.shared.$lastCaptureShortcutRegistrationFailed.eraseToAnyPublisher()
+        case .screenshotClipboard: return ScreenshotService.shared.$clipboardShortcutRegistrationFailed.eraseToAnyPublisher()
+        case .recentCaptures: return RecentCaptureService.shared.$shortcutRegistrationFailed.eraseToAnyPublisher()
+        case .radialMenu: return RadialMenuService.shared.$registrationFailed.eraseToAnyPublisher()
+        case .scratchpad: return ScratchpadService.shared.$shortcutRegistrationFailed.eraseToAnyPublisher()
+        case .snippetLibrary: return SnippetLibraryService.shared.$shortcutRegistrationFailed.eraseToAnyPublisher()
+        case .commandBar: return CommandBarService.shared.$shortcutRegistrationFailed.eraseToAnyPublisher()
+        case .keyboardBrightnessDecrease, .keyboardBrightnessIncrease:
+            return BrightnessService.shared.$keyboardBrightnessShortcutRegistrationFailed.eraseToAnyPublisher()
+        case .displayBrightnessDecrease, .displayBrightnessIncrease:
+            return BrightnessService.shared.$displayBrightnessShortcutRegistrationFailed.eraseToAnyPublisher()
+        case .switcher, .switcherWindow, .finderRename, .colorPicker, .screenOCR, .screenshot, .screenRecorder:
+            return Just(false).eraseToAnyPublisher()
+        }
+    }
+}

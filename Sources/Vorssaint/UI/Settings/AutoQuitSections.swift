@@ -3,8 +3,7 @@
 
 import SwiftUI
 
-/// The auto-quit half of the window behaviour page. Its switch is the page's
-/// own switch row, so these are only the sections underneath it.
+/// Auto-quit configuration remains editable before its watcher is enabled.
 struct AutoQuitSections: View {
     @ObservedObject private var l10n = L10n.shared
     @ObservedObject private var permissions = Permissions.shared
@@ -14,52 +13,49 @@ struct AutoQuitSections: View {
 
     var body: some View {
         Group {
-            Section(l10n.s.autoQuitHowTitle) {
-                Text(l10n.s.autoQuitEnableCaption)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            SettingsSection {
+                VStack(alignment: .leading, spacing: 4) {
+                    FeatureSwitchRow(feature: .autoQuit)
+                    SettingsCaptionText(l10n.s.autoQuitEnableCaption)
+                }
+                if enabled, !permissions.accessibility {
+                    PermissionRow(kind: .accessibility)
+                }
                 if enabled, service.isRunning {
                     Label(l10n.s.autoQuitActiveNow, systemImage: "checkmark.circle.fill")
-                        .font(.caption)
+                        .font(SettingsTypography.caption)
                         .foregroundStyle(.green)
                 }
                 bullet("rectangle.badge.xmark", l10n.s.autoQuitStep1)
                 bullet("bolt.fill", l10n.s.autoQuitStep2)
                 Text(l10n.s.autoQuitPredictableNote)
-                    .font(.caption)
+                    .font(SettingsTypography.caption)
                     .foregroundStyle(.secondary)
-            }
-
-            // The exception list has one reader, the window check, and that only
-            // runs while the feature does. With the switch off every edit here
-            // is a no-op, so the list follows it.
-            Section(l10n.s.autoQuitExceptionsTitle) {
+                Divider()
+                Text(l10n.s.autoQuitExceptionsTitle).font(SettingsTypography.sectionTitle)
+                    .accessibilityAddTraits(.isHeader)
                 if sortedExceptions.isEmpty {
                     Text(l10n.s.autoQuitExceptionsEmpty)
-                        .font(.callout)
+                        .font(SettingsTypography.body)
                         .foregroundStyle(.secondary)
                 } else {
                     ForEach(sortedExceptions, id: \.self) { bundleID in
-                        HStack(spacing: 9) {
-                            Image(nsImage: InstalledApps.icon(for: bundleID))
-                                .resizable().frame(width: 20, height: 20)
-                            Text(InstalledApps.name(for: bundleID))
-                            Spacer()
+                        AppBundleRow(bundleID: bundleID) {
                             if service.isMandatoryException(bundleID) {
                                 Image(systemName: "lock.fill")
+                                    .font(SettingsTypography.icon)
                                     .foregroundStyle(.tertiary)
+                                    .frame(width: 24, height: 24)
+                                    .help(UXEntryStrings(l10n.language).mandatoryException)
+                                    .accessibilityLabel(UXEntryStrings(l10n.language).mandatoryException)
                             } else {
-                                Button {
+                                AppBundleRemoveButton(label: String(format: UXEntryStrings(l10n.language).removeFromListFormat,
+                                                                         InstalledApps.name(for: bundleID))) {
                                     service.removeException(bundleID)
-                                } label: {
-                                    Image(systemName: "minus.circle.fill")
-                                        .foregroundStyle(.secondary)
                                 }
-                                .buttonStyle(.plain)
                             }
                         }
                     }
-                    .disabled(!enabled)
                 }
 
                 Button {
@@ -67,17 +63,10 @@ struct AutoQuitSections: View {
                 } label: {
                     Label(l10n.s.autoQuitAddApp, systemImage: "plus")
                 }
-                .disabled(!enabled)
 
                 Text(l10n.s.autoQuitExceptionsCaption)
-                    .font(.caption)
+                    .font(SettingsTypography.caption)
                     .foregroundStyle(.secondary)
-            }
-
-            if enabled, !permissions.accessibility {
-                Section(l10n.s.permissionRequired) {
-                    PermissionRow(kind: .accessibility)
-                }
             }
         }
         .sheet(isPresented: $showingAppPicker) {
@@ -86,7 +75,13 @@ struct AutoQuitSections: View {
     }
 
     private var sortedExceptions: [String] {
-        service.exceptions.sorted { InstalledApps.name(for: $0).localizedCaseInsensitiveCompare(InstalledApps.name(for: $1)) == .orderedAscending }
+        AutoQuitSupport.visibleExceptions(service.exceptions) {
+            InstalledApps.url(for: $0) != nil
+        }
+        .sorted {
+            InstalledApps.name(for: $0).localizedCaseInsensitiveCompare(InstalledApps.name(for: $1))
+                == .orderedAscending
+        }
     }
 
     private var appPickerSheet: some View {
@@ -109,7 +104,7 @@ struct AutoQuitSections: View {
                 .foregroundStyle(.tint)
                 .frame(width: 18)
             Text(text)
-                .font(.callout)
+                .font(SettingsTypography.body)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }

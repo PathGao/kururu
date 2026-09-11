@@ -29,10 +29,10 @@ struct BrightnessDisplay: Identifiable, Equatable {
     var isActive: Bool
     /// 0...1 for the UI slider.
     var brightness: Double
-    /// False when the monitor never answered a brightness read: the slider
-    /// still works (writes go through), it just starts from the last value
-    /// applied here instead of the monitor's own.
-    let readable: Bool
+    /// Whether the latest refresh read the monitor successfully.
+    var readable: Bool
+    /// Unknown slider positions are input affordances, never measured percentages.
+    var hasKnownBrightness = true
 }
 
 /// Brightness sliders for every display, built-in and external. The built-in
@@ -71,9 +71,11 @@ final class BrightnessService: ObservableObject {
     @Published private(set) var drawableDisplays = Set<CGDirectDisplayID>()
     @Published private(set) var pendingDisplayIDs = Set<CGDirectDisplayID>()
     @Published private(set) var displayControlFailure: DisplayControlFailure?
+    @Published private(set) var brightnessWriteFailures: [CGDirectDisplayID: String] = [:]
     @Published private(set) var brightnessOSDSupported = false
     @Published private(set) var keyboardLightEnabled: Bool?
     @Published private(set) var keyboardBrightnessShortcutRegistrationFailed = false
+    @Published private(set) var displayBrightnessShortcutRegistrationFailed = false
 
     enum DisplayControlFailure: Equatable {
         case unavailable
@@ -86,7 +88,6 @@ final class BrightnessService: ObservableObject {
         var service: CFTypeRef?
         var maximum: UInt16
         var ddcReadable = false
-        var ddcPathKey: String?
     }
 
     private var screenObserver: NSObjectProtocol?
@@ -135,6 +136,7 @@ final class BrightnessService: ObservableObject {
     }
     private var pendingLevels: [CGDirectDisplayID: PendingWrite] = [:]
     private var writeSequence: UInt64 = 0
+    private var latestBrightnessWrites: [CGDirectDisplayID: UInt64] = [:]
     /// Keeps fast system-key repeats based on the newest requested value while
     /// DisplayServices is still applying the previous asynchronous write.
     private var systemWritesInFlight = Set<CGDirectDisplayID>()
@@ -142,7 +144,11 @@ final class BrightnessService: ObservableObject {
     /// waiting to be added to the step that read commits. An entry existing at
     /// all means a read is in flight for that display. Main thread only, like
     /// the key presses that fill it (issue #370).
-    private var ddcPendingSteps: [CGDirectDisplayID: Double] = [:]
+    private struct DDCReadSteps {
+        let token: UUID
+        var delta: Double
+    }
+    private var ddcPendingSteps: [CGDirectDisplayID: DDCReadSteps] = [:]
     private var drainScheduled = false
     /// Session memory for write-only monitors, so their slider does not jump
     /// back to a placeholder between panel openings. Each value remembers
@@ -217,6 +223,8 @@ final class BrightnessService: ObservableObject {
     private var keyboardLightBridge: KeyboardLightBridge? { Self.sharedKeyboardLightBridge }
     private let keyboardBrightnessDecreaseHotkey = QuickToolHotkey(id: 57)
     private let keyboardBrightnessIncreaseHotkey = QuickToolHotkey(id: 58)
+    private let displayBrightnessDecreaseHotkey = QuickToolHotkey(id: 59)
+    private let displayBrightnessIncreaseHotkey = QuickToolHotkey(id: 60)
     /// Stale rebuilds (an unplug mid-scan) must not overwrite fresh state.
     private var rebuildGeneration = 0
     /// The topology a queued or running rebuild already covers. Opening the
@@ -230,6 +238,12 @@ final class BrightnessService: ObservableObject {
         }
         keyboardBrightnessIncreaseHotkey.onPress = { [weak self] in
             self?.stepKeyboardLight(direction: 1)
+        }
+        displayBrightnessDecreaseHotkey.onPress = { [weak self] in
+            self?.stepDisplayUnderPointer(direction: -1)
+        }
+        displayBrightnessIncreaseHotkey.onPress = { [weak self] in
+            self?.stepDisplayUnderPointer(direction: 1)
         }
     }
 
@@ -297,6 +311,7 @@ final class BrightnessService: ObservableObject {
         if wanted { start() } else { stop() }
         syncKeyTap()
         syncKeyboardBrightnessHotkeys()
+        syncDisplayBrightnessHotkeys()
     }
 
     private func syncKeyboardBrightnessHotkeys() {
@@ -313,6 +328,50 @@ final class BrightnessService: ObservableObject {
             enabled: enabled && !increaseConflicts, shortcut: increaseShortcut)
         keyboardBrightnessShortcutRegistrationFailed = decreaseConflicts || increaseConflicts
             || !(decreaseRegistered && increaseRegistered)
+    }
+
+    private func syncDisplayBrightnessHotkeys() {
+        let enabled = AppFeature.brightness.isAvailable
+            && UserDefaults.standard.bool(forKey: DefaultsKey.brightnessControlEnabled)
+            && UserDefaults.standard.bool(forKey: BrightnessShortcutPreferenceKey.enabled)
+        let decrease = GlobalShortcutRole.displayBrightnessDecrease.configuredShortcut()
+        let increase = GlobalShortcutRole.displayBrightnessIncrease.configuredShortcut()
+        let decreaseConflict = enabled && decrease?.conflictsWithSystemShortcut == true
+        let increaseConflict = enabled && increase?.conflictsWithSystemShortcut == true
+        let decreaseRegistered = displayBrightnessDecreaseHotkey.sync(
+            enabled: enabled && decrease != nil && !decreaseConflict,
+            shortcut: decrease ?? .displayBrightnessDecreaseDefault)
+        let increaseRegistered = displayBrightnessIncreaseHotkey.sync(
+            enabled: enabled && increase != nil && !increaseConflict,
+            shortcut: increase ?? .displayBrightnessIncreaseDefault)
+        displayBrightnessShortcutRegistrationFailed = decreaseConflict || increaseConflict
+            || (enabled && decrease != nil && !decreaseRegistered)
+            || (enabled && increase != nil && !increaseRegistered)
+    }
+
+    func stepDisplayUnderPointer(direction: Int) {
+        guard Thread.isMainThread else {
+            DispatchQueue.main.async { [weak self] in
+                self?.stepDisplayUnderPointer(direction: direction)
+            }
+            return
+        }
+        guard running else { return }
+        let pointer = NSEvent.mouseLocation
+        let pointerID = NSScreen.screens.first(where: { NSMouseInRect(pointer, $0.frame, false) })
+            .flatMap { ($0.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")]
+                as? NSNumber)?.uint32Value }
+        guard let request = BrightnessSupport.commandBrightnessRequest(
+            direction: direction,
+            pointerDisplayID: pointerID,
+            displays: displays.map { ($0.id, $0.isBuiltIn) })
+        else { return }
+        stateLock.lock()
+        let route = routes[request.displayID]
+        stateLock.unlock()
+        guard let route else { return }
+        step(request.displayID, method: route.method, delta: request.delta,
+             showOSD: UserDefaults.standard.bool(forKey: DefaultsKey.brightnessOSDEnabled))
     }
 
     private func start() {
@@ -341,16 +400,20 @@ final class BrightnessService: ObservableObject {
         rebuildGeneration += 1
         rebuildingTopology = nil
         routes = [:]
+        // An optimistic slider request is not a successful hardware setting.
+        for id in latestBrightnessWrites.keys { lastApplied.removeValue(forKey: id) }
         pendingLevels = [:]
         writeSequence = 0
+        latestBrightnessWrites = [:]
         systemWritesInFlight = []
-        lastApplied = [:]
+        levelKnownAt = [:]
         knownTopology = []
         knownActiveTopology = []
         stateLock.unlock()
         ddcPendingSteps = [:]
         pendingDisplayIDs = []
         displayControlFailure = nil
+        brightnessWriteFailures = [:]
         brightnessOSDSupported = false
         BrightnessOSD.teardown()
         if !displays.isEmpty { displays = [] }
@@ -420,12 +483,14 @@ final class BrightnessService: ObservableObject {
     func setBrightness(_ value: Double, for id: CGDirectDisplayID,
                        showOSD: Bool = false) {
         let clamped = min(max(value, 0), 1)
-        if let index = displays.firstIndex(where: { $0.id == id }),
-           displays[index].brightness != clamped {
+        brightnessWriteFailures.removeValue(forKey: id)
+        if let index = displays.firstIndex(where: { $0.id == id }) {
             displays[index].brightness = clamped
+            displays[index].hasKnownBrightness = true
         }
         stateLock.lock()
         writeSequence &+= 1
+        latestBrightnessWrites[id] = writeSequence
         pendingLevels[id] = PendingWrite(value: clamped,
                                          showOSD: showOSD,
                                          sequence: writeSequence)
@@ -912,9 +977,8 @@ final class BrightnessService: ObservableObject {
         guard let route else { return Unmanaged.passUnretained(event) }
         if route.method == .system {
             // Same rule the media keys follow, so both kinds of keyboard
-            // behave alike: the built-in panel keeps the system's own handling
-            // and its animation unless the app's own overlay replaces it, and
-            // every other system-routed display has to be stepped here,
+            // behave alike: the built-in panel keeps native handling and
+            // animation; every other system-routed display is stepped here,
             // because the system only ever moves its native target.
             let overlayReplacesNative = keyThreadLock.withLock { overlayReplacesNativeOSD }
             guard BrightnessSupport.stepsSystemRoutedDisplay(
@@ -955,7 +1019,8 @@ final class BrightnessService: ObservableObject {
                       method: BrightnessDisplay.Method,
                       delta: Double,
                       showOSD: Bool) {
-        let cached = displays.first(where: { $0.id == displayID })?.brightness
+        let snapshot = displays.first(where: { $0.id == displayID })
+        let cached = snapshot?.hasKnownBrightness == true ? snapshot?.brightness : nil
         if method == .system {
             guard let current = currentSystemBrightness(for: displayID, fallback: cached) else { return }
             commitStep(from: current, delta: delta, to: displayID, method: method, showOSD: showOSD)
@@ -964,12 +1029,14 @@ final class BrightnessService: ObservableObject {
         stateLock.lock()
         let known = levelKnownAt[displayID]
         let route = routes[displayID]
+        let readGeneration = rebuildGeneration
+        let readWriteSequence = writeSequence
         stateLock.unlock()
         let fresh = BrightnessSupport.trustsRememberedLevel(lastKnownAt: known, now: Date(),
                                                             window: Self.levelTrustWindow)
         // Gamma dimming is this app's own doing, so the remembered value is
         // the truth by construction and there is nothing to ask.
-        guard method == .ddc, route?.ddcReadable == true, !fresh,
+        guard method == .ddc, !fresh,
               let route, let service = route.service else {
             guard let current = cached else { return }
             commitStep(from: current, delta: delta, to: displayID, method: method, showOSD: showOSD)
@@ -980,30 +1047,24 @@ final class BrightnessService: ObservableObject {
         // begin from the same value the first press has not written yet, and
         // two taps would move the monitor a single step.
         if ddcPendingSteps[displayID] != nil {
-            ddcPendingSteps[displayID, default: 0] += delta
+            ddcPendingSteps[displayID]?.delta += delta
             return
         }
-        ddcPendingSteps[displayID] = 0
+        let readToken = UUID()
+        ddcPendingSteps[displayID] = DDCReadSteps(token: readToken, delta: 0)
         // Reading a monitor takes long enough to be felt, so it happens off
         // the main thread and the step follows the answer.
         workQueue.async { [weak self] in
             guard let self else { return }
             let probe = self.ddcProbeLuminance(for: displayID, service: service)
-            if case .replied = probe {
-                self.forgetWriteOnlyDDCPath(route.ddcPathKey)
-            } else {
-                if case .writeOnly = probe {
-                    self.rememberWriteOnlyDDCPath(route.ddcPathKey)
-                }
-                self.stateLock.lock()
-                if self.routes[displayID]?.ddcPathKey == route.ddcPathKey {
-                    self.routes[displayID]?.ddcReadable = false
-                }
-                self.stateLock.unlock()
-                Self.log.log("ddc reads stopped answering for display \(displayID); future steps will write only")
-            }
             DispatchQueue.main.async {
-                let queued = self.ddcPendingSteps.removeValue(forKey: displayID) ?? 0
+                guard self.ddcPendingSteps[displayID]?.token == readToken else { return }
+                let queued = self.ddcPendingSteps.removeValue(forKey: displayID)?.delta ?? 0
+                self.stateLock.lock()
+                let currentRequest = self.running && self.rebuildGeneration == readGeneration
+                    && self.writeSequence == readWriteSequence
+                self.stateLock.unlock()
+                guard currentRequest else { return }
                 var current = cached
                 if case let .replied(value, maximum) = probe {
                     let level = BrightnessSupport.normalized(
@@ -1012,7 +1073,11 @@ final class BrightnessService: ObservableObject {
                     current = level
                     if let index = self.displays.firstIndex(where: { $0.id == displayID }) {
                         self.displays[index].brightness = level
+                        self.displays[index].hasKnownBrightness = true
+                        self.displays[index].readable = true
                     }
+                } else if let index = self.displays.firstIndex(where: { $0.id == displayID }) {
+                    self.displays[index].readable = false
                 }
                 guard let current else { return }
                 self.commitStep(from: current, delta: delta + queued, to: displayID,
@@ -1097,8 +1162,8 @@ final class BrightnessService: ObservableObject {
                 displayIsBuiltIn: isBuiltIn,
                 overlayReplacesNative: wantsBrightnessOSD && brightnessOSDSupported
             ), BrightnessBridge.setBrightness != nil else {
-                // The built-in panel keeps the system's native brightness
-                // handling and animation unless the overlay replaces it.
+                // Pass both halves through so the built-in panel keeps its
+                // native brightness handling and animation.
                 return Unmanaged.passUnretained(event)
             }
             if press.isKeyDown, let current = currentSystemBrightness(
@@ -1332,7 +1397,7 @@ final class BrightnessService: ObservableObject {
             // Placeholder; the DDC pass below fills brightness and route.
             built.append(BrightnessDisplay(id: id, name: name, isBuiltIn: false,
                                            method: .ddc, isActive: true,
-                                           brightness: 0.5, readable: false))
+                                           brightness: 0.5, readable: false, hasKnownBrightness: false))
         }
 
         let drawableIDs = BrightnessSupport.drawableDisplayIDs(
@@ -1371,7 +1436,8 @@ final class BrightnessService: ObservableObject {
                                          isBuiltIn: display.isBuiltIn,
                                          method: previous.method, isActive: true,
                                          brightness: previous.brightness,
-                                         readable: previous.readable)
+                                         readable: previous.readable,
+                                         hasKnownBrightness: previous.hasKnownBrightness)
             }
             DispatchQueue.main.async { [weak self] in
                 guard let self, self.running, generation == self.rebuildGeneration else { return }
@@ -1407,26 +1473,13 @@ final class BrightnessService: ObservableObject {
                     continue
                 }
                 let id = built[candidate.index].id
-                let ioDisplayLocation = candidate.identity.ioDisplayLocation.flatMap {
-                    $0.isEmpty ? nil : $0
-                } ?? matched.identity.ioDisplayLocation
-                let pathKey = BrightnessSupport.ddcPathKey(
-                    displayFingerprint: Self.displayFingerprint(id),
-                    ioDisplayLocation: ioDisplayLocation)
-                let rememberedWriteOnly = !BrightnessSupport.shouldProbeDDC(
-                    pathKey: pathKey, writeOnlyPaths: writeOnlyDDCPaths())
-                let probe: DDCProbe
-                if rememberedWriteOnly {
-                    probe = .writeOnly
-                    Self.log.log("ddc cached display \(id): writeOnly")
-                } else {
-                    probe = ddcProbeLuminance(for: id, service: matched.service,
+                // A timeout describes this read, not a permanent monitor capability.
+                // Old persisted write-only classifications are deliberately ignored.
+                let probe = ddcProbeLuminance(for: id, service: matched.service,
                                               classifyingChannel: true)
-                    Self.log.log("ddc probe display \(id): \(String(describing: probe), privacy: .public)")
-                }
+                Self.log.log("ddc probe display \(id): \(String(describing: probe), privacy: .public)")
                 switch probe {
                 case .replied(let current, let maximum):
-                    forgetWriteOnlyDDCPath(pathKey)
                     let ceiling = BrightnessSupport.sanitizedMaximum(maximum)
                     built[candidate.index] = BrightnessDisplay(
                         id: id, name: built[candidate.index].name, isBuiltIn: false,
@@ -1435,27 +1488,25 @@ final class BrightnessService: ObservableObject {
                                                                  maximum: ceiling),
                         readable: true)
                     newRoutes[id] = Route(method: .ddc, service: matched.service,
-                                          maximum: ceiling, ddcReadable: true,
-                                          ddcPathKey: pathKey)
+                                          maximum: ceiling, ddcReadable: true)
                     stateLock.lock()
                     levelKnownAt[id] = Date()
                     stateLock.unlock()
                     softwareIndices.remove(candidate.index)
                 case .writeOnly:
-                    rememberWriteOnlyDDCPath(pathKey)
                     // Reads fail on some monitors whose writes still work:
                     // keep the slider, seeded from this session's last value.
                     stateLock.lock()
-                    let seed = rememberedLevel(for: id) ?? 0.5
+                    let seed = rememberedLevel(for: id)
                     stateLock.unlock()
                     built[candidate.index] = BrightnessDisplay(
                         id: id, name: built[candidate.index].name, isBuiltIn: false,
-                        method: .ddc, isActive: true, brightness: seed, readable: false)
+                        method: .ddc, isActive: true, brightness: seed ?? 0.5, readable: false,
+                        hasKnownBrightness: seed != nil)
                     newRoutes[id] = Route(method: .ddc, service: matched.service,
-                                          maximum: 100, ddcPathKey: pathKey)
+                                          maximum: 100)
                     softwareIndices.remove(candidate.index)
                 case .dead:
-                    forgetWriteOnlyDDCPath(pathKey)
                     // The channel rejects every write (typically an HDMI
                     // conversion in the path): dim in the video pipeline
                     // instead, which works on any connection.
@@ -1519,6 +1570,7 @@ final class BrightnessService: ObservableObject {
             }
             for index in resolved.indices {
                 let id = resolved[index].id
+                if pendingLevels[id] != nil { resolved[index].hasKnownBrightness = true }
                 resolved[index].brightness = BrightnessSupport.brightnessAfterRebuild(
                     probed: resolved[index].brightness,
                     pending: pendingLevels[id]?.value)
@@ -1535,6 +1587,7 @@ final class BrightnessService: ObservableObject {
                 }
             }
             routes = newRoutes
+            latestBrightnessWrites = latestBrightnessWrites.filter { pendingLevels[$0.key] != nil }
             knownTopology = seenTopology
             knownActiveTopology = activeTopology
             rebuildingTopology = nil
@@ -1542,7 +1595,7 @@ final class BrightnessService: ObservableObject {
             for id in activeTopology {
                 managedDisabledDisplays.removeValue(forKey: id)
             }
-            for display in resolved where display.method != nil {
+            for display in resolved where display.method != nil && display.hasKnownBrightness {
                 lastApplied[display.id] = RememberedLevel(
                     value: display.brightness,
                     fingerprint: Self.displayFingerprint(display.id))
@@ -1554,8 +1607,14 @@ final class BrightnessService: ObservableObject {
             let route = display.method.map { String(describing: $0) } ?? "none"
             Self.log.log("display \(display.id) [\(Self.displayFingerprint(display.id), privacy: .public)] route \(route, privacy: .public) level \(display.brightness)")
         }
+        let resolvedFingerprints = Dictionary(uniqueKeysWithValues: resolved.map {
+            ($0.id, Self.displayFingerprint($0.id))
+        })
         DispatchQueue.main.async { [weak self] in
             guard let self, self.running, generation == self.rebuildGeneration else { return }
+            self.brightnessWriteFailures = self.brightnessWriteFailures.filter {
+                resolvedFingerprints[$0.key] == $0.value
+            }
             if self.displays != resolved { self.displays = resolved }
             if self.drawableDisplays != drawableIDs { self.drawableDisplays = drawableIDs }
             if self.brightnessOSDSupported != supportsBrightnessOSD {
@@ -1600,17 +1659,20 @@ final class BrightnessService: ObservableObject {
                 writeSucceeded = applySoftwareDim(id, value: value)
             }
             Self.log.log("wrote display \(id) route \(String(describing: route.method), privacy: .public) level \(value) ok \(writeSucceeded)")
-            if route.method == .ddc, !writeSucceeded, route.ddcReadable == false,
-               let pathKey = route.ddcPathKey {
-                forgetWriteOnlyDDCPath(pathKey)
-                DispatchQueue.main.async { [weak self] in
-                    self?.refresh(force: true)
-                }
-            }
             if route.method == .system {
                 stateLock.lock()
                 if pendingLevels[id] == nil { systemWritesInFlight.remove(id) }
                 stateLock.unlock()
+            }
+            let succeeded = writeSucceeded
+            DispatchQueue.main.async { [weak self] in
+                self?.finishBrightnessWrite(id: id, sequence: pending.sequence,
+                                            generation: writeGeneration, succeeded: succeeded)
+            }
+            if route.method == .ddc, !writeSucceeded, route.ddcReadable == false {
+                DispatchQueue.main.async { [weak self] in
+                    self?.refresh(force: true)
+                }
             }
             if writeSucceeded, let osdLevel {
                 DispatchQueue.main.async { [weak self] in
@@ -1627,6 +1689,35 @@ final class BrightnessService: ObservableObject {
                     BrightnessOSD.show(displayID: id,
                                        brightness: osdLevel)
                 }
+            }
+        }
+    }
+
+    /// A result belongs to one display's latest request, not another display's
+    /// newer request. Failed targets remain visible for retry but are not a
+    /// known hardware level for later key presses or reconnection recovery.
+    private func finishBrightnessWrite(id: CGDirectDisplayID, sequence: UInt64,
+                                       generation: Int, succeeded: Bool) {
+        guard running else { return }
+        stateLock.lock()
+        guard rebuildGeneration == generation, latestBrightnessWrites[id] == sequence else {
+            stateLock.unlock()
+            return
+        }
+        latestBrightnessWrites.removeValue(forKey: id)
+        let fingerprint = lastApplied[id]?.fingerprint ?? Self.displayFingerprint(id)
+        if !succeeded {
+            lastApplied.removeValue(forKey: id)
+            levelKnownAt.removeValue(forKey: id)
+        }
+        stateLock.unlock()
+        if succeeded {
+            brightnessWriteFailures.removeValue(forKey: id)
+        } else {
+            brightnessWriteFailures[id] = fingerprint
+            if let index = displays.firstIndex(where: { $0.id == id }) {
+                displays[index].readable = false
+                displays[index].hasKnownBrightness = false
             }
         }
     }
@@ -1726,34 +1817,6 @@ final class BrightnessService: ObservableObject {
         case replied(current: UInt16, maximum: UInt16)
         case writeOnly
         case dead
-    }
-
-    private func writeOnlyDDCPaths() -> Set<String> {
-        Set(UserDefaults.standard.stringArray(
-            forKey: DefaultsKey.brightnessDDCWriteOnlyPaths
-        ) ?? [])
-    }
-
-    private func rememberWriteOnlyDDCPath(_ path: String?) {
-        guard let path else { return }
-        let defaults = UserDefaults.standard
-        let stored = defaults.stringArray(forKey: DefaultsKey.brightnessDDCWriteOnlyPaths) ?? []
-        let updated = BrightnessSupport.updatedWriteOnlyDDCPaths(
-            stored, path: path, isWriteOnly: true)
-        if updated != stored {
-            defaults.set(updated, forKey: DefaultsKey.brightnessDDCWriteOnlyPaths)
-        }
-    }
-
-    private func forgetWriteOnlyDDCPath(_ path: String?) {
-        guard let path else { return }
-        let defaults = UserDefaults.standard
-        let stored = defaults.stringArray(forKey: DefaultsKey.brightnessDDCWriteOnlyPaths) ?? []
-        let updated = BrightnessSupport.updatedWriteOnlyDDCPaths(
-            stored, path: path, isWriteOnly: false)
-        if updated != stored {
-            defaults.set(updated, forKey: DefaultsKey.brightnessDDCWriteOnlyPaths)
-        }
     }
 
     /// Reads the monitor's luminance while also judging the channel itself:

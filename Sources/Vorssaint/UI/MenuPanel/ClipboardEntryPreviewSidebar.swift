@@ -12,7 +12,11 @@ struct ClipboardEntryPreviewSidebar: View {
     var entry: ClipboardHistoryEntry?
     @Binding var isEditing: Bool
     var onClose: () -> Void
+    var isEntryCurrent: (UUID) -> Bool
     @State private var draft = ""
+    @State private var editSaveFailed = false
+    @State private var isSaving = false
+    @State private var editingSession = UUID()
     @State private var editingEntryID: UUID?
     @FocusState private var editorFocused: Bool
 
@@ -23,8 +27,14 @@ struct ClipboardEntryPreviewSidebar: View {
             if let entry {
                 if editingEntryID == entry.id {
                     textEditor(entry)
+                    if editSaveFailed { editFailureMessage }
                 } else if entry.kind == .text {
-                    ClipboardTextPreview(text: entry.text)
+                    ClipboardJSONPreview(original: entry.text) { copyDerivedText($0, from: entry) }
+                        .id(entry.id)
+                } else if let source = imageSource(entry) {
+                    ClipboardImagePreview(url: source.url, thumbnail: source.thumbnail,
+                                          dimensions: source.dimensions) { copyDerivedText($0, from: entry) }
+                        .id(entry.id)
                 } else {
                     contentScrollView(entry)
                 }
@@ -39,6 +49,7 @@ struct ClipboardEntryPreviewSidebar: View {
                 cancelEditing()
             }
         }
+        .onChange(of: draft) { _, _ in clearEditFailure() }
         .onDisappear { cancelEditing() }
     }
 
@@ -48,7 +59,10 @@ struct ClipboardEntryPreviewSidebar: View {
                 .font(.system(size: 11.5, weight: .semibold))
                 .foregroundStyle(.secondary)
             Spacer()
-            Button(action: onClose) {
+            Button {
+                cancelEditing()
+                onClose()
+            } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 9.5, weight: .semibold))
                     .foregroundStyle(.secondary)
@@ -103,28 +117,35 @@ struct ClipboardEntryPreviewSidebar: View {
                 .lineSpacing(2)
                 .frame(maxWidth: .infinity, alignment: .topLeading)
         case .image:
-            imagePreview(entry)
+            EmptyView()
         case .files:
             filesPreview(entry)
         }
     }
 
-    @ViewBuilder
-    private func imagePreview(_ entry: ClipboardHistoryEntry) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            if let name = entry.imageFile,
-               let image = ClipboardImageStore.thumbnail(named: name) {
-                Image(nsImage: image)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(maxWidth: .infinity)
-                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    private func imageSource(_ entry: ClipboardHistoryEntry) -> (url: URL?, thumbnail: NSImage?, dimensions: String)? {
+        if entry.kind == .image {
+            let name = entry.imageFile.flatMap { name in
+                !name.isEmpty && name != "." && name != ".."
+                    && (name as NSString).lastPathComponent == name && !name.contains("\\") ? name : nil
             }
-            Text("\(text.imageEntryLabel) · \(entry.imageDimensionsLabel)")
-                .font(.system(size: 10.5))
-                .foregroundStyle(.secondary)
+            return (name.flatMap { ClipboardImageStore.directory?.appendingPathComponent($0) },
+                    name.flatMap { ClipboardImageStore.thumbnail(named: $0) },
+                    "\(text.imageEntryLabel) · \(entry.imageDimensionsLabel)")
         }
-        .frame(maxWidth: .infinity, alignment: .topLeading)
+        if entry.kind == .files, entry.filePaths.count == 1,
+           let path = entry.filePaths.first, ClipboardImageStore.isImageFile(atPath: path) {
+            return (URL(fileURLWithPath: path), ClipboardImageStore.fileThumbnail(atPath: path),
+                    (path as NSString).lastPathComponent)
+        }
+        return nil
+    }
+
+    private func copyDerivedText(_ value: String, from entry: ClipboardHistoryEntry) {
+        guard isEntryCurrent(entry.id), !value.isEmpty else { return }
+        let textEntry = ClipboardHistoryEntry(id: entry.id, text: value,
+                                             copiedAt: entry.copiedAt, pinnedAt: entry.pinnedAt)
+        ClipboardHistoryService.shared.copyOnlyQuickEntry(textEntry)
     }
 
     @ViewBuilder
@@ -261,6 +282,9 @@ struct ClipboardEntryPreviewSidebar: View {
                 .foregroundStyle(.tertiary)
             Spacer()
             if editingEntryID == entry.id {
+                if isSaving {
+                    ProgressView().controlSize(.mini).accessibilityLabel(text.save)
+                }
                 Button(text.cancel) {
                     cancelEditing()
                 }
@@ -268,14 +292,14 @@ struct ClipboardEntryPreviewSidebar: View {
                     saveEditing(entry)
                 }
                 .buttonStyle(.borderedProminent)
-                .disabled(!ClipboardHistoryEditing.canSave(original: entry.text, draft: draft))
+                .disabled(isSaving || !ClipboardHistoryEditing.canSave(original: entry.text, draft: draft))
             } else {
                 if entry.kind == .text {
                     Button(text.edit) {
                         beginEditing(entry)
                     }
                 }
-                Button(text.copy) {
+                Button(ClipboardActionStrings.copyOriginal(entry.kind)) {
                     ClipboardHistoryService.shared.copyOnlyQuickEntry(entry)
                 }
                 .buttonStyle(.borderedProminent)
@@ -287,6 +311,9 @@ struct ClipboardEntryPreviewSidebar: View {
     }
 
     private func beginEditing(_ entry: ClipboardHistoryEntry) {
+        editingSession = UUID()
+        isSaving = false
+        editSaveFailed = false
         draft = entry.text
         editingEntryID = entry.id
         isEditing = true
@@ -294,14 +321,50 @@ struct ClipboardEntryPreviewSidebar: View {
     }
 
     private func cancelEditing() {
+        editingSession = UUID()
+        isSaving = false
+        editSaveFailed = false
         editorFocused = false
         editingEntryID = nil
         draft = ""
         isEditing = false
     }
 
+    private var editFailureMessage: some View {
+        Text(text.editSaveFailed)
+            .font(.caption)
+            .foregroundStyle(.orange)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, 12)
+            .padding(.bottom, 8)
+    }
+
+    private func clearEditFailure() {
+        editingSession = UUID()
+        isSaving = false
+        editSaveFailed = false
+    }
+
     private func saveEditing(_ entry: ClipboardHistoryEntry) {
-        guard ClipboardHistoryService.shared.updateText(entry, to: draft) else { return }
-        cancelEditing()
+        guard !isSaving, editingEntryID == entry.id else { return }
+        let session = editingSession
+        let savedDraft = draft
+        isSaving = true
+        editSaveFailed = false
+        ClipboardHistoryService.shared.updateText(entry, to: savedDraft, isCurrent: { [self] in
+            editingSession == session && editingEntryID == entry.id
+                && isEditing && isEntryCurrent(entry.id) && draft == savedDraft
+        }) { [self] saved in
+            guard editingSession == session, editingEntryID == entry.id,
+                  isEditing, isEntryCurrent(entry.id) else { return }
+            isSaving = false
+            guard draft == savedDraft else { return }
+            guard saved else {
+                editSaveFailed = true
+                editorFocused = true
+                return
+            }
+            cancelEditing()
+        }
     }
 }

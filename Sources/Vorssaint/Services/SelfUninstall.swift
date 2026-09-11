@@ -10,26 +10,38 @@ import ServiceManagement
 /// The bundle id is a constant identifier (never user input), so the `tccutil`
 /// call cannot be steered elsewhere; the login item and sudoers rule are the
 /// app's own; the preference and saved-state paths are built from the app's own
-/// bundle id; and the only thing deleted is the app's own bundle, which is moved
-/// to the Trash (reversible). Nothing leaves the machine.
+/// bundle id. Complete removal deletes those app-owned data paths permanently;
+/// only the app bundle is moved to the Trash. Nothing leaves the machine.
 enum SelfUninstall {
-    private static var bundleID: String { Bundle.main.bundleIdentifier ?? "com.vorssaint.utils" }
+    enum Failure {
+        case preparation, rule, permissions
+        case files([String]), handoff(String, dataRemovalStarted: Bool)
+    }
+
+    private static var bundleID: String? { ProductIdentityBoundarySupport.ownedBundleID(Bundle.main.bundleIdentifier) }
 
     /// Resets every TCC permission the app holds, drops the login item and the
     /// optional closed-lid sudoers rule, and leaves the app in place. Calls back
     /// on the main queue. Used by "Clear all permissions".
-    static func clearPermissions(completion: @escaping () -> Void) {
+    static func clearPermissions(completion: @escaping (PermissionResetResult) -> Void) {
+        guard bundleID != nil else {
+            NSLog("%@", ProductIdentityBoundarySupport.invalidIdentityMessage)
+            DispatchQueue.main.async { completion(.preparationFailed) }
+            return
+        }
         // Stop every input interceptor FIRST (on the main thread), then revoke.
         // Revoking Accessibility while a tap is live makes the tap callback hang
         // on an AX call and freezes the whole machine's input — see the note on
         // `suspendInputInterceptors`.
         DispatchQueue.main.async {
-            _ = suspendInputInterceptors()
+            let suspended = suspendInputInterceptors()
             DispatchQueue.global(qos: .userInitiated).async {
-                detachFromSystem()
-                removeSudoersRuleIfPresent {           // may show one admin prompt
-                    resetTCC()
-                    DispatchQueue.main.async(execute: completion)
+                PermissionResetSupport.run(
+                    prepare: { suspended && detachFromSystem(verifyLoginRemoval: true) },
+                    removeRule: removeSudoersRuleIfPresent,
+                    reset: resetTCC
+                ) { result in
+                    DispatchQueue.main.async { completion(result) }
                 }
             }
         }
@@ -37,21 +49,54 @@ enum SelfUninstall {
 
     /// Clears permissions, removes preferences and saved state, sends the app
     /// bundle to the Trash and quits. Used by "Uninstall Vorssaint completely".
-    static func uninstallCompletely(onFailure: @escaping () -> Void) {
+    static func uninstallCompletely(onFailure: @escaping (Failure) -> Void) {
+        guard bundleID != nil else {
+            DispatchQueue.main.async { onFailure(.preparation) }
+            return
+        }
         DispatchQueue.main.async {
             guard suspendInputInterceptors() else {
-                onFailure()
+                onFailure(.preparation)
                 return
             }
             DispatchQueue.global(qos: .userInitiated).async {
-                guard detachFromSystem() else {
-                    DispatchQueue.main.async(execute: onFailure)
-                    return
-                }
-                removeSudoersRuleIfPresent {
-                    resetTCC()
-                    removePreferences()
-                    DispatchQueue.main.async { trashOwnBundleAndQuit() }
+                PermissionResetSupport.run(
+                    prepare: { detachFromSystem(verifyLoginRemoval: true) },
+                    removeRule: removeSudoersRuleIfPresent,
+                    reset: resetTCC
+                ) { result in
+                    guard result == .completed else {
+                        let failure: Failure = result == .ruleRemovalFailed ? .rule
+                            : result == .resetFailed ? .permissions : .preparation
+                        DispatchQueue.main.async { onFailure(failure) }
+                        return
+                    }
+                    let helper: UninstallHandoff
+                    do { helper = try prepareTrashHandoff() }
+                    catch {
+                        DispatchQueue.main.async { onFailure(.handoff(error.localizedDescription, dataRemovalStarted: false)) }
+                        return
+                    }
+                    DispatchQueue.main.async {
+                        ClipboardHistoryService.shared.stopPersistenceForRemoval()
+                        ScratchpadService.shared.stopPersistenceForRemoval()
+                        ShelfService.shared.stopPersistenceForRemoval()
+                        DispatchQueue.global(qos: .userInitiated).async {
+                            let failed = removePreferences()
+                            guard failed.isEmpty else {
+                                helper.cancel()
+                                DispatchQueue.main.async { onFailure(.files(failed)) }
+                                return
+                            }
+                            do { try helper.commit() }
+                            catch {
+                                helper.cancel()
+                                DispatchQueue.main.async { onFailure(.handoff(error.localizedDescription, dataRemovalStarted: true)) }
+                                return
+                            }
+                            DispatchQueue.main.async { NSApp.terminate(nil) }
+                        }
+                    }
                 }
             }
         }
@@ -103,13 +148,13 @@ enum SelfUninstall {
         PreciseVolumeRollerService.shared.suspend()
         // Leaving the mic cut after the app is gone would strand the user
         // with a silent input and no indicator anywhere.
-        MicMuteService.shared.unmuteForTeardown()
+        let microphonesRestored = MicMuteService.shared.unmuteForTeardown()
         MicMuteService.shared.suspend()
-        return mouseAccelerationRestored
+        return mouseAccelerationRestored && microphonesRestored
     }
 
     @discardableResult
-    private static func detachFromSystem() -> Bool {
+    private static func detachFromSystem(verifyLoginRemoval: Bool = false) -> Bool {
         if UserDefaults.standard.bool(forKey: DefaultsKey.sleepDisabledFlag),
            !restoreSleepBeforeRemoval() {
             return false
@@ -119,7 +164,14 @@ enum SelfUninstall {
         // intent goes with it, or the startup repair would quietly register
         // the item again after the user asked for a clean detach.
         UserDefaults.standard.set(false, forKey: DefaultsKey.launchAtLoginWanted)
-        try? SMAppService.mainApp.unregister()
+        if verifyLoginRemoval {
+            if SMAppService.mainApp.status != .notRegistered {
+                do { try SMAppService.mainApp.unregister() }
+                catch { return false }
+            }
+        } else {
+            try? SMAppService.mainApp.unregister()
+        }
         return true
     }
 
@@ -152,46 +204,58 @@ enum SelfUninstall {
             && !SudoersSupport.sleepDisabled(inPmsetOutput: verification.output)
     }
 
-    private static func removeSudoersRuleIfPresent(then: @escaping () -> Void) {
-        guard Sudoers.ruleFilesPresent || Sudoers.isConfigured() else { then(); return }
-        Sudoers.remove { _ in then() }            // shows the admin password prompt
+    private static func removeSudoersRuleIfPresent(then: @escaping (Bool) -> Void) {
+        guard Sudoers.ruleFilesPresent || Sudoers.isConfigured() else { then(true); return }
+        Sudoers.remove { success in then(success) }            // shows the admin password prompt
     }
 
     /// `tccutil reset All <bundle id>` clears Accessibility, Screen Recording,
     /// Full Disk Access, Automation and the rest, for this app only. The bundle
     /// id is a constant, so there is nothing to inject.
-    private static func resetTCC() {
-        _ = Shell.run("/usr/bin/tccutil", ["reset", "All", bundleID])
+    @discardableResult
+    private static func resetTCC() -> Bool {
+        guard let bundleID else { return false }
+        return Shell.run("/usr/bin/tccutil", ["reset", "All", bundleID]).status == 0
     }
 
-    private static func removePreferences() {
+    private static func removePreferences() -> [String] {
+        guard let id = bundleID else { return [ProductIdentityBoundarySupport.invalidIdentityMessage] }
         CommandBarQueryHabits.removeInstallationKey()
-        let id = bundleID
         UserDefaults.standard.removePersistentDomain(forName: id)
         let home = NSHomeDirectory()
-        try? FileManager.default.removeItem(atPath: "\(home)/Library/Preferences/\(id).plist")
-        try? FileManager.default.removeItem(atPath: "\(home)/Library/Saved Application State/\(id).savedState")
-        // Clipboard images and any other app-owned data live here.
-        try? FileManager.default.removeItem(atPath: "\(home)/Library/Application Support/\(id)")
-        try? FileManager.default.removeItem(atPath: "\(home)/Library/Caches/\(id)")
-        // URLSession writes these on our behalf whenever the app talks to the
-        // network, so they exist without the app ever choosing the path.
-        try? FileManager.default.removeItem(atPath: "\(home)/Library/HTTPStorages/\(id)")
-        try? FileManager.default.removeItem(
-            atPath: "\(home)/Library/HTTPStorages/\(id).binarycookies")
+        let paths = [
+            "\(home)/Library/Preferences/\(id).plist",
+            "\(home)/Library/Saved Application State/\(id).savedState",
+            "\(home)/Library/Application Support/\(id)",
+            "\(home)/Library/Caches/\(id)",
+            "\(home)/Library/HTTPStorages/\(id)",
+            "\(home)/Library/HTTPStorages/\(id).binarycookies"
+        ]
+        return paths.filter { path in
+            do { try FileManager.default.removeItem(atPath: path); return false }
+            catch {
+                return (error as NSError).domain != NSCocoaErrorDomain
+                    || (error as NSError).code != NSFileNoSuchFileError
+            }
+        }
     }
 
-    /// Moves the app's own bundle to the Trash after it quits, then quits. The
+    /// Prepares a helper that waits for an explicit commit and then process exit. The
     /// path is the running app's own location, checked to be an `.app`, so this
     /// can only ever remove this app. A detached helper does the move so the
     /// bundle is not mutated while it is running.
-    private static func trashOwnBundleAndQuit() {
+    private static func prepareTrashHandoff() throws -> UninstallHandoff {
         let app = Bundle.main.bundlePath
-        guard app.hasSuffix(".app"), app != "/" else { NSApp.terminate(nil); return }
+        guard app.hasSuffix(".app"), app != "/" else {
+            throw NSError(domain: NSCocoaErrorDomain, code: NSFileReadUnsupportedSchemeError)
+        }
         let pid = ProcessInfo.processInfo.processIdentifier
         let script = """
         #!/bin/sh
         APP="$1"; PID="$2"
+        trap '/bin/rm -f "$0"' EXIT
+        IFS= read -r COMMIT || exit 0
+        [ "$COMMIT" = "commit" ] || exit 0
         while kill -0 "$PID" 2>/dev/null; do sleep 0.3; done
         TRASH="$HOME/.Trash"
         /bin/mkdir -p "$TRASH" 2>/dev/null || true
@@ -213,15 +277,49 @@ enum SelfUninstall {
         """
         let scriptURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("vorssaint-uninstall-\(pid)-\(UUID().uuidString).sh")
-        do {
-            try script.write(to: scriptURL, atomically: true, encoding: .utf8)
-            // Its own session: the script's first act is to wait for this app
-            // to exit, so a child left in our session would be torn down with
-            // us before it ever gets to move the bundle.
-            try DetachedProcess.spawn("/bin/sh", [scriptURL.path, app, "\(pid)"])
-            NSApp.terminate(nil)
-        } catch {
+        try script.write(to: scriptURL, atomically: true, encoding: .utf8)
+        var descriptors: [Int32] = [-1, -1]
+        guard pipe(&descriptors) == 0 else {
             try? FileManager.default.removeItem(at: scriptURL)
+            throw NSError(domain: NSPOSIXErrorDomain, code: Int(errno))
+        }
+        defer { close(descriptors[0]) }
+        do {
+            guard fcntl(descriptors[1], F_SETNOSIGPIPE, 1) != -1 else {
+                throw NSError(domain: NSPOSIXErrorDomain, code: Int(errno))
+            }
+            try DetachedProcess.spawn("/bin/sh", [scriptURL.path, app, "\(pid)"],
+                                      standardInput: descriptors[0])
+            return UninstallHandoff(input: descriptors[1])
+        } catch {
+            close(descriptors[1])
+            try? FileManager.default.removeItem(at: scriptURL)
+            throw error
+        }
+    }
+
+    /// The helper cannot move anything until this pipe receives the full commit line.
+    private final class UninstallHandoff {
+        private var input: Int32
+        init(input: Int32) { self.input = input }
+        deinit { cancel() }
+        func cancel() {
+            guard input >= 0 else { return }
+            close(input)
+            input = -1
+        }
+        func commit() throws {
+            let bytes = Array("commit\n".utf8)
+            var offset = 0
+            while offset < bytes.count {
+                let written = bytes.withUnsafeBytes {
+                    write(input, $0.baseAddress!.advanced(by: offset), bytes.count - offset)
+                }
+                if written < 0, errno == EINTR { continue }
+                guard written > 0 else { throw NSError(domain: NSPOSIXErrorDomain, code: Int(errno)) }
+                offset += written
+            }
+            cancel()
         }
     }
 }

@@ -210,7 +210,6 @@ enum SettingsDirectory {
                 SettingsDirectoryItem(page: .clipboard, s: s, language: language,
                                        icon: "doc.on.clipboard",
                                        featureKeywords: [
-                                        (.urlCleaner, [s.urlCleanerName, s.urlCleanerEnable]),
                                         (.clipboardHistory, [FeatureStrings.clipboard(language).limit,
                                                              FeatureStrings.clipboard(language).skipSensitive,
                                                              FeatureStrings.clipboard(language).autoClearEnable,
@@ -220,8 +219,14 @@ enum SettingsDirectory {
                                                              FeatureStrings.clipboard(language)
                                                                 .autoClearOnScreenLock,
                                                              FeatureStrings.clipboardIgnoredApps(language)
-                                                                .listTitle]),
+                                        .listTitle]),
                                        ]),
+                SettingsDirectoryItem(page: .urlCleaner, s: s, language: language,
+                                      icon: AppFeature.urlCleaner.symbolName,
+                                      featureKeywords: [
+                                        (.urlCleaner, [s.urlCleanerEnable, s.urlCleanerManualTitle,
+                                                       s.urlCleanerRulesTitle]),
+                                      ]),
                 SettingsDirectoryItem(page: .cutPaste, s: s, language: language,
                                        icon: "filemenu.and.selection",
                                        featureKeywords: [
@@ -281,16 +286,12 @@ enum SettingsDirectory {
             ]),
             (AppInfo.name, [
                 SettingsDirectoryItem(page: .advanced, s: s, language: language, icon: "wrench.and.screwdriver",
-                                      keywords: [s.launchAtLogin, s.languageLabel,
+                                      keywords: [s.tabAdvanced, s.launchAtLogin, s.languageLabel,
                                                  FeatureStrings.appearance(language).label,
                                                  FeatureStrings.appearance(language).dark]),
                 SettingsDirectoryItem(page: .about, s: s, language: language, icon: "info.circle",
-                                      keywords: [s.reviewIntro, s.reviewHighlights]),
+                                      keywords: [s.reviewIntro, s.reviewHighlights, s.viewOnGitHub]),
                 SettingsDirectoryItem(page: .releaseNotes, s: s, language: language, icon: "sparkles"),
-                SettingsDirectoryItem(page: .support, s: s, language: language, icon: "heart.fill",
-                                      keywords: [s.donateButton, s.supportIntroStarButton,
-                                                 s.discordIntroJoinButton,
-                                                 s.communityIntroFollowButton]),
             ]),
         ]
     }

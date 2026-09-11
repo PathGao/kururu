@@ -8,7 +8,6 @@ struct ScreenshotCaptureSettings: View {
     @ObservedObject private var l10n = L10n.shared
     @ObservedObject private var permissions = Permissions.shared
     @ObservedObject private var service = ScreenshotService.shared
-    @ObservedObject private var sharing = ScreenshotShareService.shared
     @AppStorage(DefaultsKey.screenshotFullScreenShortcutEnabled)
     private var fullScreenShortcutEnabled = false
     @AppStorage(DefaultsKey.screenshotLastCaptureShortcutEnabled)
@@ -37,9 +36,6 @@ struct ScreenshotCaptureSettings: View {
     @AppStorage(DefaultsKey.screenshotToolShortcutsEnabled) private var toolShortcutsEnabled = true
     @AppStorage(DefaultsKey.screenshotCopyToClipboard) private var copyToClipboard = false
     @AppStorage(DefaultsKey.screenshotPreviewPosition) private var previewPositionRaw = ""
-    @AppStorage(DefaultsKey.screenshotSharingEnabled) private var sharingEnabled = true
-    @State private var showingSharedLinks = false
-    @State private var showingSharePrivacy = false
 
     private var strings: ScreenshotFeatureStrings {
         FeatureStrings.screenshot(l10n.language)
@@ -47,7 +43,8 @@ struct ScreenshotCaptureSettings: View {
 
     var body: some View {
         Group {
-            Section {
+            SettingsSection(title: AppFeature.screenshot.name(l10n.s, language: l10n.language),
+                            systemImage: "camera.viewfinder") {
                 HStack(spacing: 10) {
                     Button {
                         ScreenshotService.shared.capture()
@@ -55,6 +52,7 @@ struct ScreenshotCaptureSettings: View {
                         Label(strings.captureButton, systemImage: "camera.viewfinder")
                             .frame(maxWidth: .infinity)
                     }
+                    .settingsAction(.primary)
                     Button {
                         ScreenshotService.shared.captureScrolling()
                     } label: {
@@ -62,11 +60,9 @@ struct ScreenshotCaptureSettings: View {
                             .frame(maxWidth: .infinity)
                     }
                 }
-                .buttonStyle(.bordered)
                 .controlSize(.large)
-                Text(strings.panelCaption)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                SettingsInfo(text: strings.panelCaption, systemImage: "camera.viewfinder")
+                Divider()
                 Toggle(strings.fullScreenShortcutTitle, isOn: $fullScreenShortcutEnabled)
                     .onChange(of: fullScreenShortcutEnabled) { _, _ in
                         ScreenshotService.shared.syncWithPreferences()
@@ -77,7 +73,7 @@ struct ScreenshotCaptureSettings: View {
                 }
                 if fullScreenShortcutEnabled, service.fullScreenShortcutRegistrationFailed {
                     Text(l10n.s.shortcutUnavailable)
-                        .font(.caption)
+                        .font(SettingsTypography.caption)
                         .foregroundStyle(.orange)
                 }
                 Toggle(strings.editLastCapture, isOn: $lastCaptureShortcutEnabled)
@@ -91,7 +87,7 @@ struct ScreenshotCaptureSettings: View {
                 if lastCaptureShortcutEnabled,
                    service.lastCaptureShortcutRegistrationFailed {
                     Text(l10n.s.shortcutUnavailable)
-                        .font(.caption)
+                        .font(SettingsTypography.caption)
                         .foregroundStyle(.orange)
                 }
                 Toggle(strings.editClipboardImage, isOn: $clipboardShortcutEnabled)
@@ -104,35 +100,36 @@ struct ScreenshotCaptureSettings: View {
                 }
                 if clipboardShortcutEnabled, service.clipboardShortcutRegistrationFailed {
                     Text(l10n.s.shortcutUnavailable)
-                        .font(.caption)
+                        .font(SettingsTypography.caption)
                         .foregroundStyle(.orange)
                 }
                 if !permissions.screenRecording {
                     PermissionRow(kind: .screenRecording)
                 }
-            } header: {
-                Text(AppFeature.screenshot.name(l10n.s, language: l10n.language))
             }
             .settingsSectionAnchor(.screenshot)
 
-            Section {
-                Toggle(strings.freezeToggle, isOn: $freeze)
-                Text(strings.freezeCaption)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            SettingsSection(title: UXEntryStrings(l10n.language).captureOptions, systemImage: "viewfinder") {
+                SettingsToggleWithCaption(title: strings.freezeToggle,
+                                          caption: strings.freezeCaption, isOn: $freeze)
                 Toggle(strings.hideVorssaintWindowsToggle, isOn: $hideVorssaintWindows)
-                Picker(strings.delayLabel, selection: $delay) {
-                    ForEach(ScreenshotSupport.allowedDelays, id: \.self) { seconds in
-                        if seconds == 0 {
-                            Text(strings.delayOff).tag(0)
-                        } else {
-                            Text(String(format: strings.delaySecondsFormat, seconds)).tag(seconds)
+                SettingsControlRow(title: strings.delayLabel, systemImage: "timer") {
+                    Picker(strings.delayLabel, selection: $delay) {
+                        ForEach(ScreenshotSupport.allowedDelays, id: \.self) { seconds in
+                            if seconds == 0 {
+                                Text(strings.delayOff).tag(0)
+                            } else {
+                                Text(String(format: strings.delaySecondsFormat, seconds)).tag(seconds)
+                            }
                         }
                     }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
                 }
-                .pickerStyle(.segmented)
+                Divider()
                 Toggle(strings.pointerToggle, isOn: $includePointer)
                 Toggle(strings.lastRegionToggle, isOn: $showLastRegion)
+                previewPositionRow
                 DisclosureGroup {
                     Toggle(strings.loupeStartsOnToggle, isOn: $loupeStartsOn)
                     Toggle(strings.loupeRememberZoomToggle, isOn: $rememberLoupeZoom)
@@ -152,80 +149,38 @@ struct ScreenshotCaptureSettings: View {
                     }
                     .pickerStyle(.segmented)
                     Text(strings.loupeZoomOptionCaption)
-                        .font(.caption)
+                        .font(SettingsTypography.caption)
                         .foregroundStyle(.secondary)
-                    previewPositionRow
-                    defaultActionRow
                 } label: {
-                    Text(FeatureStrings.recorder(l10n.language).moreOptions)
+                    Label(FeatureStrings.recorder(l10n.language).moreOptions,
+                          systemImage: "slider.horizontal.3")
                 }
             }
 
-            Section {
-                Toggle(strings.autoCopyToggle, isOn: $copyToClipboard)
-                Text(strings.autoCopyCaption)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            SettingsSection(title: UXEntryStrings(l10n.language).outputSettings, systemImage: "square.and.arrow.down") {
+                defaultActionRow
+                SettingsToggleWithCaption(title: strings.autoCopyToggle,
+                                          caption: strings.autoCopyCaption, isOn: $copyToClipboard)
+                Divider()
                 folderRow
                 subfolderRow
                 fileNameRow
-                Toggle(strings.downscaleToggle, isOn: $downscale)
-                Text(strings.downscaleCaption)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                SettingsToggleWithCaption(title: strings.downscaleToggle,
+                                          caption: strings.downscaleCaption, isOn: $downscale)
             }
 
-            Section {
+            SettingsSection(title: strings.toolShortcutsTitle, systemImage: "slider.horizontal.3") {
                 ScreenshotToolOrderControls(orderRaw: $toolOrderRaw,
                                             shortcutsEnabled: $toolShortcutsEnabled,
                                             showsTitle: false)
-            } header: {
-                Text(strings.toolShortcutsTitle)
             }
 
-            Section {
-                Toggle(strings.shareEnabledToggle, isOn: $sharingEnabled)
-                if sharingEnabled {
-                    Text(strings.shareCaption)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                Button {
-                    showingSharePrivacy = true
-                } label: {
-                    Label(strings.sharePrivacyButton, systemImage: "hand.raised")
-                }
-                if !sharing.records.isEmpty {
-                    Button {
-                        showingSharedLinks = true
-                    } label: {
-                        HStack {
-                            Label(strings.sharedLinksTitle, systemImage: "link")
-                            Spacer()
-                            Text("\(sharing.records.count)")
-                                .foregroundStyle(.secondary)
-                            Image(systemName: "chevron.right")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.tertiary)
-                        }
-                    }
-                    .buttonStyle(.plain)
-                }
-            } header: {
-                Text(strings.shareSectionTitle)
-            }
-        }
-        .onAppear { sharing.refresh() }
-        .sheet(isPresented: $showingSharedLinks) {
-            ScreenshotSharedLinksView()
-        }
-        .sheet(isPresented: $showingSharePrivacy) {
-            ScreenshotSharePrivacyView()
         }
     }
 
     private var defaultActionRow: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        SettingsControlRow(title: strings.defaultActionLabel, systemImage: "checkmark.circle",
+                           caption: strings.defaultActionCaption) {
             Picker(strings.defaultActionLabel, selection: $defaultActionRaw) {
                 Text(strings.defaultActionNone).tag(ScreenshotDefaultAction.none.rawValue)
                 Text(strings.saveButton).tag(ScreenshotDefaultAction.save.rawValue)
@@ -233,31 +188,30 @@ struct ScreenshotCaptureSettings: View {
                 Text(strings.copyButton).tag(ScreenshotDefaultAction.copy.rawValue)
                 Text(strings.editButton).tag(ScreenshotDefaultAction.edit.rawValue)
             }
-            Text(strings.defaultActionCaption)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            .labelsHidden()
         }
     }
 
     private var previewPositionRow: some View {
-        Picker(strings.previewPositionLabel, selection: $previewPositionRaw) {
-            Text(strings.previewPositionAutomatic)
-                .tag(ScreenshotSupport.QuickPreviewPosition.automatic.rawValue)
-            Text(strings.previewPositionTopLeft)
-                .tag(ScreenshotSupport.QuickPreviewPosition.topLeft.rawValue)
-            Text(strings.previewPositionTopRight)
-                .tag(ScreenshotSupport.QuickPreviewPosition.topRight.rawValue)
-            Text(strings.previewPositionBottomLeft)
-                .tag(ScreenshotSupport.QuickPreviewPosition.bottomLeft.rawValue)
-            Text(strings.previewPositionBottomRight)
-                .tag(ScreenshotSupport.QuickPreviewPosition.bottomRight.rawValue)
+        SettingsControlRow(title: strings.previewPositionLabel, systemImage: "rectangle.inset.filled") {
+            Picker(strings.previewPositionLabel, selection: $previewPositionRaw) {
+                Text(strings.previewPositionAutomatic)
+                    .tag(ScreenshotSupport.QuickPreviewPosition.automatic.rawValue)
+                Text(strings.previewPositionTopLeft)
+                    .tag(ScreenshotSupport.QuickPreviewPosition.topLeft.rawValue)
+                Text(strings.previewPositionTopRight)
+                    .tag(ScreenshotSupport.QuickPreviewPosition.topRight.rawValue)
+                Text(strings.previewPositionBottomLeft)
+                    .tag(ScreenshotSupport.QuickPreviewPosition.bottomLeft.rawValue)
+                Text(strings.previewPositionBottomRight)
+                    .tag(ScreenshotSupport.QuickPreviewPosition.bottomRight.rawValue)
+            }
+            .labelsHidden()
         }
     }
 
     private var folderRow: some View {
-        HStack {
-            Text(strings.folderLabel)
-            Spacer()
+        SettingsControlRow(title: strings.folderLabel, systemImage: "folder") {
             Text(currentFolderName)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
@@ -271,70 +225,69 @@ struct ScreenshotCaptureSettings: View {
                 }
                 .buttonStyle(.borderless)
                 .screenshotSafeHelp(l10n.s.shortcutReset)
+                .accessibilityLabel(l10n.s.shortcutReset)
             }
-            Button(strings.folderChoose) {
+            Button {
                 chooseFolder()
+            } label: {
+                Label(strings.folderChoose, systemImage: "folder.badge.plus")
             }
         }
     }
 
     private var subfolderRow: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text(strings.subfolderLabel)
-                    .lineLimit(1)
-                TextField("", text: $saveSubfolder)
+        SettingsControlRow(title: strings.subfolderLabel, systemImage: "folder.badge.gearshape",
+                           caption: strings.subfolderCaption) {
+            VStack(alignment: .leading, spacing: 4) {
+                TextField(strings.subfolderLabel, text: $saveSubfolder)
+                    .labelsHidden()
                     .textFieldStyle(.roundedBorder)
-                    .frame(maxWidth: 150)
+                    .frame(width: 220)
                 if !saveSubfolder.isEmpty {
                     Text(ScreenshotSupport.expandSaveSubfolder(saveSubfolder, date: Date()))
+                        .font(SettingsTypography.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                         .truncationMode(.middle)
+                        .frame(width: 220, alignment: .leading)
                 }
             }
-            .fixedSize(horizontal: false, vertical: true)
-            Text(strings.subfolderCaption)
-                .font(.caption)
-                .foregroundStyle(.secondary)
         }
     }
 
     private var fileNameRow: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text(strings.fileNamePatternLabel)
-                    .lineLimit(1)
-                TextField("", text: $fileNamePattern)
-                    .textFieldStyle(.roundedBorder)
-                    .frame(maxWidth: 150)
-                Text(fileNamePreview)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-            }
-            .fixedSize(horizontal: false, vertical: true)
-            Text(strings.fileNamePatternCaption)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            if ScreenshotSupport.fileNamePatternUsesNumber(fileNamePattern) {
-                HStack {
-                    Text(strings.fileNumberStartLabel)
-                        .lineLimit(1)
-                    TextField("", value: $numberStart, formatter: Self.numberFieldFormatter)
-                        .textFieldStyle(.roundedBorder)
-                        .frame(width: 70)
-                    Stepper("", value: $numberStart, in: 0...999_999)
+        VStack(alignment: .leading, spacing: 12) {
+            SettingsControlRow(title: strings.fileNamePatternLabel, systemImage: "doc.text",
+                               caption: strings.fileNamePatternCaption) {
+                VStack(alignment: .leading, spacing: 4) {
+                    TextField(strings.fileNamePatternLabel, text: $fileNamePattern)
                         .labelsHidden()
-                    Button(strings.fileNumberResetButton) {
-                        nextNumber = numberStart
-                    }
-                    Spacer()
-                    Text(String(format: strings.fileNumberNextFormat, nextNumber))
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 220)
+                    Text(fileNamePreview)
+                        .font(SettingsTypography.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
+                        .truncationMode(.middle)
+                        .frame(width: 220, alignment: .leading)
                 }
-                .fixedSize(horizontal: false, vertical: true)
+            }
+            if ScreenshotSupport.fileNamePatternUsesNumber(fileNamePattern) {
+                SettingsControlRow(title: strings.fileNumberStartLabel, systemImage: "number",
+                                   caption: String(format: strings.fileNumberNextFormat, nextNumber)) {
+                    TextField(strings.fileNumberStartLabel, value: $numberStart,
+                              formatter: Self.numberFieldFormatter)
+                        .labelsHidden()
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 70)
+                    Stepper(strings.fileNumberStartLabel, value: $numberStart, in: 0...999_999)
+                        .labelsHidden()
+                    Button {
+                        nextNumber = numberStart
+                    } label: {
+                        Label(strings.fileNumberResetButton, systemImage: "arrow.counterclockwise")
+                    }
+                }
                 .onChange(of: numberStart) { _, newValue in
                     nextNumber = newValue
                 }
@@ -380,174 +333,6 @@ struct ScreenshotCaptureSettings: View {
         panel.allowsMultipleSelection = false
         if panel.runModal() == .OK, let url = panel.url {
             saveFolder = url.path
-        }
-    }
-}
-
-struct ScreenshotSharePrivacyView: View {
-    @Environment(\.dismiss) private var dismiss
-    @ObservedObject private var l10n = L10n.shared
-    let actionTitle: String?
-    let onAction: (() -> Void)?
-
-    init(actionTitle: String? = nil, onAction: (() -> Void)? = nil) {
-        self.actionTitle = actionTitle
-        self.onAction = onAction
-    }
-
-    private var strings: ScreenshotFeatureStrings {
-        FeatureStrings.screenshot(l10n.language)
-    }
-
-    var body: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Label(strings.sharePrivacyTitle, systemImage: "hand.raised")
-                    .font(.title3.weight(.semibold))
-                Spacer()
-                Button(actionTitle ?? strings.done) {
-                    dismiss()
-                    guard let onAction else { return }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                        onAction()
-                    }
-                }
-                    .keyboardShortcut(.defaultAction)
-            }
-            .padding(20)
-
-            Divider()
-
-            ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    privacyParagraph(symbol: "photo", text: strings.sharePrivacyData)
-                    privacyParagraph(symbol: "externaldrive", text: strings.sharePrivacyStorage)
-                    privacyParagraph(symbol: "person.2", text: strings.sharePrivacyAccess)
-                }
-                .padding(20)
-            }
-        }
-        .frame(width: 560, height: 390)
-    }
-
-    private func privacyParagraph(symbol: String, text: String) -> some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: symbol)
-                .foregroundStyle(.secondary)
-                .frame(width: 22)
-            Text(text)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
-    }
-}
-
-private struct ScreenshotSharedLinksView: View {
-    @Environment(\.dismiss) private var dismiss
-    @ObservedObject private var l10n = L10n.shared
-    @ObservedObject private var sharing = ScreenshotShareService.shared
-    @State private var deletingID: String?
-    @State private var showingDeleteError = false
-
-    private var strings: ScreenshotFeatureStrings {
-        FeatureStrings.screenshot(l10n.language)
-    }
-
-    var body: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Text(strings.sharedLinksTitle)
-                    .font(.title3.weight(.semibold))
-                Spacer()
-                Button(strings.done) { dismiss() }
-                    .keyboardShortcut(.defaultAction)
-            }
-            .padding(18)
-
-            Divider()
-
-            if sharing.records.isEmpty {
-                ContentUnavailableView(strings.sharedLinksEmpty,
-                                       systemImage: "link.badge.plus")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                List(sharing.records) { record in
-                    linkRow(record)
-                }
-                .listStyle(.inset)
-            }
-        }
-        .frame(width: 560, height: 360)
-        .onAppear { sharing.refresh() }
-        .alert(strings.deleteFailedHUD, isPresented: $showingDeleteError) {
-            Button(strings.done, role: .cancel) {}
-        }
-    }
-
-    private func linkRow(_ record: ScreenshotShareRecord) -> some View {
-        HStack(spacing: 14) {
-            Image(systemName: "link")
-                .font(.title3)
-                .foregroundStyle(.secondary)
-                .frame(width: 24)
-            VStack(alignment: .leading, spacing: 4) {
-                Text(record.url.absoluteString)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                    .textSelection(.enabled)
-                HStack(spacing: 4) {
-                    Text(strings.expiresLabel)
-                    Text(record.expiresAt, style: .relative)
-                }
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            }
-            Spacer(minLength: 8)
-            Button {
-                copy(record.url)
-            } label: {
-                Image(systemName: "doc.on.doc")
-            }
-            .buttonStyle(.borderless)
-            .screenshotSafeHelp(strings.copyLink)
-            Button {
-                NSWorkspace.shared.open(record.url)
-            } label: {
-                Image(systemName: "arrow.up.forward.app")
-            }
-            .buttonStyle(.borderless)
-            .screenshotSafeHelp(strings.openLink)
-            Button(role: .destructive) {
-                delete(record)
-            } label: {
-                if deletingID == record.id {
-                    ProgressView()
-                        .controlSize(.small)
-                } else {
-                    Image(systemName: "trash")
-                }
-            }
-            .buttonStyle(.borderless)
-            .disabled(deletingID != nil)
-            .screenshotSafeHelp(strings.deleteLink)
-        }
-        .padding(.vertical, 5)
-    }
-
-    private func copy(_ url: URL) {
-        sharing.copy(url)
-    }
-
-    private func delete(_ record: ScreenshotShareRecord) {
-        deletingID = record.id
-        Task {
-            do {
-                try await sharing.delete(record)
-                QuickToolHUD.show(icon: "link", message: strings.linkDeletedHUD)
-            } catch {
-                showingDeleteError = true
-            }
-            deletingID = nil
         }
     }
 }

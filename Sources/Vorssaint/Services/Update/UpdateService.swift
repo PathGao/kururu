@@ -27,7 +27,7 @@ final class UpdateService: ObservableObject {
     /// preview. Set alongside `.available`; cleared otherwise.
     @Published private(set) var availableNotes: String?
 
-    private let repository = "vorssaint/vorssaint-utils"
+    private var repository: String { ProductIdentity.repositoryURL.path.trimmingCharacters(in: CharacterSet(charactersIn: "/")) }
     private var downloadURL: URL?
     /// Size the release advertises for the asset, used to bound the download.
     private var downloadExpectedBytes: Int64?
@@ -37,6 +37,27 @@ final class UpdateService: ObservableObject {
 
     private init() {}
 
+    private var updatesAllowed: Bool {
+        BuildCapabilityPolicy.allowsUpdates(configured: ProductIdentity.allowsSelfUpdates,
+                                            development: AppInfo.isDeveloperBuild)
+    }
+
+    @discardableResult
+    private func requireConfiguredUpdates() -> Bool {
+        guard updatesAllowed else {
+            refreshTimer?.invalidate()
+            refreshTimer = nil
+            downloadSession?.invalidateAndCancel()
+            downloadSession = nil
+            downloadURL = nil
+            downloadExpectedBytes = nil
+            availableNotes = nil
+            state = .failed(BuildCapabilityPolicy.updatesUnavailable(languageCode: L10n.shared.language.rawValue))
+            return false
+        }
+        return true
+    }
+
     var autoCheckEnabled: Bool {
         get { UserDefaults.standard.object(forKey: DefaultsKey.autoCheckUpdates) as? Bool ?? true }
         set {
@@ -45,36 +66,12 @@ final class UpdateService: ObservableObject {
         }
     }
 
-    var includeBetaUpdates: Bool {
-        get {
-            if let explicit = UserDefaults.standard.object(forKey: DefaultsKey.includeBetaUpdates) as? Bool {
-                return explicit
-            }
-            return AppInfo.isBeta
-        }
-        set {
-            UserDefaults.standard.set(newValue, forKey: DefaultsKey.includeBetaUpdates)
-        }
-    }
-
     // MARK: - Scheduling
 
     /// Called at launch: checks shortly after start and then daily, if enabled.
     func startAutomaticChecks() {
+        guard requireConfiguredUpdates() else { return }
         consumeInstallResult()
-        if AppInfo.isBeta && UserDefaults.standard.object(forKey: DefaultsKey.includeBetaUpdates) == nil {
-            UserDefaults.standard.set(true, forKey: DefaultsKey.includeBetaUpdates)
-        }
-        // The local dev build never auto-updates, but can simulate the
-        // "update available" UI via the `simulateUpdate` default, for testing.
-        if AppInfo.isDeveloperBuild {
-            if UserDefaults.standard.bool(forKey: DefaultsKey.simulateUpdate) {
-                let simulatedVersion = AppInfo.isBeta ? "9.9.9-beta.1" : "9.9.9"
-                state = .available(version: simulatedVersion)
-                availableNotes = ReleaseNotes.rawNotes(for: AppInfo.version)
-            }
-            return
-        }
         configureAutomaticChecks()
         if autoCheckEnabled {
             DispatchQueue.main.asyncAfter(deadline: .now() + 6) { [weak self] in
@@ -84,6 +81,7 @@ final class UpdateService: ObservableObject {
     }
 
     private func configureAutomaticChecks() {
+        guard requireConfiguredUpdates() else { return }
         refreshTimer?.invalidate()
         refreshTimer = nil
         guard autoCheckEnabled else { return }
@@ -100,31 +98,17 @@ final class UpdateService: ObservableObject {
     // MARK: - Check
 
     func check(manual: Bool) {
-        if AppInfo.isDeveloperBuild {
-            // No real update target; reflect the simulation default so the
-            // notification UI can be exercised locally.
-            if UserDefaults.standard.bool(forKey: DefaultsKey.simulateUpdate) {
-                state = .available(version: "9.9.9")
-                availableNotes = ReleaseNotes.rawNotes(for: AppInfo.version)
-            } else {
-                state = .upToDate
-                availableNotes = nil
-            }
-            lastChecked = Date()
-            return
-        }
+        guard requireConfiguredUpdates() else { return }
         if case .checking = state { return }
         if case .downloading = state { return }
         if case .installing = state { return }
         state = .checking
 
-        let endpoint = includeBetaUpdates
-            ? "https://api.github.com/repos/\(repository)/releases?per_page=10"
-            : "https://api.github.com/repos/\(repository)/releases/latest"
+        let endpoint = "https://api.github.com/repos/\(repository)/releases/latest"
 
         var request = URLRequest(url: URL(string: endpoint)!)
         request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
-        request.setValue("Vorssaint/\(AppInfo.version)", forHTTPHeaderField: "User-Agent")
+        request.setValue("\(ProductIdentity.name)/\(AppInfo.version)", forHTTPHeaderField: "User-Agent")
         request.cachePolicy = .reloadIgnoringLocalCacheData
 
         URLSession.shared.dataTask(with: request) { [weak self] data, _, error in
@@ -138,9 +122,7 @@ final class UpdateService: ObservableObject {
                 }
 
                 let releases: [GitHubRelease]
-                if self.includeBetaUpdates {
-                    releases = (try? JSONDecoder().decode([GitHubRelease].self, from: data)) ?? []
-                } else if let single = try? JSONDecoder().decode(GitHubRelease.self, from: data) {
+                if let single = try? JSONDecoder().decode(GitHubRelease.self, from: data) {
                     releases = [single]
                 } else {
                     releases = []
@@ -166,8 +148,7 @@ final class UpdateService: ObservableObject {
 
                 if let chosen = UpdateServiceSupport.selectUpdate(
                     from: candidates,
-                    currentVersion: AppInfo.version,
-                    includeBetas: self.includeBetaUpdates
+                    currentVersion: AppInfo.version
                 ) {
                     let versionClean = chosen.tagName.trimmingCharacters(in: CharacterSet(charactersIn: "vV "))
                     self.downloadURL = chosen.dmgURL
@@ -193,7 +174,7 @@ final class UpdateService: ObservableObject {
     /// or the panel opens, so a new release surfaces promptly without hammering the
     /// API. The hourly timer is the floor; this makes it feel immediate.
     func checkIfStale(maxAge: TimeInterval = 15 * 60) {
-        if AppInfo.isDeveloperBuild { return }
+        guard requireConfiguredUpdates() else { return }
         guard autoCheckEnabled else { return }
         switch state {
         case .checking, .downloading, .installing: return
@@ -206,7 +187,7 @@ final class UpdateService: ObservableObject {
     // MARK: - Download & install
 
     func downloadAndInstall() {
-        if AppInfo.isDeveloperBuild { return }  // never replace the local dev build over itself
+        guard requireConfiguredUpdates() else { return }
         guard let downloadURL else { return }
         // Pre-flight BEFORE spending the download: a translocated app or one
         // running from a read-only volume (the mounted DMG) can never be
@@ -313,6 +294,7 @@ final class UpdateService: ObservableObject {
     /// writable by this user (standard account with the app in /Applications),
     /// the script runs through an admin prompt instead of failing silently.
     private func launchInstaller(dmgPath: String, offered: String?) {
+        guard requireConfiguredUpdates() else { return }
         let appPath = Bundle.main.bundlePath
         let pid = ProcessInfo.processInfo.processIdentifier
         let fm = FileManager.default
@@ -343,6 +325,7 @@ final class UpdateService: ObservableObject {
 
     private func launchUserInstaller(appPath: String, dmgPath: String, pid: Int32,
                                      resultPath: String, expectedVersion: String) {
+        guard requireConfiguredUpdates() else { return }
         let scriptURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("vorssaint-update-\(pid)-\(UUID().uuidString).sh")
         do {
@@ -378,6 +361,7 @@ final class UpdateService: ObservableObject {
     /// exit — and so it survives that exit.
     private func launchAdminInstaller(appPath: String, dmgPath: String, pid: Int32,
                                       resultPath: String, expectedVersion: String) {
+        guard requireConfiguredUpdates() else { return }
         let command = UpdateInstallerSupport.elevatedInstallCommand(appPath: appPath,
                                                                     dmgPath: dmgPath,
                                                                     pid: pid,
@@ -439,6 +423,7 @@ final class UpdateService: ObservableObject {
     }
 
     private func consumeInstallResult() {
+        guard requireConfiguredUpdates() else { return }
         guard let url = Self.installResultURL else { return }
         // A leftover progress file means an installer died mid-run (or is
         // still running right now); it is never a finished verdict.

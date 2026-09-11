@@ -133,15 +133,6 @@ final class RecorderExporter {
         let timelineDuration = (try? await timeline.load(.duration)) ?? .zero
         let audioTracks = (try? await timeline.loadTracks(withMediaType: .audio)) ?? []
 
-        let style = document.resolvedBackdrop
-        let padding = style.kind == .none ? 0 : style.padding * 0.18
-        let fullCanvas = RecorderSupport.canvasSize(source: sourceSize,
-                                                    padding: padding,
-                                                    aspect: document.resolvedAspect,
-                                                    cropsToAspect: style.kind == .none)
-        let regularSize = RecorderSupport.evenSize(CGSize(
-            width: fullCanvas.width * document.resolvedQuality.outputScale,
-            height: fullCanvas.height * document.resolvedQuality.outputScale))
         let outputFrameRate = frameRate
         let outputScale = document.resolvedQuality.outputScale
 
@@ -382,7 +373,7 @@ final class RecorderExporter {
             return nil
         }
         let directory = cache
-            .appendingPathComponent(Bundle.main.bundleIdentifier ?? "com.vorssaint.utils",
+            .appendingPathComponent(Bundle.main.bundleIdentifier ?? ProductIdentity.unbundledStorageID,
                                     isDirectory: true)
             .appendingPathComponent("Temporary Recording Uploads", isDirectory: true)
         do {

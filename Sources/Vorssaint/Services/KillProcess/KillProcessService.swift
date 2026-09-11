@@ -151,15 +151,31 @@ final class KillProcessService: ObservableObject {
         }
     }
 
-    /// Kills a process the caller knows only by pid, as the monitor's process
-    /// rows do. The start time is read at this moment, so a pid that has been
-    /// reused since the row was drawn cannot be hit.
-    func kill(pid: pid_t, name: String, force: Bool) {
-        guard !Self.isProtected(pid: pid, name: name),
-              let target = Self.currentTarget(pid: pid) else { return }
+    /// Port inspection never elevates privileges. The identity is captured when
+    /// the row is queried and checked again immediately before the signal.
+    static func terminateWithoutAuthorization(pid: pid_t, name: String, startedAt: UInt64) -> Bool {
+        guard !isProtected(pid: pid, name: name) else { return false }
+        switch attemptDirectKill(target: KillTarget(pid: pid, startedAt: startedAt), force: false) {
+        case .killed, .alreadyGone: return true
+        case .needsAdmin, .failed, .stale: return false
+        }
+    }
+
+    /// The monitor passes the identity from its displayed snapshot, before
+    /// confirmation. killBatch rechecks it before any signal or authorization.
+    func kill(pid: pid_t, name: String, startedAt: UInt64, force: Bool) {
+        guard !Self.isProtected(pid: pid, name: name) else { return }
+        let target = KillTarget(pid: pid, startedAt: startedAt)
         DispatchQueue.global(qos: .userInitiated).async {
             let removed = self.killBatch([target], force: force, adminPromptProcessName: name)
             self.finishKill(removed: removed)
+            if !removed.contains(pid) {
+                DispatchQueue.main.async {
+                    let text = FeatureStrings.killProcess(L10n.shared.language)
+                    QuickToolHUD.show(icon: "exclamationmark.triangle",
+                                      message: String(format: text.monitorKillFailedFormat, name))
+                }
+            }
         }
     }
 
@@ -362,7 +378,7 @@ final class KillProcessService: ObservableObject {
         currentStartTime(pid: target.pid) == target.startedAt
     }
 
-    private static func currentStartTime(pid: pid_t,
+    static func currentStartTime(pid: pid_t,
                                          expectedParent: pid_t? = nil,
                                          expectedPath: String? = nil) -> UInt64? {
         var info = proc_bsdinfo()

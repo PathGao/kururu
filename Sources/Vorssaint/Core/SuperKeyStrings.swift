@@ -25,12 +25,15 @@ struct SuperKeyStrings {
     var mappingForeignMapping: String = "Another app’s key mapping uses the selected key. Remove it in that app: quitting it is not enough."
     var mappingSystemRefused: String = "macOS refused the key mapping. Reconnect the keyboard or restart the Mac, then switch this on again."
 
+    var inputMonitoringUnavailable: String = "Keyboard input monitoring could not start. Turn the super key off and on to retry."
+
     /// What to show when the key mapping was refused. Every refusal names one
     /// thing to change; none of them is visible in the key itself.
     func mappingFailure(_ failure: SuperKeyMappingFailure) -> String {
         switch failure {
         case .foreignMapping: return mappingForeignMapping
         case .systemRefused: return mappingSystemRefused
+        case .inputMonitoringUnavailable: return inputMonitoringUnavailable
         }
     }
 }
@@ -152,7 +155,8 @@ extension SuperKeyStrings {
         manageButton: "Configurar…",
         soloInputSource: "Cambiar fuente de entrada; mantener para Bloq Mayús",
         mappingForeignMapping: "La reasignación de otra app usa la tecla seleccionada. Elimínala en esa app: salir de ella no basta.",
-        mappingSystemRefused: "macOS rechazó la reasignación de teclas. Vuelve a conectar el teclado o reinicia el Mac y activa esto de nuevo."
+        mappingSystemRefused: "macOS rechazó la reasignación de teclas. Vuelve a conectar el teclado o reinicia el Mac y activa esto de nuevo.",
+        inputMonitoringUnavailable: "No se pudo iniciar la supervisión del teclado. Desactiva y vuelve a activar la supertecla para reintentarlo."
     )
 
     static let de = SuperKeyStrings(
@@ -175,7 +179,8 @@ extension SuperKeyStrings {
         manageButton: "Einrichten…",
         soloInputSource: "Eingabequelle wechseln; für Feststelltaste halten",
         mappingForeignMapping: "Die Tastenbelegung einer anderen App verwendet die ausgewählte Taste. Entferne sie in dieser App: Beenden reicht nicht.",
-        mappingSystemRefused: "macOS hat die Tastenbelegung abgelehnt. Schließe die Tastatur neu an oder starte den Mac neu und schalte dies wieder ein."
+        mappingSystemRefused: "macOS hat die Tastenbelegung abgelehnt. Schließe die Tastatur neu an oder starte den Mac neu und schalte dies wieder ein.",
+        inputMonitoringUnavailable: "Die Überwachung der Tastatureingaben konnte nicht gestartet werden. Schalte die Super-Taste aus und wieder ein, um es erneut zu versuchen."
     )
 
     static let fr = SuperKeyStrings(
@@ -198,7 +203,8 @@ extension SuperKeyStrings {
         manageButton: "Configurer…",
         soloInputSource: "Changer de source d’entrée\u{00A0}; maintenir pour Verr. Maj",
         mappingForeignMapping: "Le remappage d’une autre app utilise la touche sélectionnée. Supprimez-le dans cette app\u{00A0}: la quitter ne suffit pas.",
-        mappingSystemRefused: "macOS a refusé le remappage. Rebranchez le clavier ou redémarrez le Mac, puis réactivez ceci."
+        mappingSystemRefused: "macOS a refusé le remappage. Rebranchez le clavier ou redémarrez le Mac, puis réactivez ceci.",
+        inputMonitoringUnavailable: "La surveillance du clavier n’a pas pu démarrer. Désactivez puis réactivez la super touche pour réessayer."
     )
 
     static let it = SuperKeyStrings(
@@ -244,7 +250,8 @@ extension SuperKeyStrings {
         manageButton: "設定…",
         soloInputSource: "入力ソースを切り替え（長押しで Caps Lock）",
         mappingForeignMapping: "他のアプリのキー割り当てが選択したキーを使っています。そのアプリで割り当てを削除してください。終了するだけでは残ります。",
-        mappingSystemRefused: "macOS がキー割り当てを受け付けませんでした。キーボードを接続し直すか Mac を再起動してから、もう一度オンにしてください。"
+        mappingSystemRefused: "macOS がキー割り当てを受け付けませんでした。キーボードを接続し直すか Mac を再起動してから、もう一度オンにしてください。",
+        inputMonitoringUnavailable: "キーボード入力の監視を開始できませんでした。スーパーキーを一度オフにしてから、再びオンにして試してください。"
     )
 
     static let ko = SuperKeyStrings(
@@ -290,7 +297,8 @@ extension SuperKeyStrings {
         manageButton: "设置…",
         soloInputSource: "切换输入法；长按开关大写锁定",
         mappingForeignMapping: "另一个 App 的按键映射使用了所选按键。请在那个 App 里删除映射：仅退出它并不够。",
-        mappingSystemRefused: "macOS 拒绝了按键映射。请重新连接键盘或重启 Mac，然后重新打开此功能。"
+        mappingSystemRefused: "macOS 拒绝了按键映射。请重新连接键盘或重启 Mac，然后重新打开此功能。",
+        inputMonitoringUnavailable: "无法启动键盘输入监听。请关闭再开启超级键以重试。"
     )
 
     static let zhTW = SuperKeyStrings(

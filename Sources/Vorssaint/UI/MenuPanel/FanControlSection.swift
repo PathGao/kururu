@@ -277,6 +277,9 @@ struct FanControlCardContent: View {
     }
 
     private var stateMessage: String? {
+        if !FanControlIdentifiers.isConfigured {
+            return BuildCapabilityPolicy.helperUnavailable(languageCode: L10n.shared.language.rawValue)
+        }
         if error == .noFans { return strings.noFans }
         if accessState == .unavailable { return strings.unsupported }
         switch error {

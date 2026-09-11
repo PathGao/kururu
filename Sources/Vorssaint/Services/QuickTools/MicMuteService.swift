@@ -18,6 +18,10 @@ final class MicMuteService: ObservableObject {
     static let shared = MicMuteService()
 
     @Published private(set) var isMuted = false
+    @Published private(set) var isMuteRequested = false
+    @Published private(set) var isApplying = false
+    @Published private(set) var lastResult: MicMuteResult?
+    @Published private(set) var failedDeviceNames: [String] = []
     @Published private(set) var shortcutRegistrationFailed = false
 
     private let hotkey = QuickToolHotkey(id: 12)
@@ -62,32 +66,24 @@ final class MicMuteService: ObservableObject {
                                             fallback: .micMuteDefault)
         shortcutRegistrationFailed = !hotkey.sync(enabled: enabled, shortcut: shortcut)
 
-        let wantsMute = UserDefaults.standard.bool(forKey: DefaultsKey.micMuteActive)
-        if available {
-            if wantsMute {
-                apply(muted: true, announce: false)
-            }
-            isMuted = wantsMute
+        let defaults = UserDefaults.standard
+        let wantsMute = available && defaults.bool(forKey: DefaultsKey.micMuteActive)
+        let hasRecovery = !(defaults.stringArray(forKey: DefaultsKey.micMuteMutedDevices) ?? []).isEmpty
+        if wantsMute || hasRecovery || defaults.bool(forKey: DefaultsKey.micMuteActive) {
+            apply(muted: wantsMute, announce: false)
         } else {
-            // Switching the feature off must not strand a muted microphone
-            // with no control left to unmute it.
-            if wantsMute {
-                apply(muted: false, announce: false)
-                UserDefaults.standard.set(false, forKey: DefaultsKey.micMuteActive)
-            }
+            isMuteRequested = false
             isMuted = false
+            syncListeners()
         }
-        syncListeners()
     }
 
-    /// The listeners only exist to keep an active mute true while devices come
-    /// and go, so they live exactly as long as the mute does.
+    /// A pending restore needs device-arrival notifications too. It must not
+    /// be confused with a request to keep all microphones muted.
     private func syncListeners() {
-        if isMuted {
-            installListeners()
-        } else {
-            removeListeners()
-        }
+        let pending = !(UserDefaults.standard.stringArray(forKey: DefaultsKey.micMuteMutedDevices) ?? []).isEmpty
+        if isMuteRequested || pending { installListeners() }
+        else { removeListeners() }
     }
 
     func suspend() {
@@ -95,7 +91,8 @@ final class MicMuteService: ObservableObject {
     }
 
     func toggle() {
-        setMuted(!isMuted)
+        guard !isApplying else { return }
+        setMuted(MicMuteBatchSupport.toggleTarget(isMuteRequested: isMuteRequested, lastResult: lastResult))
     }
 
     func setMuted(_ muted: Bool) {
@@ -106,77 +103,95 @@ final class MicMuteService: ObservableObject {
     /// carries a normal sweep may never be drained once the app is going away,
     /// and a microphone left cut by an app that no longer exists is the one
     /// failure this feature cannot afford, so this one waits.
-    func unmuteForTeardown() {
+    func unmuteForTeardown() -> Bool {
         let defaults = UserDefaults.standard
-        guard defaults.bool(forKey: DefaultsKey.micMuteActive) else { return }
-        let savedVolumes = defaults.dictionary(forKey: DefaultsKey.micMuteSavedVolumes) as? [String: Double] ?? [:]
-        // Missing means never tracked; an empty list means tracked and owning
-        // nothing, and the sweep must keep those two apart.
-        let mutedDevices = defaults.stringArray(forKey: DefaultsKey.micMuteMutedDevices)
-        let legacyVolume = defaults.double(forKey: DefaultsKey.micMuteSavedVolume)
-
-        // Any sweep still in flight loses its right to publish, and this one
-        // runs behind it on the same serial queue.
+        guard defaults.bool(forKey: DefaultsKey.micMuteActive)
+            || !(defaults.stringArray(forKey: DefaultsKey.micMuteMutedDevices) ?? []).isEmpty
+            || isApplying else { return true }
         applyGeneration += 1
-        let outcome = halQueue.sync {
-            Self.applyToDevices(muted: false,
-                                savedVolumes: savedVolumes,
-                                mutedDevices: mutedDevices,
-                                legacyVolume: legacyVolume)
-        }
         defaults.set(false, forKey: DefaultsKey.micMuteActive)
-        defaults.set(outcome.savedVolumes, forKey: DefaultsKey.micMuteSavedVolumes)
-        defaults.set(outcome.mutedDevices, forKey: DefaultsKey.micMuteMutedDevices)
+        isMuteRequested = false
+        let outcome = halQueue.sync { Self.runSweep(muted: false) }
+        isApplying = false
         isMuted = false
-        removeListeners()
+        lastResult = outcome.result
+        failedDeviceNames = outcome.failedDeviceNames
+        let restored = outcome.mutedDevices.isEmpty
+            && (outcome.result == .unmuted || outcome.result == .noDevices)
+        if restored { removeListeners() }
+        else { syncListeners() }
+        return restored
     }
 
-    /// Silently re-asserts the persisted state; used when the set of input
-    /// devices, or the default one, changes underneath us.
     private func reapplyIfNeeded() {
-        guard UserDefaults.standard.bool(forKey: DefaultsKey.micMuteActive) else { return }
-        apply(muted: true, announce: false)
+        let defaults = UserDefaults.standard
+        let requested = defaults.bool(forKey: DefaultsKey.micMuteActive)
+        guard requested || !(defaults.stringArray(forKey: DefaultsKey.micMuteMutedDevices) ?? []).isEmpty else { return }
+        apply(muted: requested && AppFeature.micMute.isAvailable, announce: false)
     }
 
     // MARK: - Applying
 
-    /// Hands the sweep to the audio queue and keeps the published state, the
-    /// persisted state and the HUD on the main thread, where they belong.
     private func apply(muted: Bool, announce: Bool) {
-        let defaults = UserDefaults.standard
-        let savedVolumes = defaults.dictionary(forKey: DefaultsKey.micMuteSavedVolumes) as? [String: Double] ?? [:]
-        let mutedDevices = defaults.stringArray(forKey: DefaultsKey.micMuteMutedDevices)
-        let legacyVolume = defaults.double(forKey: DefaultsKey.micMuteSavedVolume)
-
+        let requested = muted && AppFeature.micMute.isAvailable
+        UserDefaults.standard.set(requested, forKey: DefaultsKey.micMuteActive)
+        isMuteRequested = requested
+        isApplying = true
+        // A previous full-mute observation no longer proves the current batch.
+        isMuted = false
+        syncListeners()
         applyGeneration += 1
         let generation = applyGeneration
         halQueue.async { [weak self] in
-            let outcome = Self.applyToDevices(muted: muted,
-                                              savedVolumes: savedVolumes,
-                                              mutedDevices: mutedDevices,
-                                              legacyVolume: legacyVolume)
+            let outcome = Self.runSweep(muted: requested)
             DispatchQueue.main.async {
-                self?.finish(outcome, muted: muted, announce: announce, generation: generation)
+                self?.finish(outcome, announce: announce, generation: generation)
             }
         }
     }
 
-    /// Main thread. Publishes one sweep.
-    private func finish(_ outcome: MuteOutcome, muted: Bool, announce: Bool, generation: Int) {
-        // A sweep that reached nothing leaves the recorded state alone: it is
-        // what a later unmute needs to put every level back.
-        guard generation == applyGeneration, outcome.applied else { return }
+    /// Serialized physical sweeps always persist their recovery ledger, even
+    /// when a newer request supersedes their right to publish UI. The next
+    /// sweep reads this ledger here, after all earlier hardware writes finish.
+    private static func runSweep(muted: Bool) -> MicMuteBatchOutcome {
         let defaults = UserDefaults.standard
+        let devices = inputDevices()
+        let identifiers = Dictionary(uniqueKeysWithValues: devices.map { ($0.uid, $0.id) })
+        var potentiallyChanged: Set<String> = []
+        let access = MicMuteDeviceAccess(
+            muteSwitch: { uid in identifiers[uid].flatMap { muteSwitchValue(of: $0) } },
+            volume: { uid in identifiers[uid].flatMap { inputVolume(of: $0) } },
+            setMuteSwitch: { muted, uid in identifiers[uid].map { setMuteSwitch(muted, of: $0, didWrite: { potentiallyChanged.insert(uid) }) } ?? false },
+            setVolume: { volume, uid in identifiers[uid].map { setInputVolume(volume, of: $0, didWrite: { potentiallyChanged.insert(uid) }) } ?? false },
+            restorationVolume: { uid in identifiers[uid].flatMap { inputVolume(of: $0, restoring: true) } },
+            restoreVolume: { volume, uid in identifiers[uid].map { setInputVolume(volume, of: $0, restoring: true) } ?? false },
+            mayHaveChanged: { potentiallyChanged.contains($0) },
+            hasMuteSwitch: { uid in
+                guard let id = identifiers[uid] else { return false }
+                var address = muteAddress()
+                return AudioObjectHasProperty(id, &address)
+            })
+        let outcome = MicMuteBatchSupport.apply(muted: muted,
+            devices: devices.map { MicMuteDevice(uid: $0.uid, name: $0.name) },
+            savedVolumes: defaults.dictionary(forKey: DefaultsKey.micMuteSavedVolumes) as? [String: Double] ?? [:],
+            mutedDevices: defaults.stringArray(forKey: DefaultsKey.micMuteMutedDevices),
+            legacyVolume: defaults.double(forKey: DefaultsKey.micMuteSavedVolume), access: access)
         defaults.set(outcome.savedVolumes, forKey: DefaultsKey.micMuteSavedVolumes)
         defaults.set(outcome.mutedDevices, forKey: DefaultsKey.micMuteMutedDevices)
+        return outcome
+    }
 
-        if isMuted != muted { isMuted = muted }
-        defaults.set(muted, forKey: DefaultsKey.micMuteActive)
+    private func finish(_ outcome: MicMuteBatchOutcome, announce: Bool, generation: Int) {
+        guard generation == applyGeneration else { return }
+        isApplying = false
+        isMuted = outcome.result == .muted
+        lastResult = outcome.result
+        failedDeviceNames = outcome.failedDeviceNames
         syncListeners()
         guard announce else { return }
-        QuickToolHUD.show(icon: muted ? "mic.slash.fill" : "mic.fill",
-                          message: muted ? FeatureStrings.micMute(L10n.shared.language).mutedHUD
-                                        : FeatureStrings.micMute(L10n.shared.language).unmutedHUD)
+        let text = FeatureStrings.micMute(L10n.shared.language)
+        QuickToolHUD.show(icon: text.resultSymbol(for: outcome.result),
+                          message: text.resultMessage(for: outcome.result))
     }
 
     // MARK: - CoreAudio
@@ -184,122 +199,7 @@ final class MicMuteService: ObservableObject {
     private struct InputDevice {
         let id: AudioDeviceID
         let uid: String
-    }
-
-    private struct MuteOutcome {
-        var applied: Bool
-        var savedVolumes: [String: Double]
-        var mutedDevices: [String]
-    }
-
-    /// Runs on `halQueue`. Every CoreAudio call of a sweep happens here.
-    private static func applyToDevices(muted: Bool,
-                                       savedVolumes: [String: Double],
-                                       mutedDevices: [String]?,
-                                       legacyVolume: Double) -> MuteOutcome {
-        let devices = inputDevices()
-        guard !devices.isEmpty else {
-            // Nothing to silence. An unmute has still done its job.
-            return MuteOutcome(applied: !muted, savedVolumes: savedVolumes, mutedDevices: [])
-        }
-        return muted
-            ? mute(devices, savedVolumes: savedVolumes, mutedDevices: mutedDevices)
-            : unmute(devices, savedVolumes: savedVolumes, mutedDevices: mutedDevices, legacyVolume: legacyVolume)
-    }
-
-    private static func mute(_ devices: [InputDevice],
-                             savedVolumes: [String: Double],
-                             mutedDevices: [String]?) -> MuteOutcome {
-        var outcome = MuteOutcome(applied: false, savedVolumes: savedVolumes, mutedDevices: [])
-        let owned = Set(mutedDevices ?? [])
-        for device in devices {
-            // Already silent: a microphone the user muted themselves is left
-            // alone, so unmuting later never opens something this app did not
-            // close. One this app already muted keeps its owner.
-            if isSilenced(device.id) {
-                outcome.applied = true
-                if owned.contains(device.uid) { outcome.mutedDevices.append(device.uid) }
-                continue
-            }
-            if setMuteSwitch(true, of: device.id) {
-                outcome.applied = true
-                outcome.mutedDevices.append(device.uid)
-                continue
-            }
-            // No mute switch, or a device that keeps its own: use the input
-            // volume, remembering the level.
-            let volume = inputVolume(of: device.id)
-            if MicMuteSupport.shouldSaveVolume(volume), let volume {
-                outcome.savedVolumes[device.uid] = Double(volume)
-            }
-            // Claimed only when the device really went quiet: a driver that
-            // takes the write and keeps its level must not be recorded as
-            // muted, or the unmute would raise a microphone it never lowered.
-            if setInputVolume(0, of: device.id), isSilenced(device.id) {
-                outcome.applied = true
-                outcome.mutedDevices.append(device.uid)
-            } else {
-                outcome.savedVolumes.removeValue(forKey: device.uid)
-            }
-        }
-        return outcome
-    }
-
-    private static func unmute(_ devices: [InputDevice],
-                               savedVolumes: [String: Double],
-                               mutedDevices: [String]?,
-                               legacyVolume: Double) -> MuteOutcome {
-        var outcome = MuteOutcome(applied: false, savedVolumes: savedVolumes, mutedDevices: [])
-        let targets = Set(MicMuteSupport.restoreTargets(recorded: mutedDevices,
-                                                        present: devices.map(\.uid)))
-        var attempted = false
-        for device in devices where targets.contains(device.uid) {
-            // A saved level only leaves once the device really opened: a
-            // restore that failed keeps the claim and the level, so the next
-            // attempt still knows the device is this app's to release.
-            if muteSwitchValue(of: device.id) == 1 {
-                attempted = true
-                if setMuteSwitch(false, of: device.id) {
-                    outcome.applied = true
-                    outcome.savedVolumes.removeValue(forKey: device.uid)
-                } else {
-                    outcome.mutedDevices.append(device.uid)
-                }
-                continue
-            }
-            guard let volume = inputVolume(of: device.id) else {
-                // Unreadable right now (a headset mid reconnection): nothing
-                // was restored, so the claim and the level survive.
-                outcome.mutedDevices.append(device.uid)
-                continue
-            }
-            guard volume <= 0.01 else {
-                // Already audible: the level has nothing left to restore.
-                outcome.savedVolumes.removeValue(forKey: device.uid)
-                continue
-            }
-            attempted = true
-            let restore = MicMuteSupport.volumeToRestore(uid: device.uid,
-                                                         saved: savedVolumes,
-                                                         legacy: legacyVolume)
-            if setInputVolume(restore, of: device.id) {
-                outcome.applied = true
-                outcome.savedVolumes.removeValue(forKey: device.uid)
-            } else {
-                outcome.mutedDevices.append(device.uid)
-            }
-        }
-        // Nothing left silenced is a finished unmute; the user must never be
-        // left holding a mute the app refuses to release.
-        if !attempted { outcome.applied = true }
-        return outcome
-    }
-
-    /// True when no audio can come out of the device right now.
-    private static func isSilenced(_ device: AudioDeviceID) -> Bool {
-        if muteSwitchValue(of: device) == 1 { return true }
-        guard let volume = inputVolume(of: device) else { return false }
-        return volume <= 0.01
+        let name: String
     }
 
     /// Every device that can capture audio, skipping the app's own mixing
@@ -333,7 +233,7 @@ final class MicMuteService: ObservableObject {
             let name = read(deviceID, kAudioObjectPropertyName, &nameRef) ? nameRef as String : uid
             guard !MicMuteSupport.isOwnDevice(name: name) else { continue }
 
-            devices.append(InputDevice(id: deviceID, uid: uid))
+            devices.append(InputDevice(id: deviceID, uid: uid, name: name))
         }
         return devices
     }
@@ -366,7 +266,7 @@ final class MicMuteService: ObservableObject {
     /// drivers answer a write with success and keep their own value, so the
     /// switch only counts when the device reads back the way it was asked to;
     /// otherwise the caller still has the volume to fall back on.
-    private static func setMuteSwitch(_ muted: Bool, of device: AudioDeviceID) -> Bool {
+    private static func setMuteSwitch(_ muted: Bool, of device: AudioDeviceID, didWrite: () -> Void = {}) -> Bool {
         var address = muteAddress()
         var settable = DarwinBoolean(false)
         guard AudioObjectHasProperty(device, &address),
@@ -375,44 +275,51 @@ final class MicMuteService: ObservableObject {
         var value: UInt32 = muted ? 1 : 0
         guard AudioObjectSetPropertyData(device, &address, 0, nil,
                                          UInt32(MemoryLayout<UInt32>.size), &value) == noErr else { return false }
-        guard let readBack = muteSwitchValue(of: device) else { return true }
+        didWrite()
+        guard let readBack = muteSwitchValue(of: device) else { return false }
         return readBack == value
     }
 
-    private static func volumeAddresses() -> [AudioObjectPropertyAddress] {
-        // Main element first; devices without a master volume expose the
-        // channels individually.
-        [kAudioObjectPropertyElementMain, 1, 2].map { element in
-            AudioObjectPropertyAddress(mSelector: kAudioDevicePropertyVolumeScalar,
-                                       mScope: kAudioDevicePropertyScopeInput,
-                                       mElement: element)
-        }
+    private static func volumeAddress(_ element: UInt32) -> AudioObjectPropertyAddress {
+        AudioObjectPropertyAddress(mSelector: kAudioDevicePropertyVolumeScalar,
+                                   mScope: kAudioDevicePropertyScopeInput, mElement: element)
     }
 
-    private static func inputVolume(of device: AudioDeviceID) -> Float? {
-        for var address in volumeAddresses() where AudioObjectHasProperty(device, &address) {
-            var volume = Float(0)
-            var size = UInt32(MemoryLayout<Float>.size)
-            if AudioObjectGetPropertyData(device, &address, 0, nil, &size, &volume) == noErr {
-                return volume
-            }
-        }
-        return nil
+    private static func hasVolume(_ device: AudioDeviceID, element: UInt32) -> Bool {
+        var address = volumeAddress(element)
+        return AudioObjectHasProperty(device, &address)
     }
 
-    private static func setInputVolume(_ volume: Float, of device: AudioDeviceID) -> Bool {
-        var applied = false
-        for var address in volumeAddresses() where AudioObjectHasProperty(device, &address) {
-            var settable = DarwinBoolean(false)
-            guard AudioObjectIsPropertySettable(device, &address, &settable) == noErr,
-                  settable.boolValue else { continue }
-            var value = volume
-            if AudioObjectSetPropertyData(device, &address, 0, nil,
-                                          UInt32(MemoryLayout<Float>.size), &value) == noErr {
-                applied = true
-            }
-        }
-        return applied
+    private static func readVolume(_ device: AudioDeviceID, element: UInt32) -> Float? {
+        var address = volumeAddress(element)
+        var volume = Float(0)
+        var size = UInt32(MemoryLayout<Float>.size)
+        guard AudioObjectGetPropertyData(device, &address, 0, nil, &size, &volume) == noErr else { return nil }
+        return volume
+    }
+
+    private static func inputVolume(of device: AudioDeviceID, restoring: Bool = false) -> Float? {
+        MicMuteVolumeSupport.read(restoring: restoring,
+            hasProperty: { hasVolume(device, element: $0) },
+            read: { readVolume(device, element: $0) })
+    }
+
+    private static func setInputVolume(_ volume: Float, of device: AudioDeviceID, restoring: Bool = false, didWrite: () -> Void = {}) -> Bool {
+        MicMuteVolumeSupport.write(volume, restoring: restoring,
+            hasProperty: { hasVolume(device, element: $0) },
+            isSettable: { element in
+                var address = volumeAddress(element)
+                var settable = DarwinBoolean(false)
+                return AudioObjectIsPropertySettable(device, &address, &settable) == noErr && settable.boolValue
+            }, read: { readVolume(device, element: $0) },
+            write: { value, element in
+                var address = volumeAddress(element)
+                var value = value
+                let written = AudioObjectSetPropertyData(device, &address, 0, nil,
+                    UInt32(MemoryLayout<Float>.size), &value) == noErr
+                if written { didWrite() }
+                return written
+            })
     }
 
     @discardableResult

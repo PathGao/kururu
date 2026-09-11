@@ -9,6 +9,8 @@ import IOKit
 struct ProcessUsage: Identifiable, Equatable {
     let pid: pid_t
     let name: String
+    /// Identity of the final displayed owner, captured with this row snapshot.
+    let startedAt: UInt64?
     /// CPU/GPU/energy: percentage (0–100). Memory: bytes. Network: total bytes/s.
     let value: Double
     let networkDownBytesPerSec: Double?
@@ -19,11 +21,13 @@ struct ProcessUsage: Identifiable, Equatable {
     init(pid: pid_t,
          name: String,
          value: Double,
+         startedAt: UInt64? = nil,
          networkDownBytesPerSec: Double? = nil,
          networkUpBytesPerSec: Double? = nil) {
         self.pid = pid
         self.name = name
         self.value = value
+        self.startedAt = startedAt
         self.networkDownBytesPerSec = networkDownBytesPerSec
         self.networkUpBytesPerSec = networkUpBytesPerSec
     }
@@ -201,22 +205,27 @@ final class ProcessUsageService {
         let gpuRows = topGPU(limit: sampleLimit,
                              sampleInterval: sampleInterval,
                              aggregatePercentage: gpuPercentage)
-        var scores: [pid_t: (name: String, value: Double)] = [:]
+        var scores: [pid_t: (name: String, value: Double, startedAt: UInt64?)] = [:]
+        var conflictingPIDs = Set<pid_t>()
 
         for row in cpuRows + gpuRows {
-            var score = scores[row.pid] ?? (row.name, 0)
+            if let existing = scores[row.pid], existing.startedAt != row.startedAt {
+                conflictingPIDs.insert(row.pid)
+            }
+            var score = scores[row.pid] ?? (row.name, 0, row.startedAt)
             score.value += row.value
             if score.name.hasPrefix("pid ") { score.name = row.name }
             scores[row.pid] = score
         }
 
         let rows = scores
-            .filter { _, score in score.value >= 2 }
+            .filter { pid, score in score.value >= 2 && !conflictingPIDs.contains(pid) }
             .sorted { $0.value.value > $1.value.value }
             .map { pid, score in
                 ProcessUsage(pid: pid,
                              name: score.name,
-                             value: MetricFormat.boundedPercentage(score.value))
+                             value: MetricFormat.boundedPercentage(score.value),
+                             startedAt: score.startedAt)
             }
         cacheLock.lock()
         energyCache = cachedRows(from: rows)
@@ -458,7 +467,7 @@ final class ProcessUsageService {
             ? groupedByApp(parsePS(result.output, maxRows: rawProcessRowLimit(for: limit)) { (Double($0) ?? 0) * 1024 }
                 .map { row in
                     guard let footprint = Self.physicalFootprint(of: row.pid) else { return row }
-                    return ProcessUsage(pid: row.pid, name: row.name, value: footprint)
+                    return ProcessUsage(pid: row.pid, name: row.name, value: footprint, startedAt: row.startedAt)
                 })
             : nil
         return finishMemory(rows, limit: limit)
@@ -518,10 +527,14 @@ final class ProcessUsageService {
         return totals
             .sorted { $0.value > $1.value }
             .map { owner, value in
-                ProcessUsage(pid: owner,
-                             name: ResponsibleProcess.displayName(pid: owner,
-                                                                  fallback: fallbackNames[owner] ?? "pid \(owner)"),
-                             value: value)
+                let startedAt = KillProcessService.currentStartTime(pid: owner)
+                let name = ResponsibleProcess.displayName(pid: owner,
+                                                          fallback: fallbackNames[owner] ?? "pid \(owner)")
+                let identity = KillProcessService.currentStartTime(pid: owner) == startedAt ? startedAt : nil
+                return ProcessUsage(pid: owner,
+                             name: name,
+                             value: value,
+                             startedAt: identity)
             }
     }
 
@@ -533,7 +546,8 @@ final class ProcessUsageService {
         return rows.map { row in
             ProcessUsage(pid: row.pid,
                          name: row.name,
-                         value: MetricFormat.boundedPercentage(row.value * scale))
+                         value: MetricFormat.boundedPercentage(row.value * scale),
+                         startedAt: row.startedAt)
         }
     }
 
@@ -554,10 +568,14 @@ final class ProcessUsageService {
 
         return totals
             .map { owner, value in
-                ProcessUsage(pid: owner,
-                             name: ResponsibleProcess.displayName(pid: owner,
-                                                                  fallback: fallbackNames[owner] ?? "pid \(owner)"),
+                let startedAt = KillProcessService.currentStartTime(pid: owner)
+                let name = ResponsibleProcess.displayName(pid: owner,
+                                                          fallback: fallbackNames[owner] ?? "pid \(owner)")
+                let identity = KillProcessService.currentStartTime(pid: owner) == startedAt ? startedAt : nil
+                return ProcessUsage(pid: owner,
+                             name: name,
                              value: value.down + value.up,
+                             startedAt: identity,
                              networkDownBytesPerSec: value.down,
                              networkUpBytesPerSec: value.up)
             }

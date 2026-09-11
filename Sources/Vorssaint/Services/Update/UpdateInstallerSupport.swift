@@ -24,7 +24,10 @@ enum UpdateInstallerSupport {
     /// root, where a plain `open` could launch the app as root), $6 expected
     /// version from the trusted release tag.
     static func installerScript() -> String {
-        """
+        let diskRequirement = BuildCapabilityPolicy.teamCodeRequirement(teamID: ProductIdentity.signingTeamID)
+        let appRequirement = BuildCapabilityPolicy.codeRequirement(teamID: ProductIdentity.signingTeamID,
+                                                                  identifier: ProductIdentity.releaseBundleID)
+        return """
         #!/bin/sh
         APP="$1"; DMG="$2"; PID="$3"; RESULT="$4"; ASUSER="$5"; EXPECTED_VERSION="$6"
         SCRIPT="$0"
@@ -63,7 +66,7 @@ enum UpdateInstallerSupport {
         }
         while kill -0 "$PID" 2>/dev/null; do sleep 0.3; done
         note fail-dmg-verify
-        DMG_VERIFY_REQ='anchor apple generic and certificate leaf[subject.OU] = "3D485NHW29"'
+        DMG_VERIFY_REQ=\(shellSingleQuoted(diskRequirement))
         if ! /usr/bin/codesign -v --strict -R="$DMG_VERIFY_REQ" "$DMG" 2>/dev/null; then
             /bin/rm -f "$DMG"
             finalize
@@ -113,7 +116,7 @@ enum UpdateInstallerSupport {
                     elif /usr/sbin/spctl -a -t exec "$STAGE" >/dev/null 2>&1; then
                         GATEKEEPER_OK=1
                     fi
-                    VERIFY_REQ='identifier "com.vorssaint.utils" and anchor apple generic and certificate leaf[subject.OU] = "3D485NHW29"'
+                    VERIFY_REQ=\(shellSingleQuoted(appRequirement))
                     note fail-verify
                     if /usr/bin/codesign -v --deep --strict -R="$VERIFY_REQ" "$STAGE" 2>/dev/null \
                         && [ "$GATEKEEPER_OK" = 1 ]; then

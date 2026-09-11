@@ -3,9 +3,6 @@
 
 import SwiftUI
 
-/// Advanced page: a clean way to reset every permission the app holds, and a
-/// full self-uninstall. Both actions are confirmation-gated and scoped entirely
-/// to this app (see `SelfUninstall`).
 struct AdvancedSettings: View {
     @ObservedObject private var l10n = L10n.shared
     @ObservedObject private var appearance = AppAppearanceController.shared
@@ -14,12 +11,19 @@ struct AdvancedSettings: View {
     @State private var showClearConfirm = false
     @State private var showUninstallConfirm = false
     @State private var uninstallFailed = false
+    @State private var uninstallFailure: SelfUninstall.Failure?
     @State private var working = false
+    @State private var clearingPermissions = false
     @State private var cleared = false
-    @State private var exported = false
+    @State private var exportResult: SettingsBackupExport?
+    @State private var clearResult: PermissionResetResult?
     @State private var importFailed = false
     @State private var pendingImport: [String: Any]?
     @State private var showImportConfirm = false
+
+    private var hierarchy: SettingsHierarchyStrings { SettingsHierarchyStrings(language: l10n.language) }
+
+    private var actionText: SettingsActionStrings { SettingsActionStrings(language: l10n.language) }
 
     private var backup: BackupFeatureStrings {
         FeatureStrings.backup(l10n.language)
@@ -28,8 +32,8 @@ struct AdvancedSettings: View {
     private var appearanceStrings: AppearanceStrings { FeatureStrings.appearance(l10n.language) }
 
     var body: some View {
-        Form {
-            Section {
+        SettingsForm {
+            SettingsSection(hierarchy.general) {
                 Toggle(l10n.s.launchAtLogin, isOn: $launchAtLogin)
                     .onChange(of: launchAtLogin) { _, enabled in
                         do {
@@ -43,7 +47,7 @@ struct AdvancedSettings: View {
                     .onAppear { launchAtLogin = LaunchAtLogin.isEnabled }
                 if let loginError {
                     Text(loginError)
-                        .font(.caption)
+                        .font(SettingsTypography.caption)
                         .foregroundStyle(.red)
                 }
                 Picker(l10n.s.languageLabel, selection: $l10n.language) {
@@ -51,6 +55,8 @@ struct AdvancedSettings: View {
                         Text(language.displayName).tag(language)
                     }
                 }
+            }
+            SettingsSection(appearanceStrings.label) {
                 Picker(appearanceStrings.label, selection: $appearance.appearance) {
                     ForEach(AppAppearance.allCases) { option in
                         Text(option.title(appearanceStrings)).tag(option)
@@ -62,76 +68,69 @@ struct AdvancedSettings: View {
                     Toggle(appearanceStrings.liquidGlass, isOn: $appearance.liquidGlassEnabled)
                 }
 #endif
+                ThemeSettings()
             }
-            Section(backup.title) {
-                Text(backup.description)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                HStack(spacing: 10) {
-                    Button {
-                        importFailed = false
-                        exported = SettingsBackup.runExportPanel() == true
-                    } label: {
-                        Label(backup.exportButton, systemImage: "square.and.arrow.up")
+            SettingsSection(hierarchy.maintenance) {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(backup.title).font(.headline)
+                    SettingsExplanation(backup.description)
+                    ViewThatFits(in: .horizontal) {
+                        HStack(spacing: 10) { backupActions }
+                            .fixedSize(horizontal: true, vertical: false)
+                        VStack(alignment: .leading, spacing: 10) { backupActions }
                     }
-                    Button {
-                        exported = false
-                        importFailed = false
-                        guard let url = SettingsBackup.runImportPanel() else { return }
-                        if let settings = SettingsBackup.readSettings(at: url) {
-                            pendingImport = settings
-                            showImportConfirm = true
-                        } else {
-                            importFailed = true
+                    if exportResult == .saved {
+                        HStack(spacing: 6) {
+                            Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+                            Text(backup.exported).font(SettingsTypography.caption).foregroundStyle(.green)
                         }
+                    }
+                    if case let .failed(reason) = exportResult {
+                        Text("\(actionText.exportFailed)\n\(reason)")
+                            .font(SettingsTypography.caption)
+                            .foregroundStyle(.orange)
+                            .textSelection(.enabled)
+                    }
+                    if importFailed {
+                        Text(backup.invalidFile)
+                            .font(SettingsTypography.caption)
+                            .foregroundStyle(.orange)
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(l10n.s.advancedResetSection).font(.headline)
+                    SettingsExplanation(l10n.s.advancedResetDescription)
+                    Button(role: .destructive) {
+                        showClearConfirm = true
                     } label: {
-                        Label(backup.importButton, systemImage: "square.and.arrow.down")
+                        Label(l10n.s.advancedClearButton, systemImage: "lock.slash")
+                    }
+                    .disabled(working)
+                    if clearingPermissions { ProgressView().controlSize(.small) }
+                    if let clearResult, clearResult != .completed {
+                        Text(actionText.permissionFailure(clearResult))
+                            .font(SettingsTypography.caption)
+                            .foregroundStyle(.orange)
+                    }
+                    if cleared {
+                        HStack(spacing: 6) {
+                            Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+                            Text(l10n.s.advancedCleared).font(SettingsTypography.caption).foregroundStyle(.green)
+                        }
                     }
                 }
-                if exported {
-                    HStack(spacing: 6) {
-                        Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
-                        Text(backup.exported).font(.caption).foregroundStyle(.green)
-                    }
-                }
-                if importFailed {
-                    Text(backup.invalidFile)
-                        .font(.caption)
-                        .foregroundStyle(.orange)
-                }
-            }
 
-            Section(l10n.s.advancedResetSection) {
-                Text(l10n.s.advancedResetDescription)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                Button(role: .destructive) {
-                    showClearConfirm = true
-                } label: {
-                    Label(l10n.s.advancedClearButton, systemImage: "lock.slash")
-                }
-                .disabled(working)
-                if cleared {
-                    HStack(spacing: 6) {
-                        Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
-                        Text(l10n.s.advancedCleared).font(.caption).foregroundStyle(.green)
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(l10n.s.advancedUninstallSection).font(.headline)
+                    SettingsExplanation(l10n.s.advancedUninstallDescription)
+                    Button(role: .destructive) {
+                        showUninstallConfirm = true
+                    } label: {
+                        Label(l10n.s.advancedUninstallButton, systemImage: "trash")
                     }
+                    .disabled(working)
                 }
-            }
-
-            Section(l10n.s.advancedUninstallSection) {
-                Text(l10n.s.advancedUninstallDescription)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                Button(role: .destructive) {
-                    showUninstallConfirm = true
-                } label: {
-                    Label(l10n.s.advancedUninstallButton, systemImage: "trash")
-                }
-                .disabled(working)
             }
         }
         .formStyle(.grouped)
@@ -139,10 +138,14 @@ struct AdvancedSettings: View {
             Button(l10n.s.uninstallerCancel, role: .cancel) {}
             Button(l10n.s.advancedClearButton, role: .destructive) {
                 working = true
+                clearingPermissions = true
                 cleared = false
-                SelfUninstall.clearPermissions {
+                clearResult = nil
+                SelfUninstall.clearPermissions { result in
                     working = false
-                    cleared = true
+                    clearingPermissions = false
+                    clearResult = result
+                    cleared = result == .completed
                 }
             }
         } message: {
@@ -152,11 +155,9 @@ struct AdvancedSettings: View {
             Button(l10n.s.uninstallerCancel, role: .cancel) {}
             Button(l10n.s.advancedUninstallButton, role: .destructive) {
                 working = true
-                SelfUninstall.uninstallCompletely {
+                SelfUninstall.uninstallCompletely { failure in
                     working = false
-                    // Stopping leaves the Mac exactly as it was, so the only
-                    // thing left to do is say so: the button going quiet on
-                    // its own reads as the app ignoring the request.
+                    uninstallFailure = failure
                     uninstallFailed = true
                 }
             }
@@ -166,7 +167,7 @@ struct AdvancedSettings: View {
         .alert(l10n.s.advancedUninstallFailedTitle, isPresented: $uninstallFailed) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text(l10n.s.advancedUninstallFailedBody)
+            Text(uninstallFailure.map(actionText.uninstallFailure) ?? l10n.s.advancedUninstallFailedBody)
         }
         .alert(backup.importConfirmTitle, isPresented: $showImportConfirm) {
             Button(l10n.s.uninstallerCancel, role: .cancel) { pendingImport = nil }
@@ -179,4 +180,28 @@ struct AdvancedSettings: View {
             Text(backup.importConfirmBody)
         }
     }
+
+    @ViewBuilder
+    private var backupActions: some View {
+        Button {
+            importFailed = false
+            exportResult = SettingsBackup.runExportPanel()
+        } label: {
+            Label(backup.exportButton, systemImage: "square.and.arrow.up")
+        }
+        Button {
+            exportResult = nil
+            importFailed = false
+            guard let url = SettingsBackup.runImportPanel() else { return }
+            if let settings = SettingsBackup.readSettings(at: url) {
+                pendingImport = settings
+                showImportConfirm = true
+            } else {
+                importFailed = true
+            }
+        } label: {
+            Label(backup.importButton, systemImage: "square.and.arrow.down")
+        }
+    }
+
 }

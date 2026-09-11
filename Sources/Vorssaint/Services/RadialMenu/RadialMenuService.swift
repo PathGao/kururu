@@ -96,6 +96,7 @@ final class RadialMenuService: ObservableObject {
     // MARK: - Lifecycle
 
     func syncWithPreferences() {
+        defer { MiddleClickService.shared.syncWithPreferences() }
         let defaults = UserDefaults.standard
         let enabled = AppFeature.radialMenu.isAvailable
             && defaults.bool(forKey: DefaultsKey.radialMenuEnabled)
@@ -317,6 +318,28 @@ final class RadialMenuService: ObservableObject {
 
     /// The Settings page's try-it button: a sticky session with the saved
     /// placement, exactly like a quick press of the shortcut.
+    func toggleFromTrackpad(profileID: UUID) {
+        let defaults = UserDefaults.standard
+        guard AppFeature.radialMenu.isAvailable,
+              defaults.bool(forKey: DefaultsKey.radialMenuEnabled),
+              SessionActivity.shared.isActive,
+              !CleaningModeManager.shared.isActive,
+              AXIsProcessTrusted() else { return }
+        let profiles = RadialMenuSupport.decodeProfiles(defaults.data(forKey: DefaultsKey.radialMenuProfiles),
+                                                       defaults: defaults)
+        guard let profile = profiles.first(where: { $0.id == profileID }),
+              TrackpadGestureRouting.owner(fingers: profile.trackpadTapFingers,
+                  middleClickTapFingers: Defaults.sanitizedMiddleClickTapFingers(
+                      defaults.integer(forKey: DefaultsKey.middleClickTapFingers)),
+                  profiles: profiles) == .radial(profileID) else { return }
+        if sessionActive, activeProfile?.id == profileID {
+            endSession()
+        } else {
+            endSession()
+            beginSession(for: profile, hold: false, activationOverride: .press)
+        }
+    }
+
     func presentPreview(for profile: RadialMenuProfile? = nil) {
         endSession()
         let defaults = UserDefaults.standard
@@ -328,7 +351,8 @@ final class RadialMenuService: ObservableObject {
         beginSession(for: targetProfile, hold: false)
     }
 
-    private func beginSession(for profile: RadialMenuProfile, hold: Bool, heldButton: Int64? = nil) {
+    private func beginSession(for profile: RadialMenuProfile, hold: Bool, heldButton: Int64? = nil,
+                              activationOverride: RadialMenuActivationMode? = nil) {
         let defaults = UserDefaults.standard
         let items = availableItems(profile.items)
         guard !items.isEmpty else {
@@ -351,7 +375,7 @@ final class RadialMenuService: ObservableObject {
         }
 
         let shortcut = GlobalShortcut(storageValue: profile.shortcut) ?? .radialMenuDefault
-        let activationMode = RadialMenuActivationMode.sanitized(
+        let activationMode = activationOverride ?? RadialMenuActivationMode.sanitized(
             defaults.string(forKey: DefaultsKey.radialMenuActivationMode))
         let startsHeld = activationMode.startsHeld(
             requestedHold: hold,
@@ -870,7 +894,7 @@ final class RadialMenuService: ObservableObject {
                                       styleMask: [.borderless, .nonactivatingPanel],
                                       backing: .buffered,
                                       defer: false)
-        panel.title = "Vorssaint"
+        panel.title = AppInfo.name
         panel.isReleasedWhenClosed = false
         panel.isMovableByWindowBackground = false
         panel.hidesOnDeactivate = false

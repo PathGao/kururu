@@ -604,8 +604,8 @@ enum ShelfPersistenceSupport {
 
     /// Drops entries that can no longer be honored (missing files, empty text,
     /// invalid links) and mirrors the live shelf's batch rules: an emptied
-    /// batch disappears and a single-child batch collapses to its child, the
-    /// same way removing items from a live batch behaves.
+    /// batch disappears. Surviving batches retain their identity and title,
+    /// including single-child batches restored from an imported store.
     ///
     /// `fileExists` decides whether a file item survives. Callers must answer
     /// true for files on volumes that are merely NOT MOUNTED right now (see
@@ -674,10 +674,6 @@ enum ShelfPersistenceSupport {
                                          remainingLeaves: &remainingLeaves,
                                          fileExists: fileExists, resolveBookmark: resolveBookmark)
                 if children.isEmpty { continue }
-                if children.count == 1 {
-                    result.append(children[0])
-                    continue
-                }
                 result.append(ShelfPersistedItem(id: item.id, kind: .batch, title: item.title,
                                                  children: children))
             }

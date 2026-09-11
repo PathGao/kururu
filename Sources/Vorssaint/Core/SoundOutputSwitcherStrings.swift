@@ -10,6 +10,8 @@ struct SoundOutputSwitcherFeatureStrings {
     var caption: String = "Choose outputs and use the shortcut to move to the next available one."
     var devices: String = "Outputs in cycle"
     var noAvailableSelection: String = "Select at least one available output."
+    var switchFailed: String = "Could not switch the audio output. Try again."
+    var switchFailedFormat: String = "Could not switch the audio output to %@."
 }
 
 extension FeatureStrings {
@@ -64,7 +66,9 @@ extension SoundOutputSwitcherFeatureStrings {
         enable: "Cambiar salidas con atajo",
         caption: "Elige salidas y usa el atajo para pasar a la siguiente disponible.",
         devices: "Salidas en el ciclo",
-        noAvailableSelection: "Selecciona al menos una salida disponible."
+        noAvailableSelection: "Selecciona al menos una salida disponible.",
+        switchFailed: "No se pudo cambiar la salida de audio. Inténtalo de nuevo.",
+        switchFailedFormat: "No se pudo cambiar la salida de audio a %@."
     )
 
     static let de = SoundOutputSwitcherFeatureStrings(
@@ -72,7 +76,9 @@ extension SoundOutputSwitcherFeatureStrings {
         enable: "Ausgaben per Kurzbefehl wechseln",
         caption: "Wähle Ausgaben und nutze den Kurzbefehl für die nächste verfügbare.",
         devices: "Ausgaben im Wechsel",
-        noAvailableSelection: "Wähle mindestens eine verfügbare Ausgabe."
+        noAvailableSelection: "Wähle mindestens eine verfügbare Ausgabe.",
+        switchFailed: "Die Audioausgabe konnte nicht gewechselt werden. Versuche es erneut.",
+        switchFailedFormat: "Die Audioausgabe konnte nicht zu %@ gewechselt werden."
     )
 
     static let fr = SoundOutputSwitcherFeatureStrings(
@@ -80,7 +86,9 @@ extension SoundOutputSwitcherFeatureStrings {
         enable: "Changer de sortie avec un raccourci",
         caption: "Choisissez les sorties et utilisez le raccourci pour passer à la suivante disponible.",
         devices: "Sorties du cycle",
-        noAvailableSelection: "Sélectionnez au moins une sortie disponible."
+        noAvailableSelection: "Sélectionnez au moins une sortie disponible.",
+        switchFailed: "Impossible de changer la sortie audio. Réessayez.",
+        switchFailedFormat: "Impossible de passer à la sortie audio %@."
     )
 
     static let it = SoundOutputSwitcherFeatureStrings(
@@ -96,7 +104,9 @@ extension SoundOutputSwitcherFeatureStrings {
         enable: "ショートカットで出力を切り替える",
         caption: "出力を選び、ショートカットで次に利用可能な出力へ切り替えます。",
         devices: "切り替える出力",
-        noAvailableSelection: "利用可能な出力を1つ以上選択してください。"
+        noAvailableSelection: "利用可能な出力を1つ以上選択してください。",
+        switchFailed: "音声出力を切り替えられませんでした。もう一度お試しください。",
+        switchFailedFormat: "音声出力を%@に切り替えられませんでした。"
     )
 
     static let ko = SoundOutputSwitcherFeatureStrings(
@@ -112,7 +122,9 @@ extension SoundOutputSwitcherFeatureStrings {
         enable: "用快捷键切换输出",
         caption: "选择输出设备，然后用快捷键切到下一个可用输出。",
         devices: "循环中的输出",
-        noAvailableSelection: "请至少选择一个可用输出。"
+        noAvailableSelection: "请至少选择一个可用输出。",
+        switchFailed: "无法切换音频输出，请重试。",
+        switchFailedFormat: "无法将音频输出切换到%@。"
     )
 
     static let zhTW = SoundOutputSwitcherFeatureStrings(
@@ -120,7 +132,9 @@ extension SoundOutputSwitcherFeatureStrings {
         enable: "使用快速鍵切換輸出",
         caption: "選擇輸出裝置，然後用快速鍵切換到下一個可用輸出。",
         devices: "循環中的輸出",
-        noAvailableSelection: "請至少選擇一個可用輸出。"
+        noAvailableSelection: "請至少選擇一個可用輸出。",
+        switchFailed: "無法切換音訊輸出，請重試。",
+        switchFailedFormat: "無法將音訊輸出切換到%@。"
     )
 
     static let zhHK = SoundOutputSwitcherFeatureStrings(

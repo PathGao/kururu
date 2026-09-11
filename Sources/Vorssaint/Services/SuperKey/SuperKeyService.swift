@@ -250,7 +250,10 @@ final class SuperKeyService: ObservableObject {
         autoreleasepool {
             let runLoop = CFRunLoopGetCurrent()
             lifecycleLock.withLock { tapRunLoop = runLoop }
-            guard !lifecycleLock.withLock({ shouldStopTapThread }) else {
+            let startupGeneration = lifecycleLock.withLock {
+                shouldStopTapThread ? nil : mappingGeneration
+            }
+            guard let startupGeneration else {
                 if clearEventTapThread() { startOnMain() }
                 return
             }
@@ -273,14 +276,7 @@ final class SuperKeyService: ObservableObject {
             ) else {
                 _ = clearEventTapThread()
                 DispatchQueue.main.async { [weak self] in
-                    guard let self else { return }
-                    let stillStopped = self.lifecycleLock.withLock {
-                        self.tap == nil && self.tapThread == nil
-                    }
-                    guard stillStopped else { return }
-                    self.clearLeftoverMapping()
-                    self.isRunning = false
-                    Self.isEngaged = false
+                    self?.tapDidFail(generation: startupGeneration)
                 }
                 return
             }
@@ -367,6 +363,18 @@ final class SuperKeyService: ObservableObject {
 
     private func startOnMain() {
         DispatchQueue.main.async { [weak self] in self?.syncWithPreferences() }
+    }
+
+    private func tapDidFail(generation: UInt) {
+        let stillStopped = lifecycleLock.withLock {
+            mappingGeneration == generation && tap == nil && tapThread == nil
+                && !shouldStopTapThread
+        }
+        guard stillStopped else { return }
+        clearLeftoverMapping()
+        isRunning = false
+        Self.isEngaged = false
+        setMappingFailure(.inputMonitoringUnavailable)
     }
 
     private func tapDidStart(_ startedTap: CFMachPort) {

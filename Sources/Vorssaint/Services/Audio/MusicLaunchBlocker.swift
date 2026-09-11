@@ -3,19 +3,15 @@
 
 import AppKit
 
-/// Keeps the system music app from opening on its own, which macOS does
-/// whenever a media key is pressed with no other player around to take it.
-///
-/// While the option is on, a launch of the music app that follows a media
-/// key is terminated before its window appears, and an optional replacement
-/// app opens instead. Opening the music app from the Dock, Spotlight or a
-/// double-click is left alone. Nothing runs while the feature is off: no
-/// observers, no taps, no cost.
+/// Observes new launches only while enabled. A selected app launched within
+/// two seconds of a media key is terminated; already-running apps are untouched.
 final class MusicLaunchBlocker: ObservableObject {
     static let shared = MusicLaunchBlocker()
 
-    /// The current and the legacy identifier of the system music app.
-    static let blockedBundleIDs: Set<String> = ["com.apple.Music", "com.apple.iTunes"]
+    static var blockedBundleIDs: [String] {
+        Defaults.sanitizedBundleIdentifierList(
+            UserDefaults.standard.stringArray(forKey: DefaultsKey.musicBlockBundleIDs) ?? MusicLaunchSupport.defaultBlockedBundleIDs)
+    }
 
     private var observers: [NSObjectProtocol] = []
     private var mediaKeyTap: CFMachPort?
@@ -63,9 +59,9 @@ final class MusicLaunchBlocker: ObservableObject {
 
     private func handleLaunch(_ note: Notification) {
         guard let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication,
-              let bundleID = app.bundleIdentifier,
-              Self.blockedBundleIDs.contains(bundleID) else { return }
+              let bundleID = app.bundleIdentifier else { return }
         guard MusicLaunchSupport.shouldBlockLaunch(
+            bundleID: bundleID, blockedBundleIDs: Self.blockedBundleIDs,
             now: ProcessInfo.processInfo.systemUptime,
             lastTriggerAt: lastMediaKeyAt
         ) else { return }

@@ -53,11 +53,13 @@ final class FanControlService: ObservableObject {
     }
 
     static func recoverIfNeeded() {
+        guard FanControlIdentifiers.isConfigured else { return }
         guard UserDefaults.standard.bool(forKey: DefaultsKey.fanControlRecoveryNeeded) else { return }
         shared.restoreAutomatic()
     }
 
     func syncWithPreferences() {
+        guard FanControlIdentifiers.isConfigured else { refreshAccessState(); return }
         if AppFeature.fanControl.isAvailable {
             if UserDefaults.standard.bool(forKey: DefaultsKey.fanControlRecoveryNeeded) {
                 restoreAutomatic()
@@ -90,6 +92,7 @@ final class FanControlService: ObservableObject {
     }
 
     func authorize() {
+        guard FanControlIdentifiers.isConfigured else { accessState = .unavailable; error = .helperUnavailable; return }
         refreshAccessState()
         switch accessState {
         case .requiresApproval:
@@ -125,6 +128,7 @@ final class FanControlService: ObservableObject {
     }
 
     func applyConfiguration(_ configuration: FanControlConfiguration) {
+        guard FanControlIdentifiers.isConfigured else { accessState = .unavailable; error = .helperUnavailable; return }
         guard FanControlPolicy.validConfiguration(configuration) else {
             error = .controlFailed
             return
@@ -212,6 +216,7 @@ final class FanControlService: ObservableObject {
     }
 
     private func restoreBeforeTermination() {
+        guard FanControlIdentifiers.isConfigured else { return }
         send { proxy, reply in proxy.restoreAutomatic(withReply: reply) } completion: { response in
             if let response, response.succeeded, !response.snapshot.isCooling {
                 UserDefaults.standard.removeObject(forKey: DefaultsKey.fanControlRecoveryNeeded)
@@ -232,6 +237,8 @@ final class FanControlService: ObservableObject {
     /// outlives the bundle, so a silent failure here reads as success forever.
     @discardableResult
     static func restoreAndUnregisterForRemoval() -> Bool {
+        // This build has never owned a privileged helper. Do not touch another identity.
+        guard FanControlIdentifiers.isConfigured else { return true }
         let service = appService
         guard service.status == .enabled else {
             guard service.status != .notRegistered else { return true }
@@ -270,6 +277,7 @@ final class FanControlService: ObservableObject {
     }
 
     private static func unregisterForRemoval(_ service: SMAppService) -> Bool {
+        guard FanControlIdentifiers.isConfigured else { return true }
         do {
             try service.unregister()
             return true
@@ -328,6 +336,7 @@ final class FanControlService: ObservableObject {
     }
 
     private func proxy(errorHandler: @escaping (NSXPCConnection) -> Void) -> FanControlXPCProtocol? {
+        guard FanControlIdentifiers.isConfigured else { return nil }
         if connection == nil {
             let connection = NSXPCConnection(machServiceName: FanControlIdentifiers.helperID,
                                              options: .privileged)
@@ -391,6 +400,7 @@ final class FanControlService: ObservableObject {
     // MARK: - Registration and local reads
 
     private func refreshAccessState() {
+        guard FanControlIdentifiers.isConfigured else { accessState = .unavailable; return }
         switch Self.appService.status {
         case .notRegistered: accessState = .notRegistered
         case .enabled: accessState = .enabled
@@ -406,6 +416,7 @@ final class FanControlService: ObservableObject {
     /// is registered again. This runs once per app build and only when the user
     /// opens an already-authorized Fan Control surface.
     private func replaceRegistrationIfNeeded() -> Bool {
+        guard FanControlIdentifiers.isConfigured else { return false }
         let installed = UserDefaults.standard.string(forKey: DefaultsKey.fanControlHelperVersion) ?? ""
         let current = Self.helperVersion
         guard !installed.isEmpty, installed != current,
@@ -491,6 +502,7 @@ final class FanControlService: ObservableObject {
     }
 
     private func restoreThenUnregister() {
+        guard FanControlIdentifiers.isConfigured else { return }
         refreshAccessState()
         guard accessState != .notRegistered else { return }
         if accessState != .enabled {

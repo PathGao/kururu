@@ -3,11 +3,11 @@
 
 import SwiftUI
 
-/// Reusable panel configuration: one expandable block per panel section, each
-/// with a master "show in panel" toggle plus per-item toggles. Shared by
-/// Settings → Menu bar panel and the onboarding panel step so the two stay identical.
-/// Designed to live inside a `Form` (grouped style) in both places.
+/// Section visibility and child options shared by the monitoring and panel settings pages.
 struct MonitorPanelConfig: View {
+    var includeMixer = true
+    var includeUtilities = true
+    var includeStandaloneSections = false
     @ObservedObject private var l10n = L10n.shared
     @ObservedObject private var features = FeatureRuntime.shared
     @State private var expandedBlocks = Set<PanelSectionID>()
@@ -41,9 +41,41 @@ struct MonitorPanelConfig: View {
     @AppStorage(DefaultsKey.monitorPwrTimeRemaining) private var pwrTimeRemaining = true
     @AppStorage(DefaultsKey.monitorPwrHealth) private var pwrHealth = true
 
+    @AppStorage(DefaultsKey.panelShowFanControl) private var showFanControl = true
+    @AppStorage(DefaultsKey.panelShowKeepAwake) private var showKeepAwake = true
+    @AppStorage(DefaultsKey.panelShowBrightness) private var showBrightness = true
+    @AppStorage(DefaultsKey.panelShowControls) private var showControls = true
     @AppStorage(DefaultsKey.monitorShowMixer) private var showMixer = true
+    @AppStorage(DefaultsKey.panelShowUtilities) private var showUtilities = true
+    @AppStorage(DefaultsKey.panelUtilityClipboard) private var showClipboard = true
+    @AppStorage(DefaultsKey.panelUtilityURLCleaner) private var showURLCleaner = true
 
     var body: some View {
+        if includeStandaloneSections {
+            if PanelSectionID.keepAwake.isAvailable {
+                visibilityRow(.keepAwake, master: $showKeepAwake)
+            }
+            if PanelSectionID.brightness.isAvailable {
+                visibilityRow(.brightness, master: $showBrightness)
+            }
+            if PanelSectionID.controls.isAvailable {
+                visibilityRow(.controls, master: $showControls)
+            }
+            if AppFeature.fanControl.isAvailable {
+                let unavailable = AppFeature.fanControl.hardwareUnsupportedReason
+                visibilityRow(.fanControl, master: $showFanControl)
+                    .disabled(unavailable != nil)
+                    .opacity(unavailable == nil ? 1 : 0.55)
+                    .help(unavailable ?? "")
+                if let unavailable {
+                    Text(unavailable)
+                        .font(SettingsTypography.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.leading, 28)
+                }
+            }
+        }
         if PanelSectionID.system.isAvailable {
             block(.system, title: l10n.s.systemSection, master: $showSystem) {
                 if AppFeature.monitorCPU.isAvailable || AppFeature.monitorGPU.isAvailable {
@@ -94,32 +126,71 @@ struct MonitorPanelConfig: View {
             }
         }
         // The mixer is a per-app list, so it has no sub-items — just show/hide.
-        if AppFeature.mixer.isAvailable {
-            Toggle(FeatureStrings.mixer(l10n.language).pageTitle, isOn: $showMixer)
+        if includeMixer, AppFeature.mixer.isAvailable {
+            visibilityRow(.mixer, master: $showMixer)
+        }
+        if includeUtilities, PanelSectionID.utilities.isAvailable {
+            if AppFeature.clipboardHistory.isAvailable || AppFeature.urlCleaner.isAvailable {
+                block(.utilities, title: l10n.s.utilitiesSection, master: $showUtilities) {
+                    if AppFeature.clipboardHistory.isAvailable {
+                        Toggle(AppFeature.clipboardHistory.name(l10n.s, language: l10n.language), isOn: $showClipboard)
+                    }
+                    if AppFeature.urlCleaner.isAvailable {
+                        Toggle(l10n.s.urlCleanerName, isOn: $showURLCleaner)
+                    }
+                }
+            } else {
+                visibilityRow(.utilities, master: $showUtilities)
+            }
         }
     }
 
-    /// One expandable section: a master "show in panel" toggle, then the per-item
-    /// toggles (disabled while the whole block is hidden).
+    private func visibilityRow(_ id: PanelSectionID, master: Binding<Bool>) -> some View {
+        HStack(spacing: 12) {
+            HStack(spacing: 8) {
+                Image(systemName: id.symbolName)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 20)
+                    .accessibilityHidden(true)
+                Text(id.title(l10n.s)).font(SettingsTypography.body.weight(.medium))
+                Spacer()
+            }
+            Toggle(l10n.s.monitorShowInPanel, isOn: master)
+                .toggleStyle(.switch).controlSize(.regular)
+                .labelsHidden()
+                .accessibilityLabel("\(id.title(l10n.s)): \(l10n.s.monitorShowInPanel)")
+        }
+    }
+
+    /// The visibility switch stays discoverable when item options are collapsed.
     @ViewBuilder
     private func block<Content: View>(_ id: PanelSectionID,
                                       title: String,
                                       master: Binding<Bool>,
                                       @ViewBuilder _ items: @escaping () -> Content) -> some View {
-        DisclosureHeaderRow(isExpanded: expansionBinding(for: id)) {
-            Image(systemName: id.symbolName)
-                .font(.system(size: 15, weight: .medium))
-                .foregroundStyle(master.wrappedValue ? Color.accentColor : Color.secondary)
-                .frame(width: 32, height: 32)
-                .background(Color.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 9))
-            Text(title).font(.system(size: 12, weight: .medium))
-            Spacer()
+        HStack(spacing: 12) {
+            DisclosureHeaderRow(isExpanded: expansionBinding(for: id)) {
+                Image(systemName: id.symbolName)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 20)
+                Text(title).font(.system(size: 13, weight: .medium))
+                Spacer()
+            }
+            Toggle(l10n.s.monitorShowInPanel, isOn: master)
+                .toggleStyle(.switch).controlSize(.regular)
+                .labelsHidden()
+                .accessibilityLabel("\(title): \(l10n.s.monitorShowInPanel)")
         }
         if expandedBlocks.contains(id) {
-            Group {
-                Toggle(l10n.s.monitorShowInPanel, isOn: master)
+            VStack(alignment: .leading, spacing: 12) {
+                if !master.wrappedValue {
+                    Text(UXEntryStrings(l10n.language).hiddenOptions)
+                        .font(.callout).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
                 items()
-                    .disabled(!master.wrappedValue)
             }
             .disclosureIndent()
         }

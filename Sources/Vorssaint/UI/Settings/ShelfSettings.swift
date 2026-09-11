@@ -10,6 +10,7 @@ struct ShelfSettings: View {
     @AppStorage(DefaultsKey.shelfShortcutEnabled) private var shortcutEnabled = true
     @AppStorage(DefaultsKey.shelfShakeToOpen) private var shake = true
     @AppStorage(DefaultsKey.shelfDropZoneEnabled) private var dropZone = true
+    @AppStorage(DefaultsKey.shelfDockPlacement) private var dockPlacement = "menuBar"
     @AppStorage(DefaultsKey.shelfEdgeDragEnabled) private var edgeDrag = false
     @AppStorage(DefaultsKey.shelfCloseAfterDrop) private var closeAfterDrop = false
     @AppStorage(DefaultsKey.shelfRemoveAfterDrop) private var removeAfterDrop = true
@@ -17,28 +18,43 @@ struct ShelfSettings: View {
     @State private var showingAppPicker = false
 
     var body: some View {
-        Form {
-            Section {
+        let placementText = ShelfDockPlacementStrings.text(l10n.language)
+        SettingsForm {
+            if let issue = shelf.persistenceIssue {
+                SettingsSection {
+                    ShelfPersistenceNotice(issue: issue, isSaving: shelf.isSaving,
+                                           strings: .text(l10n.language), onRetry: { shelf.retryPersistence() })
+                }
+            }
+            SettingsSection {
                 Toggle(l10n.s.shelfEnable, isOn: $enabled)
                     .onChange(of: enabled) { _, _ in
                         ShelfService.shared.syncWithPreferences()
                     }
                 Text(l10n.s.shelfEnableCaption)
-                    .font(.caption)
+                    .font(SettingsTypography.caption)
                     .foregroundStyle(.secondary)
                 Label(l10n.s.shelfNoPermission, systemImage: "checkmark.shield")
-                    .font(.caption)
+                    .font(SettingsTypography.caption)
                     .foregroundStyle(.secondary)
+                Button {
+                    ShelfService.shared.summon()
+                } label: {
+                    Label(l10n.s.shelfOpenNow, systemImage: "tray.and.arrow.down")
+                }
+                .settingsAction(.primary)
+                .disabled(!enabled)
             }
 
-            Section(l10n.s.shelfHowTitle) {
+            SettingsSection(l10n.s.shelfHowTitle) {
                 bullet("1", l10n.s.shelfStep1)
                 bullet("2", l10n.s.shelfStep2)
                 bullet("3", l10n.s.shelfStep3)
             }
 
-            if enabled {
-                Section {
+            Group {
+                SettingsSection(title: UXEntryStrings(l10n.language).activationAndShortcuts,
+                                systemImage: "hand.tap") {
                     Toggle(l10n.s.shelfShortcutToggle, isOn: $shortcutEnabled)
                         .onChange(of: shortcutEnabled) { _, _ in
                             ShelfService.shared.syncHotkey()
@@ -46,9 +62,9 @@ struct ShelfSettings: View {
                     ShortcutPreferenceRow(role: .shelf, isEnabled: shortcutEnabled) {
                         ShelfService.shared.syncHotkey()
                     }
-                    if shortcutEnabled, shelf.hotkeyRegistrationFailed {
+                    if enabled, shortcutEnabled, shelf.hotkeyRegistrationFailed {
                         Text(l10n.s.shortcutUnavailable)
-                            .font(.caption)
+                            .font(SettingsTypography.caption)
                             .foregroundStyle(.orange)
                     }
                     VStack(alignment: .leading, spacing: 3) {
@@ -57,16 +73,25 @@ struct ShelfSettings: View {
                                 ShelfService.shared.syncDragMonitor()
                             }
                         Text(l10n.s.shelfShakeCaption)
-                            .font(.caption)
+                            .font(SettingsTypography.caption)
                             .foregroundStyle(.secondary)
                     }
                     VStack(alignment: .leading, spacing: 3) {
-                        Toggle(l10n.s.shelfDropZoneToggle, isOn: $dropZone)
+                        Toggle(ShelfDockPlacement.normalized(dockPlacement) == .topCenter
+                               ? placementText.topToggle : l10n.s.shelfDropZoneToggle, isOn: $dropZone)
                             .onChange(of: dropZone) { _, _ in
                                 ShelfService.shared.syncDragMonitor()
                             }
-                        Text(l10n.s.shelfDropZoneCaption)
-                            .font(.caption)
+                        Picker(placementText.position, selection: $dockPlacement) {
+                            Text(placementText.menuBar).tag("menuBar")
+                            Text(placementText.topCenter).tag("topCenter")
+                        }
+                        .onChange(of: dockPlacement) { _, _ in
+                            shelf.syncDockedPresentation()
+                        }
+                        Text(ShelfDockPlacement.normalized(dockPlacement) == .topCenter
+                             ? placementText.topCaption : l10n.s.shelfDropZoneCaption)
+                            .font(SettingsTypography.caption)
                             .foregroundStyle(.secondary)
                     }
                     VStack(alignment: .leading, spacing: 3) {
@@ -75,57 +100,44 @@ struct ShelfSettings: View {
                                 ShelfService.shared.syncDragMonitor()
                             }
                         Text(l10n.s.shelfEdgeCaption)
-                            .font(.caption)
+                            .font(SettingsTypography.caption)
                             .foregroundStyle(.secondary)
-                    }
-                    Button {
-                        ShelfService.shared.summon()
-                    } label: {
-                        Label(l10n.s.shelfOpenNow, systemImage: "tray.and.arrow.down")
                     }
                 }
 
-                Section(l10n.s.shelfBehaviorTitle) {
+                SettingsSection(l10n.s.shelfBehaviorTitle) {
                     VStack(alignment: .leading, spacing: 3) {
                         Toggle(l10n.s.shelfCloseAfterDrop, isOn: $closeAfterDrop)
                         Text(l10n.s.shelfCloseAfterDropCaption)
-                            .font(.caption)
+                            .font(SettingsTypography.caption)
                             .foregroundStyle(.secondary)
                     }
                     VStack(alignment: .leading, spacing: 3) {
                         Toggle(l10n.s.shelfRemoveAfterDrop, isOn: $removeAfterDrop)
                         Text(l10n.s.shelfRemoveAfterDropCaption)
-                            .font(.caption)
+                            .font(SettingsTypography.caption)
                             .foregroundStyle(.secondary)
                     }
                     VStack(alignment: .leading, spacing: 3) {
                         Toggle(l10n.s.shelfClearOnClose, isOn: $clearOnClose)
                         Text(l10n.s.shelfClearOnCloseCaption)
-                            .font(.caption)
+                            .font(SettingsTypography.caption)
                             .foregroundStyle(.secondary)
                     }
                 }
 
-                Section(l10n.s.shelfExclusionsTitle) {
+                SettingsSection(l10n.s.shelfExclusionsTitle) {
                     if sortedExclusions.isEmpty {
                         Text(l10n.s.shelfExclusionsEmpty)
-                            .font(.callout)
+                            .font(SettingsTypography.body)
                             .foregroundStyle(.secondary)
                     } else {
                         ForEach(sortedExclusions, id: \.self) { bundleID in
-                            HStack(spacing: 9) {
-                                Image(nsImage: InstalledApps.icon(for: bundleID))
-                                    .resizable()
-                                    .frame(width: 20, height: 20)
-                                Text(InstalledApps.name(for: bundleID))
-                                Spacer()
-                                Button {
+                            AppBundleRow(bundleID: bundleID) {
+                                AppBundleRemoveButton(label: String(format: UXEntryStrings(l10n.language).removeFromListFormat,
+                                                                         InstalledApps.name(for: bundleID))) {
                                     shelf.removeAutomaticExclusion(bundleID)
-                                } label: {
-                                    Image(systemName: "minus.circle.fill")
-                                        .foregroundStyle(.secondary)
                                 }
-                                .buttonStyle(.plain)
                             }
                         }
                     }
@@ -135,10 +147,11 @@ struct ShelfSettings: View {
                         Label(l10n.s.autoQuitAddApp, systemImage: "plus")
                     }
                     Text(l10n.s.shelfExclusionsCaption)
-                        .font(.caption)
+                        .font(SettingsTypography.caption)
                         .foregroundStyle(.secondary)
                 }
             }
+            ShelfImportSettings()
         }
         .formStyle(.grouped)
         .sheet(isPresented: $showingAppPicker) {
@@ -174,7 +187,7 @@ struct ShelfSettings: View {
                 .frame(width: 18, height: 18)
                 .background(Circle().fill(Color.accentColor))
             Text(text)
-                .font(.callout)
+                .font(SettingsTypography.body)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }

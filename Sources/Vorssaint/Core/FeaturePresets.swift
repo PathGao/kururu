@@ -3,10 +3,8 @@
 
 import Foundation
 
-/// One-click starting points for the Features hub. A preset is a shape, not a
-/// prison: applying one installs and engages its units and uninstalls the
-/// rest, but nothing is deleted — every feature keeps its settings and comes
-/// back with one click, exactly like any hub install.
+/// Preserved starting sets for first-run seeding and existing preset behavior.
+/// The Features hub and onboarding no longer expose preset buttons.
 enum FeaturePreset: String, CaseIterable, Identifiable {
     case essential, windows, battery
 
@@ -23,6 +21,14 @@ enum FeaturePreset: String, CaseIterable, Identifiable {
         let selected = FeaturePreset.essential.units
         for unit in FeatureUnit.allCases {
             defaults.set(selected.contains(unit), forKey: unit.availabilityKey)
+        }
+    }
+
+    /// Review bundles expose supported pages without bypassing hardware admission.
+    static func prepareVisualReviewAvailability(in defaults: UserDefaults, supportedUnits: Set<FeatureUnit>) {
+        guard VisualReviewConfiguration.current != nil else { return }
+        for unit in FeatureUnit.allCases {
+            defaults.set(supportedUnits.contains(unit), forKey: unit.availabilityKey)
         }
     }
 
@@ -50,8 +56,7 @@ enum FeaturePreset: String, CaseIterable, Identifiable {
         case .windows:
             return [DefaultsKey.switcherEnabled,
                     DefaultsKey.dockPreviewEnabled,
-                    DefaultsKey.dockClickEnabled,
-                    DefaultsKey.dockClickMinimize,
+                        DefaultsKey.dockClickMinimize,
                     DefaultsKey.windowMaximizeEnabled]
         }
     }

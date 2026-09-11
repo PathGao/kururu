@@ -12,7 +12,7 @@ struct PanelUninstallerView: View {
     @ObservedObject private var homebrew = HomebrewManager.shared
     @State private var dropTargeted = false
     @State private var showingAppPicker = false
-    @State private var pendingHomebrewRemoval: HomebrewPackage?
+    @State private var pendingHomebrewRemoval: AppUninstaller.HomebrewRemovalConfirmation?
     @State private var showHomebrewDetails = false
 
     var onClose: () -> Void
@@ -20,6 +20,9 @@ struct PanelUninstallerView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             header
+            if let error = uninstaller.selectionError {
+                UninstallerSelectionErrorView(error: error)
+            }
             content
         }
         .dropDestination(for: URL.self) { urls, _ in
@@ -36,16 +39,16 @@ struct PanelUninstallerView: View {
         }
         .alert(l10n.s.homebrewConfirmUninstallTitle,
                isPresented: homebrewRemovalConfirmationPresented,
-               presenting: pendingHomebrewRemoval) { package in
+               presenting: pendingHomebrewRemoval) { confirmation in
             Button(l10n.s.uninstallerCancel, role: .cancel) {
                 dismissHomebrewRemovalConfirmation()
             }
             Button(l10n.s.homebrewUninstall, role: .destructive) {
-                uninstaller.removeSelectedWithHomebrew()
+                uninstaller.removeSelectedWithHomebrew(confirmation: confirmation)
                 dismissHomebrewRemovalConfirmation()
             }
-        } message: { package in
-            Text(String(format: l10n.s.homebrewConfirmUninstallBodyFormat, package.displayName))
+        } message: { confirmation in
+            Text(String(format: l10n.s.homebrewConfirmUninstallBodyFormat, confirmation.package.displayName))
         }
     }
 
@@ -77,7 +80,8 @@ struct PanelUninstallerView: View {
                     .frame(width: 22, height: 22)
             }
             .buttonStyle(.plain)
-            .help(l10n.s.uninstallerCancel)
+            .help(l10n.s.menuClose)
+            .accessibilityLabel(l10n.s.menuClose)
         }
     }
 
@@ -108,7 +112,7 @@ struct PanelUninstallerView: View {
     }
 
     private var appPickerState: some View {
-        AppPickerView(compact: true) {
+        AppPickerView(compact: true, canBrowseApplications: true) {
             showingAppPicker = false
         } onSelect: { url in
             showingAppPicker = false
@@ -333,8 +337,10 @@ struct PanelUninstallerView: View {
     }
 
     private func presentHomebrewRemovalConfirmation(for package: HomebrewPackage) {
+        guard let confirmation = uninstaller.homebrewRemovalConfirmation,
+              confirmation.package.id == package.id else { return }
         PanelInteractionState.shared.isPresentingPopoverModal = true
-        pendingHomebrewRemoval = package
+        pendingHomebrewRemoval = confirmation
     }
 
     private func dismissHomebrewRemovalConfirmation() {
@@ -407,6 +413,7 @@ struct PanelUninstallerView: View {
     }
 
     private func selectFirstApp(from urls: [URL]) -> Bool {
+        guard !uninstaller.isBusy else { return false }
         guard let app = urls.first(where: { $0.pathExtension == "app" }) ?? urls.first else {
             return false
         }
@@ -415,6 +422,7 @@ struct PanelUninstallerView: View {
     }
 
     private func choose() {
+        uninstaller.reset()
         showingAppPicker = true
     }
 

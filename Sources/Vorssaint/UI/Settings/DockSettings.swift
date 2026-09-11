@@ -20,96 +20,81 @@ struct DockSettings: View {
     private var clickText: DockClickFeatureStrings { FeatureStrings.dockClick(l10n.language) }
 
     var body: some View {
-        Form {
-            FeatureSwitchSection(unit: .dock)
-            Section {
-                do {
-                    Text(dockPreviewCaption)
-                        .font(.caption)
-                        .foregroundStyle(dockPreviewWarning ? .orange : .secondary)
-                    if dockPreviewEnabled {
-                        HStack {
-                            Text(text.openDelay)
-                            Spacer()
-                            TextField("", value: dockPreviewOpenDelayBinding,
-                                      formatter: Self.dockPreviewOpenDelayFormatter)
-                                .textFieldStyle(.roundedBorder)
-                                .frame(width: 64)
-                            Stepper("", value: dockPreviewOpenDelayBinding,
-                                    in: DockPreviewSupport.openDelayMillisecondsRange,
-                                    step: 50)
-                                .labelsHidden()
-                            Text(verbatim: "ms")
-                                .foregroundStyle(.secondary)
-                        }
-                        .fixedSize(horizontal: false, vertical: true)
-                        SettingsCaptionText(text.openDelayCaption)
-                        HStack {
-                            Text(text.backgroundOpacity)
-                            Slider(value: dockPreviewBackgroundOpacityBinding,
-                                   in: DockPreviewSupport.backgroundOpacityRange,
-                                   step: 0.05)
-                            Text("\(dockPreviewBackgroundOpacityPercent)%")
-                                .font(.system(.body, design: .monospaced))
-                                .foregroundStyle(.secondary)
-                                .frame(width: 52, alignment: .trailing)
-                        }
-                        SettingsCaptionText(text.backgroundOpacityCaption)
-                        Toggle(text.quitAppOnClose,
-                               isOn: $dockPreviewQuitAppOnClose)
-                        SettingsCaptionText(text.quitAppOnCloseCaption)
+        SettingsForm {
+            SettingsSection {
+                FeatureSwitchRow(feature: .dockPreview)
+                SettingsInfo(text: dockPreviewCaption,
+                             systemImage: dockPreviewWarning ? "exclamationmark.triangle" : "cursorarrow.motionlines",
+                             warning: dockPreviewWarning)
+                Divider()
+                SettingsControlRow(title: text.openDelay, systemImage: "timer", caption: text.openDelayCaption) {
+                    HStack(spacing: 6) {
+                        TextField(text.openDelay, value: dockPreviewOpenDelayBinding,
+                                  formatter: Self.dockPreviewOpenDelayFormatter)
+                            .textFieldStyle(.roundedBorder).frame(width: 64)
+                        Stepper(text.openDelay, value: dockPreviewOpenDelayBinding,
+                                in: DockPreviewSupport.openDelayMillisecondsRange, step: 50)
+                            .labelsHidden()
+                        Text(verbatim: "ms").foregroundStyle(.secondary)
                     }
                 }
-            } header: {
-                Text(AppFeature.dockPreview.name(l10n.s, language: l10n.language))
+                SettingsControlRow(title: text.backgroundOpacity, systemImage: "square.on.square", caption: text.backgroundOpacityCaption) {
+                    HStack(spacing: 8) {
+                        Slider(value: dockPreviewBackgroundOpacityBinding,
+                               in: DockPreviewSupport.backgroundOpacityRange, step: 0.05)
+                            .frame(width: 150)
+                            .accessibilityLabel(text.backgroundOpacity)
+                        Text("\(dockPreviewBackgroundOpacityPercent)%")
+                            .font(SettingsTypography.body.monospacedDigit())
+                            .foregroundStyle(.secondary).frame(width: 44, alignment: .trailing)
+                    }
+                }
+                WindowPreviewControls(sizeKey: DefaultsKey.dockPreviewSize,
+                                      exclusionsKey: DefaultsKey.dockPreviewExcludedApps)
+                Divider()
+                SettingsToggleWithCaption(title: text.quitAppOnClose,
+                                          caption: text.quitAppOnCloseCaption,
+                                          isOn: $dockPreviewQuitAppOnClose)
             }
             .settingsSectionAnchor(.dock)
             if AppFeature.dockClick.isAvailable {
-                Section {
-                    do {
-                        Toggle(clickText.minimize, isOn: $dockClickMinimize)
-                            .onChange(of: dockClickMinimize) { _, enabled in
-                                if enabled { dockClickHide = false }
-                                DockClickService.shared.syncWithPreferences()
-                            }
-                        Text(clickText.minimizeCaption)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Toggle(clickText.hide, isOn: $dockClickHide)
-                            .onChange(of: dockClickHide) { _, enabled in
-                                if enabled { dockClickMinimize = false }
-                                DockClickService.shared.syncWithPreferences()
-                            }
-                        Text(clickText.hideCaption)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Toggle(clickText.cycleWindows, isOn: $dockClickCycleWindows)
-                            .onChange(of: dockClickCycleWindows) { _, _ in
-                                DockClickService.shared.syncWithPreferences()
-                            }
-                        Text(clickText.cycleWindowsCaption)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                } header: {
-                    Text(AppFeature.dockClick.name(l10n.s, language: l10n.language))
+                SettingsSection(title: AppFeature.dockClick.name(l10n.s, language: l10n.language),
+                                systemImage: "cursorarrow.click") {
+                    SettingsToggleWithCaption(title: clickText.minimize,
+                                              caption: clickText.minimizeCaption,
+                                              isOn: $dockClickMinimize)
+                        .onChange(of: dockClickMinimize) { _, enabled in
+                            if enabled { dockClickHide = false }
+                            DockClickService.shared.syncWithPreferences()
+                        }
+                    SettingsToggleWithCaption(title: clickText.hide,
+                                              caption: clickText.hideCaption,
+                                              isOn: $dockClickHide)
+                        .onChange(of: dockClickHide) { _, enabled in
+                            if enabled { dockClickMinimize = false }
+                            DockClickService.shared.syncWithPreferences()
+                        }
+                    SettingsToggleWithCaption(title: clickText.cycleWindows,
+                                              caption: clickText.cycleWindowsCaption,
+                                              isOn: $dockClickCycleWindows)
+                        .onChange(of: dockClickCycleWindows) { _, _ in
+                            DockClickService.shared.syncWithPreferences()
+                        }
                 }
                 .settingsSectionAnchor(.dockClick)
             }
-            WindowPreviewSection(sizeKey: DefaultsKey.dockPreviewSize,
-                                 exclusionsKey: DefaultsKey.dockPreviewExcludedApps)
-            // Dock Preview always captures thumbnails, so an enabled preview
-            // needs both permissions; no mode makes screen recording optional.
-            if dockPreviewEnabled {
-                if !permissions.accessibility {
-                    Section(l10n.s.permissionRequired) {
-                        PermissionRow(kind: .accessibility)
-                    }
+            // Dock Preview always captures thumbnails. Dock clicks only need
+            // Accessibility, including when previews are switched off.
+            if (dockPreviewEnabled || (AppFeature.dockClick.isAvailable
+                && (dockClickMinimize || dockClickHide || dockClickCycleWindows))),
+               !permissions.accessibility {
+                SettingsSection(l10n.s.permissionRequired) {
+                    PermissionRow(kind: .accessibility)
                 }
-                if !permissions.screenRecording {
-                    Section {
-                        PermissionRow(kind: .screenRecording)
-                    }
+            }
+            if dockPreviewEnabled, !permissions.screenRecording {
+                SettingsSection {
+                    PermissionRow(kind: .screenRecording)
                 }
             }
         }

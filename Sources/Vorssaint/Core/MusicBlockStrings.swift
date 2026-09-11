@@ -3,12 +3,15 @@
 
 import Foundation
 
-/// Localized strings for the Music launch blocker.
+/// Localized strings for the media-key app launch blocker.
 struct MusicBlockFeatureStrings {
-    var pageTitle: String = "Music app blocker"
+    var pageTitle: String = "App launch blocker"
     var section: String = "Media keys"
-    var title: String = "Stop Music from opening on its own"
-    var caption: String = "The Music app no longer opens when you press the media keys. You can still open it yourself."
+    var title: String = "Block selected apps after media keys"
+    var caption: String = "Only launches within two seconds of a media key are blocked. Manual launches in that window may also be blocked; other automatic launches and already-running apps are untouched."
+    var listTitle: String = "Blocked apps"
+    var listCaption: String = "Music is the default. Add or remove apps to choose which launches this feature checks."
+    var removeApp: String = "Remove app"
     var replacementLabel: String = "Open instead"
     var replacementNone: String = "None"
     var chooseApp: String = "Choose app…"
@@ -38,120 +41,114 @@ extension MusicBlockFeatureStrings {
     static let enUS = MusicBlockFeatureStrings()
 
     static let ptBR = MusicBlockFeatureStrings(
-        pageTitle: "Bloqueio do app Música",
         section: "Teclas de mídia",
-        title: "Impedir que o Música abra sozinho",
-        caption: "O app Música deixa de abrir ao tocar nas teclas de mídia. Você ainda pode abri-lo quando quiser.",
         replacementLabel: "Abrir no lugar",
         replacementNone: "Nenhum",
         chooseApp: "Escolher app…"
     )
 
     static let tr = MusicBlockFeatureStrings(
-        pageTitle: "Müzik engelleyici",
         section: "Medya tuşları",
-        title: "Müzik uygulamasının kendiliğinden açılmasını engelle",
-        caption: "Medya tuşlarına basınca Müzik uygulaması artık açılmaz. Yine de kendin açabilirsin.",
         replacementLabel: "Yerine aç",
         replacementNone: "Hiçbiri",
         chooseApp: "Uygulama seç…"
     )
 
     static let ru = MusicBlockFeatureStrings(
-        pageTitle: "Блокировка приложения Музыка",
         section: "Медиаклавиши",
-        title: "Не давать Музыке открываться самой",
-        caption: "Приложение Музыка больше не открывается при нажатии медиаклавиш. Его по-прежнему можно открыть самому.",
         replacementLabel: "Открывать вместо",
         replacementNone: "Нет",
         chooseApp: "Выбрать приложение…"
     )
 
     static let es = MusicBlockFeatureStrings(
-        pageTitle: "Bloqueo de la app Música",
+        pageTitle: "Bloqueo de inicio de apps",
         section: "Teclas multimedia",
-        title: "Evitar que Música se abra sola",
-        caption: "La app Música deja de abrirse al pulsar las teclas multimedia. Sigue pudiendo abrirla tú.",
+        title: "Bloquear apps seleccionadas tras teclas multimedia",
+        caption: "Solo se bloquean los inicios durante los dos segundos posteriores a una tecla multimedia, incluidos los manuales en ese intervalo. Los demás inicios automáticos y las apps ya abiertas no se ven afectados.",
+        listTitle: "Apps bloqueadas",
+        listCaption: "Solo Música por defecto. Añade o elimina apps para elegir qué inicios comprobar.",
+        removeApp: "Eliminar app",
         replacementLabel: "Abrir en su lugar",
         replacementNone: "Ninguna",
         chooseApp: "Elegir app…"
     )
 
     static let de = MusicBlockFeatureStrings(
-        pageTitle: "Musik-App-Blocker",
+        pageTitle: "App-Startblocker",
         section: "Medientasten",
-        title: "Musik nicht von selbst öffnen lassen",
-        caption: "Die Musik-App öffnet sich beim Drücken der Medientasten nicht mehr. Du kannst sie weiterhin selbst öffnen.",
+        title: "Ausgewählte Apps nach Medientasten blockieren",
+        caption: "Nur Starts innerhalb von zwei Sekunden nach einer Medientaste werden blockiert, auch manuelle Starts in diesem Zeitraum. Andere automatische Starts und laufende Apps bleiben unberührt.",
+        listTitle: "Blockierte Apps",
+        listCaption: "Standardmäßig nur Musik. Füge Apps hinzu oder entferne sie, um ihre Starts prüfen zu lassen.",
+        removeApp: "App entfernen",
         replacementLabel: "Stattdessen öffnen",
         replacementNone: "Keine",
         chooseApp: "App wählen…"
     )
 
     static let fr = MusicBlockFeatureStrings(
-        pageTitle: "Blocage de l’app Musique",
+        pageTitle: "Blocage du lancement des apps",
         section: "Touches multimédias",
-        title: "Empêcher Musique de s’ouvrir toute seule",
-        caption: "L’app Musique ne s’ouvre plus quand vous appuyez sur les touches multimédias. Vous pouvez toujours l’ouvrir vous-même.",
+        title: "Bloquer les apps choisies après les touches multimédias",
+        caption: "Seuls les lancements dans les deux secondes suivant une touche multimédia sont bloqués, y compris les lancements manuels dans ce délai. Les autres lancements automatiques et les apps déjà ouvertes restent inchangés.",
+        listTitle: "Apps bloquées",
+        listCaption: "Musique uniquement par défaut. Ajoutez ou retirez des apps pour choisir les lancements à vérifier.",
+        removeApp: "Retirer l’app",
         replacementLabel: "Ouvrir à la place",
         replacementNone: "Aucune",
         chooseApp: "Choisir une app…"
     )
 
     static let it = MusicBlockFeatureStrings(
-        pageTitle: "Blocco dell’app Musica",
         section: "Tasti multimediali",
-        title: "Impedisci a Musica di aprirsi da sola",
-        caption: "L’app Musica non si apre più premendo i tasti multimediali. Puoi comunque aprirla tu.",
         replacementLabel: "Apri al suo posto",
         replacementNone: "Nessuna",
         chooseApp: "Scegli app…"
     )
 
     static let ja = MusicBlockFeatureStrings(
-        pageTitle: "ミュージック起動ブロック",
+        pageTitle: "App 起動ブロック",
         section: "メディアキー",
-        title: "ミュージックが勝手に開かないようにする",
-        caption: "メディアキーを押してもミュージックアプリは開かなくなります。自分で開くことはできます。",
+        title: "メディアキー操作後に選択した App の起動をブロック",
+        caption: "メディアキーを押してから2秒以内の起動のみをブロックします。その間の手動起動も対象です。その他の自動起動や実行中の App には影響しません。",
+        listTitle: "ブロックする App",
+        listCaption: "初期設定はミュージックのみです。App を追加・削除して対象を選択します。",
+        removeApp: "App を削除",
         replacementLabel: "代わりに開く",
         replacementNone: "なし",
         chooseApp: "アプリを選択…"
     )
 
     static let ko = MusicBlockFeatureStrings(
-        pageTitle: "음악 앱 차단기",
         section: "미디어 키",
-        title: "음악 앱이 저절로 열리지 않게 하기",
-        caption: "미디어 키를 눌러도 음악 앱이 열리지 않습니다. 직접 여는 것은 가능합니다.",
         replacementLabel: "대신 열기",
         replacementNone: "없음",
         chooseApp: "앱 선택…"
     )
 
     static let zhHans = MusicBlockFeatureStrings(
-        pageTitle: "「音乐」App 拦截",
+        pageTitle: "App 启动拦截",
         section: "媒体键",
-        title: "阻止音乐 App 自行打开",
-        caption: "按下媒体键时音乐 App 不再打开。你仍可以自己打开它。",
+        title: "拦截媒体键后启动的所选 App",
+        caption: "仅拦截按下媒体键后两秒内的启动。这两秒内手动打开也可能被拦截；其它自动启动和已运行的 App 不受影响。",
+        listTitle: "拦截名单",
+        listCaption: "默认仅音乐 App。添加或移除 App，选择要检查的启动。",
+        removeApp: "移除 App",
         replacementLabel: "改为打开",
         replacementNone: "无",
         chooseApp: "选择 App…"
     )
 
     static let zhTW = MusicBlockFeatureStrings(
-        pageTitle: "音樂 App 攔截",
         section: "媒體鍵",
-        title: "阻止音樂 App 自行開啟",
-        caption: "按媒體鍵時音樂 App 不再開啟。你仍可以自己打開它。",
         replacementLabel: "改為開啟",
         replacementNone: "無",
         chooseApp: "選擇 App…"
     )
 
     static let zhHK = MusicBlockFeatureStrings(
-        pageTitle: "音樂 App 攔截",
         section: "媒體鍵",
-        title: "阻止音樂 App 自行開啟",
-        caption: "按媒體鍵時音樂 App 不再開啟。你仍可以自己打開它。",
         replacementLabel: "改為開啟",
         replacementNone: "無",
         chooseApp: "選擇 App…"

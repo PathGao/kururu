@@ -62,8 +62,8 @@ struct BrightnessSection: View {
                     .lineLimit(1)
                     .truncationMode(.middle)
                 Spacer(minLength: 4)
-                if display.isActive, display.method != nil {
-                    Text("\(Int((display.brightness * 100).rounded()))%")
+                if !display.isBuiltIn, display.isActive, display.method != nil {
+                    Text(display.hasKnownBrightness ? "\(Int((display.brightness * 100).rounded()))%" : "—")
                         .font(.system(size: 10.5, weight: .semibold).monospacedDigit())
                         .foregroundStyle(.secondary)
                 } else if !display.isActive {
@@ -73,11 +73,23 @@ struct BrightnessSection: View {
                 }
                 DisplayPowerButton(display: display, compact: true)
             }
-            if display.isActive, display.method != nil {
+            if !display.isBuiltIn, display.isActive, display.method != nil {
                 Slider(value: brightnessBinding(display), in: 0...1)
                     .controlSize(.small)
                     .disabled(service.isDisplayPending(display.id))
                     .accessibilityLabel(display.name)
+                        .accessibilityValue(display.hasKnownBrightness ? "\(Int((display.brightness * 100).rounded()))%" : FeatureStrings.brightness(l10n.language).brightnessUnknownNote)
+            }
+            if let explanation = brightnessControlExplanation(display, strings: strings) {
+                Text(explanation)
+                    .font(.system(size: 10.5))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            if service.brightnessWriteFailures[display.id] != nil {
+                Text(strings.brightnessWriteFailed)
+                    .font(.system(size: 10.5))
+                    .foregroundStyle(.red)
             }
         }
     }
@@ -140,4 +152,13 @@ func displayControlFailureText(_ failure: BrightnessService.DisplayControlFailur
     case .lastActive: return strings.lastDisplayCaption
     case .failed: return strings.switchFailed
     }
+}
+
+/// Describes the displayed value without treating missing readback as a failed write.
+func brightnessControlExplanation(_ display: BrightnessDisplay,
+                                  strings: BrightnessFeatureStrings) -> String? {
+    guard !display.isBuiltIn, display.isActive, let method = display.method else { return nil }
+    if method == .software { return strings.softwareDimmingNote }
+    if !display.hasKnownBrightness { return strings.brightnessUnknownNote }
+    return display.readable ? nil : strings.brightnessReadbackNote
 }

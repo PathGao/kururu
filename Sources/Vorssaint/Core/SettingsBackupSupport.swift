@@ -4,8 +4,7 @@
 import Foundation
 
 /// The portable part of the app's settings: what a backup file carries and
-/// how an incoming file is validated. Pure logic so the harness can pin down
-/// exactly which keys travel (and, more importantly, which never do).
+/// how an incoming file is validated and applied to an injected preference store.
 enum SettingsBackupSupport {
     static let formatVersionKey = "vorssaintBackupVersion"
     static let appVersionKey = "vorssaintBackupAppVersion"
@@ -54,6 +53,8 @@ enum SettingsBackupSupport {
         DefaultsKey.panelDiskOrder,
         DefaultsKey.panelPowerOrder,
         DefaultsKey.panelCollapsedSections,
+        BrightnessShortcutPreferenceKey.decrease,
+        BrightnessShortcutPreferenceKey.increase,
         // Experience flags: a restored Mac must not replay onboarding or the
         // feature intros the user has already been through.
         DefaultsKey.hasOnboarded,
@@ -70,6 +71,8 @@ enum SettingsBackupSupport {
     /// out by construction (they are not preference keys), listed here only
     /// when they would otherwise slip in through the registered set.
     static let machineStateKeys: Set<String> = [
+        // A new product identity must obtain its own login-item choice.
+        DefaultsKey.launchAtLoginWanted,
         // A Bluetooth restore owed by one sleeping Mac means nothing on another.
         DefaultsKey.bluetoothSleepRestorePending,
         DefaultsKey.micMuteActive,
@@ -79,6 +82,8 @@ enum SettingsBackupSupport {
         DefaultsKey.micMuteMutedDevices,
         DefaultsKey.cleanerLastAutoRun,
         DefaultsKey.cleanerLastAutoFreed,
+        DefaultsKey.cleanerLastAutoFailed,
+        DefaultsKey.cleanerLastAutoAttempted,
         DefaultsKey.whatsAppDownloadsAutomaticStartDate,
         DefaultsKey.whatsAppDownloadsLastAutoRun,
         DefaultsKey.whatsAppDownloadsLastCleanup,
@@ -139,6 +144,7 @@ enum SettingsBackupSupport {
         }
         settings = portableMediaSettings(settings)
         settings = portableMouseExceptions(settings)
+        settings = portableThemeSettings(settings)
         return [
             formatVersionKey: formatVersion,
             appVersionKey: appVersion,
@@ -154,9 +160,13 @@ enum SettingsBackupSupport {
               version >= 1, version <= formatVersion,
               let settings = payload[settingsKey] as? [String: Any]
         else { return nil }
+        // Dropping a malformed theme would clear the current one during replacement.
+        // Reject it before any settings are changed; absence still means the old default.
+        if let theme = settings[DefaultsKey.importedInterfaceTheme],
+           !valueLooksRight(DefaultsKey.importedInterfaceTheme, theme) { return nil }
         let allowed = exportKeys().union(legacyImportKeys.keys)
         let filtered = settings.filter { allowed.contains($0.key) && valueLooksRight($0.key, $0.value) }
-        return portableMouseExceptions(portableMediaSettings(filtered))
+        return portableThemeSettings(portableMouseExceptions(portableMediaSettings(filtered)))
     }
 
     /// Keys older backups still carry. They are written back as they were and
@@ -168,8 +178,15 @@ enum SettingsBackupSupport {
         for feature in AppFeature.allCases {
             keys[DefaultsKey.featureAvailable(feature.rawValue)] = true
         }
+        for key in Defaults.retiredFeatureSwitchKeys.values { keys[key] = true }
         return keys
     }()
+
+    /// The replacement step after `sanitizedSettings` has accepted the backup.
+    static func replaceExportedSettings(_ settings: [String: Any], in defaults: UserDefaults) {
+        for key in exportKeys() { defaults.removeObject(forKey: key) }
+        for (key, value) in settings { defaults.set(value, forKey: key) }
+    }
 
     static func formatVersion(from payload: [String: Any]) -> Int? {
         if let intValue = payload[formatVersionKey] as? Int {
@@ -236,6 +253,21 @@ enum SettingsBackupSupport {
         return settings
     }
 
+    private static func portableThemeSettings(_ source: [String: Any]) -> [String: Any] {
+        var settings = source
+        let key = DefaultsKey.importedInterfaceTheme
+        guard let value = source[key] else { return settings }
+        if let data = value as? Data, data.isEmpty { return settings }
+        if let data = value as? Data,
+           let theme = try? ThemeImportSupport.parse(data),
+           let normalized = try? ThemeImportSupport.savedData(theme) {
+            settings[key] = normalized
+        } else {
+            settings.removeValue(forKey: key)
+        }
+        return settings
+    }
+
     private static func portableMediaSettings(_ source: [String: Any]) -> [String: Any] {
         var settings = source
         // Preset pictures are private files on this Mac. A backup carries the
@@ -292,6 +324,14 @@ enum SettingsBackupSupport {
     /// switch belongs, or text where a number belongs, would otherwise reach
     /// code that trusts its own settings.
     static func valueLooksRight(_ key: String, _ value: Any) -> Bool {
+        if key == DefaultsKey.shelfDockPlacement {
+            guard let raw = value as? String else { return false }
+            return ShelfDockPlacement(rawValue: raw) != nil
+        }
+        if key == DefaultsKey.importedInterfaceTheme {
+            guard let data = value as? Data else { return false }
+            return data.isEmpty || (try? ThemeImportSupport.parse(data)) != nil
+        }
         if key == DefaultsKey.scratchpadDocument {
             return ScratchpadDocument.decoded(value as? Data, defaultName: "Scratchpad") != nil
         }

@@ -48,7 +48,7 @@ enum URLCleaning {
         ],
         "xiaohongshu.com": [
             "xhsshare", "author_share", "xsec_source", "share_from_user_hidden",
-            "shareRedId", "share_id", "exSource", "app_version", "app_platform",
+            "shareredid", "share_id", "exsource", "app_version", "app_platform",
             "apptime", "appuid",
         ],
     ]
@@ -167,6 +167,17 @@ enum URLCleaning {
                 group(for: $0, builtIn: (hostParameters[$0] ?? []).sorted(), rules: rules)
             }
         return groups.filter { !$0.entries.isEmpty }
+    }
+
+    static func settingGroupEnabled(_ enabled: Bool, site: String, rules: Rules) -> Rules {
+        guard let group = ruleGroups(rules: rules).first(where: { $0.site == site }) else { return rules }
+        var result = rules
+        if enabled {
+            result.disabled.removeValue(forKey: site)
+        } else {
+            result.disabled[site, default: []].formUnion(group.entries.map(\.name))
+        }
+        return result
     }
 
     /// Comma-separated names, the format the global custom list has always

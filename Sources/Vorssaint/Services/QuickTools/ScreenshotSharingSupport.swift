@@ -10,13 +10,6 @@ enum ScreenshotShareDuration: Int, CaseIterable, Codable, Identifiable {
 
     var id: Int { rawValue }
 
-    func title(_ strings: ScreenshotFeatureStrings) -> String {
-        switch self {
-        case .oneHour: strings.shareOneHour
-        case .sixHours: strings.shareSixHours
-        case .twentyFourHours: strings.shareTwentyFourHours
-        }
-    }
 }
 
 struct ScreenshotShareRecord: Codable, Equatable, Identifiable {
@@ -39,17 +32,11 @@ struct ScreenshotShareResponse: Decodable {
 }
 
 enum ScreenshotSharingSupport {
-    static let productionEndpoint = URL(string: "https://screenshots.vorssaint.com")!
-    static let developerBundleIdentifier = "com.vorssaint.utils.dev"
     static let maximumUploadBytes = 25 * 1_024 * 1_024
 
-    static func endpoint(bundleIdentifier: String?, developerOverride: String?) -> URL {
-        guard bundleIdentifier == developerBundleIdentifier,
-              let developerOverride,
-              let candidate = sanitizedEndpoint(developerOverride)
-        else { return productionEndpoint }
-        return candidate
-    }
+    // No service belongs to this product; neither old preferences nor a
+    // development override may restore the retired upstream endpoint.
+    static func endpoint(bundleIdentifier: String?, developerOverride: String?) -> URL? { nil }
 
     static func sanitizedEndpoint(_ value: String) -> URL? {
         let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -68,14 +55,7 @@ enum ScreenshotSharingSupport {
     }
 
     static func uploadURL(endpoint: URL, duration: ScreenshotShareDuration) -> URL? {
-        let base = endpoint.appendingPathComponent("v1", isDirectory: true)
-            .appendingPathComponent("screenshots", isDirectory: false)
-        guard var components = URLComponents(url: base, resolvingAgainstBaseURL: false) else {
-            return nil
-        }
-        components.queryItems = [URLQueryItem(name: "expiresIn",
-                                               value: String(duration.rawValue))]
-        return components.url
+        nil
     }
 
     static func record(response: ScreenshotShareResponse,

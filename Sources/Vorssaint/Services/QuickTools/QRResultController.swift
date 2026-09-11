@@ -12,6 +12,7 @@ import SwiftUI
 final class QRResultController {
     static let shared = QRResultController()
 
+    private(set) var presentationID = 0
     private var panel: QRResultPanel?
     private var keyMonitor: Any?
     private var localMonitor: Any?
@@ -20,19 +21,29 @@ final class QRResultController {
     private init() {}
 
     func show(reading: BarcodeDetector.Reading) {
+        show(payload: reading.payload, url: reading.url, isText: false)
+    }
+
+    /// A failed automatic OCR copy keeps its recognized text here for retry.
+    func show(text: String) {
+        show(payload: text, url: nil, isText: true)
+    }
+
+    private func show(payload: String, url: URL?, isText: Bool) {
         guard Thread.isMainThread else {
-            DispatchQueue.main.async { self.show(reading: reading) }
+            DispatchQueue.main.async { self.show(payload: payload, url: url, isText: isText) }
             return
         }
         close()
 
         let strings = L10n.shared.s
         let content = QRResultView(
-            payload: reading.payload,
-            url: reading.url,
+            payload: payload,
+            url: url,
+            isText: isText,
             strings: strings,
-            copy: { [weak self] in self?.copy(reading.payload) },
-            open: { [weak self] in reading.url.map { self?.open($0) } })
+            copy: { [weak self] in self?.copy(payload, isText: isText) },
+            open: { [weak self] in url.map { self?.open($0) } })
         let host = NSHostingController(rootView: content)
         host.view.layoutSubtreeIfNeeded()
         let size = host.view.fittingSize
@@ -72,6 +83,7 @@ final class QRResultController {
     }
 
     func close() {
+        presentationID += 1
         if let keyMonitor {
             NSEvent.removeMonitor(keyMonitor)
             self.keyMonitor = nil
@@ -88,17 +100,37 @@ final class QRResultController {
         panel = nil
     }
 
-    private func copy(_ payload: String) {
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        pasteboard.setString(payload, forType: .string)
-        close()
-        QuickToolHUD.show(icon: "qrcode", message: L10n.shared.s.ocrQRCopied)
+    private func copy(_ payload: String, isText: Bool = false) {
+        let generation = presentationID
+        Self.copyText(payload) { [weak self] copied in
+            guard let self, self.presentationID == generation else { return }
+            let icon = isText ? "text.viewfinder" : "qrcode"
+            guard copied else {
+                QuickToolHUD.show(icon: icon,
+                                  message: FeatureStrings.commandBar(L10n.shared.language).copyFailed)
+                return
+            }
+            self.close()
+            QuickToolHUD.show(icon: icon,
+                              message: isText ? L10n.shared.s.ocrCopied : L10n.shared.s.ocrQRCopied)
+        }
+    }
+
+    static func copyText(_ payload: String, completion: @escaping (Bool) -> Void) {
+        GeneralPasteboardAccess.shared.async({
+            let pasteboard = NSPasteboard.general
+            pasteboard.clearContents()
+            return pasteboard.setString(payload, forType: .string)
+        }, then: completion)
     }
 
     private func open(_ url: URL) {
+        guard NSWorkspace.shared.open(url) else {
+            QuickToolHUD.show(icon: "qrcode",
+                              message: FeatureStrings.commandBar(L10n.shared.language).destinationOpenFailed)
+            return
+        }
         close()
-        NSWorkspace.shared.open(url)
     }
 
     private func installMonitors(for panel: NSPanel) {
@@ -134,6 +166,7 @@ private final class QRResultPanel: NSPanel {
 private struct QRResultView: View {
     let payload: String
     let url: URL?
+    let isText: Bool
     let strings: Strings
     let copy: () -> Void
     let open: () -> Void
@@ -141,10 +174,10 @@ private struct QRResultView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 7) {
-                Image(systemName: "qrcode")
+                Image(systemName: isText ? "text.viewfinder" : "qrcode")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(Color.accentColor)
-                Text(strings.qrResultTitle)
+                Text(isText ? strings.ocrName : strings.qrResultTitle)
                     .font(.system(size: 13, weight: .semibold))
             }
 

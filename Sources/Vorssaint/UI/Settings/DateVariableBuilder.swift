@@ -90,7 +90,7 @@ struct DateVariableBuilder: View {
             // their own read as if the token would follow the language.
             if TextSnippetSupport.DateVariableStyle.localeDependent.contains(style) {
                 Text(text.dateTimeStyleLocaleNote)
-                    .font(.caption)
+                    .font(SettingsTypography.caption)
                     .foregroundStyle(.secondary)
             }
 
@@ -99,7 +99,7 @@ struct DateVariableBuilder: View {
             // -tz(...) syntax with a date example.
             VStack(alignment: .leading, spacing: 4) {
                 Text(text.dateTimeTimezoneLabel)
-                    .font(.caption)
+                    .font(SettingsTypography.caption)
                     .foregroundStyle(.secondary)
                 if let timeZoneIdentifier {
                     HStack {
@@ -165,7 +165,7 @@ struct DateVariableBuilder: View {
             if style == .custom {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(text.dateTimePatternLabel)
-                        .font(.caption)
+                        .font(SettingsTypography.caption)
                         .foregroundStyle(.secondary)
                     TextField(text.dateTimePatternLabel, text: $customPattern)
                         .font(.body.monospaced())
@@ -174,7 +174,7 @@ struct DateVariableBuilder: View {
 
             HStack(alignment: .firstTextBaseline) {
                 Text(text.dateTimePreviewLabel)
-                    .font(.caption)
+                    .font(SettingsTypography.caption)
                     .foregroundStyle(.secondary)
                 Spacer()
                 Text(previewText)

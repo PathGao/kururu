@@ -34,7 +34,7 @@ struct ScreenRecordingCaptureSettings: View {
 
     var body: some View {
         Group {
-            Section {
+            SettingsSection {
                 Button {
                     ScreenRecorderService.shared.toggle()
                 } label: {
@@ -44,7 +44,7 @@ struct ScreenRecordingCaptureSettings: View {
                 Text(service.isRecording
                      ? RecorderSupport.elapsedLabel(seconds: service.elapsedSeconds)
                      : strings.panelCaption)
-                    .font(.caption)
+                    .font(SettingsTypography.caption)
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
                 if !permissions.screenRecording {
@@ -58,7 +58,7 @@ struct ScreenRecordingCaptureSettings: View {
             }
             .settingsSectionAnchor(.screenRecorder)
 
-            Section {
+            SettingsSection {
                 Picker(strings.countdownLabel, selection: $countdown) {
                     ForEach(ScreenshotSupport.allowedDelays, id: \.self) { seconds in
                         if seconds == 0 {
@@ -72,7 +72,7 @@ struct ScreenRecordingCaptureSettings: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Toggle(strings.systemAudioToggle, isOn: $systemAudio)
                     Text(strings.systemAudioCaption)
-                        .font(.caption)
+                        .font(SettingsTypography.caption)
                         .foregroundStyle(.secondary)
                 }
                 VStack(alignment: .leading, spacing: 4) {
@@ -83,7 +83,7 @@ struct ScreenRecordingCaptureSettings: View {
                             }
                         }
                     Text(strings.microphoneCaption)
-                        .font(.caption)
+                        .font(SettingsTypography.caption)
                         .foregroundStyle(.secondary)
                     if microphone, permissions.microphone != .granted {
                         PermissionRow(kind: .microphone)
@@ -92,18 +92,18 @@ struct ScreenRecordingCaptureSettings: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Toggle(strings.openEditorToggle, isOn: $opensEditor)
                     Text(strings.openEditorCaption)
-                        .font(.caption)
+                        .font(SettingsTypography.caption)
                         .foregroundStyle(.secondary)
                 }
                 VStack(alignment: .leading, spacing: 4) {
                     Toggle(strings.automaticZoomToggle, isOn: $automaticZoom)
                     Text(strings.automaticZoomCaption)
-                        .font(.caption)
+                        .font(SettingsTypography.caption)
                         .foregroundStyle(.secondary)
                 }
             }
 
-            Section {
+            SettingsSection {
                 folderRow
                 DisclosureHeaderRow(isExpanded: $showsMoreOptions) {
                     Text(strings.moreOptions)
@@ -118,7 +118,7 @@ struct ScreenRecordingCaptureSettings: View {
                                 Text(strings.qualityHigh).tag(RecorderSupport.Quality.high.rawValue)
                             }
                             Text(strings.qualityCaption)
-                                .font(.caption)
+                                .font(SettingsTypography.caption)
                                 .foregroundStyle(.secondary)
                         }
                         Picker(strings.frameRateLabel, selection: $frameRate) {

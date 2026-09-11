@@ -9,20 +9,20 @@ struct CleaningModeSettings: View {
     @AppStorage(DefaultsKey.cleaningModeKeepScreenVisible) private var cleaningModeKeepScreenVisible = false
 
     var body: some View {
-        Form {
+        SettingsForm {
             if AppFeature.cleaningMode.isAvailable {
-                Section {
+                SettingsSection {
                     Button {
                         CleaningModeManager.shared.activate()
                     } label: {
                         Label(l10n.s.cleaningStartNow, systemImage: "bubbles.and.sparkles")
                     }
                     Text(l10n.s.cleaningPanelCaption)
-                        .font(.caption)
+                        .font(SettingsTypography.caption)
                         .foregroundStyle(.secondary)
                     Toggle(l10n.s.cleaningKeepScreenVisibleToggle, isOn: $cleaningModeKeepScreenVisible)
                     Text(l10n.s.cleaningKeepScreenVisibleCaption)
-                        .font(.caption)
+                        .font(SettingsTypography.caption)
                         .foregroundStyle(.secondary)
                 } header: {
                     Text(AppFeature.cleaningMode.name(l10n.s, language: l10n.language))

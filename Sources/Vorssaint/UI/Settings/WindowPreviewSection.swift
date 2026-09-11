@@ -5,7 +5,7 @@ import SwiftUI
 
 /// Thumbnail size and exclusions for one preview surface. The App Switcher
 /// and Dock Preview each include it with their own pair of keys.
-struct WindowPreviewSection: View {
+struct WindowPreviewControls: View {
     @ObservedObject private var l10n = L10n.shared
     @AppStorage private var previewSize: String
     private let exclusionsKey: String
@@ -20,18 +20,20 @@ struct WindowPreviewSection: View {
     private var text: WindowPreviewExclusionStrings { FeatureStrings.windowPreviewExclusions(l10n.language) }
 
     var body: some View {
-        Section {
-            Picker(text.previewSizeLabel, selection: $previewSize) {
-                Text(text.previewSizeSmall).tag("small")
-                Text(text.previewSizeNormal).tag("normal")
-                Text(text.previewSizeLarge).tag("large")
-                Text(text.previewSizeXLarge).tag("xlarge")
+        Group {
+            SettingsControlRow(title: text.previewSizeLabel, systemImage: "rectangle.on.rectangle") {
+                Picker(text.previewSizeLabel, selection: $previewSize) {
+                    Text(text.previewSizeSmall).tag("small")
+                    Text(text.previewSizeNormal).tag("normal")
+                    Text(text.previewSizeLarge).tag("large")
+                    Text(text.previewSizeXLarge).tag("xlarge")
+                }
+                .labelsHidden()
+                .pickerStyle(.segmented)
+                .frame(minWidth: 260)
+                .onChange(of: previewSize) { _, _ in onSizeChange() }
             }
-            .pickerStyle(.segmented)
-            .onChange(of: previewSize) { _, _ in onSizeChange() }
             WindowPreviewExclusionsList(key: exclusionsKey)
-        } header: {
-            Text(FeatureStrings.windowPreviewExclusions(l10n.language).sectionTitle)
         }
     }
 }

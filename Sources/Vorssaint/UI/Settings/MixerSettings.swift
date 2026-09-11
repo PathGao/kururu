@@ -3,9 +3,7 @@
 
 import SwiftUI
 
-/// The mixer's lasting choices; the panel keeps the live controls (devices,
-/// sliders, mute) and the lists of live things (outputs in the cycle, apps in
-/// the list).
+/// Mixer behavior and output-cycle configuration; the panel keeps live volume controls.
 struct MixerSettings: View {
     @ObservedObject private var l10n = L10n.shared
     @ObservedObject private var features = FeatureRuntime.shared
@@ -19,18 +17,20 @@ struct MixerSettings: View {
     @AppStorage(DefaultsKey.preciseVolumeRollerEnabled) private var preciseVolumeRollerEnabled = false
     @AppStorage(DefaultsKey.soundOutputSwitcherEnabled) private var soundOutputSwitcherEnabled = false
 
+    private var hierarchy: SettingsHierarchyStrings { SettingsHierarchyStrings(language: l10n.language) }
     private var mixerText: MixerFeatureStrings { FeatureStrings.mixer(l10n.language) }
     private var switcherText: SoundOutputSwitcherFeatureStrings {
         FeatureStrings.soundOutputSwitcher(l10n.language)
     }
 
     var body: some View {
-        Form {
-            FeatureSwitchSection(unit: .mixer)
-            if AppFeature.mixer.isAvailable {
-                Section(AppFeature.mixer.name(l10n.s, language: l10n.language)) {
+        SettingsForm {
+            Group {
+                SettingsSection {
+                    FeatureSwitchRow(feature: .mixer)
                     if AppVolumeMixer.isSupported {
-                        Toggle(mixerText.hideInactiveApps, isOn: $hideInactiveApps)
+                        MixerAppScopePicker(hideInactiveApps: $hideInactiveApps, strings: mixerText)
+                        SettingsExplanation(hierarchy.mixerScope)
                     }
                     SettingsToggleWithCaption(title: mixerText.lowerOnHeadphonesDisconnect,
                                               caption: mixerText.lowerOnHeadphonesDisconnectCaption,
@@ -53,15 +53,17 @@ struct MixerSettings: View {
             }
 
             if AppFeature.soundOutputSwitcher.isAvailable {
-                Section(AppFeature.soundOutputSwitcher.name(l10n.s, language: l10n.language)) {
+                SettingsSection {
+                    FeatureSwitchRow(feature: .soundOutputSwitcher)
                     SettingsCaptionText(switcherText.caption)
+                    SoundOutputSwitcherDevicePicker()
                     ShortcutPreferenceRow(role: .soundOutputSwitcher,
                                           isEnabled: soundOutputSwitcherEnabled) {
                         SoundOutputSwitcher.shared.syncWithPreferences()
                     }
                     if soundOutputSwitcherEnabled, outputSwitcher.registrationFailed {
                         Text(l10n.s.shortcutUnavailable)
-                            .font(.caption)
+                            .font(SettingsTypography.caption)
                             .foregroundStyle(.orange)
                     }
                 }
@@ -98,7 +100,7 @@ struct MixerSettings: View {
                                           caption: l10n.s.preciseVolumeRollerCaption,
                                           isOn: $preciseVolumeRollerEnabled)
                     .onChange(of: preciseVolumeRollerEnabled) { _, enabled in
-                        if enabled { permissions.requestAccessibility() }
+                        if enabled && AppFeature.mixer.isAvailable { permissions.requestAccessibility() }
                         PreciseVolumeRollerService.shared.syncWithPreferences()
                     }
                 Text(FeatureStrings.hub(l10n.language).energyKeyboard)
@@ -110,7 +112,7 @@ struct MixerSettings: View {
                     .help(FeatureStrings.hub(l10n.language).energyHelp)
             }
 
-            if preciseVolumeRollerEnabled, !permissions.accessibility {
+            if preciseVolumeRollerEnabled, AppFeature.mixer.isAvailable, !permissions.accessibility {
                 Button {
                     Permissions.shared.openAccessibilitySettings()
                 } label: {
@@ -119,7 +121,7 @@ struct MixerSettings: View {
                 .buttonStyle(.link)
             } else if preciseVolumeRoller.tapFailed {
                 Text(l10n.s.preciseVolumeRollerTapFailed)
-                    .font(.caption)
+                    .font(SettingsTypography.caption)
                     .foregroundStyle(.orange)
             }
         }

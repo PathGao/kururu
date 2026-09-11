@@ -73,6 +73,7 @@ struct RadialMenuProfile: Codable, Identifiable, Equatable {
     var color: RadialMenuColor = .accent
     var shortcut: String = ""
     var mouseButton: String = RadialMenuMouseTrigger.off.rawValue
+    var trackpadTapFingers: Int = 0
     var items: [RadialMenuItem] = []
     /// The starter set this wheel was created from, so restoring its actions
     /// brings back that one. Kept as the raw value because it is persisted;
@@ -86,7 +87,7 @@ struct RadialMenuProfile: Codable, Identifiable, Equatable {
 
 extension RadialMenuProfile {
     private enum CodingKeys: String, CodingKey {
-        case id, name, color, shortcut, mouseButton, items, preset
+        case id, name, color, shortcut, mouseButton, trackpadTapFingers, items, preset
     }
 
     init(from decoder: Decoder) throws {
@@ -96,6 +97,8 @@ extension RadialMenuProfile {
                   color: try container.decodeIfPresent(RadialMenuColor.self, forKey: .color) ?? .accent,
                   shortcut: try container.decodeIfPresent(String.self, forKey: .shortcut) ?? "",
                   mouseButton: try container.decodeIfPresent(String.self, forKey: .mouseButton) ?? RadialMenuMouseTrigger.off.rawValue,
+                  trackpadTapFingers: RadialMenuSupport.sanitizedTrackpadTapFingers(
+                    (try? container.decode(Int.self, forKey: .trackpadTapFingers)) ?? 0),
                   items: try container.decodeIfPresent([FailableRadialMenuItem].self, forKey: .items)?
                       .compactMap(\.value) ?? [],
                   preset: try container.decodeIfPresent(String.self, forKey: .preset))
@@ -703,10 +706,11 @@ enum RadialMenuSupport {
     }
 
     /// True when any profile, at any level, controls keyboard input or windows,
-    /// or claims a mouse button, and therefore needs the Accessibility permission.
+    /// or claims a mouse button or trackpad tap, requiring Accessibility.
     static func needsAccessibility(_ profiles: [RadialMenuProfile]) -> Bool {
         profiles.contains { profile in
             RadialMenuMouseTrigger.sanitized(profile.mouseButton) != .off
+                || sanitizedTrackpadTapFingers(profile.trackpadTapFingers) != 0
                 || needsAccessibility(profile.items)
         }
     }
@@ -736,11 +740,15 @@ enum RadialMenuSupport {
     /// `RadialMenuFaviconFetcher.maxStoredIconBytes` of PNG apiece), so it
     /// belongs to settings and session start, never to an event-tap callback.
     /// A callback that only needs the summoner wants `claimedMouseButtons`.
+    static func decodedStoredProfiles(_ data: Data?) -> [RadialMenuProfile]? {
+        guard let data,
+              let decoded = try? JSONDecoder().decode([FailableRadialMenuProfile].self, from: data) else { return nil }
+        let profiles = sanitizedProfiles(decoded.compactMap(\.value))
+        return profiles.isEmpty ? nil : profiles
+    }
+
     static func decodeProfiles(_ data: Data?, defaults: UserDefaults = .standard) -> [RadialMenuProfile] {
-        if let data, let decoded = try? JSONDecoder().decode([FailableRadialMenuProfile].self, from: data) {
-            let sanitized = sanitizedProfiles(decoded.compactMap(\.value))
-            if !sanitized.isEmpty { return sanitized }
-        }
+        if let profiles = decodedStoredProfiles(data) { return profiles }
         // Legacy items migration
         let legacyItemsData = defaults.data(forKey: DefaultsKey.radialMenuItems)
         let legacyShortcut = defaults.string(forKey: DefaultsKey.radialMenuShortcut)
@@ -767,6 +775,10 @@ enum RadialMenuSupport {
         try? JSONEncoder().encode(sanitizedProfiles(profiles))
     }
 
+    static func sanitizedTrackpadTapFingers(_ value: Int) -> Int {
+        value == 3 || value == 4 ? value : 0
+    }
+
     static func sanitizedProfiles(_ profiles: [RadialMenuProfile]) -> [RadialMenuProfile] {
         var seenIDs = Set<UUID>()
         var result: [RadialMenuProfile] = []
@@ -779,6 +791,7 @@ enum RadialMenuSupport {
                 profile.shortcut = ""
             }
             profile.mouseButton = RadialMenuMouseTrigger.sanitized(profile.mouseButton).rawValue
+            profile.trackpadTapFingers = sanitizedTrackpadTapFingers(profile.trackpadTapFingers)
             result.append(profile)
         }
         if result.isEmpty {

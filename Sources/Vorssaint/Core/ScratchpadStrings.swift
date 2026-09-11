@@ -5,10 +5,10 @@ import Foundation
 
 /// Localized strings for the scratchpad, the floating pad for short-lived text.
 struct ScratchpadFeatureStrings {
-    var pageTitle: String = "Scratchpad"
-    var hubDescription: String = "Floating pads for short-lived notes"
-    var panelCaption: String = "Quick notes in separate tabs"
-    var openButton: String = "Open scratchpad"
+    var pageTitle: String = "Notes"
+    var hubDescription: String = "Floating notes you can pin above other apps"
+    var panelCaption: String = "Notes save automatically in separate tabs"
+    var openButton: String = "Open notes"
     var placeholder: String = "Type anything. It saves by itself."
     var copyAll: String = "Copy all"
     var copied: String = "Copied"
@@ -23,18 +23,18 @@ struct ScratchpadFeatureStrings {
     var retentionMonth: String = "After a month unused"
     var retentionCaption: String = "The pad empties itself once the text goes that long without edits."
     var closeOnClickOutside: String = "Close when I click outside"
-    var keepOpen: String = "Keep open"
-    var backgroundOpacity: String = "Pad background"
+    var keepOpen: String = "Pin above other apps"
+    var backgroundOpacity: String = "Note background"
     var backgroundTranslucent: String = "Translucent"
     var backgroundOpaque: String = "Opaque"
-    var newPad: String = "New scratchpad"
-    var padActions: String = "Scratchpad actions"
-    var renamePad: String = "Rename scratchpad"
-    var closePad: String = "Close scratchpad"
+    var newPad: String = "New note"
+    var padActions: String = "Note actions"
+    var renamePad: String = "Rename note"
+    var closePad: String = "Close note"
     var saveName: String = "Save"
     var cancel: String = "Cancel"
     var deletePadMessageFormat: String = "Delete “%@” and everything in it?"
-    var padLimitFormat: String = "You can keep up to %d scratchpads"
+    var padLimitFormat: String = "You can keep up to %d notes"
     var previewFormatting: String = "Show formatting"
     var editText: String = "Edit text"
 }
@@ -378,10 +378,10 @@ extension ScratchpadFeatureStrings {
     )
 
     static let zhHans = ScratchpadFeatureStrings(
-        pageTitle: "草稿板",
-        hubDescription: "用标签页整理临时笔记的浮动记事板",
-        panelCaption: "在独立标签页中自动保存的速记",
-        openButton: "打开草稿板",
+        pageTitle: "便条",
+        hubDescription: "独立浮动的临时便条，可置顶在其他 App 上方",
+        panelCaption: "分标签页记录，内容自动保存",
+        openButton: "打开便条",
         placeholder: "随便写点什么，会自动保存。",
         copyAll: "全部拷贝",
         copied: "已拷贝",
@@ -394,29 +394,29 @@ extension ScratchpadFeatureStrings {
         retentionDay: "一天未使用后",
         retentionWeek: "一周未使用后",
         retentionMonth: "一个月未使用后",
-        retentionCaption: "文本超过该时间没有编辑时，草稿板会自动清空。",
+        retentionCaption: "文本超过该时间没有编辑时，便条会自动清空。",
         closeOnClickOutside: "点击外部时关闭",
-        keepOpen: "保持打开",
-        backgroundOpacity: "草稿板背景",
+        keepOpen: "置顶在其他 App 上方",
+        backgroundOpacity: "便条背景",
         backgroundTranslucent: "半透明",
         backgroundOpaque: "不透明",
-        newPad: "新建草稿板",
-        padActions: "草稿板操作",
-        renamePad: "重命名草稿板",
-        closePad: "关闭草稿板",
+        newPad: "新建便条",
+        padActions: "便条操作",
+        renamePad: "重命名便条",
+        closePad: "关闭便条",
         saveName: "保存",
         cancel: "取消",
         deletePadMessageFormat: "删除“%@”及其中的全部内容？",
-        padLimitFormat: "最多可保留 %d 个草稿板",
+        padLimitFormat: "最多可保留 %d 个便条",
         previewFormatting: "显示格式",
         editText: "编辑文本"
     )
 
     static let zhTW = ScratchpadFeatureStrings(
-        pageTitle: "草稿板",
+        pageTitle: "便條",
         hubDescription: "用分頁整理臨時筆記的浮動記事板",
         panelCaption: "在不同分頁中自動儲存的快速筆記",
-        openButton: "打開草稿板",
+        openButton: "打開便條",
         placeholder: "隨手寫點什麼，會自動儲存。",
         copyAll: "全部拷貝",
         copied: "已拷貝",
@@ -429,29 +429,29 @@ extension ScratchpadFeatureStrings {
         retentionDay: "一天未使用後",
         retentionWeek: "一週未使用後",
         retentionMonth: "一個月未使用後",
-        retentionCaption: "文字超過該時間沒有編輯時，草稿板會自動清空。",
+        retentionCaption: "文字超過該時間沒有編輯時，便條會自動清空。",
         closeOnClickOutside: "點一下外部時關閉",
         keepOpen: "保持開啟",
-        backgroundOpacity: "草稿板背景",
+        backgroundOpacity: "便條背景",
         backgroundTranslucent: "半透明",
         backgroundOpaque: "不透明",
-        newPad: "新增草稿板",
-        padActions: "草稿板操作",
-        renamePad: "重新命名草稿板",
-        closePad: "關閉草稿板",
+        newPad: "新增便條",
+        padActions: "便條操作",
+        renamePad: "重新命名便條",
+        closePad: "關閉便條",
         saveName: "儲存",
         cancel: "取消",
         deletePadMessageFormat: "刪除「%@」和其中的所有內容？",
-        padLimitFormat: "最多可保留 %d 個草稿板",
+        padLimitFormat: "最多可保留 %d 個便條",
         previewFormatting: "顯示格式",
         editText: "編輯文字"
     )
 
     static let zhHK = ScratchpadFeatureStrings(
-        pageTitle: "草稿板",
+        pageTitle: "便條",
         hubDescription: "用分頁整理臨時筆記的浮動記事板",
         panelCaption: "在不同分頁中自動儲存的快速筆記",
-        openButton: "開啟草稿板",
+        openButton: "開啟便條",
         placeholder: "隨手寫些什麼，會自動儲存。",
         copyAll: "全部拷貝",
         copied: "已拷貝",
@@ -464,20 +464,20 @@ extension ScratchpadFeatureStrings {
         retentionDay: "一天未使用後",
         retentionWeek: "一星期未使用後",
         retentionMonth: "一個月未使用後",
-        retentionCaption: "文字超過該時間沒有編輯，草稿板會自動清空。",
+        retentionCaption: "文字超過該時間沒有編輯，便條會自動清空。",
         closeOnClickOutside: "點一下外部時關閉",
         keepOpen: "保持開啟",
-        backgroundOpacity: "草稿板背景",
+        backgroundOpacity: "便條背景",
         backgroundTranslucent: "半透明",
         backgroundOpaque: "不透明",
-        newPad: "新增草稿板",
-        padActions: "草稿板操作",
-        renamePad: "重新命名草稿板",
-        closePad: "關閉草稿板",
+        newPad: "新增便條",
+        padActions: "便條操作",
+        renamePad: "重新命名便條",
+        closePad: "關閉便條",
         saveName: "儲存",
         cancel: "取消",
         deletePadMessageFormat: "刪除「%@」及當中的所有內容？",
-        padLimitFormat: "最多可保留 %d 個草稿板",
+        padLimitFormat: "最多可保留 %d 個便條",
         previewFormatting: "顯示格式",
         editText: "編輯文字"
     )

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2026 Vorssaint
 
-# Builds Vorssaint, assembles the .app bundle, signs it and (with --install)
+# Builds the product, assembles the .app bundle, signs it and (with --install)
 # installs it into /Applications.
 #
 # The bundle is staged in a temporary directory outside ~/Documents: folders synced
@@ -14,10 +14,12 @@ cd "$(dirname "$0")"
 # the script ends.
 ICON_TMP=""
 STAGE_TMP=""
+IDENTITY_TMP=""
 
 cleanup() {
     [[ -n "$ICON_TMP" ]] && rm -rf "$ICON_TMP"
     [[ -n "$STAGE_TMP" ]] && rm -rf "$STAGE_TMP"
+    [[ -n "$IDENTITY_TMP" ]] && rm -rf "$IDENTITY_TMP"
     return 0
 }
 trap cleanup EXIT
@@ -26,7 +28,7 @@ trap cleanup EXIT
 # into the build sweeps like any other ending.
 trap 'exit 1' INT TERM HUP
 
-# Flags: --dev builds the local-only "Vorssaint (Developer)" variant (its own
+# Flags: --dev builds the local-only Developer variant (its own
 # bundle id, so it coexists with the official app); --install puts it in /Applications.
 DEV=0
 INSTALL=0
@@ -40,20 +42,22 @@ for arg in "$@"; do
 done
 
 if (( DEV )); then
-    APP_NAME="Vorssaint (Developer)"
-    EXECUTABLE="VorssaintDeveloper"
-    APP_BUNDLE_ID="com.vorssaint.utils.dev"
     BUILD_VARIANT_FLAGS=(-D VORSSAINT_DEVELOPMENT)
     APP_OPTIMIZATION_FLAGS=(-Onone)
     BUILD_CONFIGURATION="debug"
 else
-    APP_NAME="Vorssaint"
-    EXECUTABLE="Vorssaint"
-    APP_BUNDLE_ID="com.vorssaint.utils"
     BUILD_VARIANT_FLAGS=()
     APP_OPTIMIZATION_FLAGS=(-O)
     BUILD_CONFIGURATION="release"
 fi
+# Compile the same identity source used by the app and helper. Read a plist,
+# never shell-evaluate generated configuration.
+IDENTITY_TMP="$(mktemp -d)"
+swiftc Sources/Vorssaint/Core/ProductIdentity.swift Tools/PrintProductIdentity.swift -o "$IDENTITY_TMP/identity"
+"$IDENTITY_TMP/identity" "$DEV" > "$IDENTITY_TMP/config.plist"
+APP_NAME="$(/usr/libexec/PlistBuddy -c 'Print :APP_NAME' "$IDENTITY_TMP/config.plist")"
+EXECUTABLE="$(/usr/libexec/PlistBuddy -c 'Print :EXECUTABLE' "$IDENTITY_TMP/config.plist")"
+APP_BUNDLE_ID="$(/usr/libexec/PlistBuddy -c 'Print :APP_BUNDLE_ID' "$IDENTITY_TMP/config.plist")"
 FAN_HELPER_ID="$APP_BUNDLE_ID.fan-control"
 # Now Playing is read through /usr/bin/perl loading this library; see
 # Sources/NowPlayingAdapter. Staged under Contents/Frameworks, signed on its own.
@@ -75,10 +79,6 @@ developer_id_identity() {
 # every self-signed one; ask codesign itself with a throwaway copy of /bin/echo.
 legacy_identity_installed() {
     local probe signed=1
-    # A locked keychain still lists its identities but cannot sign with them,
-    # and this one is locked after every reboot; unlock it before asking.
-    security unlock-keychain -p vorssaint-signing \
-        "$HOME/Library/Keychains/vorssaint-signing.keychain-db" 2>/dev/null || true
     probe="$(mktemp)"
     cp /bin/echo "$probe"
     /usr/bin/codesign --force --strip-disallowed-xattrs --sign "$LEGACY_IDENTITY" "$probe" \
@@ -87,25 +87,14 @@ legacy_identity_installed() {
     return $signed
 }
 
-# Any build that lands in /Applications needs a stable signature, not just the
-# Developer one: macOS ties Accessibility and Screen Recording grants to the
-# exact binary hash, so an ad-hoc rebuild orphans them while System Settings
-# keeps showing them as granted, and no new prompt ever appears. A plain
-# --install strands them under the released bundle id, on the app the user
-# actually relies on. When no identity is installed, create the stable local one
-# up front instead of falling through to ad-hoc — setup-signing.sh is free,
-# offline and idempotent. Gating on the install rather than the variant keeps
-# this off CI, where neither ci.yml nor release.yml passes --install.
+# Developer and installed builds need an existing stable signing identity.
+# Building must never create certificates or modify the user's keychains.
 if (( DEV || INSTALL )) && [[ -z "$(developer_id_identity)" ]] \
     && ! legacy_identity_installed; then
-    echo "▸ No signing identity installed; creating the stable local one…"
-    if ! ./Tools/setup-signing.sh; then
-        echo "  ⚠ Tools/setup-signing.sh failed; signing ad-hoc instead." >&2
-        echo "    Accessibility and Screen Recording grants will not survive rebuilds:" >&2
-        echo "    System Settings will show them as granted while the app is not trusted." >&2
-        echo "    After fixing the identity, clear the stale grant once with:" >&2
-        echo "      tccutil reset Accessibility $APP_BUNDLE_ID" >&2
-    fi
+    echo "No usable signing identity is available for this build." >&2
+    echo "Reuse an existing signing certificate, or configure and unlock one yourself before rebuilding." >&2
+    echo "No signing setup or keychain changes were performed." >&2
+    exit 1
 fi
 
 codesign_with_timestamp_retry() {
@@ -254,6 +243,27 @@ if (( TEST )); then
     swiftc -Onone -target "$TARGET" -sdk "$SDK" "${SDK_COMPAT_FLAGS[@]}" \
         "${VM_STATISTICS_COMPAT_FLAGS[@]}" \
         Sources/Vorssaint/Services/Media/MediaSupport.swift \
+        Sources/Vorssaint/Services/Media/MediaPDFSupport.swift \
+        Sources/Vorssaint/Services/Media/MediaInputSelectionSupport.swift \
+        Sources/Vorssaint/Services/Media/MediaCancellationToken.swift \
+        Sources/Vorssaint/Core/MediaPDFStrings.swift \
+        Tests/MediaPDFTests.swift \
+        Tests/MediaPDFCompressionTests.swift \
+        Tests/MediaPDFCompressionSelectionTests.swift \
+        Tests/MediaPDFSelectionTests.swift \
+        Tests/MediaCancellationTests.swift \
+        Tests/MicMuteBatchTests.swift \
+        Tests/BuildCapabilityPolicyTests.swift \
+        Tests/ScreenshotSharingBoundaryTests.swift \
+        Tests/SettingsBackupIdentityTests.swift \
+        Sources/Vorssaint/Services/QuickTools/ScreenshotShareService.swift \
+        Tests/ProductIdentityBoundaryTests.swift \
+        Sources/Vorssaint/Services/FanControl/FanControlXPC.swift \
+        Tests/TrackpadGestureTests.swift \
+        Tests/RadialTrackpadBindingTests.swift \
+        Tests/RadialTrackpadIntegrationTests.swift \
+        Sources/Vorssaint/Core/TrackpadGestureStrings.swift \
+        Sources/Vorssaint/Services/MiddleClick/TrackpadGestureSupport.swift \
         Sources/Vorssaint/Core/QuitProtectionSupport.swift \
         Sources/Vorssaint/Core/QuitProtectionStrings.swift \
         Sources/Vorssaint/Core/Defaults.swift \
@@ -262,6 +272,42 @@ if (( TEST )); then
         Sources/Vorssaint/Core/FeatureHubStrings.swift \
         Sources/Vorssaint/Core/ShortcutSettingsStrings.swift \
         Sources/Vorssaint/Core/SettingsBackupSupport.swift \
+        Sources/Vorssaint/Services/SettingsBackupExport.swift \
+        Sources/Vorssaint/Services/PermissionResetSupport.swift \
+        Sources/Vorssaint/Services/RadialMenu/RadialMenuProfileDeletion.swift \
+        Tests/SettingsActionTests.swift \
+        Sources/Vorssaint/Core/ThemeImportSupport.swift \
+        Sources/Vorssaint/Core/ThemeLinkImportSupport.swift \
+        Sources/Vorssaint/Core/JSONPreviewFormatter.swift \
+        Sources/Vorssaint/Core/URLAutomaticCleaning.swift \
+        Sources/Vorssaint/Core/URLRuleImportSupport.swift \
+        Sources/Vorssaint/Services/ThemePreferences.swift \
+        Tests/ShelfDockPlacementTests.swift \
+        Tests/ShelfDockVisibilityTests.swift \
+        Tests/ShelfIndexStoreTests.swift \
+        Tests/ShelfImportTests.swift \
+        Tests/ShelfImportAssetsTests.swift \
+        Tests/ShelfImportTransactionTests.swift \
+        Tests/ShelfPayloadCleanupTests.swift \
+        Tests/ScratchpadPresentationTests.swift \
+        Tests/ScratchpadImportTests.swift \
+        Tests/ClipboardImportTests.swift \
+        Tests/ClipboardEncodingTests.swift \
+        Tests/ClipboardImportTransactionTests.swift \
+        Tests/ScratchpadImportStoreTests.swift \
+        Tests/ShelfDockBackupTests.swift \
+        Tests/ThemeImportTests.swift \
+        Tests/ClipboardJSONPreviewTests.swift \
+        Tests/URLAutomaticCleaningTests.swift \
+        Tests/URLRuleImportTests.swift \
+        Tests/URLRuleEditingTests.swift \
+        Tests/SettingsNavigationTests.swift \
+        Tests/CleanerRunResultTests.swift \
+        Tests/WhatsAppOrganizerPolicyTests.swift \
+        Tests/SpotifyPhoneProtectionTests.swift \
+        Tests/SwitcherRegressionTests.swift \
+        Tests/AssistiveKeyboardTests.swift \
+        Sources/Vorssaint/Core/SettingsHierarchyStrings.swift \
         Sources/Vorssaint/Core/BackupStrings.swift \
         Sources/Vorssaint/Core/SnippetStrings.swift \
         Sources/Vorssaint/Core/BrightnessStrings.swift \
@@ -278,8 +324,17 @@ if (( TEST )); then
         Sources/Vorssaint/Core/SoundOutputSwitcherStrings.swift \
         Sources/Vorssaint/Core/ScratchpadStrings.swift \
         Sources/Vorssaint/Core/FinderRenameStrings.swift \
+        Sources/Vorssaint/Core/FinderArrangementStrings.swift \
+        Sources/Vorssaint/Services/Finder/FinderArrangementSupport.swift \
+        Tests/FinderArrangementTests.swift \
+        Tests/FinderTargetAcquisitionTests.swift \
+        Tests/DisplayBrightnessShortcutTests.swift \
         Sources/Vorssaint/Core/CommandBarStrings.swift \
         Sources/Vorssaint/Core/FeedbackStrings.swift \
+        Sources/Vorssaint/Core/FeedbackDraftSupport.swift \
+        Tests/FeedbackDraftTests.swift \
+        Tests/ProductSettingsTests.swift \
+        Tests/StableUpdateTests.swift \
         Sources/Vorssaint/Core/RadialMenuStrings.swift \
         Sources/Vorssaint/Core/MenuBarAppearanceStrings.swift \
         Sources/Vorssaint/Core/AppAppearance.swift \
@@ -288,6 +343,12 @@ if (( TEST )); then
         Sources/Vorssaint/Core/KeepAwakeStrings.swift \
         Sources/Vorssaint/Core/BluetoothSleepStrings.swift \
         Sources/Vorssaint/Core/EnvironmentStrings.swift \
+        Sources/Vorssaint/Core/EnvironmentCopyFeedback.swift \
+        Tests/EnvironmentCopyTests.swift \
+        Sources/Vorssaint/Services/CommandBar/CommandBarActionSupport.swift \
+        Tests/CommandBarActionTests.swift \
+        Sources/Vorssaint/Services/CommandBar/CommandBarDestinationSupport.swift \
+        Tests/CommandBarDestinationTests.swift \
         Sources/Vorssaint/Core/PermissionGuideStrings.swift \
         Sources/Vorssaint/Core/FanControlStrings.swift \
         Sources/Vorssaint/Services/FanControl/FanControlSupport.swift \
@@ -295,6 +356,7 @@ if (( TEST )); then
         Sources/Vorssaint/Services/RadialMenu/RadialMenuSupport.swift \
         Sources/Vorssaint/Services/QuickTools/ScratchpadSupport.swift \
         Sources/Vorssaint/Services/QuickTools/ScratchpadStore.swift \
+        Sources/Vorssaint/Services/QuickTools/ScratchpadImportSupport.swift \
         Sources/Vorssaint/Services/KillProcess/KillProcessSupport.swift \
         Sources/Vorssaint/Services/DirectorySize.swift \
         Sources/Vorssaint/Services/Environment/EnvironmentInspector.swift \
@@ -310,8 +372,14 @@ if (( TEST )); then
         Sources/Vorssaint/Services/Recorder/RecorderImageOverlay.swift \
         Sources/Vorssaint/Services/Recorder/RecorderBlurRegion.swift \
         Sources/Vorssaint/Services/Recorder/RecorderEditDocument.swift \
+        Sources/Vorssaint/Core/ProductIdentity.swift \
+        Sources/Vorssaint/Core/BuildCapabilityPolicy.swift \
+        Sources/Vorssaint/Core/ProductIdentityBoundarySupport.swift \
         Sources/Vorssaint/Core/AppInfo.swift \
+        Sources/Vorssaint/Core/VisualReviewConfiguration.swift \
         Sources/Vorssaint/Core/GlobalShortcut.swift \
+        Sources/Vorssaint/Core/BrightnessShortcutStrings.swift \
+        Sources/Vorssaint/Core/HomebrewHierarchyStrings.swift \
         Sources/Vorssaint/Core/SymbolicHotKeys.swift \
         Sources/Vorssaint/Services/SystemShortcutTakeoverSupport.swift \
         Sources/Vorssaint/Core/Localization.swift \
@@ -322,6 +390,8 @@ if (( TEST )); then
         Sources/Vorssaint/Core/WhatsAppOrganizerStrings.swift \
         Sources/Vorssaint/Core/ReleaseNotes.swift \
         Sources/Vorssaint/Core/URLCleaning.swift \
+        Sources/Vorssaint/Core/URLCleanerResultState.swift \
+        Sources/Vorssaint/Core/UXTaskFlowStrings.swift \
         Sources/Vorssaint/Services/GeneralPasteboardAccess.swift \
         Sources/Vorssaint/Services/Audio/MixerRoutingSupport.swift \
         Sources/Vorssaint/Services/Audio/MusicLaunchSupport.swift \
@@ -333,9 +403,19 @@ if (( TEST )); then
         Sources/Vorssaint/Services/DockPreview/DockPreviewSupport.swift \
         Sources/Vorssaint/Services/Homebrew/HomebrewSupport.swift \
         Sources/Vorssaint/Services/Clipboard/ClipboardHistorySupport.swift \
+        Sources/Vorssaint/Services/Clipboard/ClipboardImportSupport.swift \
+        Sources/Vorssaint/Services/Clipboard/ClipboardImportTransaction.swift \
         Sources/Vorssaint/Services/Clipboard/ClipboardAutoClearSupport.swift \
         Sources/Vorssaint/Services/AutoQuit/AutoQuitSupport.swift \
+        Sources/Vorssaint/Services/Shelf/ShelfDockPlacementSupport.swift \
+        Sources/Vorssaint/Services/Shelf/ShelfDockVisibilitySupport.swift \
+        Sources/Vorssaint/Services/QuickTools/ScratchpadPresentationSupport.swift \
         Sources/Vorssaint/Services/Shelf/ShelfSupport.swift \
+        Sources/Vorssaint/Services/Shelf/ShelfIndexStore.swift \
+        Sources/Vorssaint/Services/Shelf/ShelfImportSupport.swift \
+        Sources/Vorssaint/Services/Shelf/ShelfImportAssets.swift \
+        Sources/Vorssaint/Services/Shelf/ShelfImportTransaction.swift \
+        Sources/Vorssaint/Services/Shelf/ShelfPayloadCleanup.swift \
         Sources/Vorssaint/Services/Finder/FinderRenameSupport.swift \
         Sources/Vorssaint/Services/Update/UpdateInstallerSupport.swift \
         Sources/Vorssaint/Services/Update/UpdateServiceSupport.swift \
@@ -352,6 +432,8 @@ if (( TEST )); then
         Sources/Vorssaint/Services/MiddleClick/MiddleClickSupport.swift \
         Sources/Vorssaint/Services/MouseNavigation/MouseNavigationSupport.swift \
         Sources/Vorssaint/Services/MouseButtons/MouseButtonShortcutSupport.swift \
+        Sources/Vorssaint/Services/MouseButtons/MouseButtonConfigurationSupport.swift \
+        Tests/MouseButtonConfigurationTests.swift \
         Sources/Vorssaint/Services/MouseButtons/MouseSpacesGestureSupport.swift \
         Sources/Vorssaint/Services/MouseClickDebounce/MouseClickDebounceSupport.swift \
         Sources/Vorssaint/Services/MouseExceptions/MouseAppExceptionSupport.swift \
@@ -378,6 +460,7 @@ if (( TEST )); then
         Sources/Vorssaint/Services/CommandBar/CommandBarQueryMemory.swift \
         Sources/Vorssaint/Services/SpotlightNamesSupport.swift \
         Sources/Vorssaint/Services/QuickTools/MicMuteSupport.swift \
+        Sources/Vorssaint/Services/QuickTools/MicMuteBatchSupport.swift \
         Sources/Vorssaint/Services/QuickTools/QuickTogglesSupport.swift \
         Sources/Vorssaint/Services/QuickTools/ScreenshotCapturePolicy.swift \
         Sources/Vorssaint/Services/QuickTools/ScreenshotSupport.swift \
@@ -414,6 +497,18 @@ if (( TEST )); then
         Sources/Vorssaint/Services/Metrics/MonitorSamplingPolicy.swift \
         Sources/Vorssaint/Services/Metrics/MonitorHistory.swift \
         Tests/MonitorHistoryTests.swift \
+        Tests/MusicLaunchBlockerTests.swift \
+        Tests/MusicReplacementActionTests.swift \
+        Sources/Vorssaint/Services/Ports/LocalPortSupport.swift \
+        Sources/Vorssaint/Services/Ports/LocalPortScanner.swift \
+        Tests/LocalPortTests.swift \
+        Sources/Vorssaint/Services/Cleaner/CleanerPackageCaches.swift \
+        Tests/CleanerPackageCacheTests.swift \
+        Tests/BrightnessNativeBoundaryTests.swift \
+        Sources/Vorssaint/Core/OnboardingFeatureSelection.swift \
+        Sources/Vorssaint/Core/OnboardingFeatureStrings.swift \
+        Tests/OnboardingFeatureSelectionTests.swift \
+        Tests/FeatureSwitchRetirementTests.swift \
         Sources/Vorssaint/Services/Metrics/MaxCapacityProbe.swift \
         Sources/Vorssaint/Services/Metrics/TemperatureSensorSelector.swift \
         Sources/Vorssaint/Services/Metrics/SustainedAlertGate.swift \
@@ -422,7 +517,13 @@ if (( TEST )); then
         Sources/Vorssaint/Services/Cleaner/CleanerSupport.swift \
         Sources/Vorssaint/Services/Cleaner/CleanerPolicy.swift \
         Sources/Vorssaint/Services/Cleaner/CleanerSchedule.swift \
+        Sources/Vorssaint/Core/CleanerRunResult.swift \
+        Sources/Vorssaint/Core/CleanerRunStrings.swift \
+        Sources/Vorssaint/Core/WhatsAppOrganizerPolicy.swift \
+        Sources/Vorssaint/Services/AssistiveKeyboard.swift \
         Sources/Vorssaint/Services/Uninstall/UninstallerSupport.swift \
+        Sources/Vorssaint/Core/UninstallerSelectionSupport.swift \
+        Tests/UninstallerSelectionTests.swift \
         Sources/Vorssaint/Services/ManagedDownloads/WhatsAppDownloadSupport.swift \
         Sources/Vorssaint/Services/Metrics/CPUCoreUsageSupport.swift \
         Tests/CPUCoreUsageTests.swift \
@@ -436,6 +537,14 @@ if (( TEST )); then
     # `set -e` would end the script on a failing run before the sweep below.
     test_status=0
     ./build/metrics-tests || test_status=$?
+    if swiftc -target "$TARGET" -sdk "$SDK" \
+        Sources/Vorssaint/UI/PlainTextEditor.swift \
+        Tests/PlainTextEditorLifecycleTests.swift Tests/PlainTextEditorLifecycleMain.swift \
+        -o build/editor-lifecycle-tests; then
+        ./build/editor-lifecycle-tests || test_status=1
+    else
+        test_status=1
+    fi
     ./Tests/PreferenceCleanupTests.sh || test_status=1
     discard_test_preferences || test_status=1
     exit $test_status
@@ -463,6 +572,8 @@ fi
 
 echo "▸ Compiling protected fan helper…"
 swiftc -O -target "$TARGET" -sdk "$SDK" "${SDK_COMPAT_FLAGS[@]}" "${BUILD_VARIANT_FLAGS[@]}" \
+    Sources/Vorssaint/Core/ProductIdentity.swift \
+    Sources/Vorssaint/Core/BuildCapabilityPolicy.swift \
     Sources/Vorssaint/Services/FanControl/FanControlSupport.swift \
     Sources/Vorssaint/Services/FanControl/FanControlXPC.swift \
     Sources/Vorssaint/Services/SystemMonitor/SMCClient.swift \
@@ -479,17 +590,20 @@ swiftc -O -target "$TARGET" -sdk "$SDK" "${SDK_COMPAT_FLAGS[@]}" -emit-library \
     -o "build/$NOW_PLAYING_ADAPTER"
 
 echo "▸ Generating app icon…"
-swift Tools/MakeIcon.swift build/AppIcon.iconset
+swiftc Sources/Vorssaint/UI/OctopusMark.swift Tools/MakeIcon.swift -o build/MakeIcon
+build/MakeIcon build/AppIcon.iconset
 xattr -c -r build/AppIcon.iconset build/AppIcon.icns build/MenuBarIcon.png build/MenuBarIcon@2x.png build/BrandMark.png 2>/dev/null || true
 ACTOOL_BIN="$(xcrun --find actool 2>/dev/null || true)"
 ICON_TMP="$(mktemp -d)"
 ADAPTIVE_SKIP=""
-if [[ -z "$ACTOOL_BIN" ]]; then
+if [[ ! -d "Resources/Brand/KururuAppIcon.icon" ]]; then
+    ADAPTIVE_SKIP="kururu adaptive source is not provided"
+elif [[ -z "$ACTOOL_BIN" ]]; then
     ADAPTIVE_SKIP="actool not found (adaptive icons need Xcode 26+)"
 else
     echo "▸ Compiling adaptive icon catalog…"
     # actool crashes on File Provider-synced paths, so compile a local copy.
-    ditto "Resources/Brand/AppIcon.icon" "$ICON_TMP/AppIcon.icon"
+    ditto "Resources/Brand/KururuAppIcon.icon" "$ICON_TMP/AppIcon.icon"
     # Xcode 27 beta actool requires the --compile target directory to already exist.
     mkdir -p "$ICON_TMP/catalog"
     if "$ACTOOL_BIN" "$ICON_TMP/AppIcon.icon" \
@@ -527,18 +641,14 @@ cp CHANGELOG.md "$STAGE/Contents/Resources/CHANGELOG.md"
 for lproj in Resources/*.lproj(N); do
     cp -R "$lproj" "$STAGE/Contents/Resources/"
 done
+"$IDENTITY_TMP/identity" "$DEV" --render-bundle "$STAGE"
+FAN_PLIST="$STAGE/Contents/Library/LaunchDaemons/$FAN_HELPER_ID.plist"
+/usr/libexec/PlistBuddy -c "Set :Label $FAN_HELPER_ID" "$FAN_PLIST"
+/usr/libexec/PlistBuddy -c "Set :BundleProgram Contents/Library/LaunchServices/$FAN_HELPER_ID" "$FAN_PLIST"
+/usr/libexec/PlistBuddy -c "Delete :MachServices" "$FAN_PLIST"
+/usr/libexec/PlistBuddy -c "Add :MachServices dict" "$FAN_PLIST"
+/usr/libexec/PlistBuddy -c "Add :MachServices:$FAN_HELPER_ID bool true" "$FAN_PLIST"
 if (( DEV )); then
-    # A distinct identity so the Developer build installs and runs next to the
-    # official app, with its own permissions, preferences and login item.
-    /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier com.vorssaint.utils.dev" "$STAGE/Contents/Info.plist"
-    /usr/libexec/PlistBuddy -c "Set :CFBundleName Vorssaint (Developer)" "$STAGE/Contents/Info.plist"
-    /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName Vorssaint (Developer)" "$STAGE/Contents/Info.plist"
-    /usr/libexec/PlistBuddy -c "Set :CFBundleExecutable $EXECUTABLE" "$STAGE/Contents/Info.plist"
-    FAN_PLIST="$STAGE/Contents/Library/LaunchDaemons/$FAN_HELPER_ID.plist"
-    /usr/libexec/PlistBuddy -c "Set :Label $FAN_HELPER_ID" "$FAN_PLIST"
-    /usr/libexec/PlistBuddy -c "Set :BundleProgram Contents/Library/LaunchServices/$FAN_HELPER_ID" "$FAN_PLIST"
-    /usr/libexec/PlistBuddy -c "Delete :MachServices:com.vorssaint.utils.fan-control" "$FAN_PLIST"
-    /usr/libexec/PlistBuddy -c "Add :MachServices:$FAN_HELPER_ID bool true" "$FAN_PLIST"
     # Stamp the source commit + build time so the running dev app shows (in About)
     # exactly which code it was compiled from. Lets you verify it matches HEAD before
     # testing, instead of unknowingly running a stale build. Dev-only; never shipped.
@@ -723,16 +833,6 @@ echo "✓ Bundle ready: $BUILD_STAGE"
 if (( INSTALL )); then
     echo "▸ Installing into /Applications…"
     stop_process "$EXECUTABLE"
-    # Remove the pre-rename apps so two menu bar items never coexist. Same bundle
-    # id, so macOS keeps the granted permissions for the new bundle.
-    for legacy in "Vorss:Vorss" "Vorssaint Utils:VorssaintUtils"; do
-        name="${legacy%%:*}"; proc="${legacy##*:}"
-        if [[ -d "/Applications/$name.app" ]]; then
-            stop_process "$proc"
-            rm -rf "/Applications/$name.app"
-            echo "  (legacy $name.app removed)"
-        fi
-    done
     INSTALL_DEST="/Applications/$APP_NAME.app"
     rm -rf "$INSTALL_DEST"
     ditto --noextattr --noqtn "$STAGE" "$INSTALL_DEST"

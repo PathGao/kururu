@@ -57,6 +57,15 @@ final class StatusItemController {
 
     var button: NSStatusBarButton? { statusItem.button }
 
+    var panelAnchorButton: NSStatusBarButton? {
+        let screenFrames = NSScreen.screens.map(\.frame)
+        let items = [statusItem!] + metricStatusItems.keys.sorted().compactMap { metricStatusItems[$0] }
+        return items.first { item in
+            guard item.isVisible, let frame = item.button?.window?.frame else { return false }
+            return StatusItemAnchorSupport.isTrustworthyStatusFrame(frame, screenFrames: screenFrames)
+        }?.button
+    }
+
     func containsStatusItem(at screenPoint: NSPoint) -> Bool {
         let buttons = ([statusItem?.button] + metricStatusItems.values.map(\.button)).compactMap { $0 }
         // Bound once for the whole scan: a default argument is evaluated per
@@ -242,11 +251,13 @@ final class StatusItemController {
     }
 
     private var renderedMicBadgeActive: Bool {
-        heldMicBadgeActive ?? currentMicBadgeActive
+        // A held layout must never preserve an obsolete all-muted claim.
+        (heldMicBadgeActive ?? true) && currentMicBadgeActive
     }
 
-    /// Keeps the variable-width mic badge unchanged while any status item is
-    /// anchoring an open panel. The current state is rendered after it closes.
+    /// Delays adding the variable-width mic badge while a status item anchors
+    /// an open panel. Losing confirmed mute removes the badge immediately;
+    /// holding the layout must not preserve an obsolete mute indication.
     func setMicBadgeHeld(_ held: Bool) {
         if held {
             guard heldMicBadgeActive == nil else { return }

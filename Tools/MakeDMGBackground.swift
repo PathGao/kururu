@@ -4,7 +4,7 @@
 // Renders the installer (DMG) window background: a clean light panel with the
 // app title and an arrow pointing from the app icon toward the Applications
 // folder. The two icons themselves are placed by Finder on top of this image.
-// Usage: swift Tools/MakeDMGBackground.swift <output.png>
+// Usage: swift Tools/MakeDMGBackground.swift <output.png> <product-name>
 import AppKit
 
 // Window is 600×400 pt; render at 2× for Retina sharpness.
@@ -13,8 +13,7 @@ let widthPt: CGFloat = 600, heightPt: CGFloat = 400
 let px = Int(widthPt * scale), py = Int(heightPt * scale)
 
 let out = CommandLine.arguments.count > 1 ? CommandLine.arguments[1] : "dmg-background.png"
-let scriptDir = URL(fileURLWithPath: CommandLine.arguments[0]).deletingLastPathComponent()
-let logoPath = scriptDir.deletingLastPathComponent().appendingPathComponent("Resources/Brand/logo.png").path
+let logoPath = CommandLine.arguments.count > 3 ? CommandLine.arguments[3] : ""
 
 guard let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: px, pixelsHigh: py,
                                  bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true,
@@ -36,7 +35,11 @@ NSGradient(colors: [
 ])?.draw(in: full, angle: -90)
 
 // Title (origin is bottom-left, so high y = near the top).
-let title = "Vorssaint"
+guard CommandLine.arguments.count > 2, !CommandLine.arguments[2].isEmpty else {
+    fputs("Missing product name from identity configuration.\n", stderr)
+    exit(1)
+}
+let title = CommandLine.arguments[2]
 let titleAttrs: [NSAttributedString.Key: Any] = [
     .font: NSFont.systemFont(ofSize: 26, weight: .bold),
     .foregroundColor: NSColor(calibratedWhite: 0.12, alpha: 1),
@@ -45,7 +48,7 @@ let titleSize = title.size(withAttributes: titleAttrs)
 title.draw(at: NSPoint(x: (widthPt - titleSize.width) / 2, y: heightPt - 70), withAttributes: titleAttrs)
 
 // Subtitle / instruction.
-let subtitle = "Arraste o app para a pasta Aplicativos · Drag the app to Applications"
+let subtitle = "将 kururu 拖入「应用程序」 · Drag the app to Applications"
 let subAttrs: [NSAttributedString.Key: Any] = [
     .font: NSFont.systemFont(ofSize: 12, weight: .regular),
     .foregroundColor: NSColor(calibratedWhite: 0.45, alpha: 1),
@@ -70,7 +73,7 @@ arrow.stroke()
 
 NSGraphicsContext.restoreGraphicsState()
 
-// Embed the brand mark watermark faintly behind the title (optional, subtle).
+// Optional generated native mark; a missing mark is omitted, never replaced with historical artwork.
 if let logo = NSImage(contentsOfFile: logoPath) {
     NSGraphicsContext.saveGraphicsState()
     NSGraphicsContext.current = ctx

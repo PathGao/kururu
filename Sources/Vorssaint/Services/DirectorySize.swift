@@ -8,7 +8,8 @@ import Foundation
 /// followed, so a link into another tree cannot make a folder look enormous
 /// or let the walk loop.
 enum DirectorySize {
-    static func of(_ url: URL, fm: FileManager = .default) -> Int64 {
+    static func of(_ url: URL, fm: FileManager = .default, isCancelled: () -> Bool = { false }) -> Int64 {
+        guard !isCancelled() else { return 0 }
         if isSymbolicLink(url) { return 0 }
         var isDir: ObjCBool = false
         guard fm.fileExists(atPath: url.path, isDirectory: &isDir) else { return 0 }
@@ -19,6 +20,7 @@ enum DirectorySize {
                                                                        .fileAllocatedSizeKey],
                                           options: [], errorHandler: nil) {
             for case let item as URL in enumerator {
+                guard !isCancelled() else { return 0 }
                 if isSymbolicLink(item) {
                     enumerator.skipDescendants()
                     continue

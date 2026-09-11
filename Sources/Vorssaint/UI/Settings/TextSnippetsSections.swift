@@ -25,27 +25,25 @@ struct TextSnippetsSections: View {
 
     var body: some View {
         Group {
-            Section(AppFeature.textSnippets.name(l10n.s, language: l10n.language)) {
-                Toggle(text.enable, isOn: $enabled)
+            SettingsSection(AppFeature.textSnippets.name(l10n.s, language: l10n.language)) {
+                SettingsToggleWithCaption(title: text.enable,
+                                          caption: text.enableCaption,
+                                          isOn: $enabled)
                     .onChange(of: enabled) { _, _ in
                         TextSnippetService.shared.syncWithPreferences()
                     }
-                Text(text.enableCaption)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
                 if enabled, !permissions.accessibility {
                     PermissionRow(kind: .accessibility)
                 }
-            }
-
-            Section {
-                Toggle(text.libraryToggle, isOn: $libraryEnabled)
+                Divider()
+                Text(text.libraryTitle).font(SettingsTypography.sectionTitle)
+                    .accessibilityAddTraits(.isHeader)
+                SettingsToggleWithCaption(title: text.libraryToggle,
+                                          caption: text.libraryCaption,
+                                          isOn: $libraryEnabled)
                     .onChange(of: libraryEnabled) { _, _ in
                         SnippetLibraryService.shared.syncWithPreferences()
                     }
-                Text(text.libraryCaption)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
                 if libraryEnabled {
                     ShortcutPreferenceRow(role: .snippetLibrary,
                                           isEnabled: libraryEnabled) {
@@ -53,18 +51,16 @@ struct TextSnippetsSections: View {
                     }
                     if library.shortcutRegistrationFailed {
                         Text(l10n.s.shortcutUnavailable)
-                            .font(.caption)
+                            .font(SettingsTypography.caption)
                             .foregroundStyle(.orange)
                     }
                 }
-            } header: {
-                Text(text.libraryTitle)
-            }
-
-            Section {
+                Divider()
+                Text(text.manageButton).font(SettingsTypography.sectionTitle)
+                    .accessibilityAddTraits(.isHeader)
                 if snippets.isEmpty {
                     Text(text.emptyList)
-                        .font(.caption)
+                        .font(SettingsTypography.caption)
                         .foregroundStyle(.secondary)
                 }
                 ForEach(snippets) { snippet in
@@ -80,13 +76,12 @@ struct TextSnippetsSections: View {
                 } label: {
                     Label(text.addButton, systemImage: "plus")
                 }
-            } footer: {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(text.variablesHint)
                     Text(text.variablesCaption)
                     Text(text.variablesFormatCaption)
                 }
-                .font(.caption)
+                .font(SettingsTypography.caption)
                 .foregroundStyle(.secondary)
             }
         }
@@ -160,13 +155,13 @@ private struct SnippetRow: View {
                             )
                         if !snippet.folder.isEmpty {
                             Label(snippet.folder, systemImage: "folder")
-                                .font(.caption2)
+                                .font(SettingsTypography.caption)
                                 .foregroundStyle(.secondary)
                                 .lineLimit(1)
                         }
                     }
                     Text(preview)
-                        .font(.caption)
+                        .font(SettingsTypography.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
@@ -175,12 +170,12 @@ private struct SnippetRow: View {
             .buttonStyle(.plain)
             Spacer(minLength: 8)
             Text(modeLabel)
-                .font(.caption2)
+                .font(SettingsTypography.caption)
                 .foregroundStyle(.tertiary)
             Toggle("", isOn: Binding(get: { snippet.enabled }, set: toggle))
                 .labelsHidden()
                 .toggleStyle(.switch)
-                .controlSize(.small)
+                .controlSize(.regular)
         }
         .padding(.vertical, 1)
     }
@@ -269,7 +264,7 @@ private struct SnippetEditor: View {
         VStack(alignment: .leading, spacing: 14) {
             Text(isNew ? text.newTitle : text.editTitle)
                 .font(.headline)
-            Form {
+            SettingsForm {
                 TextField(text.nameLabel, text: $snippet.name, prompt: Text(text.namePlaceholder))
                 TextField(text.triggerLabel, text: $snippet.trigger, prompt: Text(text.triggerPlaceholder))
                     .font(.body.monospaced())
@@ -328,22 +323,22 @@ private struct SnippetEditor: View {
                                 .strokeBorder(Color.primary.opacity(0.12))
                         )
                     Text(text.variablesHint)
-                        .font(.caption)
+                        .font(SettingsTypography.caption)
                         .foregroundStyle(.secondary)
                     Text(text.editorFormatCaption)
-                        .font(.caption)
+                        .font(SettingsTypography.caption)
                         .foregroundStyle(.secondary)
                 }
             }
             .formStyle(.columns)
             if triggerTooShort, !snippet.trigger.isEmpty {
                 Text(text.triggerTooShort)
-                    .font(.caption)
+                    .font(SettingsTypography.caption)
                     .foregroundStyle(.orange)
             }
             if duplicateTrigger {
                 Text(text.duplicateTrigger)
-                    .font(.caption)
+                    .font(SettingsTypography.caption)
                     .foregroundStyle(.orange)
             }
             HStack {

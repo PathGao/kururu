@@ -22,7 +22,7 @@ struct HomebrewOperationStatusView: View {
             progressArea
             if let activity = status.lastActivity, !activity.isEmpty {
                 Text(activity)
-                    .font(.system(size: compact ? 9.5 : 11))
+                    .font(compact ? .system(size: 9.5) : SettingsTypography.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(compact ? 2 : 3)
                     .fixedSize(horizontal: false, vertical: true)
@@ -45,14 +45,14 @@ struct HomebrewOperationStatusView: View {
                 Circle()
                     .fill(iconColor.opacity(0.14))
                 Image(systemName: iconName)
-                    .font(.system(size: compact ? 10 : 12, weight: .semibold))
+                    .font(compact ? .system(size: 10, weight: .semibold) : SettingsTypography.icon.weight(.semibold))
                     .foregroundStyle(iconColor)
             }
             .frame(width: compact ? 22 : 28, height: compact ? 22 : 28)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: compact ? 11.5 : 13, weight: .semibold))
+                    .font(compact ? .system(size: 11.5, weight: .semibold) : SettingsTypography.sectionTitle)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
                 HStack(spacing: 6) {
@@ -65,7 +65,7 @@ struct HomebrewOperationStatusView: View {
                                     elapsedText(now: context.date)))
                     }
                 }
-                .font(.system(size: compact ? 9.5 : 11))
+                .font(compact ? .system(size: 9.5) : SettingsTypography.caption)
                 .foregroundStyle(.secondary)
             }
             Spacer(minLength: 0)
@@ -73,12 +73,14 @@ struct HomebrewOperationStatusView: View {
                 Button(l10n.s.homebrewCancelOperation) {
                     onCancel()
                 }
-                .controlSize(.mini)
+                .font(compact ? nil : SettingsTypography.body)
+                .controlSize(compact ? .mini : .regular)
             } else {
                 Button(l10n.s.homebrewClearLog) {
                     onClear()
                 }
-                .controlSize(.mini)
+                .font(compact ? nil : SettingsTypography.body)
+                .controlSize(compact ? .mini : .regular)
             }
         }
     }
@@ -92,7 +94,7 @@ struct HomebrewOperationStatusView: View {
             } else {
                 HomebrewIndeterminateProgressBar()
                 Text(l10n.s.homebrewOperationProgressUnknown)
-                    .font(.system(size: compact ? 9 : 10))
+                    .font(compact ? .system(size: 9) : SettingsTypography.caption)
                     .foregroundStyle(.tertiary)
                     .lineLimit(1)
             }
@@ -105,7 +107,7 @@ struct HomebrewOperationStatusView: View {
     private var terminalFallback: some View {
         VStack(alignment: .leading, spacing: 6) {
             Label(l10n.s.homebrewTerminalFallback, systemImage: "terminal")
-                .font(.system(size: compact ? 9.5 : 11))
+                .font(compact ? .system(size: 9.5) : SettingsTypography.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             if terminalFallbackCommand != nil {
@@ -119,7 +121,8 @@ struct HomebrewOperationStatusView: View {
                         Label(l10n.s.menuCopy, systemImage: "doc.on.doc")
                     }
                 }
-                .controlSize(.small)
+                .font(compact ? nil : SettingsTypography.body)
+                .controlSize(compact ? .small : .regular)
             }
         }
     }
@@ -130,7 +133,7 @@ struct HomebrewOperationStatusView: View {
         } label: {
             Label(showDetails ? l10n.s.homebrewOperationHideDetails : l10n.s.homebrewOperationShowDetails,
                   systemImage: showDetails ? "chevron.up" : "chevron.down")
-                .font(.system(size: compact ? 10 : 11, weight: .medium))
+                .font(compact ? .system(size: 10, weight: .medium) : SettingsTypography.body)
         }
         .buttonStyle(.plain)
         .foregroundStyle(.secondary)
@@ -141,7 +144,7 @@ struct HomebrewOperationStatusView: View {
         VStack(alignment: .leading, spacing: 5) {
             HStack(spacing: 8) {
                 Text(l10n.s.homebrewOperationTechnicalLog)
-                    .font(.system(size: compact ? 9.5 : 11, weight: .semibold))
+                    .font(compact ? .system(size: 9.5, weight: .semibold) : SettingsTypography.caption.weight(.semibold))
                     .foregroundStyle(.tertiary)
                 Spacer(minLength: 0)
                 Button {
@@ -149,12 +152,13 @@ struct HomebrewOperationStatusView: View {
                 } label: {
                     Label(l10n.s.menuCopy, systemImage: "doc.on.doc")
                 }
-                .controlSize(.mini)
+                .font(compact ? nil : SettingsTypography.body)
+                .controlSize(compact ? .mini : .regular)
                 .disabled(log.isEmpty)
             }
             ScrollView {
                 Text(log.isEmpty ? " " : log)
-                    .font(.system(size: compact ? 9 : 10, design: .monospaced))
+                    .font(compact ? .system(size: 9, design: .monospaced) : SettingsTypography.caption.monospaced())
                     .foregroundStyle(.secondary)
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)

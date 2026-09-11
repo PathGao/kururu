@@ -55,18 +55,21 @@ enum CleanerPolicy {
         "com.apple.FontRegistry", "com.apple.ATS",
         "com.apple.akd", "com.apple.AuthKit",
         "com.paceap.", "com.native-instruments", "com.fabfilter",
+        // Spotify stores Spicetify Marketplace state alongside its cache.
+        "com.spotify.client",
     ]
 
     /// Third party caches whose content the user paid bandwidth or setup
     /// for (offline media, model and browser downloads): shown, never pre
     /// checked.
     private static let sensitiveCachePrefixes = [
-        "com.spotify.client",
         "ms-playwright",
     ]
 
     static func isExcludedCacheEntry(_ name: String) -> Bool {
         let lowered = name.lowercased()
+        let ownID = ProductIdentity.releaseBundleID.lowercased()
+        if lowered == ownID || lowered.hasPrefix(ownID + ".") { return true }
         return hiddenCachePrefixes.contains { lowered.hasPrefix($0.lowercased()) }
     }
 
@@ -85,6 +88,7 @@ enum CleanerPolicy {
     /// checked unless they hold content worth keeping, and plain named
     /// folders only when they are known download or build caches.
     static func precheckCacheEntry(_ name: String) -> Bool {
+        guard !isExcludedCacheEntry(name) else { return false }
         let lowered = name.lowercased()
         if sensitiveCachePrefixes.contains(where: { lowered.hasPrefix($0.lowercased()) }) { return false }
         if CleanerSupport.looksLikeBundleID(name) {

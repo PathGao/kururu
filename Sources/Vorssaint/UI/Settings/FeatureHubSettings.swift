@@ -3,19 +3,14 @@
 
 import SwiftUI
 
-/// The Features hub. One tile per unit, grouped in plain language: off
-/// means the unit disappears from the whole app (Settings, panel, menu
-/// bar, shortcuts) and costs nothing; its configuration is kept for its
-/// return. The Permissions tab is the transparency portal: what each system
-/// permission does, which features use it right now, and a gentle nudge when
-/// one is granted with nothing using it.
+/// Module availability stops runtime entry points while keeping a route to
+/// inspect saved settings without constructing the module's services.
 struct FeatureHubSettings: View {
     @ObservedObject private var l10n = L10n.shared
     @ObservedObject private var features = FeatureRuntime.shared
     @ObservedObject private var router = SettingsRouter.shared
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var tab: Tab = .features
-    @State private var confirmingPreset: FeaturePreset?
     /// Tracks the feature-target request currently being revealed, so a
     /// delayed retry from an older request cannot act after a newer one has
     /// already taken over (same convention as `SettingsSectionFocusModifier`).
@@ -28,6 +23,7 @@ struct FeatureHubSettings: View {
     private enum Tab { case features, permissions }
 
     private var hub: FeatureHubStrings { FeatureStrings.hub(l10n.language) }
+    private var workspace: ModuleWorkspaceStrings { ModuleWorkspaceStrings(l10n.language) }
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -38,80 +34,62 @@ struct FeatureHubSettings: View {
     }
 
     private var content: some View {
-        Form {
-            Section {
+        SettingsForm {
+            SettingsSection {
                 Picker("", selection: $tab) {
                     Text(hub.tabFeatures).tag(Tab.features)
                     Text(hub.tabPermissions).tag(Tab.permissions)
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
-                Text(tab == .features ? hub.intro : hub.permissionsIntro)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                Text(tab == .features ? workspace.intro : hub.permissionsIntro)
+                    .fixedSize(horizontal: false, vertical: true)
                 if tab == .features {
                     HStack(spacing: 8) {
-                        Text(String(format: hub.activeCountFormat,
+                        Text(String(format: workspace.activeFormat,
                                     features.availableCount, features.installableCount))
-                            .font(.caption)
-                            .foregroundStyle(.tertiary)
+                            .font(SettingsTypography.body)
+                            .foregroundStyle(.secondary)
                         Spacer(minLength: 8)
-                        Button(hub.installAllButton) {
+                        Button {
+                            FeatureRuntime.shared.relaunchApp()
+                        } label: {
+                            Image(systemName: "arrow.clockwise")
+                        }
+                        .settingsAction(.secondary)
+                        .disabled(!features.needsRestartToUnload)
+                        .opacity(features.needsRestartToUnload ? 1 : 0)
+                        .accessibilityHidden(!features.needsRestartToUnload)
+                        .accessibilityLabel(hub.restartButton)
+                        .help(hub.restartButton + "\n" + hub.restartNote)
+                        Button {
                             FeatureRuntime.shared.setAllAvailable(true)
+                        } label: {
+                            Label(workspace.addAll, systemImage: "plus.circle")
                         }
+                        .settingsAction(.primary)
                         .disabled(features.availableCount == features.installableCount)
-                        Button(hub.uninstallAllButton) {
+                        Button {
                             FeatureRuntime.shared.setAllAvailable(false)
+                        } label: {
+                            Label(workspace.removeAll, systemImage: "pause.circle")
                         }
+                        .settingsAction(.secondary)
                         .disabled(features.availableCount == 0)
                     }
-                    .controlSize(.small)
-                }
-            }
-            // The restart notice lives at the very top, never behind a
-            // scroll: uninstalling anything makes it impossible to miss.
-            if features.needsRestartToUnload {
-                Section {
-                    HStack(spacing: 10) {
-                        Image(systemName: "arrow.clockwise.circle.fill")
-                            .font(.system(size: 22))
-                            .foregroundStyle(Color.accentColor)
-                        Text(hub.restartNote)
-                            .font(.callout)
-                            .fixedSize(horizontal: false, vertical: true)
-                        Spacer(minLength: 10)
-                        Button(hub.restartButton) {
-                            FeatureRuntime.shared.relaunchApp()
-                        }
-                        .buttonStyle(.borderedProminent)
-                    }
-                    .padding(.vertical, 4)
-                    .listRowBackground(Color.accentColor.opacity(0.12))
+                    .controlSize(.regular)
                 }
             }
             if tab == .features {
-                presetsSection
                 featureSections
             } else {
-                Section {
+                SettingsSection {
                     PermissionsPortalSections(hub: hub)
                 }
             }
         }
         .formStyle(.grouped)
-        .alert(confirmingPreset.map { presetName($0) } ?? "",
-               isPresented: Binding(get: { confirmingPreset != nil },
-                                    set: { if !$0 { confirmingPreset = nil } }),
-               presenting: confirmingPreset) { preset in
-            Button(hub.presetConfirmApply) {
-                withAnimation(.easeOut(duration: 0.22)) {
-                    FeatureRuntime.shared.apply(preset)
-                }
-            }
-            Button(hub.presetConfirmCancel, role: .cancel) {}
-        } message: { preset in
-            Text(String(format: hub.presetConfirmFormat, presetName(preset)))
-        }
+
     }
 
     /// Consumes a pending Feature Hub target: switches off the Permissions
@@ -160,51 +138,10 @@ struct FeatureHubSettings: View {
         }
     }
 
-    /// Three one-click starting points. Nobody arrives wanting 37 decisions;
-    /// a preset shapes the app in one move and everything else stays one
-    /// click away in the list below.
-    private var presetsSection: some View {
-        Section {
-            HStack(alignment: .top, spacing: 8) {
-                ForEach(FeaturePreset.allCases) { preset in
-                    PresetCard(preset: preset,
-                               name: presetName(preset),
-                               caption: presetDescription(preset),
-                               applyTitle: hub.presetApplyButton) {
-                        confirmingPreset = preset
-                    }
-                }
-            }
-            .padding(.vertical, 2)
-        } header: {
-            Text(hub.presetsTitle)
-        } footer: {
-            Text(hub.presetsCaption)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-    }
-
-    private func presetName(_ preset: FeaturePreset) -> String {
-        switch preset {
-        case .essential: return hub.presetEssentialName
-        case .windows: return hub.presetWindowsName
-        case .battery: return hub.presetBatteryName
-        }
-    }
-
-    private func presetDescription(_ preset: FeaturePreset) -> String {
-        switch preset {
-        case .essential: return hub.presetEssentialDesc
-        case .windows: return hub.presetWindowsDesc
-        case .battery: return hub.presetBatteryDesc
-        }
-    }
-
     @ViewBuilder
     private var featureSections: some View {
         ForEach(FeatureGroup.allCases, id: \.self) { group in
-            Section {
+            SettingsSection {
                 ForEach(group.units, id: \.self) { unit in
                     FeatureHubRow(
                         unit: unit,
@@ -216,58 +153,17 @@ struct FeatureHubSettings: View {
                 }
                 if group == .monitor, !FeatureUnit.monitor.isAvailable {
                     Text(hub.monitorAllOffNote)
-                        .font(.caption)
+                        .font(SettingsTypography.caption)
                         .foregroundStyle(.secondary)
                 }
             } header: {
                 Text(group.title(hub))
             }
         }
-        Section {
-            Text(hub.footerNote)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-    }
-}
-
-// MARK: - Preset card
-
-private struct PresetCard: View {
-    let preset: FeaturePreset
-    let name: String
-    let caption: String
-    let applyTitle: String
-    let onApply: () -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 6) {
-                Image(systemName: preset.symbolName)
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(Color.accentColor)
-                Text(name)
-                    .font(.system(size: 12, weight: .semibold))
-                    .lineLimit(1)
-            }
-            Text(caption)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
+        SettingsSection {
+            Text(workspace.footer)
                 .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            Spacer(minLength: 0)
-            Button(applyTitle, action: onApply)
-                .buttonStyle(.bordered)
-                .controlSize(.small)
         }
-        .padding(9)
-        .frame(maxWidth: .infinity, minHeight: 96, alignment: .topLeading)
-        .background(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Color.secondary.opacity(0.08))
-        )
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(name). \(caption)")
     }
 }
 
@@ -276,17 +172,17 @@ private struct PresetCard: View {
 private struct FeatureHubRow: View {
     @ObservedObject private var l10n = L10n.shared
     @ObservedObject private var features = FeatureRuntime.shared
-    @State private var working = false
     let unit: FeatureUnit
     let hub: FeatureHubStrings
     let symbolName: String
     var isHighlighted: Bool = false
 
     private var installed: Bool { unit.isAvailable }
+    private var workspace: ModuleWorkspaceStrings { ModuleWorkspaceStrings(l10n.language) }
 
     /// Set only while this Mac cannot run the unit and it is not yet
-    /// installed, so an install that predates the check keeps an ordinary
-    /// row with its settings and Uninstall reachable.
+    /// enabled, so availability that predates the check keeps an ordinary
+    /// row with its settings and Disable reachable.
     private var unsupportedReason: String? { unit.installBlockedReason }
 
     private var title: String { unit.title(l10n.s, language: l10n.language) }
@@ -301,9 +197,13 @@ private struct FeatureHubRow: View {
 
     private var energyLabels: [String] { [unit.energyProfile.label(hub)] }
 
+    private var accessibilitySummary: String {
+        ([accessibilityTitle, description] + energyLabels).joined(separator: ". ")
+    }
+
     var body: some View {
         HStack(spacing: 10) {
-            if installed, let destination = unit.settingsDestination {
+            if let destination = unit.settingsDestination {
                 Button {
                     SettingsRouter.shared.request(destination)
                 } label: {
@@ -311,42 +211,29 @@ private struct FeatureHubRow: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityElement(children: .combine)
-                .accessibilityLabel("\(accessibilityTitle). \(description)")
+                .accessibilityLabel(accessibilitySummary)
                 .accessibilityAddTraits(.isLink)
                 .accessibilityRemoveTraits(.isButton)
             } else {
                 rowContent(showsChevron: false)
                     .accessibilityElement(children: .combine)
-                    .accessibilityLabel("\(accessibilityTitle). \(description)")
-                    .opacity(unsupportedReason == nil ? 1 : 0.4)
+                    .accessibilityLabel(accessibilitySummary)
                     .saturation(unsupportedReason == nil ? 1 : 0)
             }
-            if working {
-                ProgressView()
-                    .controlSize(.small)
-            } else if installed {
-                Button(hub.uninstallButton) { flip(to: false) }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
-                    .accessibilityLabel("\(hub.uninstallButton) \(accessibilityTitle)")
-            } else if let reason = unsupportedReason {
-                // .help() never fires on a disabled control, so the tooltip
-                // has to sit on this wrapper. Flattening it loses the only
-                // place the reason is shown.
-                HStack(spacing: 0) {
-                    Button(hub.installButton) { flip(to: true) }
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
-                        .disabled(true)
-                        .accessibilityLabel("\(hub.installButton) \(accessibilityTitle). \(reason)")
+            HStack(spacing: 0) {
+                Button { flip(to: !installed) } label: {
+                    ZStack {
+                        Label(workspace.remove, systemImage: "pause.circle").hidden()
+                        Label(workspace.add, systemImage: "plus.circle").hidden()
+                        Label(installed ? workspace.remove : workspace.add,
+                              systemImage: installed ? "pause.circle" : "plus.circle")
+                    }
                 }
-                .help(reason)
-            } else {
-                Button(hub.installButton) { flip(to: true) }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.small)
-                    .accessibilityLabel("\(hub.installButton) \(accessibilityTitle)")
+                .settingsAction(installed ? .secondary : .primary)
+                .disabled(!installed && unsupportedReason != nil)
+                .accessibilityLabel("\(installed ? workspace.remove : workspace.add) \(accessibilityTitle)")
             }
+            .help(unsupportedReason ?? "")
         }
         .padding(.vertical, 1)
         .overlay {
@@ -365,33 +252,41 @@ private struct FeatureHubRow: View {
                 .frame(width: 30, height: 30)
                 .overlay(
                     Image(systemName: symbolName)
-                        .font(PanelTypography.title)
+                        .font(SettingsTypography.icon)
                         .foregroundStyle(installed ? AnyShapeStyle(.white) : AnyShapeStyle(.secondary))
                 )
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
                     Text(title)
-                        .foregroundStyle(installed ? AnyShapeStyle(.primary) : AnyShapeStyle(.secondary))
+                        .font(SettingsTypography.body.weight(.semibold))
+                        .foregroundStyle(.primary)
+                        .layoutPriority(1)
                     if unit.isBeta {
                         Text(l10n.s.betaBadge)
-                            .font(PanelTypography.meta)
+                            .font(SettingsTypography.caption)
                             .foregroundStyle(Color.white)
                             .padding(.horizontal, 5)
                             .padding(.vertical, 1)
                             .background(Capsule().fill(Color.accentColor))
                             .accessibilityHidden(true)
                     }
+                }
+                Text(description)
+                    .font(SettingsTypography.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                HStack(spacing: 6) {
                     ForEach(unit.permissions, id: \.self) { permission in
                         Image(systemName: permission.symbolName)
-                            .font(PanelTypography.meta)
+                            .font(SettingsTypography.smallIcon)
                             .foregroundStyle(.tertiary)
                             .help(permission.name(hub))
                             .accessibilityHidden(true)
                     }
                     ForEach(energyLabels, id: \.self) { label in
                         Text(label)
-                            .font(PanelTypography.meta)
-                            .foregroundStyle(.tertiary)
+                            .font(SettingsTypography.caption)
+                            .foregroundStyle(.secondary)
                             .padding(.horizontal, 5)
                             .padding(.vertical, 1)
                             .background(Capsule().fill(Color.secondary.opacity(0.12)))
@@ -399,14 +294,11 @@ private struct FeatureHubRow: View {
                             .accessibilityHidden(true)
                     }
                 }
-                Text(description)
-                    .font(.caption)
-                    .foregroundStyle(installed ? Color.secondary : Color.secondary.opacity(0.6))
             }
             Spacer(minLength: 8)
             if showsChevron {
                 Image(systemName: "chevron.forward")
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(SettingsTypography.smallIcon)
                     .foregroundStyle(.tertiary)
                     .accessibilityHidden(true)
             }
@@ -415,122 +307,10 @@ private struct FeatureHubRow: View {
         .contentShape(Rectangle())
     }
 
-    /// A quick, honest beat of feedback: the spinner shows the action landed,
-    /// then the row fades to its new state. The flip itself is instant.
     private func flip(to install: Bool) {
-        guard !working else { return }
-        working = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
-            withAnimation(.easeOut(duration: 0.22)) {
-                FeatureRuntime.shared.setAvailable(unit, install)
-            }
-            working = false
-        }
-    }
-}
-
-// MARK: - Member switches
-
-/// One row per member of the unit at the top of its page: the switch that
-/// turns the member on (`AppFeature.pageSwitchKey`) and what it costs once
-/// on. A member's own switch off is the old per-feature uninstall: the
-/// feature leaves every surface and its service tears down; only its row
-/// here stays, so it can come back. An enable key off is the member's block
-/// waiting below.
-struct FeatureSwitchSection: View {
-    let unit: FeatureUnit
-    var usesGrid = false
-
-    var body: some View {
-        Section {
-            if usesGrid {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 190), spacing: 12)], spacing: 12) {
-                    memberRows
-                }
-            } else {
-                memberRows
-            }
-        }
+        FeatureRuntime.shared.setAvailable(unit, install)
     }
 
-    private var memberRows: some View {
-        ForEach(unit.features, id: \.self) { feature in
-            SwitchRow(feature: feature, usesCard: usesGrid)
-        }
-    }
-
-    private struct SwitchRow: View {
-        @ObservedObject private var l10n = L10n.shared
-        @ObservedObject private var features = FeatureRuntime.shared
-        let feature: AppFeature
-        var usesCard = false
-
-        /// The mouse page asked for Accessibility the moment one of these
-        /// went on; the other members show a permission row instead.
-        private static let asksAccessibility: Set<AppFeature> = [
-            .scrollInverter, .focusFollowsMouse, .smoothScroll, .mouseNavigation,
-            .mouseButtonShortcuts, .mouseClickDebounce,
-        ]
-
-        var body: some View {
-            let blocked = feature.installBlockedReason
-            let name = feature.name(l10n.s, language: l10n.language)
-            let energyLabel = feature.energyProfile.label(FeatureStrings.hub(l10n.language))
-            let binding = Binding(
-                get: { feature.pageSwitchKey.map { UserDefaults.standard.bool(forKey: $0) } ?? feature.isAvailable },
-                set: { on in
-                    FeatureRuntime.shared.setSwitch(feature, on)
-                    if on, Self.asksAccessibility.contains(feature) {
-                        Permissions.shared.requestAccessibility()
-                    }
-                }
-            )
-            Group {
-                if usesCard {
-                    VStack(alignment: .leading, spacing: 16) {
-                        HStack {
-                            Image(systemName: feature.symbolName)
-                                .font(.system(size: 21, weight: .light))
-                                .foregroundStyle(binding.wrappedValue ? Color.accentColor : Color.secondary)
-                            Spacer()
-                            if feature.pageSwitchKey != nil {
-                                Toggle(name, isOn: binding).labelsHidden().toggleStyle(.switch)
-                                    .disabled(blocked != nil)
-                            } else {
-                                Image(systemName: feature.isAvailable ? "checkmark.circle.fill" : "minus.circle")
-                                    .foregroundStyle(.secondary)
-                                    .accessibilityLabel(name)
-                            }
-                        }
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(name).font(PanelTypography.title)
-                            Text(energyLabel)
-                                .font(.system(size: 10)).foregroundStyle(.secondary)
-                        }
-                    }
-                    .padding(16)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 16))
-                } else {
-                    HStack(spacing: 8) {
-                        if feature.pageSwitchKey != nil {
-                            Toggle(name, isOn: binding).disabled(blocked != nil)
-                        } else {
-                            Label(name, systemImage: "checkmark.circle.fill")
-                        }
-                        Text(energyLabel)
-                            .font(PanelTypography.meta)
-                            .foregroundStyle(.tertiary)
-                            .padding(.horizontal, 5)
-                            .padding(.vertical, 1)
-                            .background(Capsule().fill(Color.secondary.opacity(0.12)))
-                            .help(FeatureStrings.hub(l10n.language).energyHelp)
-                    }
-                }
-            }
-            .help(blocked ?? "")
-        }
-    }
 }
 
 // MARK: - Permissions portal
@@ -641,7 +421,7 @@ private struct PermissionPortalRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: permission.symbolName)
-                .font(.system(size: 14, weight: .semibold))
+                .font(SettingsTypography.icon)
                 .foregroundStyle(.secondary)
                 .frame(width: 24, height: 24)
             VStack(alignment: .leading, spacing: 4) {
@@ -651,10 +431,10 @@ private struct PermissionPortalRow: View {
                     statusChip
                 }
                 Text(permission.explainer(hub))
-                    .font(.caption)
+                    .font(SettingsTypography.caption)
                     .foregroundStyle(.secondary)
                 Text(usedByLine)
-                    .font(.caption)
+                    .font(SettingsTypography.caption)
                     .foregroundStyle(.tertiary)
                 if status == .granted, activeFeatures.isEmpty {
                     unusedCard
@@ -665,7 +445,7 @@ private struct PermissionPortalRow: View {
                     }
                     Button(hub.openSystemSettings) { openSystemSettings() }
                 }
-                .controlSize(.small)
+                .controlSize(.regular)
                 .padding(.top, 2)
             }
         }
@@ -691,7 +471,7 @@ private struct PermissionPortalRow: View {
                 .fill(chipColor)
                 .frame(width: 6, height: 6)
             Text(chipText)
-                .font(.caption)
+                .font(SettingsTypography.caption)
                 .foregroundStyle(.secondary)
         }
     }
@@ -714,7 +494,7 @@ private struct PermissionPortalRow: View {
 
     private var unusedCard: some View {
         Text(hub.unusedBanner)
-            .font(.caption)
+            .font(SettingsTypography.caption)
             .foregroundStyle(.secondary)
             .padding(8)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -872,5 +652,125 @@ extension AppPermission {
             return FeatureStrings.recorder(L10n.shared.language).microphonePermissionExplain
         case .appManagement: return hub.explainAppManagement
         }
+    }
+}
+
+struct FeatureSwitchRow: View {
+    @ObservedObject private var l10n = L10n.shared
+    @ObservedObject private var features = FeatureRuntime.shared
+    let feature: AppFeature
+    var title: String? = nil
+
+    /// The mouse page asked for Accessibility the moment one of these
+    /// went on; the other members show a permission row instead.
+    private static let asksAccessibility: Set<AppFeature> = [
+        .scrollInverter, .focusFollowsMouse, .smoothScroll, .mouseNavigation,
+        .mouseButtonShortcuts, .mouseClickDebounce,
+    ]
+
+    var body: some View {
+        let blocked = feature.installBlockedReason
+        let name = title ?? feature.name(l10n.s, language: l10n.language)
+        let binding = Binding(
+            get: { feature.pageSwitchKey.map { UserDefaults.standard.bool(forKey: $0) } ?? feature.isAvailable },
+            set: { on in
+                FeatureRuntime.shared.setSwitch(feature, on)
+                if on, Self.asksAccessibility.contains(feature) {
+                    Permissions.shared.requestAccessibility()
+                }
+            }
+        )
+        VStack(alignment: .leading, spacing: 5) {
+          Group {
+            if feature.pageSwitchKey != nil {
+                Toggle(isOn: binding) {
+                    HStack(spacing: 12) {
+                        SettingsSymbol(systemImage: feature.symbolName)
+                        Text(name).font(SettingsTypography.body.weight(.semibold))
+                        Spacer(minLength: 8)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .toggleStyle(.switch)
+                .disabled(blocked != nil)
+            } else {
+                HStack(spacing: 12) {
+                    SettingsSymbol(systemImage: feature.symbolName)
+                    Text(name).font(SettingsTypography.body.weight(.semibold))
+                    Spacer(minLength: 8)
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(Color.accentColor)
+                        .accessibilityHidden(true)
+                }
+            }
+        }
+          .opacity(blocked == nil ? 1 : 0.55)
+          if let blocked {
+              Text(blocked)
+                  .font(SettingsTypography.caption)
+                  .foregroundStyle(.secondary)
+                  .fixedSize(horizontal: false, vertical: true)
+                  .padding(.leading, 42)
+          }
+        }
+        .frame(maxWidth: .infinity, minHeight: 40, alignment: .leading)
+        .help(blocked ?? "")
+    }
+}
+
+/// Reads preferences only. Opening an inactive module must not instantiate its
+/// services, load private history, request permission, or register shortcuts.
+struct SavedModuleConfigurationView: View {
+    @ObservedObject private var l10n = L10n.shared
+    let unit: FeatureUnit
+    private var text: ModuleWorkspaceStrings { ModuleWorkspaceStrings(l10n.language) }
+    private var shortcuts: [GlobalShortcutRole] {
+        GlobalShortcutRole.allCases.filter { $0.feature.unit == unit }
+    }
+
+    var body: some View {
+        SettingsForm {
+            SettingsSection {
+                Label(text.inactiveTitle, systemImage: "pause.circle")
+                    .font(SettingsTypography.sectionTitle)
+                Text(text.inactiveNote)
+                    .fixedSize(horizontal: false, vertical: true)
+                Button { FeatureRuntime.shared.setAvailable(unit, true) } label: {
+                    Label(text.add, systemImage: "plus.circle")
+                }
+                .settingsAction(.primary)
+                .disabled(unit.installBlockedReason != nil)
+                if let reason = unit.installBlockedReason {
+                    Text(reason).fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            SettingsSection(text.savedBehaviors) {
+                ForEach(unit.features, id: \.self) { feature in
+                    LabeledContent(feature.name(l10n.s, language: l10n.language)) {
+                        Text(savedBehavior(feature)).foregroundStyle(.secondary)
+                    }
+                }
+            }
+            if !shortcuts.isEmpty {
+                SettingsSection(text.savedShortcuts) {
+                    ForEach(shortcuts) { role in
+                        LabeledContent(role.title(l10n.s)) {
+                            Text(role.savedShortcut.displayString)
+                                .font(SettingsTypography.body.monospaced())
+                                .textSelection(.enabled)
+                        }
+                    }
+                }
+            }
+        }
+        .formStyle(.grouped)
+    }
+
+    private func savedBehavior(_ feature: AppFeature) -> String {
+        var keys = feature.enabledKeys
+        if let key = feature.switchKey, !keys.contains(key) { keys.append(key) }
+        guard !keys.isEmpty else { return text.noSeparateSwitch }
+        let enabled = keys.filter { UserDefaults.standard.bool(forKey: $0) }.count
+        return keys.count == 1 ? (enabled == 1 ? text.on : text.off) : text.actionCount(enabled, keys.count)
     }
 }

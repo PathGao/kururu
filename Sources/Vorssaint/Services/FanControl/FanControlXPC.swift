@@ -4,21 +4,21 @@
 import Foundation
 
 enum FanControlIdentifiers {
-    static let teamID = "3D485NHW29"
+    static let teamID = ProductIdentity.signingTeamID
+    static var isConfigured: Bool { BuildCapabilityPolicy.allowsPrivilegedHelper(teamID: teamID) }
 
     #if VORSSAINT_DEVELOPMENT
-    static let appBundleID = "com.vorssaint.utils.dev"
+    static let appBundleID = ProductIdentity.bundleID(development: true)
     #else
-    static let appBundleID = "com.vorssaint.utils"
+    static let appBundleID = ProductIdentity.bundleID(development: false)
     #endif
 
     static let helperID = "\(appBundleID).fan-control"
     static let plistName = "\(helperID).plist"
 
-    static let appCodeRequirement =
-        "anchor apple generic and certificate leaf[subject.OU] = \"\(teamID)\" and identifier \"\(appBundleID)\""
-    static let helperCodeRequirement =
-        "anchor apple generic and certificate leaf[subject.OU] = \"\(teamID)\" and identifier \"\(helperID)\""
+    static let appCodeRequirement = BuildCapabilityPolicy.codeRequirement(teamID: teamID, identifier: appBundleID)
+    static let helperCodeRequirement = BuildCapabilityPolicy.codeRequirement(teamID: teamID, identifier: helperID)
+
 }
 
 @objc protocol FanControlXPCProtocol {

@@ -27,80 +27,88 @@ struct ClipboardSettings: View {
     }
 
     var body: some View {
-        Form {
-            FeatureSwitchSection(unit: .clipboard)
-            if AppFeature.pastePlain.isAvailable {
-                Section {
-                    Text(l10n.s.pastePlainCaption)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    ShortcutPreferenceRow(role: .pastePlain,
-                                          isEnabled: pastePlainEnabled) {
-                        PastePlainService.shared.syncWithPreferences()
-                    }
-                    if pastePlainEnabled, pastePlain.shortcutRegistrationFailed {
-                        Text(l10n.s.shortcutUnavailable)
-                            .font(.caption)
-                            .foregroundStyle(.orange)
-                    }
-                    if pastePlainEnabled, !permissions.accessibility {
-                        PermissionRow(kind: .accessibility)
-                    }
-                } header: {
-                    Text(AppFeature.pastePlain.name(l10n.s, language: l10n.language))
-                }
-                .settingsSectionAnchor(.pastePlain)
-            }
+        SettingsForm {
             if AppFeature.clipboardHistory.isAvailable {
-                Section {
-                    Text(text.caption)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text(text.localNote)
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
-                    if enabled, history.isRunning {
-                        Label(text.active, systemImage: "checkmark.circle.fill")
-                            .font(.caption)
-                            .foregroundStyle(.green)
+                SettingsSection(title: flowText.useClipboard, systemImage: "doc.on.clipboard") {
+                    Button {
+                        ClipboardHistoryService.shared.showHistoryWindow()
+                    } label: {
+                        Label(flowText.viewClipboard, systemImage: "doc.on.clipboard")
                     }
+                    .settingsAction(.primary)
+                    Toggle(text.shortcut, isOn: $shortcutEnabled)
+                        .onChange(of: shortcutEnabled) { _, _ in
+                            ClipboardHistoryService.shared.syncHotkey()
+                        }
+                    ShortcutPreferenceRow(role: .clipboard, isEnabled: shortcutEnabled) {
+                        ClipboardHistoryService.shared.syncHotkey()
+                    }
+                    if shortcutEnabled, history.shortcutRegistrationFailed {
+                        Text(l10n.s.shortcutUnavailable).font(SettingsTypography.caption).foregroundStyle(.orange)
+                    }
+                    PanelEntrySettings(title: l10n.s.monitorShowInPanel,
+                                       key: DefaultsKey.panelUtilityClipboard)
                 }
                 .settingsSectionAnchor(.clipboardHistory)
 
-                clipboardShortcutSection
-
-                Section {
-                    Toggle(text.includeImagesFiles, isOn: $includeImagesFiles)
-                        .disabled(!enabled)
-                    Text(text.includeImagesFilesCaption)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Toggle(text.skipSensitive, isOn: $skipSensitive)
-                        .disabled(!enabled)
-                    Text(text.skipSensitiveCaption)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    ClipboardIgnoredAppsList()
-                        .disabled(!enabled)
-                    Picker(text.limit, selection: $limit) {
-                        ForEach(Defaults.allowedClipboardHistoryLimits, id: \.self) { value in
-                            Text(value == 0 ? text.limitUnlimited : "\(value)").tag(value)
-                        }
+                SettingsSection(title: flowText.automaticCapture, systemImage: "tray.and.arrow.down") {
+                    FeatureSwitchRow(feature: .clipboardHistory, title: flowText.recordCopiedContent)
+                    SettingsExplanation(flowText.automaticCaptureCaption)
+                    SettingsInfo(text: text.localNote, systemImage: "lock.shield")
+                    if enabled, history.isRunning {
+                        Label(flowText.captureActive, systemImage: "checkmark.circle.fill")
+                            .font(SettingsTypography.caption)
+                            .foregroundStyle(.green)
+                    } else if !enabled {
+                        Label(flowText.capturePaused, systemImage: "pause.circle")
+                            .font(SettingsTypography.caption)
+                            .foregroundStyle(.secondary)
                     }
-                    .disabled(!enabled)
+                    SettingsToggleWithCaption(title: text.includeImagesFiles,
+                                              caption: text.includeImagesFilesCaption,
+                                              isOn: $includeImagesFiles)
+                    SettingsToggleWithCaption(title: text.skipSensitive,
+                                              caption: text.skipSensitiveCaption,
+                                              isOn: $skipSensitive)
+                    SettingsControlRow(title: text.limit, systemImage: "tray.full") {
+                        Picker(text.limit, selection: $limit) {
+                            ForEach(Defaults.allowedClipboardHistoryLimits, id: \.self) { value in
+                                Text(value == 0 ? text.limitUnlimited : "\(value)").tag(value)
+                            }
+                        }
+                        .labelsHidden()
+                    }
+                    ClipboardIgnoredAppsList()
                 }
 
                 clipboardAutoClearSection
-            }
-
-
-            if AppFeature.clipboardHistory.isAvailable {
                 clipboardStatsSection
+                ClipboardImportSettings()
             }
-            // Cleaning a link is a clipboard rewrite, so it lives where the
-            // rest of what happens to a copy lives.
+
+            if AppFeature.pastePlain.isAvailable {
+                SettingsSection {
+                    FeatureSwitchRow(feature: .pastePlain)
+                    SettingsExplanation(l10n.s.pastePlainCaption)
+                    ShortcutPreferenceRow(role: .pastePlain, isEnabled: pastePlainEnabled) {
+                        PastePlainService.shared.syncWithPreferences()
+                    }
+                    if pastePlainEnabled, pastePlain.shortcutRegistrationFailed {
+                        Text(l10n.s.shortcutUnavailable).font(SettingsTypography.caption).foregroundStyle(.orange)
+                    }
+                    if pastePlainEnabled, !permissions.accessibility { PermissionRow(kind: .accessibility) }
+                }
+                .settingsSectionAnchor(.pastePlain)
+            }
+
             if AppFeature.urlCleaner.isAvailable {
-                URLCleanerSections()
+                SettingsSection(title: flowText.relatedTools, systemImage: "link") {
+                    Button {
+                        SettingsRouter.shared.request(AppFeature.urlCleaner.settingsDestination)
+                    } label: {
+                        Label(flowText.openURLCleaner, systemImage: "link")
+                    }
+                }
             }
         }
         .formStyle(.grouped)
@@ -123,41 +131,14 @@ struct ClipboardSettings: View {
         }
     }
 
-    @ViewBuilder
-    private var clipboardShortcutSection: some View {
-        Section(text.shortcut) {
-            Toggle(text.shortcut, isOn: $shortcutEnabled)
-                .onChange(of: shortcutEnabled) { _, _ in
-                    ClipboardHistoryService.shared.syncHotkey()
-                }
-                .disabled(!enabled)
-            ShortcutPreferenceRow(role: .clipboard,
-                                  isEnabled: enabled && shortcutEnabled) {
-                ClipboardHistoryService.shared.syncHotkey()
-            }
-            if enabled, shortcutEnabled, history.shortcutRegistrationFailed {
-                Text(l10n.s.shortcutUnavailable)
-                    .font(.caption)
-                    .foregroundStyle(.orange)
-            }
-            Text(text.shortcutCaption)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            Button {
-                ClipboardHistoryService.shared.showHistoryWindow()
-            } label: {
-                Label(text.shortcut, systemImage: "doc.on.clipboard")
-            }
-            .disabled(history.entries.isEmpty)
-        }
-    }
+    private var flowText: UXTaskFlowStrings { UXTaskFlowStrings(language: l10n.language) }
 
     // Never disabled by the capture toggle, unlike the sections above it:
     // emptying the pasteboard is a security setting in its own right, and
     // someone who keeps no history is exactly who reaches for it.
     @ViewBuilder
     private var clipboardAutoClearSection: some View {
-        Section {
+        SettingsSection(title: UXEntryStrings(l10n.language).clipboardAutoClearTitle, systemImage: "eraser") {
             HStack {
                 Toggle(text.autoClearEnable, isOn: $autoClearOnDelay)
                     .onChange(of: autoClearOnDelay) { _, _ in
@@ -183,9 +164,7 @@ struct ClipboardSettings: View {
                 .onChange(of: autoClearOnScreenLock) { _, _ in
                     ClipboardAutoClearService.shared.syncWithPreferences()
                 }
-            Text(text.autoClearCaption)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            SettingsInfo(text: text.autoClearCaption, systemImage: "eraser")
         }
     }
 
@@ -199,7 +178,7 @@ struct ClipboardSettings: View {
     }()
 
     private var clipboardStatsSection: some View {
-            Section {
+            SettingsSection(title: flowText.dataManagement, systemImage: "externaldrive") {
                 HStack {
                     Text("\(history.pinnedEntries.count)")
                     Text(text.pinned)
@@ -210,13 +189,7 @@ struct ClipboardSettings: View {
                     Text(text.recent)
                         .foregroundStyle(.secondary)
                     Spacer()
-                    Button(text.clearRecent) {
-                        history.clearRecent()
-                    }
-                    .disabled(history.recentEntries.isEmpty)
-                    Button(text.clearAll) {
-                        history.clearAll()
-                    }
+                    ClipboardClearRecentButton()
                     .disabled(history.recentEntries.isEmpty)
                 }
             }

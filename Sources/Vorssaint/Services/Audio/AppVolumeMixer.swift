@@ -31,9 +31,8 @@ struct MixerApp: Identifiable, Equatable {
     let ownerPid: pid_t
     let name: String
     let audioObjects: [AudioObjectID]
-    /// True while the app is actually emitting sound right now (shown as a
-    /// live indicator). Apps appear in the mixer even when momentarily silent,
-    /// as long as they hold an audio connection.
+    /// CoreAudio reports a running output stream; this is not a signal-level meter.
+    /// Apps remain in the full list while they hold an audio connection.
     let isPlaying: Bool
     /// The app manages its own audio (Zoom, DAWs): shown in the list so its
     /// absence doesn't read as a bug (issue #177), but never tapped — no
@@ -478,6 +477,7 @@ final class AppVolumeMixer: ObservableObject {
 
     @discardableResult
     func setUniversalOutputDeviceUID(_ uid: String) -> Bool {
+        SoundOutputSwitcher.shared.clearSwitchResult()
         guard let sanitized = Defaults.sanitizedAppOutputDeviceUID(uid),
               let device = outputDevices.first(where: { $0.uid == sanitized && $0.canBeDefaultOutput }) else {
             outputSwitchError = FeatureStrings.mixer(L10n.shared.language).outputUnavailable
@@ -539,6 +539,7 @@ final class AppVolumeMixer: ObservableObject {
 
     @discardableResult
     func setSystemSoundOutputDeviceUID(_ uid: String) -> Bool {
+        SoundOutputSwitcher.shared.clearSwitchResult()
         guard let sanitized = Defaults.sanitizedAppOutputDeviceUID(uid),
               let device = outputDevices.first(where: {
                   $0.uid == sanitized && $0.canBeDefaultSystemOutput
@@ -565,13 +566,20 @@ final class AppVolumeMixer: ObservableObject {
     }
 
     @discardableResult
-    func switchToNextSoundOutput(in selectedUIDs: [String]) -> Bool {
+    func switchToNextSoundOutput(in selectedUIDs: [String]) -> SoundOutputSwitchResult {
+        outputSwitchError = nil
         let availableUIDs = Set(outputDevices.filter(\.canBeDefaultOutput).map(\.uid))
         guard let nextUID = MixerRoutingSupport.nextSelectedOutputDeviceUID(
             currentUID: currentOutputDeviceUID,
             selectedUIDs: selectedUIDs,
-            availableUIDs: availableUIDs) else { return false }
-        return setUniversalOutputDeviceUID(nextUID)
+            availableUIDs: availableUIDs) else {
+            let hasAvailableSelection = selectedUIDs.contains { rawUID in
+                guard let uid = MixerRoutingSupport.sanitizedDeviceUID(rawUID) else { return false }
+                return availableUIDs.contains(uid)
+            }
+            return hasAvailableSelection ? .unchanged : .noAvailableSelection
+        }
+        return setUniversalOutputDeviceUID(nextUID) ? .switched : .failed
     }
 
     func toggleMute(_ app: MixerApp) {
@@ -829,6 +837,11 @@ final class AppVolumeMixer: ObservableObject {
             || snapshot.systemSoundUID != currentSystemSoundOutputDeviceUID),
            outputSwitchError != nil {
             outputSwitchError = nil
+        }
+        if snapshot.defaultUID != currentOutputDeviceUID
+            || snapshot.systemSoundUID != currentSystemSoundOutputDeviceUID
+            || snapshot.outputDevices != outputDevices {
+            SoundOutputSwitcher.shared.clearSwitchResult()
         }
         let audioEnvironmentChanged = currentOutputDeviceUID != nil
             && (snapshot.defaultUID != currentOutputDeviceUID || snapshot.outputDevices != outputDevices)

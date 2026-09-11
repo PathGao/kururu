@@ -1,22 +1,22 @@
 /* macOS Automation permission prompt. */
-"NSAppleEventsUsageDescription" = "Vorssaintは、Finderでのファイル移動、項目のゴミ箱への移動、Homebrewの操作を依頼したときのターミナルコマンドの実行にオートメーションを使用します。";
+"NSAppleEventsUsageDescription" = "__APP_NAME__は、Finderでのファイル移動、項目のゴミ箱への移動、Homebrewの操作を依頼したときのターミナルコマンドの実行にオートメーションを使用します。 要求に応じてFinderフォルダの整列ルールを設定するためにも使用します。";
 
 /* macOS Screen & System Audio Recording permission prompt. */
-"NSAudioCaptureUsageDescription" = "Vorssaintは、ミキサーで各アプリの音量を調整するため、また開始した画面収録にMacの音声を含めるために、各アプリの音声を使用します。Macの外に送信されることはありません。";
+"NSAudioCaptureUsageDescription" = "__APP_NAME__は、ミキサーで各アプリの音量を調整するため、また開始した画面収録にMacの音声を含めるために、各アプリの音声を使用します。Macの外に送信されることはありません。";
 
 /* macOS Bluetooth permission prompt. */
-"NSBluetoothAlwaysUsageDescription" = "Vorssaintは、接続済み周辺機器のバッテリー残量を読み取るためだけにBluetoothを使用します。データがMacの外に送信されることはありません。";
+"NSBluetoothAlwaysUsageDescription" = "__APP_NAME__は、接続済み周辺機器のバッテリー残量を読み取るためだけにBluetoothを使用します。データがMacの外に送信されることはありません。";
 
 /* macOS Microphone permission prompt. */
-"NSMicrophoneUsageDescription" = "Vorssaintは、画面収録でマイクをオンにしたときだけ音声を収録します。一時リンクを作成しない限り、音声はMac上に保存されます。";
+"NSMicrophoneUsageDescription" = "__APP_NAME__は、画面収録でマイクをオンにしたときだけ音声を収録します。音声はMac上に保存されます。";
 
 /* macOS Camera permission prompt. */
 
 /* macOS Downloads folder permission prompt. */
-"NSDownloadsFolderUsageDescription" = "Vorssaintは、ダウンロード内のローカルメタデータを確認し、選択した確認済みWhatsAppファイルだけを確認、整理、またはゴミ箱へ移動します。";
+"NSDownloadsFolderUsageDescription" = "__APP_NAME__は、ダウンロード内のローカルメタデータを確認し、選択した確認済みWhatsAppファイルだけを確認、整理、またはゴミ箱へ移動します。";
 
 /* macOS user-selected organizer destination prompts. */
-"NSDesktopFolderUsageDescription" = "Vorssaintは、確認済みのWhatsAppダウンロードを、明示的に選択した保存先フォルダに整理します。";
-"NSDocumentsFolderUsageDescription" = "Vorssaintは、確認済みのWhatsAppダウンロードを、明示的に選択した保存先フォルダに整理します。";
-"NSNetworkVolumesUsageDescription" = "Vorssaintは、確認済みのWhatsAppダウンロードを、明示的に選択した保存先フォルダに整理します。";
-"NSRemovableVolumesUsageDescription" = "Vorssaintは、確認済みのWhatsAppダウンロードを、明示的に選択した保存先フォルダに整理します。";
+"NSDesktopFolderUsageDescription" = "__APP_NAME__は、確認済みのWhatsAppダウンロードを、明示的に選択した保存先フォルダに整理します。";
+"NSDocumentsFolderUsageDescription" = "__APP_NAME__は、確認済みのWhatsAppダウンロードを、明示的に選択した保存先フォルダに整理します。";
+"NSNetworkVolumesUsageDescription" = "__APP_NAME__は、確認済みのWhatsAppダウンロードを、明示的に選択した保存先フォルダに整理します。";
+"NSRemovableVolumesUsageDescription" = "__APP_NAME__は、確認済みのWhatsAppダウンロードを、明示的に選択した保存先フォルダに整理します。";

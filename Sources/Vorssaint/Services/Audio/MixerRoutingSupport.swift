@@ -4,6 +4,15 @@
 import CoreAudio
 import Foundation
 
+/// A cycle with only the current output is a normal no-op, not a failure.
+enum SoundOutputSwitchResult: Equatable {
+    case switched
+    case unchanged
+    case noAvailableSelection
+    case failed
+}
+
+
 struct MixerInputRouteResolution: Equatable {
     let effectiveUID: String?
     let selectedUnavailable: Bool
@@ -170,14 +179,10 @@ enum MixerRoutingSupport {
         abs(volume - 1) < 0.005
     }
 
-    /// Inactive apps with a custom volume or output remain visible so hiding
-    /// idle rows can never conceal a setting the user may want to undo.
+    /// The playing-only list follows output activity, regardless of saved settings.
     static func shouldShowApp(isPlaying: Bool,
-                              volume: Double,
-                              selectedOutputDeviceUID: String?,
                               hideInactiveApps: Bool) -> Bool {
-        guard hideInactiveApps else { return true }
-        return isPlaying || !isUnity(volume) || selectedOutputDeviceUID != nil
+        !hideInactiveApps || isPlaying
     }
 
     /// Turns the text entered beside a mixer slider into its gain. The field

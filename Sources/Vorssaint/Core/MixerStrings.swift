@@ -36,6 +36,11 @@ struct MixerFeatureStrings {
     var allShown: String = "All"
     var hiddenCountLabel: String = "Hidden"
     var hideFromList: String = "Hide from the list"
+    var appScope: String = "Show"
+    var allApps: String = "All apps"
+    var playingApps: String = "Playing"
+    var playingEmpty: String = "No apps are playing"
+
 }
 
 extension FeatureStrings {
@@ -194,7 +199,11 @@ extension MixerFeatureStrings {
         visibleApps: "Apps en la lista",
         allShown: "Todas",
         hiddenCountLabel: "Ocultas",
-        hideFromList: "Ocultar de la lista"
+        hideFromList: "Ocultar de la lista",
+        appScope: "Mostrar",
+        allApps: "Todas las apps",
+        playingApps: "En reproducción",
+        playingEmpty: "Ninguna app está reproduciendo audio"
     )
 
     static let de = MixerFeatureStrings(
@@ -228,7 +237,11 @@ extension MixerFeatureStrings {
         visibleApps: "Apps in der Liste",
         allShown: "Alle",
         hiddenCountLabel: "Ausgeblendet",
-        hideFromList: "Aus der Liste ausblenden"
+        hideFromList: "Aus der Liste ausblenden",
+        appScope: "Anzeigen",
+        allApps: "Alle Apps",
+        playingApps: "Wiedergabe aktiv",
+        playingEmpty: "Keine App gibt gerade Audio wieder"
     )
 
     static let fr = MixerFeatureStrings(
@@ -262,7 +275,11 @@ extension MixerFeatureStrings {
         visibleApps: "Apps dans la liste",
         allShown: "Toutes",
         hiddenCountLabel: "Masquées",
-        hideFromList: "Masquer de la liste"
+        hideFromList: "Masquer de la liste",
+        appScope: "Afficher",
+        allApps: "Toutes les apps",
+        playingApps: "Lecture en cours",
+        playingEmpty: "Aucune app ne lit de contenu audio"
     )
 
     static let it = MixerFeatureStrings(
@@ -330,7 +347,11 @@ extension MixerFeatureStrings {
         visibleApps: "リストに表示するアプリ",
         allShown: "すべて",
         hiddenCountLabel: "非表示",
-        hideFromList: "リストから隠す"
+        hideFromList: "リストから隠す",
+        appScope: "表示",
+        allApps: "すべてのアプリ",
+        playingApps: "再生中",
+        playingEmpty: "再生中のアプリはありません"
     )
 
     static let ko = MixerFeatureStrings(
@@ -398,7 +419,11 @@ extension MixerFeatureStrings {
         visibleApps: "列表中的 App",
         allShown: "全部",
         hiddenCountLabel: "已隐藏",
-        hideFromList: "从列表中隐藏"
+        hideFromList: "从列表中隐藏",
+        appScope: "显示",
+        allApps: "全部 App",
+        playingApps: "正在播放",
+        playingEmpty: "当前没有 App 在播放"
     )
 
     static let zhTW = MixerFeatureStrings(

@@ -58,6 +58,63 @@ struct MetricsTests {
 
 
         MonitorHistoryTests.run { expect($0, $1) }
+        MusicLaunchBlockerTests.run { expect($0, $1) }
+        EnvironmentCopyTests.run { expect($0, $1) }
+        CommandBarActionTests.run { expect($0, $1) }
+        CommandBarDestinationTests.run { expect($0, $1) }
+        LocalPortTests.run { expect($0, $1) }
+        CleanerPackageCacheTests.run { expect($0, $1) }
+        BrightnessNativeBoundaryTests.run { expect($0, $1) }
+        OnboardingFeatureSelectionTests.run { expect($0, $1) }
+        FeatureSwitchRetirementTests.run { expect($0, $1) }
+        ShelfDockPlacementTests.run { expect($0, $1) }
+        ShelfDockVisibilityTests.run { expect($0, $1) }
+        ShelfIndexStoreTests.run { expect($0, $1) }
+        ShelfImportTests.run { expect($0, $1) }
+        ShelfImportAssetsTests.run { expect($0, $1) }
+        ShelfImportTransactionTests.run { expect($0, $1) }
+        ShelfPayloadCleanupTests.run { expect($0, $1) }
+        ScratchpadPresentationTests.run { expect($0, $1) }
+        ScratchpadImportTests.run { expect($0, $1) }
+        ClipboardImportTests.run { expect($0, $1) }
+        ClipboardEncodingTests.run { expect($0, $1) }
+        ClipboardImportTransactionTests.run { expect($0, $1) }
+        ScratchpadImportStoreTests.run { expect($0, $1) }
+        ShelfDockBackupTests.run { expect($0, $1) }
+        ThemeImportTests.run { expect($0, $1) }
+        ClipboardJSONPreviewTests.run { expect($0, $1) }
+        URLAutomaticCleaningTests.run { expect($0, $1) }
+        URLRuleImportTests.run { expect($0, $1) }
+        URLRuleEditingTests.run { expect($0, $1) }
+        SettingsNavigationTests.run { expect($0, $1) }
+        CleanerRunResultTests.run { expect($0, $1) }
+        WhatsAppOrganizerPolicyTests.run { expect($0, $1) }
+        SpotifyPhoneProtectionTests.run { expect($0, $1) }
+        SwitcherRegressionTests.run { expect($0, $1) }
+        assistiveKeyboardChecks { expect($0, $1) }
+        SettingsActionTests.run { expect($0, $1) }
+        MusicReplacementActionTests.run { expect($0, $1) }
+        MouseButtonConfigurationTests.run { expect($0, $1) }
+        FinderArrangementTests.run { expect($0, $1) }
+        FinderTargetAcquisitionTests.run { expect($0, $1) }
+        DisplayBrightnessShortcutTests.run { expect($0, $1) }
+        MediaPDFTests.run { expect($0, $1) }
+        MediaPDFCompressionTests.run { expect($0, $1) }
+        MediaPDFCompressionSelectionTests.run { expect($0, $1) }
+        MediaPDFSelectionTests.run { expect($0, $1) }
+        MediaCancellationTests.run { expect($0, $1) }
+        MicMuteBatchTests.run { expect($0, $1) }
+        BuildCapabilityPolicyTests.run { expect($0, $1) }
+        ScreenshotSharingBoundaryTests.run { expect($0, $1) }
+        SettingsBackupIdentityTests.run { expect($0, $1) }
+        FeedbackDraftTests.run { expect($0, $1) }
+StableUpdateTests.run { expect($0, $1) }
+ProductSettingsTests.run { expect($0, $1) }
+UninstallerSelectionTests.run { expect($0, $1) }
+        ProductIdentityBoundaryTests.run { expect($0, $1) }
+        TrackpadGestureTests.run { expect($0, $1) }
+        RadialTrackpadBindingTests.run { expect($0, $1) }
+        RadialTrackpadIntegrationTests.run { expect($0, $1) }
         CPUCoreUsageTests.run { expect($0, $1) }
         CPUCoreTopologyTests.run { expect($0, $1) }
 
@@ -228,6 +285,19 @@ struct MetricsTests {
         expect(ClipboardHistorySearch.rankedIndexes(candidates: clipboardCandidates,
                                                     matching: "missing") == [],
                "clipboard search returns no results for unmatched terms")
+
+        let reverseChronology = [
+            ClipboardHistorySearchCandidate(index: 0, text: "Notes about deploy", isPinned: false),
+            ClipboardHistorySearchCandidate(index: 1, text: "deploy", isPinned: false),
+            ClipboardHistorySearchCandidate(index: 2, text: "Notes about deploy", isPinned: true),
+        ]
+        expect(ClipboardHistorySearch.rankedIndexes(candidates: reverseChronology, matching: "deploy") == [1, 2, 0],
+               "older exact result outranks newer weak match; pinned breaks equal textual relevance")
+        expect(ClipboardHistorySearch.rankedIndexes(candidates: reverseChronology, matching: "  \n ") == [0, 1, 2],
+               "blank search preserves input order")
+        let equalRelevance = [0, 1, 2].map { ClipboardHistorySearchCandidate(index: $0, text: "same result", isPinned: false) }
+        expect(ClipboardHistorySearch.rankedIndexes(candidates: equalRelevance, matching: "same") == [0, 1, 2],
+               "equally relevant results preserve original order")
 
         // MARK: Clipboard auto clear preferences
 
@@ -431,10 +501,22 @@ struct MetricsTests {
                                                       isFieldEditor: false,
                                                       isEditable: true),
                "the multiline editor owns its editing keys")
+        expect(ClipboardHistoryFocus.textViewOwnsKeys(isComposing: false,
+                                                     isFieldEditor: false,
+                                                     isEditable: false),
+               "the focused read-only preview owns text selection and navigation")
         expect(!ClipboardHistoryFocus.textViewOwnsKeys(isComposing: false,
-                                                       isFieldEditor: false,
-                                                       isEditable: false),
-               "the read-only preview leaves the list's shortcuts intact")
+                                                      isFieldEditor: false,
+                                                      isEditable: false, isEscape: true),
+               "Escape in a read-only preview returns to list dismissal")
+        expect(ClipboardHistoryFocus.textViewOwnsKeys(isComposing: true,
+                                                     isFieldEditor: true,
+                                                     isEditable: true, isEscape: true),
+               "IME keeps Escape before panel dismissal")
+        expect(ClipboardHistoryFocus.textViewOwnsKeys(isComposing: false,
+                                                     isFieldEditor: false,
+                                                     isEditable: true, isEscape: true),
+               "editable text keeps its existing Escape behavior")
         expect(ClipboardHistoryEditing.canSave(original: "First draft", draft: "Second draft"),
                "clipboard text can save a real edit")
         expect(!ClipboardHistoryEditing.canSave(original: "Same", draft: "Same"),
@@ -2414,6 +2496,7 @@ struct MetricsTests {
             expect(migrationDefaults.bool(forKey: DefaultsKey.screenshotShortcutEnabled),
                    "a distinct general capture shortcut stays enabled when dedicated ones return")
             migrationDefaults.set(true, forKey: FeatureUnit.screenshot.availabilityKey)
+            migrationDefaults.set(false, forKey: DefaultsKey.screenshotEnabled)
             migrationDefaults.set(true, forKey: DefaultsKey.recorderEnabled)
             migrationDefaults.set(true, forKey: DefaultsKey.screenOCREnabled)
             Defaults.migrateOrphanedCaptureShortcut(in: migrationDefaults)
@@ -3243,12 +3326,14 @@ struct MetricsTests {
                "the Dock Preview close preference selects exactly one close action")
         var dockPreviewQuitRequests = 0
         var dockPreviewWindowCloseRequests = 0
+        var dockPreviewQuitFailures = 0
         DockPreviewSupport.performCloseAction(
             quitAppOnClose: false,
             requestQuit: {
                 dockPreviewQuitRequests += 1
                 return true
             },
+            quitFailed: { dockPreviewQuitFailures += 1 },
             closeWindow: { dockPreviewWindowCloseRequests += 1 }
         )
         DockPreviewSupport.performCloseAction(
@@ -3257,6 +3342,7 @@ struct MetricsTests {
                 dockPreviewQuitRequests += 1
                 return true
             },
+            quitFailed: { dockPreviewQuitFailures += 1 },
             closeWindow: { dockPreviewWindowCloseRequests += 1 }
         )
         DockPreviewSupport.performCloseAction(
@@ -3265,10 +3351,12 @@ struct MetricsTests {
                 dockPreviewQuitRequests += 1
                 return false
             },
+            quitFailed: { dockPreviewQuitFailures += 1 },
             closeWindow: { dockPreviewWindowCloseRequests += 1 }
         )
-        expect(dockPreviewQuitRequests == 2 && dockPreviewWindowCloseRequests == 2,
-               "Dock Preview closes a window normally, waits after an accepted quit, and falls back after refusal")
+        expect(dockPreviewQuitRequests == 2 && dockPreviewWindowCloseRequests == 1
+                && dockPreviewQuitFailures == 1,
+               "Dock Preview closes a window only in window mode and reports quit refusal without fallback")
         expect(registeredDefaults[DefaultsKey.dockClickHide] as? Bool == false,
                "hiding the active app from its Dock icon is opt-in")
         expect(DockPreviewSupport.sanitizedBackgroundOpacity(0.7) == 0.7,
@@ -3483,23 +3571,25 @@ struct MetricsTests {
                "update intro navigates back without closing")
         expect(SupportUpdateIntroStep.allCases == [.support, .social],
                "update intro page indicators follow the navigation order")
-        expect(AppInfo.discordURL.absoluteString == "https://discord.gg/M6BwWH4BJp",
-               "the community action uses the permanent Discord invitation")
-        expect(AppInfo.coffeeURL.absoluteString == "https://buymeacoffee.com/vorssaint",
-               "financial support uses Buy Me a Coffee")
-        expect(AppInfo.socialURL.absoluteString == "https://x.com/vorssaint",
-               "social previews keep the official X profile")
+        expect(AppInfo.name == ProductIdentity.name,
+               "app presentation reads the product identity")
+        expect(AppInfo.repositoryURL == ProductIdentity.repositoryURL
+               && AppInfo.websiteURL == ProductIdentity.repositoryURL,
+               "product links point to the configured repository without invented social endpoints")
         // AppInfo.version falls back to "dev" in this bare harness, so read
         // the plist the shipped app will actually carry. The pin is a
         // per-release decision: this check fails on every version bump so the
         // decision above is made consciously, never by omission.
         let releasePlist = NSDictionary(contentsOfFile: "Resources/Info.plist")
         let plistVersion = (releasePlist?["CFBundleShortVersionString"] as? String) ?? ""
-        expect(plistVersion == "3.3.5",
+        expect(plistVersion == "0.1.0",
                "bumping the app version requires re-deciding the support prompt pin above")
         let plistBuild = (releasePlist?["CFBundleVersion"] as? String) ?? ""
-        expect(plistBuild == "86",
+        expect(plistBuild == "1",
                "every app version needs its own incremented bundle build")
+        expect(!SupportUpdateIntroInfo.shouldShow(appVersion: plistVersion, lastSeenVersion: nil)
+               && !UpdateHighlightsInfo.shouldShow(appVersion: plistVersion, lastSeenVersion: nil),
+               "kururu first release never shows an upstream update introduction")
         expect(SupportUpdateIntroInfo.releaseVersion == "3.3.2",
                "the support prompt remains deliberately pinned to 3.3.2")
         // 3.3.3 adds several headline features, so the tour is re-curated
@@ -4104,8 +4194,8 @@ struct MetricsTests {
         // and which one loses depends on the order they happen to sync in.
         expect(Set(globalShortcutValues).count == globalShortcutValues.count,
                "no two features ship the same default combination")
-        expect(globalShortcutValues.count == GlobalShortcutRole.allCases.count,
-               "every role ships with a default combination registered")
+        expect(globalShortcutValues.count == GlobalShortcutRole.allCases.filter { !$0.startsUnassigned }.count,
+               "only roles with intentional defaults ship a registered combination")
         expect(GlobalShortcut(keyCode: Int64(kVK_ISO_Section),
                               modifiers: [.control, .option, .command]).isValid,
                "the extra ISO key (paragraph/caret above Tab) is recordable as a shortcut")
@@ -4323,6 +4413,16 @@ struct MetricsTests {
                "no Bluetooth restore is owed before the first sleep")
         expect(!SettingsBackupSupport.exportKeys().contains(DefaultsKey.bluetoothSleepRestorePending),
                "a Bluetooth restore owed by one sleeping Mac never travels to another")
+        expect(registeredDefaults[DefaultsKey.musicBlockBundleIDs] as? [String] == ["com.apple.Music"],
+               "the app blocker initially selects only Music")
+        expect(SettingsBackupSupport.exportKeys().contains(DefaultsKey.musicBlockBundleIDs),
+               "the chosen app blocker list travels in backups")
+        let blockerBackup: [String: Any] = [SettingsBackupSupport.formatVersionKey: 1,
+            SettingsBackupSupport.settingsKey: [DefaultsKey.musicBlockBundleIDs: [String]()]]
+        expect(SettingsBackupSupport.sanitizedSettings(from: blockerBackup)?[DefaultsKey.musicBlockBundleIDs] as? [String] == [],
+               "an empty imported blocker list stays empty")
+        expect(!SettingsBackupSupport.valueLooksRight(DefaultsKey.musicBlockBundleIDs, "com.example.Player"),
+               "a malformed blocker list is rejected during import")
         expect(registeredDefaults[DefaultsKey.musicBlockEnabled] as? Bool == false,
                "blocking the music app from launching is opt-in")
         expect(registeredDefaults[DefaultsKey.musicBlockReplacementPath] as? String == "",
@@ -4873,7 +4973,7 @@ struct MetricsTests {
             contentsOfFile: "Sources/Vorssaint/Services/Uninstall/AppUninstaller.swift",
             encoding: .utf8)) ?? ""
         let removeSelectedBody = sourceBody(of: appUninstallerSource, from: "func removeSelected()",
-                                            to: "func removeSelectedWithHomebrew()")
+                                            to: "func removeSelectedWithHomebrew(")
         expect(removeSelectedBody.contains("let knownApplications = mayClaimSharedData"),
                "a removal builds the known-application roster only when it may claim shared data")
         expect(CleanerSupport.bundleIDCandidate(fromEntryName: "com.vendor.editor.prefPane")
@@ -5053,7 +5153,7 @@ struct MetricsTests {
         expect(registeredDefaults[DefaultsKey.mediaImageProfiles] as? String == "[]",
                "Media image profiles start empty")
         expect((registeredDefaults[DefaultsKey.autoQuitExceptions] as? [String]) == Defaults.mandatoryAutoQuitExceptionBundleIDs,
-               "Finder stays in the default auto-quit exception list")
+               "Finder and Phone stay in the default auto-quit exception list")
         expect(registeredDefaults[DefaultsKey.panelCollapsedSections] == nil,
                "panel collapsed sections intentionally has no registered default")
         expect(registeredDefaults[DefaultsKey.panelUtilityOrder] == nil,
@@ -5090,8 +5190,8 @@ struct MetricsTests {
                == ["com.example.One", "com.example.Two"],
                "bundle id lists are trimmed and deduplicated")
         expect(Defaults.sanitizedAutoQuitExceptions(["com.example.One", Defaults.finderBundleIdentifier])
-               == [Defaults.finderBundleIdentifier, "com.example.One"],
-               "Finder is mandatory in the auto-quit exception list")
+               == [Defaults.finderBundleIdentifier, Defaults.phoneBundleIdentifier, "com.example.One"],
+               "Finder and Phone are mandatory in the auto-quit exception list")
         expect(AutoQuitSupport.isExcepted(bundleIdentifier: "com.example.direct",
                                           bundleURL: nil,
                                           exceptions: ["com.example.direct"]),
@@ -6061,30 +6161,14 @@ struct MetricsTests {
                                                    targetOutputDeviceUID: "BuiltInSpeakerDevice",
                                                    defaultOutputDeviceUID: "BuiltInSpeakerDevice"),
                "a persistent mixer row waits for an audio connection before building a tap")
-        expect(MixerRoutingSupport.shouldShowApp(isPlaying: false,
-                                                 volume: 1,
-                                                 selectedOutputDeviceUID: nil,
-                                                 hideInactiveApps: false),
-               "the inactive-app filter changes nothing until the user enables it")
-        expect(!MixerRoutingSupport.shouldShowApp(isPlaying: false,
-                                                  volume: 1,
-                                                  selectedOutputDeviceUID: nil,
-                                                  hideInactiveApps: true),
-               "an idle uncustomized mixer app can be hidden")
-        expect(MixerRoutingSupport.shouldShowApp(isPlaying: true,
-                                                 volume: 1,
-                                                 selectedOutputDeviceUID: nil,
-                                                 hideInactiveApps: true),
-               "a playing mixer app remains visible")
-        expect(MixerRoutingSupport.shouldShowApp(isPlaying: false,
-                                                 volume: 0.75,
-                                                 selectedOutputDeviceUID: nil,
-                                                 hideInactiveApps: true)
-                && MixerRoutingSupport.shouldShowApp(isPlaying: false,
-                                                     volume: 1,
-                                                     selectedOutputDeviceUID: "ExternalDisplay",
-                                                     hideInactiveApps: true),
-               "custom volume and output choices keep inactive mixer apps visible")
+        for (isPlaying, hideInactive, expected) in [
+            (false, false, true), (true, false, true),
+            (false, true, false), (true, true, true),
+        ] {
+            expect(MixerRoutingSupport.shouldShowApp(isPlaying: isPlaying,
+                                                     hideInactiveApps: hideInactive) == expected,
+                   "mixer app scope follows playback state (playing=\(isPlaying), filter=\(hideInactive))")
+        }
 
         // Issue #296. A tap mutes the app on the real output, so which build
         // may be installed, when an engine is allowed to go away and who may
@@ -7441,8 +7525,9 @@ struct MetricsTests {
                "invalid, file and schemeless shelf links are dropped at load")
         let shelfBatch = ShelfPersistedItem(id: UUID(), kind: .batch, title: "batch",
                                             children: [shelfFile, shelfText])
-        expect(ShelfPersistenceSupport.sanitized([shelfBatch]) { _ in false } == [shelfText],
-               "a shelf batch left with one child collapses to that child")
+        expect(ShelfPersistenceSupport.sanitized([shelfBatch]) { _ in false }
+                   == [ShelfPersistedItem(id: shelfBatch.id, kind: .batch, title: shelfBatch.title, children: [shelfText])],
+               "a restored shelf batch retains its identity and title with one surviving child")
         expect(ShelfPersistenceSupport.sanitized(
                    [ShelfPersistedItem(id: UUID(), kind: .batch, title: "batch",
                                        children: [shelfFile])]) { _ in false }
@@ -8054,6 +8139,7 @@ struct MetricsTests {
 
         let settingsFeatureTitles: [AppFeature: String] = [
             .homebrew: "Homebrew",
+            .scratchpad: "Notes",
             .screenRecorder: "Screen Recorder",
             .micMute: "Mic Mute",
         ]
@@ -8151,7 +8237,7 @@ struct MetricsTests {
             SettingsSearchItem(id: .page(.features),
                                 destination: FeatureSettingsDestination(.features),
                                 title: "Features", icon: "square.grid.2x2",
-                                keywords: ["Homebrew", "Scratchpad", "Screen Recorder"],
+                                keywords: ["Homebrew", "Notes", "Screen Recorder"],
                                 keywordFeatures: [.homebrew, .scratchpad, .screenRecorder]),
             SettingsSearchItem(id: .page(.shelf),
                                 destination: FeatureSettingsDestination(.shelf),
@@ -8228,11 +8314,11 @@ struct MetricsTests {
                     == [.page(.homebrew), .page(.features), .page(.shelf)],
                "an exact Homebrew title ranks before earlier generic keyword matches")
         let scratchpadMatches = SettingsSearchSupport.matchingItems(
-            query: "Scratchpad", items: combinedSettingsItems)
+            query: "Notes", items: combinedSettingsItems)
         expect(scratchpadMatches.first?.destination == FeatureSettingsDestination(.scratchpad)
                 && scratchpadMatches.map(\.id)
                     == [.feature(.scratchpad), .page(.features)],
-               "an exact Scratchpad match ranks before its page containers")
+               "an exact Notes match ranks before its page containers")
 
         let keywordBeforePartialTitle = SettingsSearchItem(
             id: .page(.features), destination: FeatureSettingsDestination(.features),
@@ -8682,14 +8768,11 @@ struct MetricsTests {
             UpdateServiceSupport.ReleaseCandidate(tagName: "v3.3.5-beta.1", isPrerelease: true, isDraft: true, dmgURL: dummyBetaDMG, dmgExpectedBytes: 1000, body: "Draft notes")
         ]
 
-        let selectedStable = UpdateServiceSupport.selectUpdate(from: candidateList, currentVersion: "3.3.2", includeBetas: false)
+        let selectedStable = UpdateServiceSupport.selectUpdate(from: candidateList, currentVersion: "3.3.2")
         expect(selectedStable?.tagName == "v3.3.3", "stable channel only picks stable releases")
 
-        let selectedBeta = UpdateServiceSupport.selectUpdate(from: candidateList, currentVersion: "3.3.2", includeBetas: true)
-        expect(selectedBeta?.tagName == "v3.3.4-beta.1", "beta channel picks highest non-draft release")
-
-        let selectedFromHigherBeta = UpdateServiceSupport.selectUpdate(from: candidateList, currentVersion: "3.3.4-beta.1", includeBetas: false)
-        expect(selectedFromHigherBeta == nil, "user on beta turning off betas does not downgrade to older stable")
+        let selectedFromHigherBeta = UpdateServiceSupport.selectUpdate(from: candidateList, currentVersion: "3.3.4-beta.1")
+        expect(selectedFromHigherBeta == nil, "legacy prerelease installation does not downgrade to older stable")
 
         let knownDigest = "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
         expect(UpdateServiceSupport.sha256Matches(Data("abc".utf8), expectedHex: knownDigest),
@@ -8699,37 +8782,14 @@ struct MetricsTests {
         expect(!UpdateServiceSupport.sha256Matches(Data("abc".utf8), expectedHex: "invalid"),
                "update media rejects a malformed pinned digest")
 
-        // Defaults registered
-        expect(Defaults.registeredDefaults[DefaultsKey.includeBetaUpdates] as? Bool == false,
-               "includeBetaUpdates defaults to false in registeredDefaults")
-
-        let testDefaults = UserDefaults(suiteName: "com.vorssaint.tests.betaActivation")!
-        testDefaults.removePersistentDomain(forName: "com.vorssaint.tests.betaActivation")
-        Defaults.activateBetaChannelIfRunningBeta(in: testDefaults, version: "3.3.3-beta.1")
-        expect(testDefaults.bool(forKey: DefaultsKey.includeBetaUpdates) == true,
-               "beta channel is activated automatically on a beta build")
-        testDefaults.set(false, forKey: DefaultsKey.includeBetaUpdates)
-        Defaults.activateBetaChannelIfRunningBeta(in: testDefaults, version: "3.3.3-beta.1")
-        expect(testDefaults.bool(forKey: DefaultsKey.includeBetaUpdates) == false,
-               "manual opt-out on a beta build is preserved across launches")
-
-        // Stable version does not activate beta channel
-        let stableDefaults = UserDefaults(suiteName: "com.vorssaint.tests.stableActivation")!
-        stableDefaults.removePersistentDomain(forName: "com.vorssaint.tests.stableActivation")
-        Defaults.activateBetaChannelIfRunningBeta(in: stableDefaults, version: "3.3.3")
-        expect(stableDefaults.object(forKey: DefaultsKey.includeBetaUpdates) == nil,
-               "stable release does not touch beta channel default")
-        stableDefaults.removePersistentDomain(forName: "com.vorssaint.tests.stableActivation")
-        testDefaults.removePersistentDomain(forName: "com.vorssaint.tests.betaActivation")
+        expect(Defaults.registeredDefaults["includeBetaUpdates"] == nil,
+               "obsolete beta update preference is not registered")
 
         // Localization completeness & formatting
         for language in AppLanguage.allCases {
             L10n.shared.language = language
             let s = L10n.shared.s
-            expect(!s.includeBetaUpdatesToggle.isEmpty, "\(language.rawValue) includeBetaUpdatesToggle non-empty")
-            expect(!s.includeBetaUpdatesCaption.isEmpty, "\(language.rawValue) includeBetaUpdatesCaption non-empty")
             expect(!s.betaBadgeLabel.isEmpty, "\(language.rawValue) betaBadgeLabel non-empty")
-            expect(!s.includeBetaUpdatesCaption.contains("—"), "\(language.rawValue) has no em dash")
         }
         L10n.shared.language = .enUS
 
@@ -9666,8 +9726,8 @@ struct MetricsTests {
                "a click after hiding lets the Dock bring the app back")
         expect(DockClickSupport.repeatDecision(lastAction: .hide, elapsed: 0.1) == .swallow,
                "an accidental double-click never hides and immediately reopens the app")
-        expect(DockClickSupport.isOwnBundleIdentifier("com.vorssaint.utils")
-                && DockClickSupport.isOwnBundleIdentifier("com.vorssaint.utils.dev")
+        expect(DockClickSupport.isOwnBundleIdentifier(ProductIdentity.releaseBundleID)
+                && DockClickSupport.isOwnBundleIdentifier(ProductIdentity.developmentBundleID)
                 && !DockClickSupport.isOwnBundleIdentifier("com.example.editor")
                 && !DockClickSupport.isOwnBundleIdentifier(nil),
                "Dock clicks never target either build of this app")
@@ -12257,7 +12317,7 @@ struct MetricsTests {
                    "\(prefix) right-click Keep Awake labels are present without em dash")
             expectFormat(strings.homebrewConfirmUninstallBodyFormat, ["@"], "\(prefix) Homebrew uninstall format")
             expectFormat(strings.homebrewConfirmUpgradeBodyFormat, ["@"], "\(prefix) Homebrew upgrade format")
-            expect(!strings.homebrewUpdateHomebrew.isEmpty, "\(prefix) Homebrew update Homebrew title is present")
+            expect(!HomebrewHierarchyStrings(language: language).updateDefinitions.isEmpty, "\(prefix) Homebrew update Homebrew title is present")
             expectFormat(strings.switcherIconRowMode, ["@"], "\(prefix) App Switcher icon-row title format")
             expect(!strings.switcherIconRowModeCaption.isEmpty, "\(prefix) App Switcher icon-row caption is present")
             expect(!strings.switcherSimpleMode.isEmpty, "\(prefix) App Switcher simple-mode title is present")
@@ -12385,61 +12445,23 @@ struct MetricsTests {
             expect(highlightsStrings.allSatisfy { !$0.isEmpty && !$0.contains("—") },
                    "\(prefix) update highlights strings are present without em dash")
             expect(!strings.supportIntroDoneButton.isEmpty, "\(prefix) support intro done button is set")
-            let supportCommunityStrings = [
-                strings.donateHeading,
-                strings.donateMessage,
-                strings.donateButton,
-                strings.supportIntroTitle,
-                strings.supportIntroMessage,
-                strings.supportIntroStarButton,
-                strings.supportIntroStarMessage,
-                strings.supportIntroCoffeeButton,
-                strings.discordIntroTitle,
-                strings.discordIntroMessage,
-                strings.discordIntroJoinButton,
-                strings.communityIntroTitle,
-                strings.communityIntroMessage,
-                strings.communityIntroFollowButton,
+            expect(!strings.aboutDescription.isEmpty && !strings.viewOnGitHub.isEmpty,
+                   "\(prefix) project information and repository action are localized")
+            let retiredPromotionFields: Set<String> = [
+                "donateHeading", "donateMessage", "donateButton", "donateThanks",
+                "supportIntroTitle", "supportIntroMessage", "supportIntroStarButton", "supportIntroStarMessage",
+                "supportIntroCoffeeButton", "discordIntroTitle", "discordIntroMessage", "discordIntroJoinButton",
+                "communityIntroTitle", "communityIntroMessage", "communityIntroFollowButton"
             ]
-            expect(supportCommunityStrings.allSatisfy { !$0.isEmpty && !$0.contains("—") },
-                   "\(prefix) support and community strings are complete without em dash")
-            expect(strings.donateButton.contains("Buy Me a Coffee")
-                   && strings.supportIntroCoffeeButton.contains("Buy Me a Coffee"),
-                   "\(prefix) financial support points only to Buy Me a Coffee")
-            expect(strings.supportIntroStarMessage.localizedCaseInsensitiveContains("GitHub")
-                   && strings.discordIntroJoinButton.localizedCaseInsensitiveContains("Discord"),
-                   "\(prefix) non-financial support and community actions name their destinations")
-            expect(strings.discordIntroMessage.count <= 320,
-                   "\(prefix) Discord introduction stays concise")
-            expect(!strings.communityIntroMessage.isEmpty
-                   && strings.communityIntroMessage.contains("X"),
-                   "\(prefix) community intro invites users to follow previews on X")
-            let retiredWeeklyPhrases = [
-                "uma vez por semana", "once a week", "haftada bir", "раз в неделю",
-                "una vez por semana", "einmal pro Woche", "une fois par semaine",
-                "una volta a settimana", "週1回", "매주 한 번", "每周更新一次", "每週更新一次",
-            ]
-            expect(retiredWeeklyPhrases.allSatisfy {
-                !strings.communityIntroMessage.localizedCaseInsensitiveContains($0)
-            }, "\(prefix) community intro no longer promises weekly updates")
-            expect(!strings.communityIntroMessage.contains("—")
-                   && strings.communityIntroMessage.count <= 320,
-                   "\(prefix) community intro stays concise and has no em dash")
-            if language == .enUS {
-                expect(strings.discordIntroMessage.contains("new")
-                       && strings.discordIntroMessage.contains("still being built"),
-                       "English Discord introduction says the community is new and in development")
-            } else if language == .ptBR {
-                expect(strings.discordIntroMessage.contains("nova")
-                       && strings.discordIntroMessage.contains("em desenvolvimento"),
-                       "Portuguese Discord introduction says the community is new and in development")
-            }
+            let exposedFields = Set(Mirror(reflecting: strings).children.compactMap(\.label))
+            expect(exposedFields.isDisjoint(with: retiredPromotionFields),
+                   "\(prefix) retired upstream promotion fields are absent")
             expect(!strings.updateShowcaseTitle.isEmpty, "\(prefix) update showcase title is present")
             expect(!strings.updateShowcaseMessage.isEmpty, "\(prefix) update showcase message is present")
             expect(!strings.updateShowcaseUnavailable.isEmpty, "\(prefix) update showcase fallback is present")
             expect(!strings.updateShowcaseRestart.isEmpty, "\(prefix) update showcase restart control is present")
-            expect(!strings.homebrewConfirmUpdateHomebrewTitle.isEmpty, "\(prefix) Homebrew update Homebrew confirmation title is present")
-            expect(!strings.homebrewConfirmUpdateHomebrewBody.isEmpty, "\(prefix) Homebrew update Homebrew confirmation body is present")
+            expect(!HomebrewHierarchyStrings(language: language).updateDefinitions.isEmpty, "\(prefix) Homebrew update Homebrew confirmation title is present")
+            expect(!HomebrewHierarchyStrings(language: language).updateDefinitionsConfirmation.isEmpty, "\(prefix) Homebrew update Homebrew confirmation body is present")
             expectFormat(strings.homebrewOperationUninstallFormat, ["@"], "\(prefix) Homebrew operation uninstall format")
             expectFormat(strings.homebrewOperationUpgradeFormat, ["@"], "\(prefix) Homebrew operation upgrade format")
             expect(!strings.homebrewOperationUpdateHomebrew.isEmpty, "\(prefix) Homebrew operation update Homebrew is present")
@@ -12466,12 +12488,25 @@ struct MetricsTests {
                 expect(!value.isEmpty && !value.contains("%"), "\(prefix) renders format strings")
             }
         }
+        let projectSupportSource = (try? String(contentsOfFile:
+            "Sources/Vorssaint/UI/Onboarding/WhatsNewView.swift", encoding: .utf8)) ?? ""
+        let aboutSettingsSource = (try? String(contentsOfFile:
+            "Sources/Vorssaint/UI/Settings/SettingsView.swift", encoding: .utf8)) ?? ""
+        expect(projectSupportSource.contains("Link(l10n.s.viewOnGitHub, destination: AppInfo.repositoryURL)")
+                && aboutSettingsSource.contains("destination: AppInfo.repositoryURL")
+                && AppInfo.repositoryURL.absoluteString == "https://github.com/PathGao/kururu",
+               "project support and About direct users to the configured kururu repository")
+        expect(!projectSupportSource.contains("AppInfo.coffeeURL")
+                && !projectSupportSource.contains("AppInfo.discordURL")
+                && !projectSupportSource.contains("AppInfo.socialURL")
+                && aboutSettingsSource.contains("Link(AppInfo.copyright, destination:"),
+               "project support omits retired promotion destinations while About preserves copyright attribution")
         let infoPlist = NSDictionary(contentsOfFile: "Resources/Info.plist") as? [String: Any]
         let bundleLocalizations = infoPlist?["CFBundleLocalizations"] as? [String] ?? []
         expect(bundleLocalizations.contains("tr"), "Info.plist declares Turkish as a bundle localization")
         expect(bundleLocalizations.contains("ko"), "Info.plist declares Korean as a bundle localization")
         let baseAudioPrompt = infoPlist?["NSAudioCaptureUsageDescription"] as? String ?? ""
-        expect(baseAudioPrompt.contains("Vorssaint uses each app's audio"),
+        expect(baseAudioPrompt.contains("__APP_NAME__ uses each app's audio"),
                "base audio permission prompt is an English fallback")
         let organizerFolderPromptKeys = [
             "NSDesktopFolderUsageDescription", "NSDocumentsFolderUsageDescription",
@@ -12638,12 +12673,9 @@ struct MetricsTests {
         expect(globalMonitor.contains("preventsPopoverDismissal"),
                "a click in another app respects the same hold")
 
-        // The fan helper's launchd plist ships with the release identifier in
-        // three places, and the Developer build rewrites each one so the two
-        // apps can run side by side. A fourth mention added without a matching
-        // rewrite would leave the Developer build asking launchd for a service
-        // that is registered under the other name, and fan control would just
-        // never answer.
+        // The historical helper template has three identity references.
+        // Both product variants replace these fields before staging, including
+        // the complete MachServices dictionary so no upstream service survives.
         let helperTemplate = (try? String(
             contentsOfFile: "Resources/com.vorssaint.utils.fan-control.plist",
             encoding: .utf8)) ?? ""
@@ -12651,13 +12683,14 @@ struct MetricsTests {
         let releaseHelperID = "com.vorssaint.utils.fan-control"
         let mentions = helperTemplate.components(separatedBy: releaseHelperID).count - 1
         expect(mentions == 3,
-               "the helper template names the release service exactly where the build rewrites it (\(mentions))")
+               "the historical helper template identity occurs only in fields rewritten for both products (\(mentions))")
         let buildText = (try? String(contentsOfFile: "build.sh", encoding: .utf8)) ?? ""
         for key in ["Set :Label $FAN_HELPER_ID",
                     "Set :BundleProgram Contents/Library/LaunchServices/$FAN_HELPER_ID",
-                    "Delete :MachServices:" + releaseHelperID,
+                    "Delete :MachServices",
+                    "Add :MachServices dict",
                     "Add :MachServices:$FAN_HELPER_ID"] {
-            expect(buildText.contains(key), "the Developer build rewrites \(key)")
+            expect(buildText.contains(key), "both product variants rewrite \(key)")
         }
         // Every shortcut the app ships with is written to disk as a string and
         // read back on the next launch. One that does not survive the trip
@@ -13427,11 +13460,12 @@ struct MetricsTests {
                 == [.accessibility, .screenRecording],
                "the windows first-run choice explains exactly its two broad permissions")
         expect(AppFeature.screenshot.permissions == [.screenRecording]
-                && AppFeature.screenshot.onboardingPermissions == [.screenRecording],
-               "screenshots only need the screen recording grant")
-        expect(AppFeature.screenRecorder.onboardingPermissions
-                == [.screenRecording, .accessibility],
-               "the recorder choice explains both permissions it needs")
+                && AppFeature.screenshot.onboardingPermissions.isEmpty,
+               "screenshots retain their capture permission but ask only when used")
+        expect(AppFeature.screenRecorder.onboardingPermissions.isEmpty
+                && AppFeature.screenRecorder.permissions.contains(.screenRecording)
+                && AppFeature.screenRecorder.permissions.contains(.accessibility),
+               "the capture entry does not pre-request the recorder's contextual permissions")
         expect(AppFeature.cleaner.onboardingPermissions.isEmpty
                 && AppFeature.mixer.onboardingPermissions.isEmpty,
                "contextual grants are not requested during first setup")
@@ -13506,6 +13540,17 @@ struct MetricsTests {
         expect(BluetoothSleepSupport.sleepPlan(isPoweredOn: false, restoresOnWake: true)
                 == BluetoothSleepSupport.SleepPlan(powersOff: false, owesRestore: false),
                "Bluetooth already off before sleep is left alone, so the wake never turns it on")
+        var bluetoothRestoreReads = 0
+        func readBluetoothRestorePower() -> Bool {
+            bluetoothRestoreReads += 1
+            return false
+        }
+        expect(!BluetoothSleepSupport.restores(owesRestore: false, isPoweredOn: readBluetoothRestorePower())
+               && bluetoothRestoreReads == 0,
+               "a launch without restore debt never queries the Bluetooth controller")
+        expect(BluetoothSleepSupport.restores(owesRestore: true, isPoweredOn: readBluetoothRestorePower())
+               && bluetoothRestoreReads == 1,
+               "an owed restore reads controller power exactly once")
         expect(BluetoothSleepSupport.restores(owesRestore: true, isPoweredOn: false),
                "a wake that still owes a restore switches Bluetooth back on")
         expect(!BluetoothSleepSupport.restores(owesRestore: false, isPoweredOn: false),
@@ -14012,8 +14057,8 @@ struct MetricsTests {
                "an alert with its metric off in the hub stays disarmed")
 
         expect(GlobalShortcutRole.activeRoles(isOn: { _ in true }).count
-                == GlobalShortcutRole.allCases.count,
-               "the availability-free overload keeps every enabled current role")
+                == GlobalShortcutRole.allCases.count - 2,
+               "unassigned display brightness roles remain inactive even when enabled")
         expect(!GlobalShortcutRole.activeRoles(isOn: { _ in true },
                                                isAvailable: { $0 != .shelf }).contains(.shelf),
                "a role leaves the shortcuts page when its feature is off in the hub")
@@ -14087,8 +14132,8 @@ struct MetricsTests {
             let clipboard = FeatureStrings.clipboard(language)
             let values = Mirror(reflecting: clipboard).children
                 .compactMap { $0.value as? String }
-            expect(values.count == 54 && values.allSatisfy { !$0.isEmpty },
-                   "every clipboard string is set for \(language.rawValue)")
+            expect(values.count == 56 && values.allSatisfy { !$0.isEmpty },
+                   "every clipboard string is set for \(language.rawValue) (found \(values.count))")
             expect(values.allSatisfy { !$0.contains("—") },
                    "no em-dash in visible clipboard strings (\(language.rawValue))")
             expectFormat(clipboard.deleteSelectedFormat, ["d"],
@@ -14097,10 +14142,12 @@ struct MetricsTests {
         for language in AppLanguage.allCases {
             let values = Mirror(reflecting: FeatureStrings.mouseButtons(language)).children
                 .compactMap { $0.value as? String }
-            expect(values.count == 32 && values.allSatisfy { !$0.isEmpty },
+            expect(values.count == 37 && values.allSatisfy { !$0.isEmpty },
                    "every mouse button string is set for \(language.rawValue)")
             expect(values.allSatisfy { !$0.contains("—") },
                    "no em-dash in visible mouse button strings (\(language.rawValue))")
+            expectFormat(FeatureStrings.mouseButtons(language).spacesShortcutsPartialFormat, ["@"],
+                         "\(language.rawValue) unavailable gesture directions format")
         }
         expect(FeatureStrings.hub(.ptBR).pageTitle == "Recursos"
                 && FeatureStrings.hub(.enUS).pageTitle == "Features",
@@ -14122,6 +14169,12 @@ struct MetricsTests {
                 .compactMap { $0.value as? String }
             expect(!mixerValues.isEmpty && mixerValues.allSatisfy { !$0.isEmpty },
                    "every mixer feature string is set for \(language.rawValue)")
+            let outputStrings = FeatureStrings.soundOutputSwitcher(language)
+            let outputValues = Mirror(reflecting: outputStrings).children.compactMap { $0.value as? String }
+            expect(outputValues.count == 7 && outputValues.allSatisfy { !$0.isEmpty },
+                   "every output switcher string is set for \(language.rawValue)")
+            expectFormat(outputStrings.switchFailedFormat, ["@"],
+                         "\(language.rawValue) named output switch failure format")
             expect(FeatureStrings.backup(language).description.contains(
                 FeatureStrings.scratchpad(language).pageTitle),
                    "every backup description accounts for the Scratchpad text (\(language.rawValue))")
@@ -14172,10 +14225,12 @@ struct MetricsTests {
                    "no em-dash in visible menu bar appearance strings (\(language.rawValue))")
             let killProcessValues = Mirror(reflecting: FeatureStrings.killProcess(language)).children
                 .compactMap { $0.value as? String }
-            expect(killProcessValues.count == 13 && killProcessValues.allSatisfy { !$0.isEmpty },
+            expect(killProcessValues.count == 14 && killProcessValues.allSatisfy { !$0.isEmpty },
                    "every kill process string is set for \(language.rawValue)")
             expect(killProcessValues.allSatisfy { !$0.contains("—") },
                    "no em-dash in visible kill process strings (\(language.rawValue))")
+            expectFormat(FeatureStrings.killProcess(language).monitorKillFailedFormat, ["@"],
+                         "\(language.rawValue) monitor process failure format")
             expect(FeatureStrings.killProcess(language).pidLabelFormat.contains("%d")
                     && FeatureStrings.killProcess(language).killAllFormat.contains("%@")
                     && FeatureStrings.killProcess(language).confirmKillFormat.contains("%@")
@@ -14232,8 +14287,12 @@ struct MetricsTests {
         for language in AppLanguage.allCases {
             let superKeyValues = Mirror(reflecting: FeatureStrings.superKey(language)).children
                 .compactMap { $0.value as? String }
-            expect(superKeyValues.count == 20 && superKeyValues.allSatisfy { !$0.isEmpty },
+            expect(superKeyValues.count == 21 && superKeyValues.allSatisfy { !$0.isEmpty },
                    "every super key string is set for \(language.rawValue)")
+            let trackpadValues = Mirror(reflecting: TrackpadGestureStrings.localized(language)).children
+                .compactMap { $0.value as? String }
+            expect(trackpadValues.count == 8 && trackpadValues.allSatisfy { !$0.isEmpty },
+                   "every trackpad gesture string is set for \(language.rawValue) (found \(trackpadValues.count))")
             let refusals = SuperKeyMappingFailure.allCases.map {
                 FeatureStrings.superKey(language).mappingFailure($0)
             }
@@ -14279,7 +14338,7 @@ struct MetricsTests {
                    "no em-dash in recent capture strings (\(language.rawValue))")
             let feedbackValues = Mirror(reflecting: FeatureStrings.feedback(language)).children
                 .compactMap { $0.value as? String }
-            expect(feedbackValues.count == 29 && feedbackValues.allSatisfy { !$0.isEmpty },
+            expect(feedbackValues.count == 18 && feedbackValues.allSatisfy { !$0.isEmpty },
                    "every feedback string is set for \(language.rawValue)")
             expect(feedbackValues.allSatisfy { !$0.contains("—") },
                    "no em-dash in visible feedback strings (\(language.rawValue))")
@@ -14319,8 +14378,8 @@ struct MetricsTests {
             let organizerValues = Mirror(
                 reflecting: WhatsAppOrganizerStrings.localized(language)).children
                 .compactMap { $0.value as? String }
-            expect(organizerValues.count == 30 && organizerValues.allSatisfy { !$0.isEmpty },
-                   "every WhatsApp organizer string is set for \(language.rawValue)")
+            expect(organizerValues.count == 31 && organizerValues.allSatisfy { !$0.isEmpty },
+                   "every WhatsApp organizer string is set for \(language.rawValue) (found \(organizerValues.count))")
             expect(organizerValues.allSatisfy { !$0.contains("—") },
                    "no em-dash in WhatsApp organizer strings (\(language.rawValue))")
             let recorderValues = Mirror(reflecting: FeatureStrings.recorder(language)).children
@@ -14377,9 +14436,6 @@ struct MetricsTests {
                     && !strings.urlCleanerRulesAddSite.isEmpty
                     && !strings.urlCleanerRulesParameterPlaceholder.isEmpty
                     && !strings.urlCleanerRulesAddButton.isEmpty
-                    && !strings.urlCleanerRulesRemoveButton.isEmpty
-                    && !strings.urlCleanerRulesCountSingular.isEmpty
-                    && strings.urlCleanerRulesCountPluralFormat.contains("%d")
                     && strings.urlCleanerRemovedFormat.contains("%@"),
                    "the URL cleaner rule list speaks \(language.rawValue)")
         }
@@ -14695,32 +14751,6 @@ struct MetricsTests {
                 && BrightnessSupport.ddcProbeWriteCycles(classifyingChannel: false)
                 == BrightnessSupport.writeCycles,
                "answering channels retain their field-proven read and write retries")
-        let ddcPath = BrightnessSupport.ddcPathKey(
-            displayFingerprint: "1507:9218:245",
-            ioDisplayLocation: "IOService:/port/1")
-        expect(ddcPath == "1507:9218:245|IOService:/port/1",
-               "a DDC capability cache key binds the physical display to its connection path")
-        expect(BrightnessSupport.ddcPathKey(displayFingerprint: "1507:9218:245",
-                                            ioDisplayLocation: "") == nil,
-               "a display without a stable connection path is never cached")
-        let rememberedPaths = BrightnessSupport.updatedWriteOnlyDDCPaths(
-            ["old", "same", "other", "same"], path: "same", isWriteOnly: true, limit: 3)
-        expect(rememberedPaths == ["old", "other", "same"],
-               "remembering a write-only path deduplicates it and makes it newest")
-        expect(BrightnessSupport.updatedWriteOnlyDDCPaths(
-            rememberedPaths, path: "other", isWriteOnly: false, limit: 3) == ["old", "same"],
-               "a changed DDC result invalidates the remembered path")
-        expect(BrightnessSupport.updatedWriteOnlyDDCPaths(
-            ["one", "two", "three"], path: "four", isWriteOnly: true, limit: 3)
-            == ["two", "three", "four"],
-               "the write-only path cache remains bounded")
-        expect(!BrightnessSupport.shouldProbeDDC(
-            pathKey: ddcPath, writeOnlyPaths: [ddcPath!])
-                && BrightnessSupport.shouldProbeDDC(
-                    pathKey: "another", writeOnlyPaths: [ddcPath!])
-                && BrightnessSupport.shouldProbeDDC(
-                    pathKey: nil, writeOnlyPaths: [ddcPath!]),
-               "only the same physical display path skips future DDC probes")
         expect(!SettingsBackupSupport.exportKeys().contains(
             DefaultsKey.brightnessDDCWriteOnlyPaths),
                "per-monitor DDC capability never travels in a settings backup")
@@ -14955,10 +14985,10 @@ struct MetricsTests {
                                                            displayIsBuiltIn: true,
                                                            overlayReplacesNative: false),
                "pointer on the built-in panel keeps the system's native handling")
-        expect(BrightnessSupport.stepsSystemRoutedDisplay(followsPointer: true,
+        expect(!BrightnessSupport.stepsSystemRoutedDisplay(followsPointer: true,
                                                           displayIsBuiltIn: true,
                                                           overlayReplacesNative: true),
-               "the opt-in overlay replaces native handling on the built-in panel")
+               "the built-in panel keeps native handling even with the overlay enabled")
         expect(!BrightnessSupport.stepsSystemRoutedDisplay(followsPointer: false,
                                                            displayIsBuiltIn: false,
                                                            overlayReplacesNative: false),
@@ -17483,8 +17513,8 @@ struct MetricsTests {
                "screenshot number shortcuts ship enabled")
         expect(Defaults.registeredDefaults[DefaultsKey.screenshotPreviewPosition] as? String == "",
                "screenshot preview placement preserves the existing automatic behavior by default")
-        expect(Defaults.registeredDefaults[DefaultsKey.screenshotSharingEnabled] as? Bool == true,
-               "temporary screenshot links preserve their existing availability by default")
+        expect(Defaults.registeredDefaults[DefaultsKey.screenshotSharingEnabled] == nil,
+               "retired screenshot links have no registered availability preference")
         expect(Defaults.registeredDefaults[DefaultsKey.screenshotToolOrder] as? String
                 == ScreenshotSupport.Tool.defaultOrderStorage,
                "the screenshot rail ships in its useful numbered order")
@@ -17513,23 +17543,14 @@ struct MetricsTests {
                "the recent captures shortcut defaults to control option command H")
         expect(ScreenshotShareDuration.allCases.map(\.rawValue) == [3_600, 21_600, 86_400],
                "temporary links allow only one, six or twenty-four hours")
-        let testShareEndpoint = ScreenshotSharingSupport.endpoint(
-            bundleIdentifier: ScreenshotSharingSupport.developerBundleIdentifier,
-            developerOverride: "https://test.example/")
-        expect(testShareEndpoint.absoluteString == "https://test.example"
-                && ScreenshotSharingSupport.endpoint(
-                    bundleIdentifier: "com.vorssaint.utils",
-                    developerOverride: "https://test.example").absoluteString
-                    == ScreenshotSharingSupport.productionEndpoint.absoluteString
-                && ScreenshotSharingSupport.endpoint(
-                    bundleIdentifier: ScreenshotSharingSupport.developerBundleIdentifier,
-                    developerOverride: "http://test.example")
-                    == ScreenshotSharingSupport.productionEndpoint,
-               "only the Developer build accepts a valid HTTPS test endpoint")
-        expect(ScreenshotSharingSupport.uploadURL(endpoint: testShareEndpoint,
-                                                  duration: .sixHours)?.absoluteString
-                == "https://test.example/v1/screenshots?expiresIn=21600",
-               "sharing builds the fixed upload route and expiration query")
+        expect(ScreenshotSharingSupport.endpoint(bundleIdentifier: ProductIdentity.developmentBundleID,
+                    developerOverride: "https://test.example/") == nil
+               && ScreenshotSharingSupport.endpoint(bundleIdentifier: ProductIdentity.releaseBundleID,
+                    developerOverride: "https://test.example/") == nil,
+               "neither product variant can revive the removed sharing endpoint")
+        let testShareEndpoint = URL(string: "https://test.example")!
+        expect(ScreenshotSharingSupport.uploadURL(endpoint: testShareEndpoint, duration: .sixHours) == nil,
+               "a caller-provided URL cannot recreate the removed upload route")
         let shareNow = Date(timeIntervalSince1970: 1_000)
         let shareResponse = ScreenshotShareResponse(
             id: String(repeating: "a", count: 32),
@@ -17630,7 +17651,7 @@ struct MetricsTests {
             "Image(systemName: \"ellipsis\")\n                    .font(.system(size: 12, weight: .semibold))\n                    .frame(width: 22, height: 22)\n                    .contentShape(Rectangle())",
             ".fill(selected ? Color.accentColor.opacity(0.16) : Color.clear)\n                }\n                .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))",
             "Image(systemName: service.isPinned ? \"pin.fill\" : \"pin\")\n                    .font(.system(size: 12, weight: .semibold))\n                    .frame(width: 22, height: 22)\n                    .contentShape(Rectangle())",
-            "Image(systemName: \"xmark.circle.fill\")\n                    .font(.system(size: 14))\n                    .foregroundStyle(.secondary)\n                    .frame(width: 22, height: 22)\n                    .contentShape(Rectangle())",
+            "Image(systemName: service.isAtTop ? \"chevron.up\" : \"xmark.circle.fill\")\n                    .font(.system(size: 14))\n                    .foregroundStyle(.secondary)\n                    .frame(width: 22, height: 22)\n                    .contentShape(Rectangle())",
         ]
         expect(scratchpadHitTargetContracts.allSatisfy { scratchpadViewSource.contains($0) },
                "the scratchpad tab bar and header controls keep their full padded hit targets")
@@ -17905,9 +17926,9 @@ struct MetricsTests {
                "the mute skips the app's own mixing device and no other")
         expect(!MicMuteSupport.shouldSaveVolume(nil)
                 && !MicMuteSupport.shouldSaveVolume(0)
-                && !MicMuteSupport.shouldSaveVolume(0.005)
+                && MicMuteSupport.shouldSaveVolume(0.005)
                 && MicMuteSupport.shouldSaveVolume(0.4),
-               "a level worth restoring is remembered and a silent one never is")
+               "every valid nonzero level is remembered, including quiet input, and zero never is")
         expect(MicMuteSupport.volumeToRestore(uid: "mic-a",
                                               saved: ["mic-a": 0.4, "mic-b": 0.9],
                                               legacy: 0.6) == 0.4
@@ -18402,35 +18423,23 @@ struct MetricsTests {
         let mouseSettingsLines = ((try? String(
             contentsOfFile: "Sources/Vorssaint/UI/Settings/MouseButtonSettings.swift",
             encoding: .utf8)) ?? "").components(separatedBy: "\n")
-        // Matched as the whole line, indentation included: at Section-child
-        // depth no outer `if enabled` can quietly re-gate the list behind the
-        // shortcut switch alone.
-        var exceptionsListCoversBothSwitches = false
-        for (index, line) in mouseSettingsLines.enumerated()
-        where line == "            if enabled || spacesEnabled {" {
-            var cursor = index + 1
-            while cursor < mouseSettingsLines.count, !isCodeLine(mouseSettingsLines[cursor]) {
-                cursor += 1
-            }
-            exceptionsListCoversBothSwitches = cursor < mouseSettingsLines.count
-                && mouseSettingsLines[cursor].contains("MouseExceptionsList(scope: .buttonShortcuts)")
-        }
-        expect(exceptionsListCoversBothSwitches,
-               "the exception list the tap consults for the drag stays on screen while either switch is on")
-        var spacesSwitchOffDropsBinding = false
+        expect(mouseSettingsLines.contains {
+            $0 == "            MouseExceptionsList(scope: .buttonShortcuts)"
+        }, "mouse-button exceptions remain configurable as a direct section child while actions are paused")
+        var spacesSwitchOffPreservesBinding = false
         for (index, line) in mouseSettingsLines.enumerated()
         where isCodeLine(line) && line.contains(".onChange(of: spacesEnabled)") {
             let window = mouseSettingsLines[index...].prefix(12)
             let stop = window.firstIndex {
                 $0.trimmingCharacters(in: .whitespaces) == "stopSpacesCapture()"
             }
-            let clear = window.firstIndex {
-                $0.trimmingCharacters(in: .whitespaces) == "spacesButton = 0"
+            let preserve = window.firstIndex {
+                isCodeLine($0) && $0.contains("MouseButtonConfigurationSupport.spacesButtonAfterToggle(")
             }
-            if let stop, let clear, stop < clear { spacesSwitchOffDropsBinding = true }
+            if let stop, let preserve, stop < preserve { spacesSwitchOffPreservesBinding = true }
         }
-        expect(spacesSwitchOffDropsBinding,
-               "the drag's own OFF branch drops its binding, so no hidden button ever refuses a shortcut")
+        expect(spacesSwitchOffPreservesBinding,
+               "pausing Spaces stops capture before applying the tested binding-preservation policy")
         // The drag capture speaks its own strings: the shortcut capture's
         // prompt invites the side wheel the drag refuses, and its refusals
         // point at a list that is off screen with the shortcut switch off.
@@ -19578,8 +19587,8 @@ struct MetricsTests {
                 && backupKeys.contains(DefaultsKey.keepAwakeActiveIcon)
                 && backupKeys.contains(FeatureUnit.dock.availabilityKey),
                "backup carries preferences, menu bar pins, Keep Awake appearance, language and hub availability")
-        expect(backupKeys.contains(DefaultsKey.launchAtLoginWanted),
-               "the launch at login choice travels with the settings backup")
+        expect(!backupKeys.contains(DefaultsKey.launchAtLoginWanted),
+               "login registration intent stays local to the current application identity")
         expect(backupKeys.contains(DefaultsKey.cleaningModeKeepScreenVisible),
                "the cleaning mode keep screen visible choice travels with the settings backup")
         expect(backupKeys.contains(DefaultsKey.appearance),
@@ -19714,8 +19723,8 @@ struct MetricsTests {
                 && !backupKeys.contains(DefaultsKey.fanControlRecoveryNeeded)
                 && !backupKeys.contains(DefaultsKey.fanControlHelperVersion),
                "fan display and cooling preferences travel while helper recovery state stays on one Mac")
-        expect(backupKeys.contains(DefaultsKey.screenshotSharingEnabled),
-               "the temporary screenshot links preference travels with settings backup")
+        expect(!backupKeys.contains(DefaultsKey.screenshotSharingEnabled),
+               "retired screenshot links cannot be restored through settings backup")
         expect(!backupKeys.contains(DefaultsKey.clipboardHistoryEntries)
                 && !backupKeys.contains(DefaultsKey.shelfItems)
                 && !backupKeys.contains(DefaultsKey.sleepDisabledFlag)
@@ -19723,6 +19732,8 @@ struct MetricsTests {
                 && !backupKeys.contains(DefaultsKey.micMuteSavedVolumes)
                 && !backupKeys.contains(DefaultsKey.micMuteMutedDevices)
                 && !backupKeys.contains(DefaultsKey.cleanerLastAutoRun)
+                && !backupKeys.contains(DefaultsKey.cleanerLastAutoFailed)
+                && !backupKeys.contains(DefaultsKey.cleanerLastAutoAttempted)
                 && !backupKeys.contains(DefaultsKey.statusItemPlacementGeneration)
                 && !backupKeys.contains(DefaultsKey.displaysSwitchedOff)
                 && !backupKeys.contains(DefaultsKey.screenshotSharingDeveloperEndpoint),
@@ -19866,17 +19877,14 @@ struct MetricsTests {
         let captureAt = backupServiceLines.firstIndex {
             isCodeLine($0) && $0.contains("SettingsBackupSupport.pathIdentities(")
         }
-        let clearAt = backupServiceLines.firstIndex {
-            isCodeLine($0) && $0.contains("defaults.removeObject(forKey: key)")
+        let replaceAt = backupServiceLines.firstIndex {
+            isCodeLine($0) && $0.contains("SettingsBackupSupport.replaceExportedSettings(settings, in: defaults)")
         }
         let putBackAt = backupServiceLines.firstIndex {
             isCodeLine($0) && $0.contains("SettingsBackupSupport.restoredExceptionList(")
         }
-        let writeAt = backupServiceLines.firstIndex {
-            isCodeLine($0) && $0.contains("defaults.set(value, forKey: key)")
-        }
-        expect([captureAt, clearAt, putBackAt, writeAt].allSatisfy { $0 != nil }
-                && captureAt! < clearAt! && writeAt! < putBackAt!,
+        expect([captureAt, replaceAt, putBackAt].allSatisfy { $0 != nil }
+                && captureAt! < replaceAt! && replaceAt! < putBackAt!,
                "a settings restore reads the machine-local entries before clearing "
                    + "and writes them back after the file's values")
         expect(SettingsBackupSupport.sanitizedSettings(from: [SettingsBackupSupport.settingsKey: [String: Any]()]) == nil,
@@ -20195,9 +20203,9 @@ struct MetricsTests {
         } ?? ""
         expect(clipboardActionsCode.contains("id: \"action.clipboardClearRecent\"")
                 && clipboardActionsCode.contains("title: clipboard.clearRecent")
-                && clipboardActionsCode.contains("confirmationPrompt: clipboard.clearRecent")
-                && clipboardActionsCode.contains("ClipboardHistoryService.shared.clearRecent()"),
-               "the Command Bar clears only unpinned clipboard items after confirmation")
+                && clipboardActionsCode.contains("confirmationPrompt: ClipboardActionStrings.clearMessage(unpinnedIDs.count)")
+                && clipboardActionsCode.contains("ClipboardHistoryService.shared.clearRecent(confirmedIDs: unpinnedIDs)"),
+               "the Command Bar confirms the counted snapshot before clearing unpinned clipboard items")
 
         // MARK: Compact mode, what an empty field shows
         expect(CommandBarHome.showsBrowseList(compact: false, hasCategory: false, isPeeking: false),
@@ -22026,8 +22034,8 @@ struct MetricsTests {
         for language in AppLanguage.allCases {
             let commandBarValues = Mirror(reflecting: FeatureStrings.commandBar(language)).children
                 .compactMap { $0.value as? String }
-            expect(commandBarValues.count == 157 && commandBarValues.allSatisfy { !$0.isEmpty },
-                   "every command bar string is set for \(language.rawValue)")
+            expect(commandBarValues.count == 172 && commandBarValues.allSatisfy { !$0.isEmpty },
+                   "every command bar string is set for \(language.rawValue), found \(commandBarValues.count)")
             expect(commandBarValues.allSatisfy { !$0.contains("—") },
                    "no em-dash in visible command bar strings (\(language.rawValue))")
             // The battery example chip types this word into the bar, and the
@@ -22114,13 +22122,13 @@ struct MetricsTests {
                "the command bar's battery example is the localized word, not a fixed English one")
 
         // A key glyph in front of a button label reads as that button's
-        // shortcut, so neither command bar action button carries one.
+        // shortcut. Semantic symbols are allowed; a command-key glyph is not.
         let commandBarSettingsSource = (try? String(
             contentsOfFile: "Sources/Vorssaint/UI/Settings/CommandBarSettings.swift",
             encoding: .utf8)) ?? ""
-        expect(!commandBarSettingsSource.contains("Label(text.openButton, systemImage:")
-                && !commandBarSettingsSource.contains("Label(text.resetPositionButton, systemImage:"),
-               "neither command bar action button wears an icon")
+        expect(!commandBarSettingsSource.contains("Label(text.openButton, systemImage: \"command\")")
+                && !commandBarSettingsSource.contains("Label(text.resetPositionButton, systemImage: \"command\")"),
+               "command bar action symbols do not pretend to be a Command-key shortcut")
         expect(commandBarSettingsSource.contains("Toggle(text.shortcutToggle,")
                 && !commandBarSettingsSource.contains("l10n.s.quickToolShortcutToggle"),
                "the command bar shortcut toggle says what the shortcut opens")
@@ -22787,10 +22795,10 @@ struct MetricsTests {
                "an unlearned category preserves its useful catalog order")
 
         let officialHabitService = CommandBarQueryHabits.installationKeyService(
-            bundleID: "com.vorssaint.utils")
+            bundleID: ProductIdentity.releaseBundleID)
         let developerHabitService = CommandBarQueryHabits.installationKeyService(
-            bundleID: "com.vorssaint.utils.dev")
-        expect(officialHabitService == "com.vorssaint.utils.command-bar-query-habits"
+            bundleID: ProductIdentity.developmentBundleID)
+        expect(officialHabitService == ProductIdentity.releaseBundleID + ".command-bar-query-habits"
                 && officialHabitService != developerHabitService,
                "uninstalling one app variant cannot target the other variant's query key")
 
@@ -23293,28 +23301,23 @@ struct MetricsTests {
                    "temp dir \(variable) is empty before the sweep is installed")
         }
 
-        // MARK: An identity-less build that installs creates its stable signing identity
-        // An ad-hoc signature changes hash on every build, so macOS orphans
-        // Accessibility and Screen Recording grants on each rebuild while
-        // System Settings keeps showing them as granted. build.sh therefore
-        // routes identity-less installs through Tools/setup-signing.sh before
-        // signing. The needle is the invocation at the start of a command
-        // line: the ad-hoc fallback's advice string also names the script, and
-        // must not satisfy this check.
+        // Installed/developer builds must fail without a usable existing identity.
+        // Builds must never mutate global certificates or keychains automatically.
         let runsSigningSetup = buildScript.components(separatedBy: "\n").contains {
             $0.range(of: #"^\s*(if\s+!?\s*)?\./Tools/setup-signing\.sh"#,
                      options: .regularExpression) != nil
         }
-        expect(runsSigningSetup,
-               "an identity-less build that installs invokes Tools/setup-signing.sh itself")
-        // The guard is on the install, not on the variant: a plain --install
-        // replaces the bundle under the released id, so it strands the grants
-        // on the app people actually use. CI never passes --install.
+        expect(!runsSigningSetup
+                && buildScript.contains("No usable signing identity is available for this build.")
+                && buildScript.contains("Reuse an existing signing certificate, or configure and unlock one yourself before rebuilding.")
+                && buildScript.contains("exit 1\nfi"),
+               "an identity-less installed build fails with explicit signing guidance without running setup")
+        // Every installed or developer build requires the same stable-identity guard.
         let buildScriptCode = buildScript.components(separatedBy: "\n")
             .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("#") }
         expect(buildScriptCode.contains { $0.contains("(( DEV || INSTALL ))")
                                             && $0.contains("developer_id_identity") },
-               "the signing setup guard covers every install, not only the Developer variant")
+               "the existing-identity guard covers every install and Developer variant")
         // The setup script must run against the stock /usr/bin/openssl, which
         // is LibreSSL: it rejects OpenSSL 3's -legacy flag outright, and the
         // script once died on exactly that with its stderr discarded. The
@@ -23552,7 +23555,8 @@ struct MetricsTests {
                 && queryHabitSupportSource.contains("keyService = installationKeyService(")
                 && queryHabitSupportSource.contains("keyAccount = \"hmac-key\"")
                 && uninstallScriptSource.contains("/usr/bin/security delete-generic-password")
-                && uninstallScriptSource.contains("-s \"$BUNDLE.command-bar-query-habits\" -a \"hmac-key\""),
+                && (uninstallScriptSource.contains("-s \"$BUNDLE.command-bar-query-habits\" -a hmac-key")
+                    || uninstallScriptSource.contains("-s \"$BUNDLE.command-bar-query-habits\" -a \"hmac-key\"")),
                "both uninstall paths remove only the query-learning Keychain item")
         let requiredSubpaths = ["Library/Application Support", "Library/Caches", "Library/HTTPStorages"]
         for subpath in requiredSubpaths {
@@ -23573,7 +23577,8 @@ struct MetricsTests {
         expect(!selfUninstallSource.contains("_ = Sudoers.pmsetDisableSleep")
                 && !uninstallerSource.contains("_ = Sudoers.pmsetDisableSleep"),
                "neither uninstall path discards the result of restoring sleep")
-        expect(selfUninstallSource.contains("guard detachFromSystem() else")
+        expect(selfUninstallSource.contains("prepare: { detachFromSystem(verifyLoginRemoval: true) }")
+                && selfUninstallSource.contains("guard result == .completed else")
                 && selfUninstallSource.contains("restoreSleepBeforeRemoval() -> Bool")
                 && selfUninstallSource.contains("guard FanControlService.restoreAndUnregisterForRemoval() else")
                 && selfUninstallSource.contains("adminPromptRecover")
@@ -23762,8 +23767,8 @@ struct MetricsTests {
             let quitProtection = FeatureStrings.quitProtection(language)
             let quitProtectionValues = Mirror(reflecting: quitProtection).children
                 .compactMap { $0.value as? String }
-            expect(quitProtectionValues.count == 29 && quitProtectionValues.allSatisfy { !$0.isEmpty },
-                   "every quit protection string is set for \(language.rawValue)")
+            expect(quitProtectionValues.count == 31 && quitProtectionValues.allSatisfy { !$0.isEmpty },
+                   "every quit protection string is set for \(language.rawValue) (found \(quitProtectionValues.count))")
             expect(quitProtectionValues.allSatisfy { !$0.contains("—") },
                    "no em-dash in quit protection strings (\(language.rawValue))")
             expectFormat(quitProtection.holdHUDFormat, ["@"],
@@ -23836,23 +23841,8 @@ struct MetricsTests {
                "a bad child drops itself, its batch survives and the store loads as "
                + "partial, found \(batchShelfChildTitles)")
 
-        // The sweep decision lives in ShelfService, which `--test` does not
-        // compile, so it is pinned by shape: restore may reach the payload
-        // sweep only past the guard that a store read whole has to pass. A
-        // `.partial` store's dropped entries still own files in that
-        // directory, and the blob it kept still points at them.
-        let restoreItemsBody = ((try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/Shelf/ShelfService.swift",
-            encoding: .utf8)) ?? "")
-            .components(separatedBy: "private func restoreItems()")
-            .dropFirst().first?
-            .components(separatedBy: "\n    private func ").first ?? ""
-        let pastRestoreGuard = restoreItemsBody
-            .components(separatedBy: "guard case .items = store else { return }")
-        expect(pastRestoreGuard.count == 2
-                && !pastRestoreGuard[0].contains("sweepOwnedFiles(")
-                && pastRestoreGuard[1].contains("sweepOwnedFiles("),
-               "restore sweeps the shelf's payload files only for a store it read whole")
+        // ShelfIndexStoreTests and the developer app's ShelfPersistenceSelfTest
+        // exercise partial-store protection and cleanup through actual writes.
 
         // Guards the class, not the one instance that emptied shelves: the
         // saved blob may only be read through `load`, which hands the caller a
@@ -23916,16 +23906,6 @@ struct MetricsTests {
             let guarded = offset("guard changed else { return }")
             expect(stored >= 0 && guarded > stored,
                    "\(pass) stores the whole sample before it decides whether the rows changed")
-        }
-
-        // MARK: A sleeping clock
-        for shareService in ["Sources/Vorssaint/Services/QuickTools/ScreenshotShareService.swift"] {
-            let shareCode = ((try? String(contentsOfFile: shareService, encoding: .utf8)) ?? "")
-                .components(separatedBy: "\n")
-                .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
-                .joined(separator: "\n")
-            expect(shareCode.contains("NSWorkspace.didWakeNotification"),
-                   "\(shareService) recomputes share link expiry on wake, which its sleeping clock missed")
         }
 
         // The confirmation HUD is a hand-laid AppKit panel, so its width is
@@ -24068,8 +24048,8 @@ struct MetricsTests {
                 && splitOccurrences(switcherBody, "dockClickMinimize") == 0,
                "the switcher page no longer reads Dock Preview or Dock click preferences")
         let dockPageCode = splitCode("Sources/Vorssaint/UI/Settings/DockSettings.swift")
-        expect(splitOccurrences(settingsViewCode, "WindowPreviewSection(") == 1
-                && splitOccurrences(dockPageCode, "WindowPreviewSection(") == 1,
+        expect(splitOccurrences(settingsViewCode, "WindowPreviewControls(") == 1
+                && splitOccurrences(dockPageCode, "WindowPreviewControls(") == 1,
                "the window preview block is included once by each of its two pages")
 
         // MARK: - general-sound
@@ -24100,7 +24080,12 @@ struct MetricsTests {
                 && SettingsSectionAnchor.micMute.page == .micMute
                 && SettingsSectionAnchor.soundOutputSwitcher.page == .mixer,
                "the moved sections' anchors point at their new pages")
-        for (file, count) in [("MixerSettings.swift", 2), ("MicMuteSettings.swift", 1), ("MusicBlockSettings.swift", 1)] {
+        for feature in ["mixer", "soundOutputSwitcher"] {
+            let rows = occurrences("FeatureSwitchRow(feature: .\(feature)",
+                                   codeLines("Sources/Vorssaint/UI/Settings/MixerSettings.swift"))
+            expect(rows == 1, "the mixer page presents one control for \(feature), found \(rows)")
+        }
+        for (file, count) in [("MicMuteSettings.swift", 1), ("MusicBlockSettings.swift", 1)] {
             let gates = occurrences(".isAvailable", codeLines("Sources/Vorssaint/UI/Settings/\(file)"))
             expect(gates == count, "\(file) gates one section per configurable feature (found \(gates))")
         }
@@ -24158,13 +24143,15 @@ struct MetricsTests {
                 && occurrences("Picker(", trendCode) == 0
                 && occurrences("expanded.toggle()", trendCode) == 0,
                "history visibility and time controls live only in monitor settings")
-        // Nothing puts a surface switch back on a feature's own page.
+        // These pages keep their global-only controls; clipboard deliberately shares its entry key.
         for (page, key) in [("MicMuteSettings.swift", "micMuteMenuBarIndicator"),
-                            ("ClipboardSettings.swift", "panelUtilityClipboard"),
                             ("MonitorSettings.swift", "panelShowFanControl")] {
             let found = occurrences(key, codeLines("Sources/Vorssaint/UI/Settings/" + page))
             expect(found == 0, "\(page) no longer decides where it appears (found \(found))")
         }
+
+        expect(occurrences("key: DefaultsKey.panelUtilityClipboard", codeLines("Sources/Vorssaint/UI/Settings/ClipboardSettings.swift")) == 1,
+               "clipboard uses the same canonical panel visibility key as the global panel")
 
         let aboutCode = codeLines("Sources/Vorssaint/UI/Settings/SettingsView.swift")
             .components(separatedBy: "struct AboutSettings").dropFirst().first?
@@ -24200,27 +24187,26 @@ struct MetricsTests {
                "ScratchpadSettings gates scratchpad once, found \(scratchpadGates)")
 
         // MARK: - names-access
-        // Every feature name and sidebar title as e0aca0ca showed them, per
-        // language. The accessors moved; the words may not.
+        // Feature names and sidebar titles remain paired across accessors.
         let featureNamesEnUS = [
-            "App switcher", "Dock Preview", "Dock clicks", "Maximize windows",
+            "App switcher", "Dock Preview", "Dock clicks", "Green button maximizes windows",
             "Quit on close", "Invert mouse scrolling", "Focus follows mouse", "Smooth scrolling",
             "Disable mouse acceleration", "Side buttons", "Mouse button shortcuts", "Middle click",
             "Extra click filter", "Debounce", "Text snippets", "Super key",
             "Quit & close protection", "Clipboard", "Paste as plain text", "Cut & paste",
             "Rename shortcut", "Shelf", "Clean URL", "Volume mixer",
-            "Output switcher", "Mute microphone", "Music app blocker", "Keep awake", "Displays",
+            "Output switcher", "Mute microphone", "App launch blocker", "Keep awake", "Displays",
             "Bluetooth on sleep", "Color picker", "Copy text from screen", "Cleaning Mode", "Media", "Cleaner",
             "Uninstaller", "Homebrew", "Screenshot",
-            "Radial menu", "Scratchpad", "Command Bar", "Screen recording", "Global environment", "CPU",
+            "Radial menu", "Notes", "Command Bar", "Screen recording", "Global environment", "CPU",
             "GPU", "Memory", "Network", "Disks", "Power", "Fan Control"
         ]
         let featureNamesZhHans = [
-            "窗口切换器", "Dock 窗口预览", "Dock 点按", "最大化窗口", "关闭时退出", "反转鼠标滚动", "悬停聚焦", "平滑滚动",
+            "窗口切换器", "Dock 窗口预览", "Dock 点按", "绿色按钮改为最大化", "关闭时退出", "反转鼠标滚动", "悬停聚焦", "平滑滚动",
             "关闭鼠标加速", "侧键", "鼠标按键快捷键", "三指中键", "点击防抖", "按键防抖", "文本片段", "超级键", "退出与关闭保护", "剪贴板",
             "粘贴为纯文本", "剪切和粘贴", "重命名快捷键", "暂存架", "清理 URL", "音量混音器", "输出切换器", "静音麦克风",
-            "「音乐」App 拦截", "保持唤醒", "显示器", "睡眠时的蓝牙", "颜色吸管", "拷贝屏幕文字", "清洁模式",
-            "媒体", "清理", "卸载器", "Homebrew", "截屏", "径向菜单", "草稿板", "命令栏", "屏幕录制", "全局环境",
+            "App 启动拦截", "保持唤醒", "显示器", "睡眠时的蓝牙", "颜色吸管", "拷贝屏幕文字", "清洁模式",
+            "媒体", "清理", "卸载器", "Homebrew", "截屏", "径向菜单", "便条", "命令栏", "屏幕录制", "全局环境",
             "CPU", "GPU", "内存", "网络", "磁盘", "电源", "风扇控制"
         ]
         let pageTitlesEnUS = [
@@ -24228,18 +24214,17 @@ struct MetricsTests {
             "Mouse", "Trackpad", "App switcher",
             "Dock", "Keyboard", "Finder shortcuts",
             "Window behaviour", "Cleaner", "Uninstaller",
-            "Homebrew", "Global environment", "Media", "Clipboard", "Shelf",
+            "Homebrew", "Global environment", "Media", "Clipboard", "Clean URL", "Shelf",
             "Screen capture", "Radial menu", "Command Bar",
-            "Volume mixer", "Mute microphone", "Music app blocker", "Scratchpad",
-            "Keyboard shortcuts", "Advanced", "About", "What’s New",
-            "Support"
+            "Volume mixer", "Mute microphone", "App launch blocker", "Notes",
+            "Keyboard shortcuts", "General & appearance", "About", "What’s New"
         ]
         let pageTitlesZhHans = [
-            "功能", "菜单栏图标", "菜单栏面板", "监视", "保持唤醒", "显示器", "睡眠时的蓝牙", "清洁模式", "鼠标", "触控板", "窗口切换器", "Dock", "键盘", "访达快捷键",
-            "窗口行为", "清理", "卸载器", "Homebrew", "全局环境", "媒体", "剪贴板",
-            "暂存架", "屏幕捕捉", "径向菜单", "命令栏", "音量混音器", "静音麦克风", "「音乐」App 拦截",
-            "草稿板",
-            "键盘快捷键", "高级", "关于", "新功能", "支持"
+            "功能", "菜单栏图标", "菜单栏面板", "监控", "保持唤醒", "显示器", "睡眠时的蓝牙", "清洁模式", "鼠标", "触控板", "窗口切换器", "Dock", "键盘", "访达快捷键",
+            "窗口行为", "清理", "卸载器", "Homebrew", "全局环境", "媒体", "剪贴板", "清理 URL",
+            "暂存架", "屏幕捕捉", "径向菜单", "命令栏", "音量混音器", "静音麦克风", "App 启动拦截",
+            "便条",
+            "键盘快捷键", "通用与外观", "关于", "新功能"
         ]
         expect(featureNamesEnUS.count == AppFeature.allCases.count
                 && featureNamesZhHans.count == AppFeature.allCases.count,
@@ -24360,7 +24345,7 @@ struct MetricsTests {
             (FeatureStrings.micMute(.enUS).unmuteName, "Unmute microphone", "micMute.unmuteName"),
             (FeatureStrings.micMute(.enUS).caption, "Cuts the Mac’s microphone with a click or shortcut, across every app.", "micMute.caption"),
             (FeatureStrings.micMute(.enUS).mutedHUD, "Microphone muted", "micMute.mutedHUD"),
-            (FeatureStrings.micMute(.enUS).unmutedHUD, "Microphone back on", "micMute.unmutedHUD"),
+            (FeatureStrings.micMute(.enUS).unmutedHUD, "Microphone state restored", "micMute.unmutedHUD"),
             (FeatureStrings.micMute(.enUS).menuBarToggle, "Show in the menu bar while muted", "micMute.menuBarToggle"),
             (FeatureStrings.micMute(.enUS).menuBarCaption, "A red crossed-out mic appears beside the app’s icon in the menu bar.", "micMute.menuBarCaption"),
             (FeatureStrings.mixer(.enUS).pageTitle, "Volume mixer", "mixer.pageTitle"),
@@ -24393,10 +24378,10 @@ struct MetricsTests {
             (FeatureStrings.mixer(.enUS).allShown, "All", "mixer.allShown"),
             (FeatureStrings.mixer(.enUS).hiddenCountLabel, "Hidden", "mixer.hiddenCountLabel"),
             (FeatureStrings.mixer(.enUS).hideFromList, "Hide from the list", "mixer.hideFromList"),
-            (FeatureStrings.musicBlock(.enUS).pageTitle, "Music app blocker", "musicBlock.pageTitle"),
+            (FeatureStrings.musicBlock(.enUS).pageTitle, "App launch blocker", "musicBlock.pageTitle"),
             (FeatureStrings.musicBlock(.enUS).section, "Media keys", "musicBlock.section"),
-            (FeatureStrings.musicBlock(.enUS).title, "Stop Music from opening on its own", "musicBlock.title"),
-            (FeatureStrings.musicBlock(.enUS).caption, "The Music app no longer opens when you press the media keys. You can still open it yourself.", "musicBlock.caption"),
+            (FeatureStrings.musicBlock(.enUS).title, "Block selected apps after media keys", "musicBlock.title"),
+            (FeatureStrings.musicBlock(.enUS).caption, "Only launches within two seconds of a media key are blocked. Manual launches in that window may also be blocked; other automatic launches and already-running apps are untouched.", "musicBlock.caption"),
             (FeatureStrings.musicBlock(.enUS).replacementLabel, "Open instead", "musicBlock.replacementLabel"),
             (FeatureStrings.musicBlock(.enUS).replacementNone, "None", "musicBlock.replacementNone"),
             (FeatureStrings.musicBlock(.enUS).chooseApp, "Choose app…", "musicBlock.chooseApp"),
@@ -24448,7 +24433,7 @@ struct MetricsTests {
             (FeatureStrings.micMute(.zhHans).unmuteName, "取消静音麦克风", "micMute.unmuteName"),
             (FeatureStrings.micMute(.zhHans).caption, "通过点按或快捷键切断 Mac 的麦克风，对所有 App 生效。", "micMute.caption"),
             (FeatureStrings.micMute(.zhHans).mutedHUD, "麦克风已静音", "micMute.mutedHUD"),
-            (FeatureStrings.micMute(.zhHans).unmutedHUD, "麦克风已恢复", "micMute.unmutedHUD"),
+            (FeatureStrings.micMute(.zhHans).unmutedHUD, "已恢复麦克风状态", "micMute.unmutedHUD"),
             (FeatureStrings.micMute(.zhHans).menuBarToggle, "静音时在菜单栏显示", "micMute.menuBarToggle"),
             (FeatureStrings.micMute(.zhHans).menuBarCaption, "菜单栏中的 App 图标旁会出现一个红色的划线麦克风。", "micMute.menuBarCaption"),
             (FeatureStrings.mixer(.zhHans).pageTitle, "音量混音器", "mixer.pageTitle"),
@@ -24481,10 +24466,10 @@ struct MetricsTests {
             (FeatureStrings.mixer(.zhHans).allShown, "全部", "mixer.allShown"),
             (FeatureStrings.mixer(.zhHans).hiddenCountLabel, "已隐藏", "mixer.hiddenCountLabel"),
             (FeatureStrings.mixer(.zhHans).hideFromList, "从列表中隐藏", "mixer.hideFromList"),
-            (FeatureStrings.musicBlock(.zhHans).pageTitle, "「音乐」App 拦截", "musicBlock.pageTitle"),
+            (FeatureStrings.musicBlock(.zhHans).pageTitle, "App 启动拦截", "musicBlock.pageTitle"),
             (FeatureStrings.musicBlock(.zhHans).section, "媒体键", "musicBlock.section"),
-            (FeatureStrings.musicBlock(.zhHans).title, "阻止音乐 App 自行打开", "musicBlock.title"),
-            (FeatureStrings.musicBlock(.zhHans).caption, "按下媒体键时音乐 App 不再打开。你仍可以自己打开它。", "musicBlock.caption"),
+            (FeatureStrings.musicBlock(.zhHans).title, "拦截媒体键后启动的所选 App", "musicBlock.title"),
+            (FeatureStrings.musicBlock(.zhHans).caption, "仅拦截按下媒体键后两秒内的启动。这两秒内手动打开也可能被拦截；其它自动启动和已运行的 App 不受影响。", "musicBlock.caption"),
             (FeatureStrings.musicBlock(.zhHans).replacementLabel, "改为打开", "musicBlock.replacementLabel"),
             (FeatureStrings.musicBlock(.zhHans).replacementNone, "无", "musicBlock.replacementNone"),
             (FeatureStrings.musicBlock(.zhHans).chooseApp, "选择 App…", "musicBlock.chooseApp"),
@@ -24505,10 +24490,10 @@ struct MetricsTests {
         let storageStructs: [(String, Int, [Any])] = [
             ("dockPreview", 22, AppLanguage.allCases.map { FeatureStrings.dockPreview($0) as Any }),
             ("dockClick", 7, AppLanguage.allCases.map { FeatureStrings.dockClick($0) as Any }),
-            ("micMute", 7, AppLanguage.allCases.map { FeatureStrings.micMute($0) as Any }),
-            ("mixer", 31, AppLanguage.allCases.map { FeatureStrings.mixer($0) as Any }),
-            ("musicBlock", 7, AppLanguage.allCases.map { FeatureStrings.musicBlock($0) as Any }),
-            ("soundOutputSwitcher", 5, AppLanguage.allCases.map { FeatureStrings.soundOutputSwitcher($0) as Any }),
+            ("micMute", 16, AppLanguage.allCases.map { FeatureStrings.micMute($0) as Any }),
+            ("mixer", 35, AppLanguage.allCases.map { FeatureStrings.mixer($0) as Any }),
+            ("musicBlock", 10, AppLanguage.allCases.map { FeatureStrings.musicBlock($0) as Any }),
+            ("soundOutputSwitcher", 7, AppLanguage.allCases.map { FeatureStrings.soundOutputSwitcher($0) as Any }),
             ("windowPreviewExclusions", 10, AppLanguage.allCases.map { FeatureStrings.windowPreviewExclusions($0) as Any })
         ]
         for (name, fieldCount, values) in storageStructs {
@@ -24598,7 +24583,8 @@ struct MetricsTests {
         expect(!mouseSettingsBody.isEmpty && mouseMiddleClickReads == 0,
                "MouseSettings no longer mentions middleClick (found \(mouseMiddleClickReads))")
         let trackpadPageCode = storageCode("Sources/Vorssaint/UI/Settings/TrackpadSettings.swift")
-        let trackpadGuards = trackpadPageCode.components(separatedBy: "AppFeature.middleClick.isAvailable").count - 1
+        let trackpadFormCode = trackpadPageCode.components(separatedBy: "var body: some View {").last ?? ""
+        let trackpadGuards = trackpadFormCode.components(separatedBy: "AppFeature.middleClick.isAvailable").count - 1
         expect(trackpadGuards == 1, "TrackpadSettings guards its one section on middle click (found \(trackpadGuards))")
         L10n.shared.language = .enUS
         expect(Strings.enUS.tabMouse == "Mouse" && Strings.zhHans.tabMouse == "鼠标",
@@ -24633,13 +24619,15 @@ struct MetricsTests {
                 && FeatureUnit.trackpad.features == [.middleClick]
                 && !FeatureUnit.mouse.features.contains(.middleClick),
                "the Dock unit pairs preview with clicks and the trackpad unit holds only the middle click")
-        // Every unit with a page holds exactly what that page shows.
-        for unit in [FeatureUnit.mouse, .trackpad, .clipboard, .mixer, .micMute, .musicBlock, .dock,
+        // Single-page units match their page; clipboard also owns the dedicated URL page.
+        for unit in [FeatureUnit.mouse, .trackpad, .mixer, .micMute, .musicBlock, .dock,
                      .keepAwake, .brightness, .bluetoothSleep, .cleaningMode,
                      .cutPaste, .screenshot] {
             expect(Set(unit.features) == Set(FeatureVisibilitySupport.features(for: unit.page!)),
                    "\(unit.rawValue) holds exactly what its page shows, got \(unit.features)")
         }
+        expect(Set(FeatureUnit.clipboard.features) == Set(FeatureVisibilitySupport.features(for: .clipboard) + FeatureVisibilitySupport.features(for: .urlCleaner)),
+               "clipboard unit owns the clipboard and dedicated URL cleaner pages together")
         expect(Set(FeatureUnit.monitor.features) == Set(FeatureVisibilitySupport.monitorFeatures)
                 && FeatureUnit.monitor.page == .monitor,
                "the monitor unit holds the seven monitor features")
@@ -24650,17 +24638,12 @@ struct MetricsTests {
                     .screenshot, .monitor],
                "nine units hold more than one feature")
 
-        // Availability: the unit key, plus the member switch where a feature
-        // inside a shared page has no enable key of its own — unless where it
-        // is placed is already its switch.
         expect(AppFeature.allCases.filter { $0.switchKey != nil }
-                == AppFeature.allCases.filter {
-                    $0.unit.features.count > 1 && $0.enabledKeys.count != 1 && !$0.isSwitchedByPlacement
-                },
-               "exactly the members of multi-feature units without one enable key carry a switch")
+                == [.mixer, .fanControl],
+               "only independently stopped resource-owning members carry an availability switch")
         expect(AppFeature.allCases.filter(\.isSwitchedByPlacement)
                 == [.monitorCPU, .monitorGPU, .monitorMemory, .monitorNetwork, .monitorDisk, .monitorPower],
-               "the six read-only metrics are the only features without a switch of any kind")
+               "the six read-only metrics use placement controls")
         expect(AppFeature.allCases.filter(\.isSwitchedByPlacement)
                 .allSatisfy { $0.switchKey == nil && $0.enabledKeys.isEmpty && $0.pageSwitchKey == nil },
                "a placement-switched metric carries no key a row could flip")
@@ -24674,9 +24657,9 @@ struct MetricsTests {
         expect(occurrences("plan.needCPU = AppFeature.monitorCPU.isAvailable(in: defaults)",
                            samplingPlanCode) == 1,
                "enabled CPU monitoring collects history independently of placement")
-        expect(AppFeature.allCases.compactMap(\.switchKey).count == 12
-                && Set(AppFeature.allCases.compactMap(\.switchKey)).count == 12,
-               "12 members carry a switch, each its own key")
+        expect(AppFeature.allCases.compactMap(\.switchKey).count == 2
+                && Set(AppFeature.allCases.compactMap(\.switchKey)).count == 2,
+               "two resource-owning members carry distinct availability keys")
         expect(AppFeature.allCases.allSatisfy { feature in
                    feature.switchKey.map { Defaults.registeredDefaults[$0] != nil } ?? true
                },
@@ -24773,7 +24756,7 @@ struct MetricsTests {
         expect(AppFeature.cleaningMode.onboardingPermissions.isEmpty,
                "cleaning mode is a one-shot tool: its permission stays contextual")
 
-        // Surfaces render units, not features.
+        // The hub renders units; onboarding selects individual features.
         let hubShape = settingsShape("FeatureHubSettings.swift")
         expect(occurrenceCount("ForEach(AppFeature.features(in", in: hubShape) == 0
                 && occurrenceCount("ForEach(group.units", in: hubShape) == 1,
@@ -24781,12 +24764,12 @@ struct MetricsTests {
         let onboardingShape = stripCommentLines(
             (try? String(contentsOfFile: "Sources/Vorssaint/UI/Onboarding/OnboardingView.swift",
                          encoding: .utf8)) ?? "")
-        expect(occurrenceCount("Set<AppFeature>", in: onboardingShape) == 0
-                && occurrenceCount("Set<FeatureUnit>", in: onboardingShape) == 3,
-               "the first-run picker selects units")
+        expect(occurrenceCount("Set<AppFeature>", in: onboardingShape) == 3
+                && occurrenceCount("Set<FeatureUnit>", in: onboardingShape) == 0,
+               "the first-run picker selects individual features")
         // A page is its unit's surface: visibility and navigation read the
         // unit, so a member switched off can be switched back on.
-        for (file, count) in [("SettingsView.swift", 2), ("SettingsSearchSupport.swift", 3)] {
+        for (file, count) in [("SettingsView.swift", 1), ("SettingsSearchSupport.swift", 3)] {
             let found = occurrenceCount("{ $0.unit.isAvailable }", in: settingsShape(file))
             expect(found == count, "\(file) gates pages on the unit \(count) time(s), found \(found)")
         }
@@ -24796,13 +24779,13 @@ struct MetricsTests {
         expect(occurrenceCount("{ $0.unit.isAvailable }", in: catalogShape) == 2
                 && occurrenceCount("guard feature.unit.isAvailable,", in: catalogShape) == 1,
                "the command bar lists a settings page and its feature rows while the unit is installed")
-        for (file, unit) in [("MonitorSettings.swift", "monitor"), ("BrightnessSettings.swift", "brightness"),
-                             ("MixerSettings.swift", "mixer"),
-                             ("ScreenCaptureSettings.swift", "screenshot"), ("SettingsView.swift", "mouse"),
-                             ("ClipboardSettings.swift", "clipboard"), ("CutPasteSettings.swift", "cutPaste"),
-                             ("DockSettings.swift", "dock")] {
+        for (file, unit, expected) in [("MonitorSettings.swift", "monitor", 0), ("BrightnessSettings.swift", "brightness", 0),
+                             ("MixerSettings.swift", "mixer", 0),
+                             ("ScreenCaptureSettings.swift", "screenshot", 0), ("SettingsView.swift", "mouse", 0),
+                             ("ClipboardSettings.swift", "clipboard", 0), ("CutPasteSettings.swift", "cutPaste", 0),
+                             ("DockSettings.swift", "dock", 0)] {
             let found = occurrenceCount("FeatureSwitchSection(unit: .\(unit)", in: settingsShape(file))
-            expect(found == 1, "\(file) carries the \(unit) member switches once, found \(found)")
+            expect(found == expected, "\(file) has \(expected) detached switch sections, found \(found)")
         }
 
         // MARK: - energy-badges (D25)
@@ -24822,9 +24805,9 @@ struct MetricsTests {
         expect(FeatureEnergyProfile.idle < .periodic && .periodic < .mouse && .keyboard < .inputs,
                "costs order from nothing to both taps")
         let switchRowCode = codeLines("Sources/Vorssaint/UI/Settings/FeatureHubSettings.swift")
-            .components(separatedBy: "private struct SwitchRow").last ?? ""
-        expect(occurrences("energyProfile.label(", switchRowCode) == 1,
-               "each member switch shows its own cost badge")
+            .components(separatedBy: "struct FeatureSwitchRow").last ?? ""
+        expect(occurrences("energyProfile.label(", switchRowCode) == 0,
+               "inline behavior switches do not retain the removed overview-card energy badges")
 
         // MARK: - energy-split
         expect(FeatureUnit.keepAwake.features == [.keepAwake]
@@ -24870,31 +24853,21 @@ struct MetricsTests {
         }
 
         // MARK: - switches
-        // The switch section lists the whole unit: every member has a key its
-        // row can flip, its own switch or its one enable key. The metrics that
-        // are switched by placement have no row, by design.
-        for unit in FeatureUnit.allCases where unit.features.count > 1 {
-            let unswitched = unit.features.filter {
-                $0.switchKey == nil && $0.enabledKeys.count != 1 && !$0.isSwitchedByPlacement
-            }
-            expect(unswitched.isEmpty,
-                   "\(unit.rawValue) has a switch row for every member, missing \(unswitched)")
-        }
-        expect(AppFeature.scrollInverter.switchKey == DefaultsKey.scrollInverterSwitchEnabled
-                && AppFeature.mouseButtonShortcuts.switchKey == DefaultsKey.mouseButtonShortcutsSwitchEnabled
-                && AppFeature.finderCutPaste.switchKey == DefaultsKey.finderCutPasteSwitchEnabled
-                && AppFeature.textSnippets.switchKey == DefaultsKey.textSnippetsSwitchEnabled
-                && AppFeature.dockClick.switchKey == DefaultsKey.dockClickEnabled,
-               "the five members whose enable keys are options carry a switch above them")
+        expect([AppFeature.scrollInverter, .mouseButtonShortcuts, .finderCutPaste,
+                .textSnippets, .dockClick, .quitWindowProtection].allSatisfy {
+                    $0.switchKey == nil && $0.pageSwitchKey == nil && $0.enabledKeys.count > 1
+                },
+               "multi-action groups expose concrete actions without an extra availability switch")
         expect(AppFeature.brightness.pageSwitchKey == DefaultsKey.brightnessControlEnabled
                 && AppFeature.fanControl.pageSwitchKey == DefaultsKey.fanControlEnabled
                 && AppFeature.monitorCPU.pageSwitchKey == nil
-                && AppFeature.dockClick.pageSwitchKey == DefaultsKey.dockClickEnabled
-                && AppFeature.textSnippets.pageSwitchKey == DefaultsKey.textSnippetsSwitchEnabled
+                && AppFeature.dockClick.pageSwitchKey == nil
+                && AppFeature.textSnippets.pageSwitchKey == nil
                 && AppFeature.mixer.pageSwitchKey == DefaultsKey.mixerEnabled,
                "a row flips the member's switch, else its one enable key")
-        expect(FeaturePreset.windows.enableKeys.contains(DefaultsKey.dockClickEnabled),
-               "the windows preset switches Dock click on along with the mode it picks")
+        expect(FeaturePreset.windows.enableKeys.contains(DefaultsKey.dockClickMinimize)
+                && !FeaturePreset.windows.enableKeys.contains(DefaultsKey.dockClickEnabled),
+               "the windows preset selects a concrete Dock click action without recreating a retired gate")
         let switchSuite = "com.vorssaint.tests.switches.\(UUID().uuidString)"
         if let switchDefaults = UserDefaults(suiteName: switchSuite) {
             func stored(_ key: String) -> Bool? {
@@ -24903,13 +24876,13 @@ struct MetricsTests {
             switchDefaults.removePersistentDomain(forName: switchSuite)
             switchDefaults.set(true, forKey: FeatureUnit.mouse.availabilityKey)
             switchDefaults.set(true, forKey: DefaultsKey.scrollInverterEnabled)
-            expect(!AppFeature.scrollInverter.isAvailable(in: switchDefaults),
-                   "an axis on does not make the scroll inverter available while its switch is off")
-            switchDefaults.set(true, forKey: DefaultsKey.scrollInverterSwitchEnabled)
+            expect(AppFeature.scrollInverter.isAvailable(in: switchDefaults),
+                   "scroll inversion is available with its unit without an extra gate")
+            switchDefaults.set(false, forKey: DefaultsKey.scrollInverterSwitchEnabled)
             expect(AppFeature.scrollInverter.isAvailable(in: switchDefaults)
                     && AppFeature.scrollInverter.isEngaged(in: switchDefaults)
                     && AppFeature.monitorCPU.isEngaged(in: switchDefaults),
-                   "the switch on makes it available, an axis engages it, a key-less member is always engaged")
+                   "a retired gate no longer changes availability; axes still determine engagement")
 
             // The unit migration: a switch above options is on only when one was.
             switchDefaults.removePersistentDomain(forName: switchSuite)
@@ -24927,8 +24900,7 @@ struct MetricsTests {
             expect(false, "switch migration suite can be created")
         }
 
-        // The page shows one switch per member, so the block below a member
-        // no longer repeats its enable key as a toggle.
+        // Single-action controls use one reusable row inside their own section.
         func toggleBindings(of key: String, in file: String) -> Int {
             let shape = settingsShape(file)
             guard let declaration = shape.range(of: "@AppStorage(DefaultsKey.\(key)) private var ") else {
@@ -24955,9 +24927,9 @@ struct MetricsTests {
         expect(occurrenceCount("worstCaseEnergyProfile", in: hubSwitchShape) == 0
                 && occurrenceCount("ForEach(unit.features, id:", in: hubSwitchShape) == 1
                 && occurrenceCount("$0.switchKey != nil", in: hubSwitchShape) == 0,
-               "the switch section lists every member and badges each with its own cost")
+               "one saved-behavior summary replaces the retired duplicate switch-list overview")
         let dockClickGates = occurrenceCount("if AppFeature.dockClick.isAvailable {", in: settingsShape("DockSettings.swift"))
-        expect(dockClickGates == 1, "the Dock click block hides while its switch is off, found \(dockClickGates)")
+        expect(dockClickGates == 1, "the Dock click block follows unit availability, found \(dockClickGates)")
 
         // MARK: - sound-split
         expect(FeatureUnit.mixer.features == [.mixer, .soundOutputSwitcher]
@@ -24996,11 +24968,12 @@ struct MetricsTests {
         expect(occurrenceCount("DefaultsKey.soundOutputSwitcherEnabled", in: panelShape) == 1
                 && occurrenceCount("@AppStorage(DefaultsKey.soundOutputSwitcherEnabled)", in: mixerPageShape) == 1,
                "soundOutputSwitcherEnabled is switched on the mixer page and read by the panel")
-        // The panel still reads the hidden-apps choice to filter its rows; only the toggle moved.
+        // The live list and settings share the same saved scope and picker.
         expect(occurrenceCount("DefaultsKey.mixerHideInactiveApps", in: panelShape) == 1
-                && occurrenceCount("isOn: $hideInactiveApps", in: panelShape) == 0
-                && toggleBindings(of: "mixerHideInactiveApps", in: "MixerSettings.swift") == 1,
-               "the panel reads mixerHideInactiveApps without a toggle; the mixer page binds the toggle once")
+                && occurrenceCount("@AppStorage(DefaultsKey.mixerHideInactiveApps)", in: mixerPageShape) == 1
+                && occurrenceCount("MixerAppScopePicker(hideInactiveApps: $hideInactiveApps", in: panelShape) == 1
+                && occurrenceCount("MixerAppScopePicker(hideInactiveApps: $hideInactiveApps", in: mixerPageShape) == 1,
+               "the panel and mixer page bind the shared app-scope picker to the same preference")
         expect(occurrenceCount("ShortcutPreferenceRow(role: .soundOutputSwitcher", in: panelShape) == 0
                 && occurrenceCount("ShortcutPreferenceRow(role: .soundOutputSwitcher", in: mixerPageShape) == 1,
                "the switcher shortcut moved from the panel to the mixer page")
@@ -25008,9 +24981,13 @@ struct MetricsTests {
         expect(rollerBadges == 1, "the precise volume toggle carries the keyboard cost badge, found \(rollerBadges)")
 
         // MARK: - panel-lists
-        // Lists of live things (outputs plugged in now, apps running now) belong to the panel;
-        // the mixer page keeps only the lasting switches and the shortcut row.
-        for call in ["soundOutputSwitcherSelectionBinding(for: ", "listedBinding(for: "] {
+        // App-list visibility stays in the live panel. Output-cycle membership is
+        // lasting configuration and uses one shared editor in both locations.
+        let panelDevicePickers = occurrenceCount("SoundOutputSwitcherDevicePicker(compact: true)", in: panelShape)
+        let pageDevicePickers = occurrenceCount("SoundOutputSwitcherDevicePicker()", in: mixerPageShape)
+        expect(panelDevicePickers == 1 && pageDevicePickers == 1,
+               "output-cycle configuration is reachable through the shared picker in both locations (panel \(panelDevicePickers), page \(pageDevicePickers))")
+        for call in ["listedBinding(for: "] {
             let inPanel = occurrenceCount(call, in: panelShape)
             let onPage = occurrenceCount(call, in: mixerPageShape)
             expect(inPanel == 1 && onPage == 0,
@@ -25182,14 +25159,15 @@ struct MetricsTests {
                         && $0.settingsDestination.sectionAnchor == nil
                 },
                "every member points at the shared page itself, with no section anchor")
-        expect(AppFeature.quitWindowProtection.switchKey == DefaultsKey.quitProtectionSwitchEnabled
+        expect(AppFeature.quitWindowProtection.switchKey == nil
                 && AppFeature.windowMaximizer.pageSwitchKey == DefaultsKey.windowMaximizeEnabled
-                && Defaults.registeredDefaults[DefaultsKey.quitProtectionSwitchEnabled] as? Bool == false,
-               "protection gained the member switch a shared page needs, off until a shortcut is protected")
+                && Defaults.registeredDefaults[DefaultsKey.quitProtectionSwitchEnabled] == nil,
+               "protection exposes its concrete Quit and Close actions without a retired gate")
         let behaviorShape = settingsShape("WindowBehaviorSettings.swift")
-        expect(occurrenceCount("FeatureSwitchSection(unit: .windowBehavior)", in: behaviorShape) == 1
+        expect(occurrenceCount("FeatureSwitchSection(unit: .windowBehavior)", in: behaviorShape) == 0
+                && occurrenceCount("FeatureSwitchRow(feature: .windowMaximizer)", in: behaviorShape) == 1
                 && occurrenceCount("AppFeature.quitWindowProtection.isAvailable", in: behaviorShape) == 1,
-               "the page carries the unit's switches once and gates the protection block on its member")
+               "window behavior controls stay with their sections instead of a detached switch list")
 
         // Availability travels: the merged unit is installed when either half
         // was, and the protection keeps its own former state on its switch.
@@ -25238,7 +25216,7 @@ struct MetricsTests {
             behaviorDefaults.removePersistentDomain(forName: behaviorSuite)
         }
 
-        // MARK: - one keyboard page, one clipboard page
+        // MARK: - keyboard and clipboard destinations
 
         // Debounce, snippets and the super key are three things that happen
         // while you type, so they share the device's page.
@@ -25253,13 +25231,14 @@ struct MetricsTests {
                         && $0.settingsDestination.sectionAnchor != nil
                 },
                "each keyboard member has its own anchor on the shared page")
-        // Cleaning a copied link is a clipboard rewrite.
+        // URL cleaning shares the clipboard module lifecycle but has its own task page.
         expect(FeatureUnit.clipboard.features == [.clipboardHistory, .pastePlain, .urlCleaner]
                 && FeatureVisibilitySupport.features(for: .clipboard)
-                    == [.clipboardHistory, .pastePlain, .urlCleaner]
+                    == [.clipboardHistory, .pastePlain]
+                && FeatureVisibilitySupport.features(for: .urlCleaner) == [.urlCleaner]
                 && AppFeature.urlCleaner.settingsDestination
-                    == FeatureSettingsDestination(.clipboard, sectionAnchor: .urlCleaner),
-               "the URL cleaner is the clipboard page's third member")
+                    == FeatureSettingsDestination(.urlCleaner, sectionAnchor: .urlCleaner),
+               "URL Cleaner keeps the clipboard module lifecycle and opens its own page")
         // The two surfaces that can reach every other feature leave the input
         // devices behind.
         expect(FeatureGroup.globalEntry.units == [.radialMenu, .commandBar]

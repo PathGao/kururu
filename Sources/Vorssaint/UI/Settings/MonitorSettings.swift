@@ -5,9 +5,7 @@ import AppKit
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// The "Monitor" settings page: what is measured, how often, which metrics
-/// draw a history graph and when they raise an alert. What the menu bar icon
-/// and the panel look like belongs to the menu bar panel page.
+/// Display choices share the global menu bar and panel preferences.
 struct MonitorSettings: View {
     @ObservedObject private var l10n = L10n.shared
     @ObservedObject private var features = FeatureRuntime.shared
@@ -19,35 +17,45 @@ struct MonitorSettings: View {
 
 
     var body: some View {
-        Form {
-            Section {
+        SettingsForm {
+            MonitorEntrySettings()
+            SettingsSection {
                 MonitorPerformanceStatus()
             }
             .listRowBackground(Color.clear)
-            FeatureSwitchSection(unit: .monitor, usesGrid: true)
-                .listRowBackground(Color.clear)
-            Section {
-                Picker(l10n.s.monitorIntervalLabel, selection: $interval) {
-                    ForEach(1...5, id: \.self) { seconds in
-                        Text(intervalTitle(seconds)).tag(seconds)
+            SettingsSection(title: UXEntryStrings(l10n.language).samplingAndUnits, systemImage: "gauge.with.dots.needle.33percent") {
+                SettingsControlRow(title: l10n.s.monitorIntervalLabel,
+                                   systemImage: "timer",
+                                   caption: MonitorHistoryStrings.text(l10n.language).intervalHint) {
+                    Picker(l10n.s.monitorIntervalLabel, selection: $interval) {
+                        ForEach(1...5, id: \.self) { seconds in
+                            Text(intervalTitle(seconds)).tag(seconds)
+                        }
                     }
+                    .labelsHidden()
                 }
-                Text(MonitorHistoryStrings.text(l10n.language).intervalHint)
-                    .font(.caption).foregroundStyle(.secondary)
-                Picker(l10n.s.temperatures, selection: $temperatureUnit) {
-                    Text("°C").tag(TemperatureUnit.celsius.rawValue)
-                    Text("°F").tag(TemperatureUnit.fahrenheit.rawValue)
-                }
-                .pickerStyle(.segmented)
-                if AppFeature.monitorMemory.isAvailable {
-                    Picker(l10n.s.monitorMemoryMetricLabel, selection: $memoryMetric) {
-                        Text(l10n.s.memoryMetricUsed).tag("used")
-                        Text(l10n.s.memoryMetricApp).tag("app")
+                SettingsControlRow(title: l10n.s.temperatures, systemImage: "thermometer.medium") {
+                    Picker(l10n.s.temperatures, selection: $temperatureUnit) {
+                        Text("°C").tag(TemperatureUnit.celsius.rawValue)
+                        Text("°F").tag(TemperatureUnit.fahrenheit.rawValue)
                     }
                     .pickerStyle(.segmented)
+                    .labelsHidden()
+                }
+                if AppFeature.monitorMemory.isAvailable {
+                    SettingsControlRow(title: l10n.s.monitorMemoryMetricLabel, systemImage: "memorychip") {
+                        Picker(l10n.s.monitorMemoryMetricLabel, selection: $memoryMetric) {
+                            Text(l10n.s.memoryMetricUsed).tag("used")
+                            Text(l10n.s.memoryMetricApp).tag("app")
+                        }
+                        .pickerStyle(.segmented)
+                        .labelsHidden()
+                    }
                 }
             }
-            Section(MonitorHistoryStrings.text(l10n.language).history) {
+            SettingsSection(MonitorHistoryStrings.text(l10n.language).history) {
+                Text(MonitorHistoryStrings.text(l10n.language).visibilityHint)
+                    .font(SettingsTypography.caption).foregroundStyle(.secondary)
                 Picker(MonitorHistoryStrings.text(l10n.language).range, selection: $historyMinutes) {
                     ForEach(1...5, id: \.self) { value in
                         Text("\(value) \(MonitorHistoryStrings.text(l10n.language).minutes)").tag(value)
@@ -65,28 +73,27 @@ struct MonitorSettings: View {
                 }
             }
             monitorAlertsSection
-            if AppFeature.fanControl.isAvailable {
-                let fanStrings = FeatureStrings.fanControl(l10n.language)
-                Section {
-                    Text(fanStrings.settingsCaption)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text(l10n.s.betaFeatureWarning)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                } header: {
-                    HStack(spacing: 6) {
-                        Text(AppFeature.fanControl.name(l10n.s, language: l10n.language))
-                        Text(l10n.s.betaBadge)
-                            .font(.system(size: 8, weight: .bold))
-                            .foregroundStyle(Color.white)
-                            .padding(.horizontal, 5)
-                            .padding(.vertical, 1)
-                            .background(Capsule().fill(Color.accentColor))
-                    }
+            SettingsSection {
+                FeatureSwitchRow(feature: .fanControl)
+                Text(FeatureStrings.fanControl(l10n.language).settingsCaption)
+                    .font(SettingsTypography.caption)
+                    .foregroundStyle(.secondary)
+                Text(l10n.s.betaFeatureWarning)
+                    .font(SettingsTypography.caption)
+                    .foregroundStyle(.secondary)
+            } header: {
+                HStack(spacing: 6) {
+                    Text(AppFeature.fanControl.name(l10n.s, language: l10n.language))
+                    Text(l10n.s.betaBadge)
+                        .font(.system(size: 8, weight: .bold))
+                        .foregroundStyle(Color.white)
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 1)
+                        .background(Capsule().fill(Color.accentColor))
                 }
-                .settingsSectionAnchor(.fanControl)
             }
+            .saturation(AppFeature.fanControl.installBlockedReason == nil ? 1 : 0)
+            .settingsSectionAnchor(.fanControl)
         }
         .formStyle(.grouped)
         .onAppear {
@@ -109,7 +116,7 @@ struct MonitorSettings: View {
 
     private var monitorAlertsSection: some View {
         let text = FeatureStrings.monitorAlerts(l10n.language)
-        return Section(text.section) {
+        return SettingsSection(text.section) {
             MonitorAlertsControls(compact: false)
         }
     }

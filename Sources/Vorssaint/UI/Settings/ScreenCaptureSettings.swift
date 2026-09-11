@@ -26,10 +26,9 @@ struct ScreenCaptureSettings: View {
     }
 
     var body: some View {
-        Form {
-            FeatureSwitchSection(unit: .screenshot)
+        SettingsForm {
             if !availableTools.isEmpty {
-                Section {
+                SettingsSection(title: strings.screenCaptureTitle, systemImage: "viewfinder") {
                     if availableTools.count > 1 {
                         Picker(strings.screenCaptureTitle, selection: toolSelection) {
                             ForEach(availableTools, id: \.self) { tool in
@@ -42,13 +41,13 @@ struct ScreenCaptureSettings: View {
                         .labelsHidden()
                         .controlSize(.large)
                     }
+                    Divider()
                     ToolShortcutRows(tool: currentTool, keys: currentTool.dedicatedShortcut)
                         .id(currentTool)
                     if AppFeature.screenshot.isAvailable || AppFeature.screenRecorder.isAvailable {
+                        Divider()
                         RecentCapturesShortcutRows()
                     }
-                } header: {
-                    Text(strings.screenCaptureTitle)
                 }
             }
 
@@ -118,7 +117,7 @@ private struct RecentCapturesShortcutRows: View {
         }
         if enabled, service.shortcutRegistrationFailed {
             Text(l10n.s.shortcutUnavailable)
-                .font(.caption)
+                .font(SettingsTypography.caption)
                 .foregroundStyle(.orange)
         }
     }
@@ -167,7 +166,7 @@ private struct ToolShortcutRows: View {
             .disabled(!enabled)
         if enabled, service.toolShortcutRegistrationFailures.contains(tool) {
             Text(l10n.s.shortcutUnavailable)
-                .font(.caption)
+                .font(SettingsTypography.caption)
                 .foregroundStyle(.orange)
         }
     }
@@ -180,28 +179,25 @@ private struct ScreenTextCaptureSettings: View {
     @AppStorage(DefaultsKey.screenOCRDetectQRCodes) private var detectsQRCodes = true
 
     var body: some View {
-        Section {
+        SettingsSection(title: AppFeature.screenOCR.name(l10n.s, language: l10n.language),
+                        systemImage: "text.viewfinder") {
             Button {
                 ScreenTextService.shared.capture()
             } label: {
                 Label(AppFeature.screenOCR.name(l10n.s, language: l10n.language), systemImage: "text.viewfinder")
             }
-            Text(l10n.s.ocrCaption)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            Toggle(l10n.s.ocrRemoveLineBreaksToggle, isOn: $removesLineBreaks)
-            Text(l10n.s.ocrRemoveLineBreaksCaption)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            Toggle(l10n.s.ocrQRToggle, isOn: $detectsQRCodes)
-            Text(l10n.s.ocrQRCaption)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            .settingsAction(.primary)
+            SettingsInfo(text: l10n.s.ocrCaption, systemImage: "text.viewfinder")
+            Divider()
+            SettingsToggleWithCaption(title: l10n.s.ocrRemoveLineBreaksToggle,
+                                      caption: l10n.s.ocrRemoveLineBreaksCaption,
+                                      isOn: $removesLineBreaks)
+            SettingsToggleWithCaption(title: l10n.s.ocrQRToggle,
+                                      caption: l10n.s.ocrQRCaption,
+                                      isOn: $detectsQRCodes)
             if !permissions.screenRecording {
                 PermissionRow(kind: .screenRecording)
             }
-        } header: {
-            Text(AppFeature.screenOCR.name(l10n.s, language: l10n.language))
         }
         .settingsSectionAnchor(.screenOCR)
     }
@@ -213,15 +209,16 @@ private struct ColorCaptureSettings: View {
     @AppStorage(DefaultsKey.colorPickerBareHex) private var usesBareHex = false
 
     var body: some View {
-        Section {
+        SettingsSection(title: AppFeature.colorPicker.name(l10n.s, language: l10n.language),
+                        systemImage: "eyedropper") {
             Button {
                 ColorSamplerService.shared.pick()
             } label: {
                 Label(l10n.s.colorPickerPickNow, systemImage: "eyedropper")
             }
-            Text(l10n.s.colorPickerCaption)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            .settingsAction(.primary)
+            SettingsInfo(text: l10n.s.colorPickerCaption, systemImage: "eyedropper")
+            Divider()
             Picker(l10n.s.colorPickerFormatLabel, selection: $format) {
                 ForEach(ColorCopyFormat.allCases) { format in
                     Text(format.label).tag(format.rawValue)
@@ -231,8 +228,6 @@ private struct ColorCaptureSettings: View {
             if format == ColorCopyFormat.hex.rawValue {
                 Toggle(l10n.s.colorPickerBareHexToggle, isOn: $usesBareHex)
             }
-        } header: {
-            Text(AppFeature.colorPicker.name(l10n.s, language: l10n.language))
         }
         .settingsSectionAnchor(.colorPicker)
     }

@@ -26,17 +26,19 @@ struct DiskExclusionsList: View {
             ForEach(protection.excludedVolumes, id: \.self) { name in
                 HStack(spacing: 8) {
                     Image(systemName: "externaldrive")
-                        .font(.system(size: 11))
+                        .font(SettingsTypography.icon)
                         .foregroundStyle(.secondary)
                         .frame(width: 16)
                     Text(name)
-                        .font(.system(size: 12))
+                        .font(SettingsTypography.body)
                         .lineLimit(1)
                     Spacer()
                     Button {
                         protection.removeExcludedVolume(name)
                     } label: {
                         Image(systemName: "minus.circle.fill")
+                            .font(SettingsTypography.icon)
+                            .frame(width: 24, height: 24)
                             .foregroundStyle(.secondary)
                     }
                     .buttonStyle(.plain)
@@ -53,14 +55,14 @@ struct DiskExclusionsList: View {
                         addCustom()
                     }
                     .buttonStyle(.bordered)
-                    .controlSize(.small)
+                    .controlSize(.regular)
                     .disabled(customDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     Button(l10n.s.uninstallerCancel) {
                         customDraft = ""
                         showingCustomField = false
                     }
                     .buttonStyle(.plain)
-                    .controlSize(.small)
+                    .controlSize(.regular)
                 }
             } else {
                 let candidateDrives = mountedCandidateDrives
@@ -78,7 +80,7 @@ struct DiskExclusionsList: View {
                     } label: {
                         Label(strings.addButton, systemImage: "plus")
                     }
-                    .controlSize(.small)
+                    .controlSize(.regular)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 } else {
                     Button {
@@ -86,13 +88,13 @@ struct DiskExclusionsList: View {
                     } label: {
                         Label(strings.addButton, systemImage: "plus")
                     }
-                    .controlSize(.small)
+                    .controlSize(.regular)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
 
             Text(strings.caption)
-                .font(.caption)
+                .font(SettingsTypography.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)

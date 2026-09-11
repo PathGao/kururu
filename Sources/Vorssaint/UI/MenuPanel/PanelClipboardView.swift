@@ -10,6 +10,7 @@ struct PanelClipboardView: View {
     @AppStorage(DefaultsKey.clipboardHistoryShortcutEnabled) private var shortcutEnabled = true
     @State private var query = ""
     @State private var copiedID: UUID?
+    @State private var copyFailed = false
 
     var onClose: () -> Void
 
@@ -29,6 +30,9 @@ struct PanelClipboardView: View {
         VStack(alignment: .leading, spacing: 10) {
             header
             controls
+            if copyFailed {
+                Text(ClipboardActionStrings.copyFailed).font(.caption).foregroundStyle(.orange)
+            }
             entriesList
         }
         .onAppear { PanelInteractionState.shared.viewKeepsPopoverOpen = true }
@@ -73,18 +77,10 @@ struct PanelClipboardView: View {
                     .textFieldStyle(.roundedBorder)
                     .font(.system(size: 11))
                     .disabled(history.entries.isEmpty)
-                Button {
-                    history.clearRecent()
-                    copiedID = nil
-                } label: {
-                    Image(systemName: "trash")
-                        .font(.system(size: 11, weight: .semibold))
-                        .frame(width: 24, height: 22)
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.mini)
-                .help(text.clearRecent)
-                .disabled(history.recentEntries.isEmpty)
+                ClipboardClearRecentButton()
+                    .labelStyle(.iconOnly)
+                    .buttonStyle(.bordered)
+                    .controlSize(.mini)
                 Button {
                     history.showHistoryWindow()
                 } label: {
@@ -205,57 +201,42 @@ struct PanelClipboardView: View {
             entryPreview(entry)
             HStack(spacing: 6) {
                 Button {
-                    history.move(entry, .up)
-                } label: {
-                    Image(systemName: "arrow.up")
-                        .font(PanelTypography.meta)
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.mini)
-                .help(text.moveUp)
-                .disabled(!canReorderEntries || !history.canMove(entry, .up))
-                Button {
-                    history.move(entry, .down)
-                } label: {
-                    Image(systemName: "arrow.down")
-                        .font(PanelTypography.meta)
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.mini)
-                .help(text.moveDown)
-                .disabled(!canReorderEntries || !history.canMove(entry, .down))
-                Button {
-                    history.togglePin(entry)
-                } label: {
-                    Image(systemName: entry.isPinned ? "pin.slash" : "pin")
-                        .font(PanelTypography.meta)
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.mini)
-                .help(entry.isPinned ? text.unpin : text.pin)
-                Button {
                     // The tick means "it is on the clipboard", so it waits for
                     // the write instead of announcing one still queued behind
                     // a stalled pasteboard provider.
+                    copiedID = nil
+                    copyFailed = false
                     history.copy(entry) { copied in
+                        copyFailed = !copied
                         if copied { copiedID = entry.id }
                     }
                 } label: {
-                    Label(copiedID == entry.id ? text.copied : text.copy,
+                    Label(copiedID == entry.id ? text.copied : ClipboardActionStrings.copyOriginal(entry.kind),
                           systemImage: copiedID == entry.id ? "checkmark" : "doc.on.doc")
                         .font(PanelTypography.meta)
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.mini)
-                Button {
-                    history.remove(entry)
+                Menu {
+                    Button(entry.isPinned ? text.unpin : text.pin) {
+                        history.togglePin(entry)
+                    }
+                    Button(text.moveUp) { history.move(entry, .up) }
+                        .disabled(!canReorderEntries || !history.canMove(entry, .up))
+                    Button(text.moveDown) { history.move(entry, .down) }
+                        .disabled(!canReorderEntries || !history.canMove(entry, .down))
+                    Divider()
+                    Button(text.delete, role: .destructive) { history.remove(entry) }
                 } label: {
-                    Image(systemName: "trash")
+                    Label(text.moreActions, systemImage: "ellipsis")
+                        .labelStyle(.iconOnly)
                         .font(PanelTypography.meta)
                 }
-                .buttonStyle(.bordered)
-                .controlSize(.mini)
-                .help(text.delete)
+                .menuStyle(.borderlessButton)
+                .menuIndicator(.hidden)
+                .fixedSize()
+                .help(text.moreActions)
+                .accessibilityLabel(text.moreActions)
                 Spacer()
                 Text(entry.copiedAt, style: .time)
                     .font(PanelTypography.meta)

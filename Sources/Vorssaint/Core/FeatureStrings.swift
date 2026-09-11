@@ -65,8 +65,7 @@ extension ClipboardFeatureStrings {
         recent: "최근 항목",
         pin: "고정",
         unpin: "고정 해제",
-        clearRecent: "최근 항목 지우기",
-        clearAll: "고정되지 않은 항목 지우기",
+        clearRecent: "고정되지 않은 항목 지우기",
         empty: "저장한 텍스트가 없습니다",
         disabled: "복사한 텍스트를 저장하려면 기록을 켜세요.",
         search: "복사한 텍스트 검색",
@@ -82,7 +81,7 @@ extension ClipboardFeatureStrings {
         moveUp: "위로 이동",
         moveDown: "아래로 이동",
         noResults: "결과 없음",
-        newestFirst: "최신순",
+        searchResults: "검색 결과",
         active: "새 텍스트 저장 중",
         includeImagesFiles: "복사한 이미지와 파일도 저장",
         includeImagesFilesCaption: "이미지는 기록에 추가되고 파일은 위치 링크로 저장됩니다. 텍스트 항목처럼 고정하고 붙여넣을 수 있습니다.",
@@ -100,7 +99,8 @@ extension ClipboardFeatureStrings {
         autoClearOnDisplaySleep: "디스플레이가 꺼질 때 클립보드 지우기",
         autoClearOnScreenLock: "화면이 잠길 때 클립보드 지우기",
         autoClearCaption: "시스템 클립보드만 지웁니다. 이미 저장된 항목은 기록에 남습니다.",
-        deleteSelectedFormat: "%d개 삭제"
+        deleteSelectedFormat: "%d개 삭제",
+        moreActions: "추가 동작"
     )
 }
 
@@ -108,7 +108,7 @@ extension MonitorAlertFeatureStrings {
     static let ko = MonitorAlertFeatureStrings(
         section: "알림",
         caption: "선택한 기준에 도달하면 알림이 표시됩니다. CPU 사용량과 온도 알림은 기준을 약 12초 동안 계속 넘어야 하므로 짧은 급증은 무시됩니다. 반복 설정은 같은 알림의 반복만 제한합니다.",
-        notificationsDenied: "시스템 설정에서 Vorssaint 알림이 꺼져 있어 경고를 표시할 수 없습니다.",
+        notificationsDenied: "시스템 설정에서 \(AppInfo.name) 알림이 꺼져 있어 경고를 표시할 수 없습니다.",
         cpu: "높은 CPU 사용량",
         cpuTemperature: "높은 CPU 온도",
         memory: "위험한 메모리 압력",
@@ -160,8 +160,7 @@ struct ClipboardFeatureStrings {
     var recent: String = "Recent"
     var pin: String = "Pin"
     var unpin: String = "Unpin"
-    var clearRecent: String = "Clear recent"
-    var clearAll: String = "Clear unpinned"
+    var clearRecent: String = "Clear unpinned"
     var empty: String = "No saved text"
     var disabled: String = "Enable history to start saving copied text."
     var search: String = "Search copied text"
@@ -173,11 +172,11 @@ struct ClipboardFeatureStrings {
     var selectShortcutAction: String = "Select"
     var pasteSelectedFormat: String = "Paste %d"
     var copySelectedFormat: String = "Copy %d"
-    var clearSelection: String = "Clear selection"
+    var clearSelection: String = "Deselect"
     var moveUp: String = "Move up"
     var moveDown: String = "Move down"
     var noResults: String = "No results"
-    var newestFirst: String = "Newest first"
+    var searchResults: String = "Search results"
     var active: String = "Saving new text"
     var includeImagesFiles: String = "Also save copied images and files"
     var includeImagesFilesCaption: String = "Images join the history and files are remembered as links to their location. Pin and paste them like any text item."
@@ -196,6 +195,9 @@ struct ClipboardFeatureStrings {
     var autoClearOnScreenLock: String = "Clear clipboard on screen lock"
     var autoClearCaption: String = "Clears the system clipboard only. Items already saved stay in the history."
     var deleteSelectedFormat: String = "Delete %d"
+    var moreActions: String = "More actions"
+    var editSaveFailed: String = "Could not save this edit. Your draft is still here. The history may be full or this item may no longer be available."
+    var pinFailed: String = "Could not change this pin. The history may be full or the item may no longer be available."
 
     static let enUS = ClipboardFeatureStrings()
 
@@ -218,8 +220,7 @@ struct ClipboardFeatureStrings {
         recent: "Recentes",
         pin: "Fixar",
         unpin: "Desfixar",
-        clearRecent: "Limpar recentes",
-        clearAll: "Limpar não fixados",
+        clearRecent: "Limpar não fixados",
         empty: "Nenhum texto salvo",
         disabled: "Ative o histórico para começar a guardar textos copiados.",
         search: "Buscar textos copiados",
@@ -231,11 +232,11 @@ struct ClipboardFeatureStrings {
         selectShortcutAction: "Selecionar",
         pasteSelectedFormat: "Colar %d",
         copySelectedFormat: "Copiar %d",
-        clearSelection: "Limpar seleção",
+        clearSelection: "Desmarcar seleção",
         moveUp: "Mover para cima",
         moveDown: "Mover para baixo",
         noResults: "Nenhum resultado",
-        newestFirst: "Mais recentes primeiro",
+        searchResults: "Resultados da pesquisa",
         active: "Guardando novos textos",
         includeImagesFiles: "Guardar também imagens e arquivos copiados",
         includeImagesFilesCaption: "Imagens entram no histórico e arquivos são lembrados como links para o local deles. Fixe e cole como qualquer texto.",
@@ -253,7 +254,8 @@ struct ClipboardFeatureStrings {
         autoClearOnDisplaySleep: "Limpar o clipboard quando a tela apagar",
         autoClearOnScreenLock: "Limpar o clipboard ao bloquear a tela",
         autoClearCaption: "Limpa apenas o clipboard do sistema. Os itens já guardados continuam no histórico.",
-        deleteSelectedFormat: "Apagar %d"
+        deleteSelectedFormat: "Apagar %d",
+        moreActions: "Mais ações"
     )
 
     static let tr = ClipboardFeatureStrings(
@@ -275,8 +277,7 @@ struct ClipboardFeatureStrings {
         recent: "Son",
         pin: "Sabitle",
         unpin: "Sabitlemeyi kaldır",
-        clearRecent: "Sonları temizle",
-        clearAll: "Sabitlenmeyenleri temizle",
+        clearRecent: "Sabitlenmeyenleri temizle",
         empty: "Kayıtlı metin yok",
         disabled: "Kopyalanan metinleri kaydetmeye başlamak için geçmişi etkinleştir.",
         search: "Kopyalanan metinlerde ara",
@@ -288,11 +289,11 @@ struct ClipboardFeatureStrings {
         selectShortcutAction: "Seç",
         pasteSelectedFormat: "%d öğeyi yapıştır",
         copySelectedFormat: "%d öğeyi kopyala",
-        clearSelection: "Seçimi temizle",
+        clearSelection: "Seçimi kaldır",
         moveUp: "Yukarı taşı",
         moveDown: "Aşağı taşı",
         noResults: "Sonuç yok",
-        newestFirst: "En yeniler önce",
+        searchResults: "Arama sonuçları",
         active: "Yeni metinler kaydediliyor",
         includeImagesFiles: "Kopyalanan görselleri ve dosyaları da kaydet",
         includeImagesFilesCaption: "Görseller geçmişe eklenir, dosyalar konumlarına bağlantı olarak hatırlanır. Metin gibi sabitle ve yapıştır.",
@@ -310,7 +311,8 @@ struct ClipboardFeatureStrings {
         autoClearOnDisplaySleep: "Ekran uykuya geçince panoyu temizle",
         autoClearOnScreenLock: "Ekran kilitlenince panoyu temizle",
         autoClearCaption: "Yalnızca sistem panosunu temizler. Kaydedilmiş ögeler geçmişte kalır.",
-        deleteSelectedFormat: "%d öğeyi sil"
+        deleteSelectedFormat: "%d öğeyi sil",
+        moreActions: "Diğer işlemler"
     )
 
     static let ru = ClipboardFeatureStrings(
@@ -332,8 +334,7 @@ struct ClipboardFeatureStrings {
         recent: "Недавние",
         pin: "Закрепить",
         unpin: "Открепить",
-        clearRecent: "Очистить недавнее",
-        clearAll: "Очистить незакреплённые",
+        clearRecent: "Очистить незакреплённые",
         empty: "Нет сохранённого текста",
         disabled: "Включите историю, чтобы начать сохранять скопированный текст.",
         search: "Поиск по скопированному тексту",
@@ -349,7 +350,7 @@ struct ClipboardFeatureStrings {
         moveUp: "Вверх",
         moveDown: "Вниз",
         noResults: "Ничего не найдено",
-        newestFirst: "Сначала новые",
+        searchResults: "Результаты поиска",
         active: "Сохраняет новые элементы",
         includeImagesFiles: "Сохранять также изображения и файлы",
         includeImagesFilesCaption: "Изображения попадают в историю, а файлы запоминаются как ссылки на их расположение. Закрепляйте и вставляйте их как текст.",
@@ -367,7 +368,8 @@ struct ClipboardFeatureStrings {
         autoClearOnDisplaySleep: "Очищать буфер обмена при выключении экрана",
         autoClearOnScreenLock: "Очищать буфер обмена при блокировке экрана",
         autoClearCaption: "Очищается только системный буфер обмена. Сохранённые элементы остаются в истории.",
-        deleteSelectedFormat: "Удалить: %d"
+        deleteSelectedFormat: "Удалить: %d",
+        moreActions: "Другие действия"
     )
 
     static let es = ClipboardFeatureStrings(
@@ -389,8 +391,7 @@ struct ClipboardFeatureStrings {
         recent: "Recientes",
         pin: "Fijar",
         unpin: "Desfijar",
-        clearRecent: "Limpiar recientes",
-        clearAll: "Limpiar no fijados",
+        clearRecent: "Limpiar no fijados",
         empty: "No hay texto guardado",
         disabled: "Activa el historial para empezar a guardar texto copiado.",
         search: "Buscar texto copiado",
@@ -402,11 +403,11 @@ struct ClipboardFeatureStrings {
         selectShortcutAction: "Seleccionar",
         pasteSelectedFormat: "Pegar %d",
         copySelectedFormat: "Copiar %d",
-        clearSelection: "Limpiar selección",
+        clearSelection: "Deseleccionar",
         moveUp: "Subir",
         moveDown: "Bajar",
         noResults: "Sin resultados",
-        newestFirst: "Más recientes primero",
+        searchResults: "Resultados de búsqueda",
         active: "Guardando nuevo texto",
         includeImagesFiles: "Guardar también imágenes y archivos copiados",
         includeImagesFilesCaption: "Las imágenes entran en el historial y los archivos se recuerdan como enlaces a su ubicación. Fíjalos y pégalos como cualquier texto.",
@@ -424,7 +425,10 @@ struct ClipboardFeatureStrings {
         autoClearOnDisplaySleep: "Vaciar el portapapeles al apagarse la pantalla",
         autoClearOnScreenLock: "Vaciar el portapapeles al bloquear la pantalla",
         autoClearCaption: "Solo se vacía el portapapeles del sistema. Los elementos guardados siguen en el historial.",
-        deleteSelectedFormat: "Eliminar %d"
+        deleteSelectedFormat: "Eliminar %d",
+        moreActions: "Más acciones",
+        editSaveFailed: "No se pudo guardar el cambio. El borrador se conserva. El historial puede estar lleno o el ítem ya no estar disponible.",
+        pinFailed: "No se pudo cambiar el estado de fijación. El historial puede estar lleno o el ítem ya no estar disponible."
     )
 
     static let de = ClipboardFeatureStrings(
@@ -446,8 +450,7 @@ struct ClipboardFeatureStrings {
         recent: "Zuletzt",
         pin: "Anheften",
         unpin: "Lösen",
-        clearRecent: "Zuletzt löschen",
-        clearAll: "Nicht angeheftete löschen",
+        clearRecent: "Nicht angeheftete löschen",
         empty: "Kein gespeicherter Text",
         disabled: "Aktiviere den Verlauf, um kopierten Text zu speichern.",
         search: "Kopierten Text suchen",
@@ -459,11 +462,11 @@ struct ClipboardFeatureStrings {
         selectShortcutAction: "Auswählen",
         pasteSelectedFormat: "%d einfügen",
         copySelectedFormat: "%d kopieren",
-        clearSelection: "Auswahl löschen",
+        clearSelection: "Auswahl aufheben",
         moveUp: "Nach oben",
         moveDown: "Nach unten",
         noResults: "Keine Ergebnisse",
-        newestFirst: "Neueste zuerst",
+        searchResults: "Suchergebnisse",
         active: "Speichert neuen Text",
         includeImagesFiles: "Auch kopierte Bilder und Dateien speichern",
         includeImagesFilesCaption: "Bilder wandern in den Verlauf, Dateien werden als Verweise auf ihren Ort gemerkt. Anheften und Einsetzen wie bei Text.",
@@ -481,7 +484,10 @@ struct ClipboardFeatureStrings {
         autoClearOnDisplaySleep: "Zwischenablage beim Ausschalten des Bildschirms leeren",
         autoClearOnScreenLock: "Zwischenablage beim Sperren des Bildschirms leeren",
         autoClearCaption: "Leert nur die Zwischenablage des Systems. Bereits gesicherte Einträge bleiben im Verlauf.",
-        deleteSelectedFormat: "%d löschen"
+        deleteSelectedFormat: "%d löschen",
+        moreActions: "Weitere Aktionen",
+        editSaveFailed: "Die Änderung konnte nicht gespeichert werden. Dein Entwurf bleibt erhalten. Der Verlauf ist möglicherweise voll oder der Eintrag nicht mehr verfügbar.",
+        pinFailed: "Der Anheftstatus konnte nicht geändert werden. Der Verlauf ist möglicherweise voll oder der Eintrag nicht mehr verfügbar."
     )
 
     static let fr = ClipboardFeatureStrings(
@@ -503,8 +509,7 @@ struct ClipboardFeatureStrings {
         recent: "Récents",
         pin: "Épingler",
         unpin: "Désépingler",
-        clearRecent: "Effacer les récents",
-        clearAll: "Effacer non épinglés",
+        clearRecent: "Effacer non épinglés",
         empty: "Aucun texte enregistré",
         disabled: "Activez l’historique pour commencer à enregistrer le texte copié.",
         search: "Rechercher le texte copié",
@@ -516,11 +521,11 @@ struct ClipboardFeatureStrings {
         selectShortcutAction: "Sélectionner",
         pasteSelectedFormat: "Coller %d",
         copySelectedFormat: "Copier %d",
-        clearSelection: "Effacer la sélection",
+        clearSelection: "Désélectionner",
         moveUp: "Monter",
         moveDown: "Descendre",
         noResults: "Aucun résultat",
-        newestFirst: "Plus récents d’abord",
+        searchResults: "Résultats de recherche",
         active: "Enregistre le nouveau texte",
         includeImagesFiles: "Enregistrer aussi les images et fichiers copiés",
         includeImagesFilesCaption: "Les images rejoignent l’historique et les fichiers sont mémorisés comme des liens vers leur emplacement. Épinglez-les et collez-les comme du texte.",
@@ -538,7 +543,10 @@ struct ClipboardFeatureStrings {
         autoClearOnDisplaySleep: "Vider le presse-papiers à l’extinction de l’écran",
         autoClearOnScreenLock: "Vider le presse-papiers au verrouillage de l’écran",
         autoClearCaption: "Seul le presse-papiers du système est vidé. Les éléments enregistrés restent dans l’historique.",
-        deleteSelectedFormat: "Supprimer %d"
+        deleteSelectedFormat: "Supprimer %d",
+        moreActions: "Autres actions",
+        editSaveFailed: "Impossible d’enregistrer la modification. Le brouillon est conservé. L’historique est peut-être plein ou cet élément n’est plus disponible.",
+        pinFailed: "Impossible de modifier l’épinglage. L’historique est peut-être plein ou cet élément n’est plus disponible."
     )
 
     static let it = ClipboardFeatureStrings(
@@ -560,8 +568,7 @@ struct ClipboardFeatureStrings {
         recent: "Recenti",
         pin: "Fissa",
         unpin: "Sblocca",
-        clearRecent: "Cancella recenti",
-        clearAll: "Cancella non fissati",
+        clearRecent: "Cancella non fissati",
         empty: "Nessun testo salvato",
         disabled: "Attiva la cronologia per iniziare a salvare il testo copiato.",
         search: "Cerca testo copiato",
@@ -573,11 +580,11 @@ struct ClipboardFeatureStrings {
         selectShortcutAction: "Seleziona",
         pasteSelectedFormat: "Incolla %d",
         copySelectedFormat: "Copia %d",
-        clearSelection: "Cancella selezione",
+        clearSelection: "Deseleziona",
         moveUp: "Sposta su",
         moveDown: "Sposta giù",
         noResults: "Nessun risultato",
-        newestFirst: "Più recenti prima",
+        searchResults: "Risultati di ricerca",
         active: "Salvataggio nuovo testo",
         includeImagesFiles: "Salva anche immagini e file copiati",
         includeImagesFilesCaption: "Le immagini entrano nella cronologia e i file vengono ricordati come collegamenti alla loro posizione. Fissali e incollali come qualsiasi testo.",
@@ -595,7 +602,8 @@ struct ClipboardFeatureStrings {
         autoClearOnDisplaySleep: "Svuota gli appunti quando lo schermo si spegne",
         autoClearOnScreenLock: "Svuota gli appunti al blocco dello schermo",
         autoClearCaption: "Svuota solo gli appunti di sistema. Gli elementi salvati restano nella cronologia.",
-        deleteSelectedFormat: "Elimina %d"
+        deleteSelectedFormat: "Elimina %d",
+        moreActions: "Altre azioni"
     )
 
     static let ja = ClipboardFeatureStrings(
@@ -617,8 +625,7 @@ struct ClipboardFeatureStrings {
         recent: "最近",
         pin: "固定",
         unpin: "固定解除",
-        clearRecent: "最近を消去",
-        clearAll: "未固定を消去",
+        clearRecent: "未固定を消去",
         empty: "保存済みテキストなし",
         disabled: "履歴を有効にすると、コピーしたテキストを保存できます。",
         search: "コピーしたテキストを検索",
@@ -634,7 +641,7 @@ struct ClipboardFeatureStrings {
         moveUp: "上へ移動",
         moveDown: "下へ移動",
         noResults: "結果なし",
-        newestFirst: "新しい順",
+        searchResults: "検索結果",
         active: "新しいテキストを保存中",
         includeImagesFiles: "コピーした画像やファイルも保存",
         includeImagesFilesCaption: "画像は履歴に入り、ファイルは場所へのリンクとして記憶されます。テキストと同じようにピン留めやペーストができます。",
@@ -652,7 +659,10 @@ struct ClipboardFeatureStrings {
         autoClearOnDisplaySleep: "ディスプレイスリープ時にクリップボードを消去",
         autoClearOnScreenLock: "画面ロック時にクリップボードを消去",
         autoClearCaption: "システムのクリップボードのみを消去します。保存済みの項目は履歴に残ります。",
-        deleteSelectedFormat: "%d件を削除"
+        deleteSelectedFormat: "%d件を削除",
+        moreActions: "その他の操作",
+        editSaveFailed: "変更を保存できませんでした。下書きは保持されています。履歴の容量不足か、元の項目が利用できなくなった可能性があります。",
+        pinFailed: "固定状態を変更できませんでした。履歴の容量不足か、項目が利用できなくなった可能性があります。"
     )
 
     static let zhHans = ClipboardFeatureStrings(
@@ -665,7 +675,7 @@ struct ClipboardFeatureStrings {
         limit: "数量上限",
         limitUnlimited: "无限制",
         showInPanel: "在面板中显示",
-        shortcut: "历史快捷键",
+        shortcut: "查看剪贴板快捷键",
         shortcutCaption: "打开快速窗口，支持搜索、固定项目，以及用 ⌘1 到 ⌘9 粘贴到上一个 App。",
         shortcutHint: "点击整行即可粘贴到上一个 App。⌘+点击可选择多项；⌘C 仅拷贝不粘贴。",
         clickRowShortcut: "点击整行",
@@ -674,8 +684,7 @@ struct ClipboardFeatureStrings {
         recent: "最近",
         pin: "固定",
         unpin: "取消固定",
-        clearRecent: "清除最近项目",
-        clearAll: "清除未固定项目",
+        clearRecent: "清除未固定项目",
         empty: "没有保存的文本",
         disabled: "启用历史记录后即可开始保存拷贝的文本。",
         search: "搜索拷贝的文本",
@@ -687,11 +696,11 @@ struct ClipboardFeatureStrings {
         selectShortcutAction: "选择",
         pasteSelectedFormat: "粘贴 %d 项",
         copySelectedFormat: "拷贝 %d 项",
-        clearSelection: "清除选择",
+        clearSelection: "取消选择",
         moveUp: "上移",
         moveDown: "下移",
         noResults: "没有结果",
-        newestFirst: "最新优先",
+        searchResults: "搜索结果",
         active: "正在保存新文本",
         includeImagesFiles: "同时保存拷贝的图片和文件",
         includeImagesFilesCaption: "图片会进入历史记录，文件会以其位置链接的形式被记住。可以像文本一样固定和粘贴。",
@@ -709,7 +718,10 @@ struct ClipboardFeatureStrings {
         autoClearOnDisplaySleep: "显示器睡眠时清空剪贴板",
         autoClearOnScreenLock: "锁定屏幕时清空剪贴板",
         autoClearCaption: "仅清空系统剪贴板，已保存的条目仍保留在历史记录中。",
-        deleteSelectedFormat: "删除 %d 项"
+        deleteSelectedFormat: "删除 %d 项",
+        moreActions: "更多操作",
+        editSaveFailed: "无法保存修改，草稿仍保留。历史容量可能不足，或原条目已不可用。",
+        pinFailed: "无法更改置顶状态。历史容量可能不足，或条目已不可用。"
     )
 
     static let zhTW = ClipboardFeatureStrings(
@@ -731,8 +743,7 @@ struct ClipboardFeatureStrings {
         recent: "最近",
         pin: "釘選",
         unpin: "取消釘選",
-        clearRecent: "清除最近項目",
-        clearAll: "清除未釘選項目",
+        clearRecent: "清除未釘選項目",
         empty: "沒有儲存的文字",
         disabled: "開啟紀錄後，即可開始儲存複製的文字。",
         search: "搜尋複製的文字",
@@ -744,11 +755,11 @@ struct ClipboardFeatureStrings {
         selectShortcutAction: "選取",
         pasteSelectedFormat: "貼上 %d 個",
         copySelectedFormat: "拷貝 %d 個",
-        clearSelection: "清除選取項目",
+        clearSelection: "取消選取",
         moveUp: "上移",
         moveDown: "下移",
         noResults: "沒有結果",
-        newestFirst: "最新優先",
+        searchResults: "搜尋結果",
         active: "正在儲存新文字",
         includeImagesFiles: "同時保存拷貝的圖片和檔案",
         includeImagesFilesCaption: "圖片會進入歷史記錄，檔案會以其位置連結的形式被記住。可以像文字一樣固定和貼上。",
@@ -766,7 +777,8 @@ struct ClipboardFeatureStrings {
         autoClearOnDisplaySleep: "顯示器睡眠時清除剪貼簿",
         autoClearOnScreenLock: "鎖定螢幕時清除剪貼簿",
         autoClearCaption: "僅清除系統剪貼簿，已儲存的項目仍保留在記錄中。",
-        deleteSelectedFormat: "刪除 %d 個"
+        deleteSelectedFormat: "刪除 %d 個",
+        moreActions: "更多操作"
     )
 
     static let zhHK = ClipboardFeatureStrings(
@@ -788,8 +800,7 @@ struct ClipboardFeatureStrings {
         recent: "最近",
         pin: "釘選",
         unpin: "取消釘選",
-        clearRecent: "清除最近項目",
-        clearAll: "清除未釘選項目",
+        clearRecent: "清除未釘選項目",
         empty: "沒有已儲存的文字",
         disabled: "開啟記錄後，即可開始儲存複製的文字。",
         search: "搜尋複製的文字",
@@ -801,11 +812,11 @@ struct ClipboardFeatureStrings {
         selectShortcutAction: "選取",
         pasteSelectedFormat: "貼上 %d 個",
         copySelectedFormat: "複製 %d 個",
-        clearSelection: "清除所選項目",
+        clearSelection: "取消選取",
         moveUp: "上移",
         moveDown: "下移",
         noResults: "沒有結果",
-        newestFirst: "最新優先",
+        searchResults: "搜尋結果",
         active: "正在儲存新文字",
         includeImagesFiles: "同時儲存拷貝的圖片和檔案",
         includeImagesFilesCaption: "圖片會加入歷史記錄，檔案會以其位置連結的形式被記住。可以像文字一樣固定和貼上。",
@@ -823,14 +834,15 @@ struct ClipboardFeatureStrings {
         autoClearOnDisplaySleep: "顯示器睡眠時清除剪貼簿",
         autoClearOnScreenLock: "鎖定螢幕時清除剪貼簿",
         autoClearCaption: "只會清除系統剪貼簿，已儲存的項目仍會保留在記錄中。",
-        deleteSelectedFormat: "刪除 %d 個"
+        deleteSelectedFormat: "刪除 %d 個",
+        moreActions: "更多操作"
     )
 }
 
 struct MonitorAlertFeatureStrings {
     var section: String = "Alerts"
     var caption: String = "Alerts fire when their selected limits are reached. CPU use and temperature alerts ignore spikes shorter than about 12 seconds. The repeat setting only limits repeats of the same alert."
-    var notificationsDenied: String = "Notifications for Vorssaint are off in System Settings, so alerts cannot appear."
+    var notificationsDenied: String = "Notifications for \(AppInfo.name) are off in System Settings, so alerts cannot appear."
     var cpu: String = "High CPU"
     var cpuTemperature: String = "High CPU temperature"
     var memory: String = "Critical memory pressure"
@@ -866,7 +878,7 @@ struct MonitorAlertFeatureStrings {
     static let ptBR = MonitorAlertFeatureStrings(
         section: "Alertas",
         caption: "Os alertas disparam quando os limites escolhidos são atingidos. O uso da CPU e os alertas de temperatura ignoram picos com menos de 12 segundos. A opção de repetição só limita o mesmo alerta.",
-        notificationsDenied: "As notificações do Vorssaint estão desativadas nos Ajustes do Sistema, então os alertas não aparecem.",
+        notificationsDenied: "As notificações do \(AppInfo.name) estão desativadas nos Ajustes do Sistema, então os alertas não aparecem.",
         cpu: "CPU alta",
         cpuTemperature: "Temperatura alta da CPU",
         memory: "Pressão de memória crítica",
@@ -901,7 +913,7 @@ struct MonitorAlertFeatureStrings {
     static let tr = MonitorAlertFeatureStrings(
         section: "Uyarılar",
         caption: "Uyarılar seçilen eşiklere ulaşıldığında gönderilir. CPU kullanımı ve sıcaklık uyarıları yaklaşık 12 saniyeden kısa sıçramaları yok sayar. Tekrarlama ayarı yalnızca aynı uyarının tekrarlanmasını sınırlar.",
-        notificationsDenied: "Sistem Ayarları’nda Vorssaint bildirimleri kapalı, bu yüzden uyarılar görünemez.",
+        notificationsDenied: "Sistem Ayarları’nda \(AppInfo.name) bildirimleri kapalı, bu yüzden uyarılar görünemez.",
         cpu: "Yüksek CPU",
         cpuTemperature: "Yüksek CPU sıcaklığı",
         memory: "Kritik bellek basıncı",
@@ -936,7 +948,7 @@ struct MonitorAlertFeatureStrings {
     static let ru = MonitorAlertFeatureStrings(
         section: "Оповещения",
         caption: "Оповещения появляются при достижении выбранных порогов. Загрузка CPU и температурные оповещения игнорируют скачки короче примерно 12 секунд. Настройка повтора ограничивает только повтор одного и того же оповещения.",
-        notificationsDenied: "Уведомления Vorssaint выключены в Системных настройках, поэтому оповещения не появятся.",
+        notificationsDenied: "Уведомления \(AppInfo.name) выключены в Системных настройках, поэтому оповещения не появятся.",
         cpu: "Высокая нагрузка CPU",
         cpuTemperature: "Высокая температура CPU",
         memory: "Критическое давление памяти",
@@ -971,7 +983,7 @@ struct MonitorAlertFeatureStrings {
     static let es = MonitorAlertFeatureStrings(
         section: "Alertas",
         caption: "Las alertas aparecen cuando se alcanzan los límites elegidos. El uso de CPU y las alertas de temperatura ignoran los picos de menos de unos 12 segundos. El ajuste de repetición solo limita la repetición de la misma alerta.",
-        notificationsDenied: "Las notificaciones de Vorssaint están desactivadas en Ajustes del Sistema, así que las alertas no aparecen.",
+        notificationsDenied: "Las notificaciones de \(AppInfo.name) están desactivadas en Ajustes del Sistema, así que las alertas no aparecen.",
         cpu: "CPU alta",
         cpuTemperature: "Temperatura de CPU alta",
         memory: "Presión de memoria crítica",
@@ -1006,7 +1018,7 @@ struct MonitorAlertFeatureStrings {
     static let de = MonitorAlertFeatureStrings(
         section: "Warnungen",
         caption: "Warnungen erscheinen, wenn die gewählten Grenzwerte erreicht werden. CPU-Auslastung und Temperaturwarnungen ignorieren Spitzen, die kürzer als etwa 12 Sekunden dauern. Die Wiederholungseinstellung begrenzt nur die Wiederholung derselben Warnung.",
-        notificationsDenied: "Mitteilungen für Vorssaint sind in den Systemeinstellungen aus, daher können keine Warnungen erscheinen.",
+        notificationsDenied: "Mitteilungen für \(AppInfo.name) sind in den Systemeinstellungen aus, daher können keine Warnungen erscheinen.",
         cpu: "Hohe CPU",
         cpuTemperature: "Hohe CPU-Temperatur",
         memory: "Kritischer Speicherdruck",
@@ -1041,7 +1053,7 @@ struct MonitorAlertFeatureStrings {
     static let fr = MonitorAlertFeatureStrings(
         section: "Alertes",
         caption: "Les alertes apparaissent lorsque les seuils choisis sont atteints. L’utilisation du processeur et les alertes de température ignorent les pics de moins de 12 secondes environ. Le réglage de répétition limite uniquement la répétition de la même alerte.",
-        notificationsDenied: "Les notifications de Vorssaint sont désactivées dans Réglages Système, les alertes ne peuvent donc pas apparaître.",
+        notificationsDenied: "Les notifications de \(AppInfo.name) sont désactivées dans Réglages Système, les alertes ne peuvent donc pas apparaître.",
         cpu: "CPU élevé",
         cpuTemperature: "Température CPU élevée",
         memory: "Pression mémoire critique",
@@ -1076,7 +1088,7 @@ struct MonitorAlertFeatureStrings {
     static let it = MonitorAlertFeatureStrings(
         section: "Avvisi",
         caption: "Gli avvisi compaiono quando vengono raggiunte le soglie scelte. L’uso della CPU e gli avvisi di temperatura ignorano i picchi più brevi di circa 12 secondi. L’impostazione di ripetizione limita solo la ripetizione dello stesso avviso.",
-        notificationsDenied: "Le notifiche di Vorssaint sono disattivate in Impostazioni di Sistema, quindi gli avvisi non compaiono.",
+        notificationsDenied: "Le notifiche di \(AppInfo.name) sono disattivate in Impostazioni di Sistema, quindi gli avvisi non compaiono.",
         cpu: "CPU alta",
         cpuTemperature: "Temperatura CPU alta",
         memory: "Pressione memoria critica",
@@ -1111,7 +1123,7 @@ struct MonitorAlertFeatureStrings {
     static let ja = MonitorAlertFeatureStrings(
         section: "アラート",
         caption: "選択したしきい値に達すると通知します。CPU 使用率と温度の通知は約 12 秒未満の短い急上昇を無視します。繰り返し設定は同じ通知の繰り返しだけを制限します。",
-        notificationsDenied: "システム設定でVorssaintの通知がオフのため、アラートは表示されません。",
+        notificationsDenied: "システム設定で\(AppInfo.name)の通知がオフのため、アラートは表示されません。",
         cpu: "CPU 高負荷",
         cpuTemperature: "CPU 温度が高い",
         memory: "メモリ圧迫が深刻",
@@ -1146,7 +1158,7 @@ struct MonitorAlertFeatureStrings {
     static let zhHans = MonitorAlertFeatureStrings(
         section: "提醒",
         caption: "达到所选阈值时会发出提醒。CPU 使用率和温度提醒会忽略短于约 12 秒的短暂峰值。重复设置仅限制同一提醒的重复频率。",
-        notificationsDenied: "Vorssaint 的通知已在系统设置中关闭，警报无法显示。",
+        notificationsDenied: "\(AppInfo.name) 的通知已在系统设置中关闭，警报无法显示。",
         cpu: "CPU 过高",
         cpuTemperature: "CPU 温度过高",
         memory: "内存压力严重",
@@ -1181,7 +1193,7 @@ struct MonitorAlertFeatureStrings {
     static let zhTW = MonitorAlertFeatureStrings(
         section: "提醒",
         caption: "達到所選門檻時會發出提醒。CPU 使用率和溫度提醒會忽略短於約 12 秒的短暫尖峰。重複設定只限制相同提醒的重複頻率。",
-        notificationsDenied: "Vorssaint 的通知已在系統設定中關閉，警示無法顯示。",
+        notificationsDenied: "\(AppInfo.name) 的通知已在系統設定中關閉，警示無法顯示。",
         cpu: "CPU 使用率過高",
         cpuTemperature: "CPU 溫度過高",
         memory: "記憶體壓力過高",
@@ -1216,7 +1228,7 @@ struct MonitorAlertFeatureStrings {
     static let zhHK = MonitorAlertFeatureStrings(
         section: "提示",
         caption: "達到所選門檻時會發出提示。CPU 使用率和溫度提示會忽略短於約 12 秒的短暫尖峰。重複設定只限制相同提示的重複頻率。",
-        notificationsDenied: "Vorssaint 的通知已在系統設定中關閉，警示無法顯示。",
+        notificationsDenied: "\(AppInfo.name) 的通知已在系統設定中關閉，警示無法顯示。",
         cpu: "CPU 使用率過高",
         cpuTemperature: "CPU 溫度過高",
         memory: "記憶體壓力過高",

@@ -249,7 +249,10 @@ final class WhatsAppDownloadOrganizer: ObservableObject {
         }
         guard AppFeature.cleaner.isAvailable,
               WhatsAppDownloadSupport.isEnabled,
-              UserDefaults.standard.bool(forKey: DefaultsKey.whatsAppOrganizerEnabled),
+              WhatsAppOrganizerPolicy.allowsRun(
+                manual: manual,
+                automaticEnabled: UserDefaults.standard.bool(forKey: DefaultsKey.whatsAppOrganizerEnabled),
+                accessConfirmed: UserDefaults.standard.bool(forKey: DefaultsKey.whatsAppDownloadsAccessConfirmed)),
               let root = downloadsURL,
               let settings = settings(root: root) else {
             phase = .idle

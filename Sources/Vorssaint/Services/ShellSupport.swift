@@ -124,14 +124,13 @@ enum AdminShell {
 /// toggle without asking for the administrator password every time.
 /// The password is asked once, when installing (or removing) the rule.
 enum Sudoers {
-    static let rulePath = "/etc/sudoers.d/vorssaint-clamshell"
-    // Rule files written under earlier names; removed whenever the rule is
-    // (re)installed or removed, so the closed-lid permission migrates without an
-    // extra password prompt.
-    private static let legacyRulePaths = [
-        "/etc/sudoers.d/vorssaint-utils-clamshell",
-        "/etc/sudoers.d/vorss-clamshell",
-    ]
+    #if VORSSAINT_DEVELOPMENT
+    static let rulePath = ProductIdentityBoundarySupport.sudoersRulePath(development: true)
+    #else
+    static let rulePath = ProductIdentityBoundarySupport.sudoersRulePath(development: false)
+    #endif
+    // The fork never owns or removes the upstream product's rules.
+    private static let legacyRulePaths: [String] = []
 
     /// Serializes every touch of the SleepDisabled state. The probe below
     /// re-applies the value it just read; racing it against a concurrent
@@ -165,10 +164,8 @@ enum Sudoers {
         // SSO-enrolled Macs (name@company.com, #915) and the old validation
         // rejected it before the password prompt could even appear.
         let rule = SudoersSupport.clamshellRule(uid: getuid())
-        // Clear any earlier-named rule first, then write and validate the new one
-        // (a failed check rolls back). Same password prompt either way.
-        let legacy = legacyRulePaths.joined(separator: " ")
-        let command = "mkdir -p /etc/sudoers.d && chmod 0755 /etc/sudoers.d && rm -f \(legacy) && echo '\(rule)' > \(rulePath) && chmod 0440 \(rulePath) && /usr/sbin/visudo -c -f \(rulePath) || { rm -f \(rulePath); exit 1; }"
+        // Write and validate only this variant’s rule; a failed check rolls back.
+        let command = "mkdir -p /etc/sudoers.d && chmod 0755 /etc/sudoers.d && echo '\(rule)' > \(rulePath) && chmod 0440 \(rulePath) && /usr/sbin/visudo -c -f \(rulePath) || { rm -f \(rulePath); exit 1; }"
         AdminShell.run(command, prompt: L10n.shared.s.adminPromptSudoersInstall) { ok in
             completion(ok && isConfigured())
         }

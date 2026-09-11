@@ -33,42 +33,45 @@ struct WindowBehaviorSettings: View {
     }
 
     var body: some View {
-        Form {
-            FeatureSwitchSection(unit: .windowBehavior)
+        SettingsForm {
+            SettingsSection {
+                FeatureSwitchRow(feature: .windowMaximizer)
+                Text(l10n.s.windowMaximizeCaption)
+                    .font(SettingsTypography.caption)
+                    .foregroundStyle(.secondary)
+            }
             if AppFeature.autoQuit.isAvailable {
                 AutoQuitSections()
             }
             if AppFeature.quitWindowProtection.isAvailable {
-                Section {
+                SettingsSection(AppFeature.quitWindowProtection.name(l10n.s, language: l10n.language)) {
                     Text(strings.intro)
-                        .font(.caption)
+                        .font(SettingsTypography.caption)
                         .foregroundStyle(.secondary)
                     Label(strings.accessibilityCaption, systemImage: "hand.raised.fill")
-                        .font(.caption)
+                        .font(SettingsTypography.caption)
                         .foregroundStyle(.secondary)
-                }
-
-                shortcutSection(shortcut: .quit,
-                                enabled: $quitEnabled,
-                                mode: $quitMode,
-                                holdDuration: $quitHoldDuration,
-                                doubleInterval: $quitDoubleInterval,
-                                extraModifier: $quitExtraModifier,
-                                scope: $quitScope,
-                                showFeedback: $quitShowFeedback)
-                shortcutSection(shortcut: .close,
-                                enabled: $closeEnabled,
-                                mode: $closeMode,
-                                holdDuration: $closeHoldDuration,
-                                doubleInterval: $closeDoubleInterval,
-                                extraModifier: $closeExtraModifier,
-                                scope: $closeScope,
-                                showFeedback: $closeShowFeedback)
-
-                if (quitEnabled || closeEnabled) && !permissions.accessibility {
-                    Section(strings.accessibilityCaption) {
+                    if (quitEnabled || closeEnabled) && !permissions.accessibility {
                         PermissionRow(kind: .accessibility)
                     }
+                    Divider()
+                    shortcutSection(shortcut: .quit,
+                                    enabled: $quitEnabled,
+                                    mode: $quitMode,
+                                    holdDuration: $quitHoldDuration,
+                                    doubleInterval: $quitDoubleInterval,
+                                    extraModifier: $quitExtraModifier,
+                                    scope: $quitScope,
+                                    showFeedback: $quitShowFeedback)
+                    Divider()
+                    shortcutSection(shortcut: .close,
+                                    enabled: $closeEnabled,
+                                    mode: $closeMode,
+                                    holdDuration: $closeHoldDuration,
+                                    doubleInterval: $closeDoubleInterval,
+                                    extraModifier: $closeExtraModifier,
+                                    scope: $closeScope,
+                                    showFeedback: $closeShowFeedback)
                 }
             }
         }
@@ -99,12 +102,13 @@ struct WindowBehaviorSettings: View {
         let currentScope = QuitProtectionSupport.scopeFor(scope.wrappedValue)
         let currentModifier = QuitProtectionSupport.extraModifierFor(extraModifier.wrappedValue)
 
-        Section(shortcut.symbol) {
-            Toggle(strings.enabled, isOn: enabled)
+        VStack(alignment: .leading, spacing: SettingsVisualStyle.current.contentSpacing) {
+            Text(shortcut.symbol).font(SettingsTypography.sectionTitle)
+                .accessibilityAddTraits(.isHeader)
+            SettingsToggleWithCaption(title: strings.enabled,
+                                      caption: strings.enabledCaption,
+                                      isOn: enabled)
                 .onChange(of: enabled.wrappedValue) { _, _ in service.syncWithPreferences() }
-            Text(strings.enabledCaption)
-                .font(.caption)
-                .foregroundStyle(.secondary)
 
             Picker(strings.mode, selection: mode) {
                 Text(strings.hold).tag(QuitProtectionMode.hold.rawValue)
@@ -125,7 +129,7 @@ struct WindowBehaviorSettings: View {
                 }
                 .onChange(of: holdDuration.wrappedValue) { _, _ in service.syncWithPreferences() }
                 Text("\(Int(holdDuration.wrappedValue.rounded())) ms")
-                    .font(.caption)
+                    .font(SettingsTypography.caption)
                     .foregroundStyle(.secondary)
             }
 
@@ -141,7 +145,7 @@ struct WindowBehaviorSettings: View {
                 }
                 .onChange(of: doubleInterval.wrappedValue) { _, _ in service.syncWithPreferences() }
                 Text("\(Int(doubleInterval.wrappedValue.rounded())) ms")
-                    .font(.caption)
+                    .font(SettingsTypography.caption)
                     .foregroundStyle(.secondary)
             }
 
@@ -153,7 +157,7 @@ struct WindowBehaviorSettings: View {
                 }
                 .onChange(of: extraModifier.wrappedValue) { _, _ in service.syncWithPreferences() }
                 Text("\(modifierSymbol(currentModifier))\(shortcut.symbol)")
-                    .font(.caption)
+                    .font(SettingsTypography.caption)
                     .foregroundStyle(.secondary)
             }
 
@@ -177,28 +181,20 @@ struct WindowBehaviorSettings: View {
                                    enabled: Bool) -> some View {
         if scope != .all {
             VStack(alignment: .leading, spacing: 7) {
-                Text(strings.exceptions)
-                    .font(.subheadline.weight(.semibold))
+                Text(scope == .selectedOnly ? strings.protectedApps : strings.unprotectedApps)
+                    .font(SettingsTypography.sectionTitle)
                 let values = service.exceptions(for: shortcut)
                 if values.isEmpty {
-                    Text(strings.noExceptions)
-                        .font(.caption)
+                    Text(scope == .selectedOnly ? strings.noProtectedApps : strings.noUnprotectedApps)
+                        .font(SettingsTypography.caption)
                         .foregroundStyle(.secondary)
                 } else {
                     ForEach(values, id: \.self) { bundleID in
-                        HStack(spacing: 8) {
-                            Image(nsImage: InstalledApps.icon(for: bundleID))
-                                .resizable()
-                                .frame(width: 20, height: 20)
-                            Text(InstalledApps.name(for: bundleID))
-                            Spacer()
-                            Button {
+                        AppBundleRow(bundleID: bundleID) {
+                            AppBundleRemoveButton(label: String(format: UXEntryStrings(l10n.language).removeFromListFormat,
+                                                                     InstalledApps.name(for: bundleID))) {
                                 service.removeException(bundleID, for: shortcut)
-                            } label: {
-                                Image(systemName: "minus.circle.fill")
-                                    .foregroundStyle(.secondary)
                             }
-                            .buttonStyle(.plain)
                         }
                     }
                 }
@@ -207,9 +203,7 @@ struct WindowBehaviorSettings: View {
                 } label: {
                     Label(strings.addApp, systemImage: "plus")
                 }
-                .disabled(!enabled)
-            }
-            .disabled(!enabled)
+                }
         }
     }
 

@@ -15,6 +15,7 @@ struct MonitorTrendView: View {
 }
 
 private struct MonitorMetricTrend: View {
+    @ObservedObject private var palettePreferences = ThemePreferences.shared
     @ObservedObject private var monitor = SystemMonitor.shared
     @ObservedObject private var l10n = L10n.shared
     @AppStorage("monitorHistoryMinutes") private var minutes = 1
@@ -52,7 +53,6 @@ private struct MonitorMetricTrend: View {
     private func plot(now: TimeInterval) -> some View {
         let samples = monitor.snapshot.history.points(metric, endingAt: now, minutes: window)
         let ymax = ceiling(samples)
-        let segmentCounts = Dictionary(grouping: samples, by: \.segment).mapValues(\.count)
         let hovered = hoveredX.flatMap { x -> MonitorSample? in
             guard let nearest = samples.min(by: { abs($0.time - now - x) < abs($1.time - now - x) }),
                   abs(nearest.time - now - x) <= 3 else { return nil }
@@ -70,46 +70,11 @@ private struct MonitorMetricTrend: View {
             }
                 .font(PanelTypography.meta)
             }
-            Chart {
-                ForEach(samples) { sample in
-                    LineMark(x: .value("Time", sample.time - now), y: .value("Value", value(sample.value)),
-                             series: .value("Interval", sample.segment))
-                        .interpolationMethod(.linear)
-                        .lineStyle(StrokeStyle(lineWidth: 1.6, lineCap: .round))
-                        .foregroundStyle(PanelMetricColor.data)
-                }
-                ForEach(samples.filter { segmentCounts[$0.segment] == 1 }) { sample in
-                    PointMark(x: .value("Time", sample.time - now), y: .value("Value", value(sample.value)))
-                        .foregroundStyle(PanelMetricColor.data).symbolSize(14)
-                }
-                if let hovered {
-                    RuleMark(x: .value("Time", hovered.time - now))
-                        .foregroundStyle(.secondary.opacity(0.5))
-                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 3]))
-                    PointMark(x: .value("Time", hovered.time - now), y: .value("Value", value(hovered.value)))
-                        .foregroundStyle(PanelMetricColor.data).symbolSize(20)
-                }
-            }
-            .chartXScale(domain: -Double(window * 60)...0)
-            .chartYScale(domain: 0...ymax)
-            .chartXAxis {
-                AxisMarks(values: [-Double(window * 60), 0]) { axis in
-                    if let seconds = axis.as(Double.self) {
-                        AxisValueLabel(anchor: seconds == 0 ? .topTrailing : (seconds == -Double(window * 60) ? .topLeading : .top),
-                                       collisionResolution: .disabled) {
-                            Text(seconds == 0 ? text.now : relativeTime(seconds))
-                        }
-                    }
-                }
-            }
-            .chartYAxis {
-                AxisMarks(position: .trailing, values: [0, ymax]) { axis in
-                    AxisGridLine().foregroundStyle(.secondary.opacity(0.12))
-                    AxisValueLabel {
-                        if let v = axis.as(Double.self) { Text(axisFormat(v)) }
-                    }
-                }
-            }
+            MonitorTrendPlot(
+                samples: samples.enumerated().map { .init(id: $0.offset, time: $0.element.time, value: value($0.element.value), segment: $0.element.segment) },
+                now: now, window: window, ymax: ymax,
+                hovered: hovered.map { .init(id: -1, time: $0.time, value: value($0.value), segment: $0.segment) },
+                palette: palettePreferences.applied, nowLabel: text.now, axisFormat: axisFormat)
             .chartOverlay { proxy in
                 GeometryReader { geometry in
                     Color.clear.contentShape(Rectangle())
@@ -139,13 +104,6 @@ private struct MonitorMetricTrend: View {
                 Text(text.collecting).font(PanelTypography.meta).foregroundStyle(.tertiary)
             }
         }
-    }
-
-    private func relativeTime(_ seconds: Double) -> String {
-        let total = Int(abs(seconds))
-        let m = total / 60
-        let s = total % 60
-        return m == 0 ? "−\(s)s" : "−\(m)m" + (s == 0 ? "" : "\(s)s")
     }
 
     private var percentage: Bool { [.cpu, .gpu, .memory, .memoryApp, .battery].contains(metric) }

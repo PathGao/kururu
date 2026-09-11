@@ -11,7 +11,7 @@ struct FanControlFeatureStrings {
     var fanNameFormat: String = "Fan %d"
     var rpmFormat: String = "%d RPM"
     var allowControl: String = "Allow fan control"
-    var approvalCaption: String = "Allow Vorssaint in Login Items to use the protected fan controller."
+    var approvalCaption: String = "Allow \(AppInfo.name) in Login Items to use the protected fan controller."
     var openSettings: String = "Open System Settings"
     var noFans: String = "This Mac has no controllable fan."
     var unsupported: String = "Fan control is not available on this Mac."
@@ -45,7 +45,7 @@ struct FanControlFeatureStrings {
     var averageCPU: String = "Average CPU"
     var hottestCPU: String = "Hottest CPU"
     var hottestGPU: String = "Hottest GPU"
-    var helperUnavailable: String = "The protected fan controller is unavailable. Allow Vorssaint in Login Items, then try again."
+    var helperUnavailable: String = "The protected fan controller is unavailable. Allow \(AppInfo.name) in Login Items, then try again."
 }
 
 extension FeatureStrings {
@@ -79,7 +79,7 @@ extension FanControlFeatureStrings {
         fanNameFormat: "Ventoinha %d",
         rpmFormat: "%d RPM",
         allowControl: "Permitir controle",
-        approvalCaption: "Permita o Vorssaint nos Itens de Início para usar o controle protegido das ventoinhas.",
+        approvalCaption: "Permita o \(AppInfo.name) nos Itens de Início para usar o controle protegido das ventoinhas.",
         openSettings: "Abrir Ajustes do Sistema",
         noFans: "Este Mac não tem ventoinha controlável.",
         unsupported: "O controle das ventoinhas não está disponível neste Mac.",
@@ -113,7 +113,7 @@ extension FanControlFeatureStrings {
         averageCPU: "Média da CPU",
         hottestCPU: "CPU mais quente",
         hottestGPU: "GPU mais quente",
-        helperUnavailable: "O controlador protegido das ventoinhas não está disponível. Permita o Vorssaint nos Itens de Início e tente novamente."
+        helperUnavailable: "O controlador protegido das ventoinhas não está disponível. Permita o \(AppInfo.name) nos Itens de Início e tente novamente."
     )
 
     static let tr = FanControlFeatureStrings(
@@ -124,7 +124,7 @@ extension FanControlFeatureStrings {
         fanNameFormat: "Fan %d",
         rpmFormat: "%d RPM",
         allowControl: "Fan denetimine izin ver",
-        approvalCaption: "Korumalı fan denetimini kullanmak için Giriş Öğeleri’nde Vorssaint’e izin verin.",
+        approvalCaption: "Korumalı fan denetimini kullanmak için Giriş Öğeleri’nde \(AppInfo.name)’e izin verin.",
         openSettings: "Sistem Ayarları’nı Aç",
         noFans: "Bu Mac’te denetlenebilir fan yok.",
         unsupported: "Bu Mac’te fan denetimi kullanılamıyor.",
@@ -158,7 +158,7 @@ extension FanControlFeatureStrings {
         averageCPU: "Ortalama CPU",
         hottestCPU: "En sıcak CPU",
         hottestGPU: "En sıcak GPU",
-        helperUnavailable: "Korumalı fan denetleyicisi kullanılamıyor. Giriş Öğeleri’nde Vorssaint’e izin verip yeniden deneyin."
+        helperUnavailable: "Korumalı fan denetleyicisi kullanılamıyor. Giriş Öğeleri’nde \(AppInfo.name)’e izin verip yeniden deneyin."
     )
 
     static let ru = FanControlFeatureStrings(
@@ -169,7 +169,7 @@ extension FanControlFeatureStrings {
         fanNameFormat: "Вентилятор %d",
         rpmFormat: "%d об/мин",
         allowControl: "Разрешить управление",
-        approvalCaption: "Разрешите Vorssaint в Объектах входа для защищённого управления вентиляторами.",
+        approvalCaption: "Разрешите \(AppInfo.name) в Объектах входа для защищённого управления вентиляторами.",
         openSettings: "Открыть Системные настройки",
         noFans: "На этом Mac нет управляемого вентилятора.",
         unsupported: "Управление вентиляторами недоступно на этом Mac.",
@@ -203,7 +203,7 @@ extension FanControlFeatureStrings {
         averageCPU: "Средняя CPU",
         hottestCPU: "Самая горячая CPU",
         hottestGPU: "Самая горячая GPU",
-        helperUnavailable: "Защищённый контроллер вентиляторов недоступен. Разрешите Vorssaint в Объектах входа и повторите попытку."
+        helperUnavailable: "Защищённый контроллер вентиляторов недоступен. Разрешите \(AppInfo.name) в Объектах входа и повторите попытку."
     )
 
     static let es = FanControlFeatureStrings(
@@ -214,7 +214,7 @@ extension FanControlFeatureStrings {
         fanNameFormat: "Ventilador %d",
         rpmFormat: "%d RPM",
         allowControl: "Permitir control",
-        approvalCaption: "Permite Vorssaint en Ítems de inicio para usar el control protegido de los ventiladores.",
+        approvalCaption: "Permite \(AppInfo.name) en Ítems de inicio para usar el control protegido de los ventiladores.",
         openSettings: "Abrir Ajustes del Sistema",
         noFans: "Este Mac no tiene ningún ventilador controlable.",
         unsupported: "El control de ventiladores no está disponible en este Mac.",
@@ -248,7 +248,7 @@ extension FanControlFeatureStrings {
         averageCPU: "Promedio de CPU",
         hottestCPU: "CPU más caliente",
         hottestGPU: "GPU más caliente",
-        helperUnavailable: "El controlador protegido de los ventiladores no está disponible. Permite Vorssaint en Ítems de inicio e inténtalo de nuevo."
+        helperUnavailable: "El controlador protegido de los ventiladores no está disponible. Permite \(AppInfo.name) en Ítems de inicio e inténtalo de nuevo."
     )
 
     static let de = FanControlFeatureStrings(
@@ -259,7 +259,7 @@ extension FanControlFeatureStrings {
         fanNameFormat: "Lüfter %d",
         rpmFormat: "%d U/min",
         allowControl: "Lüftersteuerung erlauben",
-        approvalCaption: "Erlaube Vorssaint unter Anmeldeobjekte, um die geschützte Lüftersteuerung zu verwenden.",
+        approvalCaption: "Erlaube \(AppInfo.name) unter Anmeldeobjekte, um die geschützte Lüftersteuerung zu verwenden.",
         openSettings: "Systemeinstellungen öffnen",
         noFans: "Dieser Mac hat keinen steuerbaren Lüfter.",
         unsupported: "Die Lüftersteuerung ist auf diesem Mac nicht verfügbar.",
@@ -293,7 +293,7 @@ extension FanControlFeatureStrings {
         averageCPU: "CPU-Durchschnitt",
         hottestCPU: "Heißeste CPU",
         hottestGPU: "Heißeste GPU",
-        helperUnavailable: "Die geschützte Lüftersteuerung ist nicht verfügbar. Erlaube Vorssaint unter Anmeldeobjekte und versuche es erneut."
+        helperUnavailable: "Die geschützte Lüftersteuerung ist nicht verfügbar. Erlaube \(AppInfo.name) unter Anmeldeobjekte und versuche es erneut."
     )
 
     static let fr = FanControlFeatureStrings(
@@ -304,7 +304,7 @@ extension FanControlFeatureStrings {
         fanNameFormat: "Ventilateur %d",
         rpmFormat: "%d tr/min",
         allowControl: "Autoriser le contrôle",
-        approvalCaption: "Autorisez Vorssaint dans Ouverture pour utiliser le contrôle protégé des ventilateurs.",
+        approvalCaption: "Autorisez \(AppInfo.name) dans Ouverture pour utiliser le contrôle protégé des ventilateurs.",
         openSettings: "Ouvrir Réglages Système",
         noFans: "Ce Mac ne possède aucun ventilateur contrôlable.",
         unsupported: "Le contrôle des ventilateurs n’est pas disponible sur ce Mac.",
@@ -338,7 +338,7 @@ extension FanControlFeatureStrings {
         averageCPU: "Moyenne du CPU",
         hottestCPU: "CPU le plus chaud",
         hottestGPU: "GPU le plus chaud",
-        helperUnavailable: "Le contrôleur protégé des ventilateurs est indisponible. Autorisez Vorssaint dans Ouverture, puis réessayez."
+        helperUnavailable: "Le contrôleur protégé des ventilateurs est indisponible. Autorisez \(AppInfo.name) dans Ouverture, puis réessayez."
     )
 
     static let it = FanControlFeatureStrings(
@@ -349,7 +349,7 @@ extension FanControlFeatureStrings {
         fanNameFormat: "Ventola %d",
         rpmFormat: "%d RPM",
         allowControl: "Consenti controllo",
-        approvalCaption: "Consenti Vorssaint in Elementi login per usare il controllo protetto delle ventole.",
+        approvalCaption: "Consenti \(AppInfo.name) in Elementi login per usare il controllo protetto delle ventole.",
         openSettings: "Apri Impostazioni di Sistema",
         noFans: "Questo Mac non ha ventole controllabili.",
         unsupported: "Il controllo ventole non è disponibile su questo Mac.",
@@ -383,7 +383,7 @@ extension FanControlFeatureStrings {
         averageCPU: "Media CPU",
         hottestCPU: "CPU più calda",
         hottestGPU: "GPU più calda",
-        helperUnavailable: "Il controller protetto delle ventole non è disponibile. Consenti Vorssaint negli elementi di login e riprova."
+        helperUnavailable: "Il controller protetto delle ventole non è disponibile. Consenti \(AppInfo.name) negli elementi di login e riprova."
     )
 
     static let ja = FanControlFeatureStrings(
@@ -394,7 +394,7 @@ extension FanControlFeatureStrings {
         fanNameFormat: "ファン%d",
         rpmFormat: "%d RPM",
         allowControl: "ファン制御を許可",
-        approvalCaption: "保護されたファン制御を使うには、ログイン項目でVorssaintを許可してください。",
+        approvalCaption: "保護されたファン制御を使うには、ログイン項目で\(AppInfo.name)を許可してください。",
         openSettings: "システム設定を開く",
         noFans: "このMacには制御可能なファンがありません。",
         unsupported: "このMacではファン制御を利用できません。",
@@ -428,7 +428,7 @@ extension FanControlFeatureStrings {
         averageCPU: "CPU平均",
         hottestCPU: "最高CPU",
         hottestGPU: "最高GPU",
-        helperUnavailable: "保護されたファンコントローラを利用できません。ログイン項目でVorssaintを許可してから、もう一度お試しください。"
+        helperUnavailable: "保護されたファンコントローラを利用できません。ログイン項目で\(AppInfo.name)を許可してから、もう一度お試しください。"
     )
 
     static let ko = FanControlFeatureStrings(
@@ -439,7 +439,7 @@ extension FanControlFeatureStrings {
         fanNameFormat: "팬 %d",
         rpmFormat: "%d RPM",
         allowControl: "팬 제어 허용",
-        approvalCaption: "보호된 팬 제어를 사용하려면 로그인 항목에서 Vorssaint를 허용하세요.",
+        approvalCaption: "보호된 팬 제어를 사용하려면 로그인 항목에서 \(AppInfo.name)를 허용하세요.",
         openSettings: "시스템 설정 열기",
         noFans: "이 Mac에는 제어 가능한 팬이 없습니다.",
         unsupported: "이 Mac에서는 팬 제어를 사용할 수 없습니다.",
@@ -473,7 +473,7 @@ extension FanControlFeatureStrings {
         averageCPU: "평균 CPU",
         hottestCPU: "가장 뜨거운 CPU",
         hottestGPU: "가장 뜨거운 GPU",
-        helperUnavailable: "보호된 팬 컨트롤러를 사용할 수 없습니다. 로그인 항목에서 Vorssaint를 허용한 다음 다시 시도하세요."
+        helperUnavailable: "보호된 팬 컨트롤러를 사용할 수 없습니다. 로그인 항목에서 \(AppInfo.name)를 허용한 다음 다시 시도하세요."
     )
 
     static let zhHans = FanControlFeatureStrings(
@@ -484,7 +484,7 @@ extension FanControlFeatureStrings {
         fanNameFormat: "风扇%d",
         rpmFormat: "%d RPM",
         allowControl: "允许风扇控制",
-        approvalCaption: "请在登录项中允许Vorssaint使用受保护的风扇控制。",
+        approvalCaption: "请在登录项中允许\(AppInfo.name)使用受保护的风扇控制。",
         openSettings: "打开系统设置",
         noFans: "这台Mac没有可控风扇。",
         unsupported: "这台Mac不支持风扇控制。",
@@ -518,7 +518,7 @@ extension FanControlFeatureStrings {
         averageCPU: "CPU平均温度",
         hottestCPU: "CPU最高温度",
         hottestGPU: "GPU最高温度",
-        helperUnavailable: "受保护的风扇控制器不可用。请在登录项中允许 Vorssaint，然后重试。"
+        helperUnavailable: "受保护的风扇控制器不可用。请在登录项中允许 \(AppInfo.name)，然后重试。"
     )
 
     static let zhTW = FanControlFeatureStrings(
@@ -529,7 +529,7 @@ extension FanControlFeatureStrings {
         fanNameFormat: "風扇%d",
         rpmFormat: "%d RPM",
         allowControl: "允許風扇控制",
-        approvalCaption: "請在登入項目中允許Vorssaint使用受保護的風扇控制。",
+        approvalCaption: "請在登入項目中允許\(AppInfo.name)使用受保護的風扇控制。",
         openSettings: "打開系統設定",
         noFans: "這台Mac沒有可控制的風扇。",
         unsupported: "這台Mac不支援風扇控制。",
@@ -563,7 +563,7 @@ extension FanControlFeatureStrings {
         averageCPU: "CPU平均溫度",
         hottestCPU: "CPU最高溫度",
         hottestGPU: "GPU最高溫度",
-        helperUnavailable: "受保護的風扇控制器無法使用。請在登入項目中允許 Vorssaint，然後再試一次。"
+        helperUnavailable: "受保護的風扇控制器無法使用。請在登入項目中允許 \(AppInfo.name)，然後再試一次。"
     )
 
     static let zhHK = FanControlFeatureStrings(
@@ -574,7 +574,7 @@ extension FanControlFeatureStrings {
         fanNameFormat: "風扇%d",
         rpmFormat: "%d RPM",
         allowControl: "允許風扇控制",
-        approvalCaption: "請在登入項目中允許Vorssaint使用受保護的風扇控制。",
+        approvalCaption: "請在登入項目中允許\(AppInfo.name)使用受保護的風扇控制。",
         openSettings: "開啟系統設定",
         noFans: "這部Mac沒有可控制的風扇。",
         unsupported: "這部Mac不支援風扇控制。",
@@ -608,6 +608,6 @@ extension FanControlFeatureStrings {
         averageCPU: "CPU平均溫度",
         hottestCPU: "CPU最高溫度",
         hottestGPU: "GPU最高溫度",
-        helperUnavailable: "受保護的風扇控制器無法使用。請在登入項目允許 Vorssaint，然後再試一次。"
+        helperUnavailable: "受保護的風扇控制器無法使用。請在登入項目允許 \(AppInfo.name)，然後再試一次。"
     )
 }

@@ -29,7 +29,7 @@ struct CommandBarAppShortcutsView: View {
                 Text(text.appCenterTitle)
                     .font(.title2.weight(.semibold))
                 Text(text.appCenterCaption)
-                    .font(.callout)
+                    .font(SettingsTypography.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -123,7 +123,7 @@ struct CommandBarAppShortcutsView: View {
 
             HStack(alignment: .center, spacing: 16) {
                 Text(message ?? text.shortcutCaptureHint)
-                    .font(.caption)
+                    .font(SettingsTypography.caption)
                     .foregroundStyle(message == nil ? Color.secondary : Color.orange)
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer()
@@ -131,6 +131,8 @@ struct CommandBarAppShortcutsView: View {
                     .keyboardShortcut(.cancelAction)
             }
         }
+        .font(SettingsTypography.body)
+        .controlSize(.regular)
         .padding(24)
         .frame(width: 780, height: 560)
         .onAppear { service.refreshApplications() }

@@ -11,7 +11,7 @@ struct MouseButtonFeatureStrings {
     var addButton: String = "Add a button or side wheel"
     var captureWaiting: String = "Now press an extra button or move the side wheel."
     var captureCancel: String = "Cancel"
-    var captureBlind: String = "Vorssaint cannot watch the mouse right now."
+    var captureBlind: String = "\(AppInfo.name) cannot watch the mouse right now."
     var captureUnsupported: String = "That input cannot take a shortcut. Use an extra button or a side-wheel direction."
     var captureWheel: String = "That button already opens the radial menu. Pick another one, or free it there first."
     var captureExists: String = "That button or direction is already on the list below."
@@ -40,6 +40,11 @@ struct MouseButtonFeatureStrings {
     var spacesCaptureExists: String = "That button already has a shortcut. Pick another one."
     var spacesFollowsDragLabel: String = "Spaces follow the drag"
     var spacesFollowsDragCaption: String = "Dragging right brings the Space on the left, the way a trackpad swipe carries it along with your fingers."
+    var spacesShortcutsPartialFormat: String = "Unavailable: %@. Enable these Mission Control keyboard shortcuts in System Settings."
+    var spacesMoveLeft: String = "Move one Space left"
+    var spacesMoveRight: String = "Move one Space right"
+    var spacesMissionControl: String = "Mission Control"
+    var spacesAppExpose: String = "App Exposé"
 }
 
 extension FeatureStrings {
@@ -73,7 +78,7 @@ extension MouseButtonFeatureStrings {
         addButton: "Adicionar botão ou roda lateral",
         captureWaiting: "Agora aperte um botão extra ou mova a roda lateral.",
         captureCancel: "Cancelar",
-        captureBlind: "O Vorssaint não consegue observar o mouse agora.",
+        captureBlind: "O \(AppInfo.name) não consegue observar o mouse agora.",
         captureUnsupported: "Esse controle não pode receber atalho. Use um botão extra ou um sentido da roda lateral.",
         captureWheel: "Esse botão já abre o menu radial. Escolha outro, ou libere ele lá primeiro.",
         captureExists: "Esse botão ou sentido já está na lista abaixo.",
@@ -108,7 +113,7 @@ extension MouseButtonFeatureStrings {
         addButton: "Düğme veya yan teker ekle",
         captureWaiting: "Şimdi ek bir düğmeye basın veya yan tekeri hareket ettirin.",
         captureCancel: "Vazgeç",
-        captureBlind: "Vorssaint şu anda fareyi izleyemiyor.",
+        captureBlind: "\(AppInfo.name) şu anda fareyi izleyemiyor.",
         captureUnsupported: "Bu girişe kısayol verilemez. Ek bir düğme veya yan teker yönü kullanın.",
         captureWheel: "Bu düğme zaten dairesel menüyü açıyor. Başka bir düğme seçin veya önce orada serbest bırakın.",
         captureExists: "Bu düğme veya yön zaten aşağıdaki listede.",
@@ -143,7 +148,7 @@ extension MouseButtonFeatureStrings {
         addButton: "Добавить кнопку или боковое колёсико",
         captureWaiting: "Теперь нажмите дополнительную кнопку или прокрутите боковое колёсико.",
         captureCancel: "Отменить",
-        captureBlind: "Vorssaint сейчас не может отслеживать мышь.",
+        captureBlind: "\(AppInfo.name) сейчас не может отслеживать мышь.",
         captureUnsupported: "Этому элементу нельзя назначить сочетание. Используйте дополнительную кнопку или направление бокового колёсика.",
         captureWheel: "Эта кнопка уже открывает радиальное меню. Выберите другую или сначала освободите её там.",
         captureExists: "Эта кнопка или направление уже есть в списке ниже.",
@@ -178,7 +183,7 @@ extension MouseButtonFeatureStrings {
         addButton: "Añadir botón o rueda lateral",
         captureWaiting: "Ahora pulsa un botón extra o mueve la rueda lateral.",
         captureCancel: "Cancelar",
-        captureBlind: "Vorssaint no puede observar el ratón ahora mismo.",
+        captureBlind: "\(AppInfo.name) no puede observar el ratón ahora mismo.",
         captureUnsupported: "Esa entrada no puede recibir un atajo. Usa un botón extra o una dirección de la rueda lateral.",
         captureWheel: "Ese botón ya abre el menú radial. Elige otro, o libéralo allí primero.",
         captureExists: "Ese botón o dirección ya está en la lista de abajo.",
@@ -202,7 +207,12 @@ extension MouseButtonFeatureStrings {
         spacesCaptureUnsupported: "Esa entrada no se puede mantener pulsada para arrastrar. Usa un botón extra.",
         spacesCaptureExists: "Ese botón ya tiene un atajo. Elige otro.",
         spacesFollowsDragLabel: "Los Espacios siguen el arrastre",
-        spacesFollowsDragCaption: "Arrastrar a la derecha trae el Espacio de la izquierda, igual que un deslizamiento en el trackpad lo lleva con tus dedos."
+        spacesFollowsDragCaption: "Arrastrar a la derecha trae el Espacio de la izquierda, igual que un deslizamiento en el trackpad lo lleva con tus dedos.",
+        spacesShortcutsPartialFormat: "No disponible: %@. Activa estos atajos de teclado de Mission Control en Ajustes del Sistema.",
+        spacesMoveLeft: "Ir al escritorio de la izquierda",
+        spacesMoveRight: "Ir al escritorio de la derecha",
+        spacesMissionControl: "Mission Control",
+        spacesAppExpose: "App Exposé"
     )
 
     static let de = MouseButtonFeatureStrings(
@@ -213,7 +223,7 @@ extension MouseButtonFeatureStrings {
         addButton: "Taste oder seitliches Rad hinzufügen",
         captureWaiting: "Drücke jetzt eine Zusatztaste oder bewege das seitliche Rad.",
         captureCancel: "Abbrechen",
-        captureBlind: "Vorssaint kann die Maus gerade nicht beobachten.",
+        captureBlind: "\(AppInfo.name) kann die Maus gerade nicht beobachten.",
         captureUnsupported: "Diese Eingabe kann keinen Kurzbefehl bekommen. Verwende eine Zusatztaste oder eine Richtung des seitlichen Rads.",
         captureWheel: "Diese Taste öffnet bereits das Radialmenü. Wähle eine andere oder gib sie dort zuerst frei.",
         captureExists: "Diese Taste oder Richtung steht schon in der Liste unten.",
@@ -237,7 +247,12 @@ extension MouseButtonFeatureStrings {
         spacesCaptureUnsupported: "Diese Eingabe lässt sich nicht gedrückt halten und ziehen. Verwende eine Zusatztaste.",
         spacesCaptureExists: "Diese Taste hat schon einen Kurzbefehl. Wähle eine andere.",
         spacesFollowsDragLabel: "Spaces folgen der Ziehbewegung",
-        spacesFollowsDragCaption: "Nach rechts ziehen holt den Space links daneben, so wie eine Streichbewegung auf dem Trackpad ihn mit den Fingern mitnimmt."
+        spacesFollowsDragCaption: "Nach rechts ziehen holt den Space links daneben, so wie eine Streichbewegung auf dem Trackpad ihn mit den Fingern mitnimmt.",
+        spacesShortcutsPartialFormat: "Nicht verfügbar: %@. Aktiviere diese Mission-Control-Tastaturkurzbefehle in den Systemeinstellungen.",
+        spacesMoveLeft: "Einen Space nach links wechseln",
+        spacesMoveRight: "Einen Space nach rechts wechseln",
+        spacesMissionControl: "Mission Control",
+        spacesAppExpose: "App-Exposé"
     )
 
     static let fr = MouseButtonFeatureStrings(
@@ -248,7 +263,7 @@ extension MouseButtonFeatureStrings {
         addButton: "Ajouter un bouton ou la molette latérale",
         captureWaiting: "Appuyez sur un bouton supplémentaire ou tournez la molette latérale.",
         captureCancel: "Annuler",
-        captureBlind: "Vorssaint ne peut pas observer la souris pour le moment.",
+        captureBlind: "\(AppInfo.name) ne peut pas observer la souris pour le moment.",
         captureUnsupported: "Cette commande ne peut pas recevoir de raccourci. Utilisez un bouton supplémentaire ou une direction de la molette latérale.",
         captureWheel: "Ce bouton ouvre déjà le menu radial. Choisissez-en un autre, ou libérez-le là-bas d’abord.",
         captureExists: "Ce bouton ou cette direction est déjà dans la liste ci-dessous.",
@@ -272,7 +287,12 @@ extension MouseButtonFeatureStrings {
         spacesCaptureUnsupported: "Cette commande ne peut pas être maintenue pour un glissement. Utilisez un bouton supplémentaire.",
         spacesCaptureExists: "Ce bouton a déjà un raccourci. Choisissez-en un autre.",
         spacesFollowsDragLabel: "Les espaces suivent le glissement",
-        spacesFollowsDragCaption: "Glisser vers la droite amène l’espace de gauche, comme un balayage sur le trackpad qui l’emporte avec les doigts."
+        spacesFollowsDragCaption: "Glisser vers la droite amène l’espace de gauche, comme un balayage sur le trackpad qui l’emporte avec les doigts.",
+        spacesShortcutsPartialFormat: "Indisponible : %@. Activez ces raccourcis clavier de Mission Control dans Réglages Système.",
+        spacesMoveLeft: "Passer au bureau de gauche",
+        spacesMoveRight: "Passer au bureau de droite",
+        spacesMissionControl: "Mission Control",
+        spacesAppExpose: "App Exposé"
     )
 
     static let it = MouseButtonFeatureStrings(
@@ -283,7 +303,7 @@ extension MouseButtonFeatureStrings {
         addButton: "Aggiungi pulsante o rotella laterale",
         captureWaiting: "Ora premi un pulsante extra o muovi la rotella laterale.",
         captureCancel: "Annulla",
-        captureBlind: "Vorssaint al momento non riesce a osservare il mouse.",
+        captureBlind: "\(AppInfo.name) al momento non riesce a osservare il mouse.",
         captureUnsupported: "Questo comando non può ricevere un’abbreviazione. Usa un pulsante extra o una direzione della rotella laterale.",
         captureWheel: "Quel pulsante apre già il menu radiale. Scegline un altro, oppure liberalo prima lì.",
         captureExists: "Quel pulsante o quella direzione è già nell’elenco qui sotto.",
@@ -318,7 +338,7 @@ extension MouseButtonFeatureStrings {
         addButton: "ボタンまたはサイドホイールを追加",
         captureWaiting: "拡張ボタンを押すか、サイドホイールを動かしてください。",
         captureCancel: "キャンセル",
-        captureBlind: "Vorssaintは今マウスを監視できません。",
+        captureBlind: "\(AppInfo.name)は今マウスを監視できません。",
         captureUnsupported: "この入力にはショートカットを割り当てられません。拡張ボタンかサイドホイールの左右を使ってください。",
         captureWheel: "そのボタンはすでにラジアルメニューを開きます。別のボタンを選ぶか、先にそちらで解除してください。",
         captureExists: "そのボタンまたは方向はすでに下のリストにあります。",
@@ -342,7 +362,12 @@ extension MouseButtonFeatureStrings {
         spacesCaptureUnsupported: "この入力は押したままドラッグできません。拡張ボタンを使ってください。",
         spacesCaptureExists: "そのボタンにはすでにショートカットがあります。別のボタンを選んでください。",
         spacesFollowsDragLabel: "スペースがドラッグに追従",
-        spacesFollowsDragCaption: "右にドラッグすると左のスペースが現れます。トラックパッドのスワイプが指と一緒にスペースを動かすのと同じ向きです。"
+        spacesFollowsDragCaption: "右にドラッグすると左のスペースが現れます。トラックパッドのスワイプが指と一緒にスペースを動かすのと同じ向きです。",
+        spacesShortcutsPartialFormat: "利用できない操作：%@。システム設定で対応する Mission Control のキーボードショートカットを有効にしてください。",
+        spacesMoveLeft: "左の操作スペースに移動",
+        spacesMoveRight: "右の操作スペースに移動",
+        spacesMissionControl: "Mission Control",
+        spacesAppExpose: "アプリケーション Exposé"
     )
 
     static let ko = MouseButtonFeatureStrings(
@@ -353,7 +378,7 @@ extension MouseButtonFeatureStrings {
         addButton: "버튼 또는 측면 휠 추가",
         captureWaiting: "이제 추가 버튼을 누르거나 측면 휠을 움직이세요.",
         captureCancel: "취소",
-        captureBlind: "Vorssaint가 지금은 마우스를 지켜볼 수 없습니다.",
+        captureBlind: "\(AppInfo.name)가 지금은 마우스를 지켜볼 수 없습니다.",
         captureUnsupported: "이 입력에는 단축키를 지정할 수 없습니다. 추가 버튼이나 측면 휠 방향을 사용하세요.",
         captureWheel: "그 버튼은 이미 방사형 메뉴를 엽니다. 다른 버튼을 고르거나 먼저 거기서 해제하세요.",
         captureExists: "그 버튼이나 방향은 이미 아래 목록에 있습니다.",
@@ -388,7 +413,7 @@ extension MouseButtonFeatureStrings {
         addButton: "添加按键或侧滚轮",
         captureWaiting: "现在请按下额外按键或转动侧滚轮。",
         captureCancel: "取消",
-        captureBlind: "Vorssaint 目前无法监视鼠标。",
+        captureBlind: "\(AppInfo.name) 目前无法监听鼠标输入。",
         captureUnsupported: "该输入无法设置快捷键。请使用额外按键或侧滚轮方向。",
         captureWheel: "该按键已用于打开径向菜单。请换一个，或先在那里释放它。",
         captureExists: "该按键或方向已在下方列表中。",
@@ -412,7 +437,12 @@ extension MouseButtonFeatureStrings {
         spacesCaptureUnsupported: "该输入无法按住拖动。请使用额外按键。",
         spacesCaptureExists: "该按键已设有快捷键。请换一个。",
         spacesFollowsDragLabel: "桌面跟着拖动走",
-        spacesFollowsDragCaption: "向右拖动会带来左边的桌面，就像在触控板上滑动时桌面跟着手指移动一样。"
+        spacesFollowsDragCaption: "向右拖动会带来左边的桌面，就像在触控板上滑动时桌面跟着手指移动一样。",
+        spacesShortcutsPartialFormat: "以下操作不可用：%@。请在系统设置中启用对应的调度中心键盘快捷键。",
+        spacesMoveLeft: "切换到左侧桌面",
+        spacesMoveRight: "切换到右侧桌面",
+        spacesMissionControl: "调度中心",
+        spacesAppExpose: "应用程序窗口"
     )
 
     static let zhTW = MouseButtonFeatureStrings(
@@ -423,7 +453,7 @@ extension MouseButtonFeatureStrings {
         addButton: "加入按鍵或側滾輪",
         captureWaiting: "現在請按下額外按鍵或轉動側滾輪。",
         captureCancel: "取消",
-        captureBlind: "Vorssaint 目前無法監看滑鼠。",
+        captureBlind: "\(AppInfo.name) 目前無法監看滑鼠。",
         captureUnsupported: "此操作無法設定快速鍵。請使用額外按鍵或側滾輪方向。",
         captureWheel: "該按鍵已用於打開放射狀選單。請換一個，或先在那裡釋放它。",
         captureExists: "該按鍵或方向已在下方列表中。",
@@ -458,7 +488,7 @@ extension MouseButtonFeatureStrings {
         addButton: "加入按鍵或側滾輪",
         captureWaiting: "現在請按下額外按鍵或轉動側滾輪。",
         captureCancel: "取消",
-        captureBlind: "Vorssaint 目前無法監看滑鼠。",
+        captureBlind: "\(AppInfo.name) 目前無法監看滑鼠。",
         captureUnsupported: "此操作無法設定快捷鍵。請使用額外按鍵或側滾輪方向。",
         captureWheel: "該按鍵已用於打開放射狀選單。請換一個，或先在那裡釋放它。",
         captureExists: "該按鍵或方向已在下方列表中。",

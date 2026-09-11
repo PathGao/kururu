@@ -1,22 +1,22 @@
 /* macOS Automation permission prompt. */
-"NSAppleEventsUsageDescription" = "Vorssaint utilise Automatisation pour déplacer des fichiers dans le Finder, placer des éléments dans la Corbeille et ouvrir des commandes Terminal lorsque vous demandez des actions Homebrew.";
+"NSAppleEventsUsageDescription" = "__APP_NAME__ utilise Automatisation pour déplacer des fichiers dans le Finder, placer des éléments dans la Corbeille et ouvrir des commandes Terminal lorsque vous demandez des actions Homebrew. Elle sert aussi à définir les règles de rangement des dossiers du Finder à votre demande.";
 
 /* macOS Screen & System Audio Recording permission prompt. */
-"NSAudioCaptureUsageDescription" = "Vorssaint utilise le son de chaque app pour régler son volume dans le mixeur et pour inclure le son du Mac dans les enregistrements d'écran que vous lancez. Rien ne quitte votre Mac.";
+"NSAudioCaptureUsageDescription" = "__APP_NAME__ utilise le son de chaque app pour régler son volume dans le mixeur et pour inclure le son du Mac dans les enregistrements d'écran que vous lancez. Rien ne quitte votre Mac.";
 
 /* macOS Bluetooth permission prompt. */
-"NSBluetoothAlwaysUsageDescription" = "Vorssaint utilise le Bluetooth uniquement pour lire la batterie des périphériques connectés. Rien ne quitte votre Mac.";
+"NSBluetoothAlwaysUsageDescription" = "__APP_NAME__ utilise le Bluetooth uniquement pour lire la batterie des périphériques connectés. Rien ne quitte votre Mac.";
 
 /* macOS Microphone permission prompt. */
-"NSMicrophoneUsageDescription" = "Vorssaint enregistre votre micro uniquement quand vous l’activez pour un enregistrement d’écran. Le son reste sur votre Mac, sauf si vous créez un lien temporaire.";
+"NSMicrophoneUsageDescription" = "__APP_NAME__ enregistre votre micro uniquement quand vous l’activez pour un enregistrement d’écran. Le son reste sur votre Mac.";
 
 /* macOS Camera permission prompt. */
 
 /* macOS Downloads folder permission prompt. */
-"NSDownloadsFolderUsageDescription" = "Vorssaint consulte les métadonnées locales de Téléchargements pour examiner, organiser ou placer dans la Corbeille uniquement les fichiers WhatsApp confirmés que vous choisissez.";
+"NSDownloadsFolderUsageDescription" = "__APP_NAME__ consulte les métadonnées locales de Téléchargements pour examiner, organiser ou placer dans la Corbeille uniquement les fichiers WhatsApp confirmés que vous choisissez.";
 
 /* macOS user-selected organizer destination prompts. */
-"NSDesktopFolderUsageDescription" = "Vorssaint organise les téléchargements WhatsApp confirmés dans un dossier de destination que vous choisissez explicitement.";
-"NSDocumentsFolderUsageDescription" = "Vorssaint organise les téléchargements WhatsApp confirmés dans un dossier de destination que vous choisissez explicitement.";
-"NSNetworkVolumesUsageDescription" = "Vorssaint organise les téléchargements WhatsApp confirmés dans un dossier de destination que vous choisissez explicitement.";
-"NSRemovableVolumesUsageDescription" = "Vorssaint organise les téléchargements WhatsApp confirmés dans un dossier de destination que vous choisissez explicitement.";
+"NSDesktopFolderUsageDescription" = "__APP_NAME__ organise les téléchargements WhatsApp confirmés dans un dossier de destination que vous choisissez explicitement.";
+"NSDocumentsFolderUsageDescription" = "__APP_NAME__ organise les téléchargements WhatsApp confirmés dans un dossier de destination que vous choisissez explicitement.";
+"NSNetworkVolumesUsageDescription" = "__APP_NAME__ organise les téléchargements WhatsApp confirmés dans un dossier de destination que vous choisissez explicitement.";
+"NSRemovableVolumesUsageDescription" = "__APP_NAME__ organise les téléchargements WhatsApp confirmés dans un dossier de destination que vous choisissez explicitement.";

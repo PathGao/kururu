@@ -4,7 +4,7 @@
 import AppKit
 import SwiftUI
 
-/// The URL cleaner half of the clipboard page; its switch is the page's own.
+/// Manual cleanup, automatic behavior and their single shared rule set.
 struct URLCleanerSections: View {
     @ObservedObject private var l10n = L10n.shared
     @ObservedObject private var cleaner = URLCleanerService.shared
@@ -16,10 +16,13 @@ struct URLCleanerSections: View {
     @State private var siteDraft = ""
     @State private var siteParameterDraft = ""
     @State private var input = ""
-    @State private var output = ""
+    @State private var resultState = URLCleanerResultState()
     @State private var message: String?
     @State private var showingAddSite = false
-    private var canClearInput: Bool { !input.isEmpty || !output.isEmpty || message != nil }
+    @State private var pendingRemoval: (site: String, name: String)?
+    private var actionText: URLRuleActionStrings { URLRuleActionStrings(language: l10n.language) }
+    private var flowText: UXTaskFlowStrings { UXTaskFlowStrings(language: l10n.language) }
+    private var canClearInput: Bool { !input.isEmpty || resultState.canCopy || message != nil }
     private var rules: URLCleaning.Rules {
         URLCleaning.rules(globalNames: globalNames,
                           siteNames: siteNames,
@@ -28,76 +31,7 @@ struct URLCleanerSections: View {
 
     var body: some View {
         Group {
-            Section(AppFeature.urlCleaner.name(l10n.s, language: l10n.language)) {
-                Text(l10n.s.urlCleanerEnableCaption)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text(l10n.s.urlCleanerLocalNote)
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
-                if enabled, cleaner.isRunning {
-                    Label(l10n.s.urlCleanerActiveNow, systemImage: "checkmark.circle.fill")
-                        .font(.caption)
-                        .foregroundStyle(.green)
-                    // The automatic rewrite is silent by design. Naming what it
-                    // took out is the only place someone can see that the
-                    // rules did anything to a link they copied.
-                    if !cleaner.lastRemoved.isEmpty {
-                        Text(removedSummary(cleaner.lastRemoved))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
-
-            Section(l10n.s.urlCleanerRulesTitle) {
-                ForEach(URLCleaning.ruleGroups(rules: rules)) { group in
-                    DisclosureGroup {
-                        parameterGrid(for: group)
-                        addParameterRow(site: group.site)
-                    } label: {
-                        HStack {
-                            Text(title(for: group.site))
-                            Spacer()
-                            Text(countLabel(group.enabledCount))
-                                .foregroundStyle(.secondary)
-                            // Two dozen names for one site is a lot of clicking
-                            // to say "not this site". The names stay listed and
-                            // can be switched back on one at a time.
-                            Button {
-                                disableEverything(in: group)
-                            } label: {
-                                Image(systemName: "minus.circle")
-                                    .frame(width: 20, height: 20)
-                            }
-                            .buttonStyle(.plain)
-                            .foregroundStyle(.secondary)
-                            .disabled(group.enabledCount == 0)
-                            .help(l10n.s.urlCleanerRulesRemoveSiteButton)
-                            .accessibilityLabel(l10n.s.urlCleanerRulesRemoveSiteButton)
-                        }
-                    }
-                }
-                DisclosureHeaderRow(isExpanded: $showingAddSite) {
-                    Text(l10n.s.urlCleanerRulesAddSite)
-                    Spacer()
-                }
-                if showingAddSite {
-                    addSiteRow
-                        .disclosureIndent()
-                }
-                Text(l10n.s.urlCleanerRulesCaption)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                // Why the list is as long as it is. Without this the length
-                // reads as "we delete a lot from your links", when a real link
-                // only ever carries a handful of these.
-                Text(l10n.s.urlCleanerRulesCoverageCaption)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Section(l10n.s.urlCleanerManualTitle) {
+            SettingsSection(title: l10n.s.urlCleanerManualTitle, systemImage: "link") {
                 HStack(spacing: 8) {
                     TextField("", text: $input, prompt: Text(l10n.s.urlCleanerInputPlaceholder))
                         .textFieldStyle(.roundedBorder)
@@ -113,35 +47,127 @@ struct URLCleanerSections: View {
                     }
                     .buttonStyle(.plain)
                     .help(l10n.s.urlCleanerClearButton)
+                    .accessibilityLabel(l10n.s.urlCleanerClearButton)
                     .disabled(!canClearInput)
                 }
                 HStack {
-                    Button(l10n.s.urlCleanerPasteButton) { paste() }
-                    Button(l10n.s.urlCleanerCleanButton) { clean() }
-                        .buttonStyle(.borderedProminent)
-                        .disabled(input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                    Button(l10n.s.urlCleanerCopyButton) { copy() }
-                        .disabled(output.isEmpty)
-                }
-                if output.isEmpty {
-                    Text(message ?? l10n.s.urlCleanerOutputPlaceholder)
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                } else {
-                    Text(output)
-                        .font(.system(.caption, design: .monospaced))
-                        .lineLimit(3)
-                        .truncationMode(.middle)
-                        .textSelection(.enabled)
-                    if let message {
-                        Text(message)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                    Button(action: paste) {
+                        Label(l10n.s.urlCleanerPasteButton, systemImage: "doc.on.clipboard")
                     }
+                    Button(action: clean) {
+                        Label(l10n.s.urlCleanerCleanButton, systemImage: "wand.and.stars")
+                    }
+                    .settingsAction(.primary)
+                    .disabled(input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
+                HStack(alignment: .top, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        if resultState.output.isEmpty {
+                            SettingsInfo(text: message ?? l10n.s.urlCleanerOutputPlaceholder,
+                                         systemImage: "text.alignleft")
+                        } else {
+                            Text(resultState.output)
+                                .font(SettingsTypography.caption.monospaced())
+                                .lineLimit(3)
+                                .truncationMode(.middle)
+                                .textSelection(.enabled)
+                            if let message {
+                                Text(message)
+                                    .font(SettingsTypography.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    Button(action: copy) {
+                        Label(l10n.s.urlCleanerCopyButton, systemImage: "doc.on.doc")
+                    }
+                    .disabled(!resultState.canCopy)
+                }
+            }
+
+            SettingsSection(title: flowText.automaticURLCleaning, systemImage: "arrow.triangle.2.circlepath") {
+                FeatureSwitchRow(feature: .urlCleaner, title: l10n.s.urlCleanerEnable)
+                SettingsExplanation(flowText.automaticURLCaption)
+                SettingsInfo(text: l10n.s.urlCleanerLocalNote, systemImage: "lock.shield")
+                if enabled, cleaner.isRunning {
+                    Label(l10n.s.urlCleanerActiveNow, systemImage: "checkmark.circle.fill")
+                        .font(SettingsTypography.caption)
+                        .foregroundStyle(.green)
+                }
+                if !cleaner.lastRemoved.isEmpty {
+                    Text(actionText.lastCleanup + removedSummary(cleaner.lastRemoved))
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            SettingsSection(title: l10n.s.urlCleanerRulesTitle, systemImage: "line.3.horizontal.decrease.circle") {
+                SettingsInfo(text: actionText.sharedRules, systemImage: "slider.horizontal.3")
+                DisclosureGroup(UXEntryStrings(l10n.language).editRules) {
+                    ForEach(URLCleaning.ruleGroups(rules: rules)) { group in
+                        DisclosureGroup {
+                            parameterGrid(for: group)
+                            addParameterRow(site: group.site)
+                        } label: {
+                            ruleGroupLabel(group)
+                        }
+                    }
+                    DisclosureHeaderRow(isExpanded: $showingAddSite) {
+                        Label(l10n.s.urlCleanerRulesAddSite, systemImage: "plus.circle")
+                        Spacer()
+                    }
+                    if showingAddSite { addSiteRow.disclosureIndent() }
+                    Text(l10n.s.urlCleanerRulesCaption).font(SettingsTypography.caption).foregroundStyle(.secondary)
+                    Text(l10n.s.urlCleanerRulesCoverageCaption).font(SettingsTypography.caption).foregroundStyle(.secondary)
+                }
+                URLRuleTransferView(globalNames: $globalNames, siteNames: $siteNames, disabledNames: $disabledNames)
             }
         }
         .settingsSectionAnchor(.urlCleaner)
+        .onChange(of: input) { _, value in invalidateForInput(value) }
+        .onChange(of: globalNames) { _, _ in invalidateForRules() }
+        .onChange(of: siteNames) { _, _ in invalidateForRules() }
+        .onChange(of: disabledNames) { _, _ in invalidateForRules() }
+        .confirmationDialog(actionText.deleteTitle,
+                            isPresented: Binding(get: { pendingRemoval != nil },
+                                                 set: { if !$0 { pendingRemoval = nil } }),
+                            titleVisibility: .visible) {
+            if let pendingRemoval {
+                Button(actionText.delete + " “" + pendingRemoval.name + "”", role: .destructive) {
+                    remove(pendingRemoval.name, from: pendingRemoval.site)
+                    self.pendingRemoval = nil
+                }
+            }
+            Button(actionText.cancel, role: .cancel) { pendingRemoval = nil }
+        } message: {
+            if let pendingRemoval {
+                Text(title(for: pendingRemoval.site) + " · " + pendingRemoval.name + "\n" +
+                     actionText.deleteMessage)
+            }
+        }
+    }
+
+    private func ruleGroupLabel(_ group: URLCleaning.RuleGroup) -> some View {
+        HStack {
+            Text(title(for: group.site))
+            Spacer()
+            Text(actionText.enabledCount(group.enabledCount, total: group.entries.count))
+                .foregroundStyle(.secondary)
+            Menu {
+                Button(actionText.enableGroup) { setGroupEnabled(true, group: group) }
+                    .disabled(group.enabledCount == group.entries.count)
+                Button(actionText.disableGroup) { setGroupEnabled(false, group: group) }
+                    .disabled(group.enabledCount == 0)
+            } label: {
+                Image(systemName: "ellipsis").frame(width: 24, height: 22)
+            }
+            .menuStyle(.borderlessButton)
+            .fixedSize()
+            .help(actionText.groupHelp)
+            .accessibilityLabel(title(for: group.site) + " · " + actionText.ruleActions)
+        }
     }
 
     /// Two columns keep a long site list (Bilibili has two dozen names) inside
@@ -157,14 +183,16 @@ struct URLCleanerSections: View {
                         .lineLimit(1)
                         .truncationMode(.middle)
                     if !entry.isBuiltIn {
-                        Button {
-                            remove(entry.name, from: group.site)
+                        Menu {
+                            Button(actionText.deleteCustom, role: .destructive) {
+                                pendingRemoval = (group.site, entry.name)
+                            }
                         } label: {
-                            Image(systemName: "minus.circle")
-                                .foregroundStyle(.secondary)
+                            Image(systemName: "ellipsis")
                         }
-                        .buttonStyle(.plain)
-                        .help(l10n.s.urlCleanerRulesRemoveButton)
+                        .menuStyle(.borderlessButton)
+                        .fixedSize()
+                        .accessibilityLabel(entry.name + " · " + actionText.ruleActions)
                     }
                     Spacer(minLength: 0)
                 }
@@ -184,12 +212,14 @@ struct URLCleanerSections: View {
                     .labelsHidden()
                     .accessibilityLabel(l10n.s.urlCleanerRulesParameterPlaceholder)
                     .onSubmit { addParameter(to: site) }
-                Button(l10n.s.urlCleanerRulesAddButton) { addParameter(to: site) }
-                    .disabled(URLCleaning.parameterName(from: parameterDrafts[site] ?? "") == nil)
+                Button { addParameter(to: site) } label: {
+                    Label(l10n.s.urlCleanerRulesAddButton, systemImage: "plus")
+                }
+                .disabled(URLCleaning.parameterName(from: parameterDrafts[site] ?? "") == nil)
             }
             Text(l10n.s.urlCleanerRulesMatchCaption)
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
+                .font(.callout)
+                .foregroundStyle(.secondary)
         }
     }
 
@@ -208,16 +238,12 @@ struct URLCleanerSections: View {
                 .labelsHidden()
                 .accessibilityLabel(l10n.s.urlCleanerRulesParameterPlaceholder)
                 .onSubmit { addSite() }
-            Button(l10n.s.urlCleanerRulesAddButton) { addSite() }
-                .disabled(URLCleaning.siteKey(from: siteDraft) == nil
+            Button(action: addSite) {
+                Label(l10n.s.urlCleanerRulesAddButton, systemImage: "plus")
+            }
+            .disabled(URLCleaning.siteKey(from: siteDraft) == nil
                             || URLCleaning.parameterName(from: siteParameterDraft) == nil)
         }
-    }
-
-    private func countLabel(_ count: Int) -> String {
-        count == 1
-            ? l10n.s.urlCleanerRulesCountSingular
-            : String(format: l10n.s.urlCleanerRulesCountPluralFormat, count)
     }
 
     private func title(for site: String) -> String {
@@ -275,30 +301,15 @@ struct URLCleanerSections: View {
         }
     }
 
-    /// Switches off every built-in name for a site and drops the ones the user
-    /// added to it, which is what "not this site" means in a model that stores
-    /// edits as a difference from the shipped tables rather than a copy.
-    private func disableEverything(in group: URLCleaning.RuleGroup) {
-        var disabled = URLCleaning.tokens(from: disabledNames)
-        for entry in group.entries where entry.isBuiltIn {
-            disabled[group.site, default: []].insert(entry.name)
-        }
-        disabledNames = URLCleaning.storageValue(forTokens: disabled)
-
-        let added = group.entries.filter { !$0.isBuiltIn }.map(\.name)
-        guard !added.isEmpty else { return }
-        if group.site == URLCleaning.allSites {
-            var names = URLCleaning.customParameters(from: globalNames)
-            for name in added { names.remove(name) }
-            globalNames = URLCleaning.storageValue(forNames: names)
-        } else {
-            var siteTokens = URLCleaning.tokens(from: siteNames)
-            for name in added { siteTokens[group.site]?.remove(name) }
-            siteNames = URLCleaning.storageValue(forTokens: siteTokens)
-        }
+    private func setGroupEnabled(_ enabled: Bool, group: URLCleaning.RuleGroup) {
+        let changed = URLCleaning.settingGroupEnabled(enabled, site: group.site, rules: rules)
+        disabledNames = URLCleaning.storageValue(forTokens: changed.disabled)
     }
 
     private func remove(_ name: String, from site: String) {
+        var disabled = URLCleaning.tokens(from: disabledNames)
+        disabled[site]?.remove(name)
+        disabledNames = URLCleaning.storageValue(forTokens: disabled)
         if site == URLCleaning.allSites {
             var names = URLCleaning.customParameters(from: globalNames)
             names.remove(name)
@@ -324,7 +335,7 @@ struct URLCleanerSections: View {
 
     private func clean() {
         let result = cleaner.clean(input)
-        output = result?.url ?? ""
+        resultState.record(result, input: input, rules: rules)
         switch URLCleaning.outcome(for: result, input: input) {
         case .notAURL: message = l10n.s.urlCleanerNoURL
         case .unchanged: message = l10n.s.urlCleanerNoChange
@@ -334,14 +345,22 @@ struct URLCleanerSections: View {
     }
 
     private func copy() {
-        guard !output.isEmpty else { return }
-        cleaner.copy(output)
+        guard resultState.canCopy else { return }
+        cleaner.copy(resultState.output)
         message = l10n.s.urlCleanerCopied
     }
 
     private func clearInput() {
         input = ""
-        output = ""
+        resultState.invalidate()
         message = nil
+    }
+
+    private func invalidateForInput(_ input: String) {
+        if resultState.invalidateIfInputChanged(to: input) { message = flowText.resultExpired }
+    }
+
+    private func invalidateForRules() {
+        if resultState.invalidateIfRulesChanged(to: rules) { message = flowText.resultExpired }
     }
 }

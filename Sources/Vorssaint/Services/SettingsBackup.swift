@@ -9,15 +9,15 @@ import UniformTypeIdentifiers
 /// every service, panel and status item comes back from a clean state instead
 /// of chasing 25 live re-syncs.
 enum SettingsBackup {
-    /// Shows the save panel and writes the file. nil = user cancelled.
+    /// Shows the save panel and writes the file. Cancellation is separate from write failure.
     @discardableResult
-    static func runExportPanel() -> Bool? {
+    static func runExportPanel() -> SettingsBackupExport {
         let panel = NSSavePanel()
-        panel.nameFieldStringValue = "Vorssaint Settings.plist"
+        panel.nameFieldStringValue = "\(AppInfo.name) Settings.plist"
         panel.allowedContentTypes = [.propertyList]
         panel.canCreateDirectories = true
         NSApp.activate(ignoringOtherApps: true)
-        guard panel.runModal() == .OK, let url = panel.url else { return nil }
+        guard panel.runModal() == .OK, let url = panel.url else { return .cancelled }
         ScratchpadService.shared.prepareForSettingsBackup()
         let defaults = UserDefaults.standard
         // object(forKey:) sees through to registered defaults, so the file is
@@ -26,15 +26,7 @@ enum SettingsBackup {
         let payload = SettingsBackupSupport.payload(appVersion: AppInfo.version) {
             defaults.object(forKey: $0)
         }
-        do {
-            let data = try PropertyListSerialization.data(fromPropertyList: payload,
-                                                          format: .xml,
-                                                          options: 0)
-            try data.write(to: url, options: .atomic)
-            return true
-        } catch {
-            return false
-        }
+        return SettingsBackupExport.write(payload, to: url)
     }
 
     /// Shows the open panel; nil = user cancelled.
@@ -86,12 +78,7 @@ enum SettingsBackup {
             out[scope.defaultsKey] = SettingsBackupSupport.pathIdentities(
                 in: defaults.stringArray(forKey: scope.defaultsKey) ?? [])
         }
-        for key in SettingsBackupSupport.exportKeys() {
-            defaults.removeObject(forKey: key)
-        }
-        for (key, value) in settings {
-            defaults.set(value, forKey: key)
-        }
+        SettingsBackupSupport.replaceExportedSettings(settings, in: defaults)
         if let restored = settings[DefaultsKey.recorderEditorPresets] as? Data {
             defaults.set(SettingsBackupSupport.preservingLocalPresetImages(
                 restored: restored, local: localRecorderPresets), forKey: DefaultsKey.recorderEditorPresets)

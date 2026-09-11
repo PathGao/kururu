@@ -29,6 +29,7 @@ enum BundleMigration {
     /// name; the caller should then skip the rest of startup.
     @discardableResult
     static func run() -> Bool {
+        guard Bundle.main.bundleIdentifier == "com.vorssaint.utils" else { return false }
         let bundleURL = Bundle.main.bundleURL
         if bundleURL.lastPathComponent == oldName {
             return renameSelfAndRelaunch(from: bundleURL)

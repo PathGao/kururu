@@ -5,7 +5,7 @@ import CryptoKit
 import Foundation
 
 /// Pure helpers for checking and comparing application versions according to
-/// Semantic Versioning 2.0.0, handling stable and pre-release (beta, rc, alpha) channels.
+/// Semantic Versioning 2.0.0, including legacy prerelease versions for safe comparisons.
 enum UpdateServiceSupport {
 
     static func sha256Matches(_ data: Data, expectedHex: String) -> Bool {
@@ -145,18 +145,17 @@ enum UpdateServiceSupport {
         let body: String?
     }
 
-    /// Selects the best update candidate from a list of releases based on channel preferences.
+    /// Selects the newest installable stable release. Legacy prerelease installations never downgrade.
     static func selectUpdate(from candidates: [ReleaseCandidate],
-                             currentVersion: String,
-                             includeBetas: Bool) -> ReleaseCandidate? {
+                             currentVersion: String) -> ReleaseCandidate? {
         let eligible = candidates.filter { candidate in
             guard !candidate.isDraft else { return false }
             guard candidate.dmgURL != nil else { return false }
 
             let parsed = SemanticVersion(raw: candidate.tagName)
-            let isBeta = candidate.isPrerelease || (parsed?.isPrerelease ?? false)
+            let isPrerelease = candidate.isPrerelease || (parsed?.isPrerelease ?? false)
 
-            if !includeBetas && isBeta {
+            if isPrerelease {
                 return false
             }
             return isNewer(candidate.tagName, than: currentVersion)

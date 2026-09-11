@@ -20,6 +20,7 @@ struct PlainTextEditor: NSViewRepresentable {
     static let lineFragmentPadding: CGFloat = 5
 
     @Binding var text: String
+    var documentID: AnyHashable?
     /// Character offsets rather than String.Index: an index computed
     /// against one version of the text is undefined behavior to read back
     /// against another, and this binding outlives the edit that produced
@@ -32,17 +33,22 @@ struct PlainTextEditor: NSViewRepresentable {
     var textContainerInset: NSSize?
     /// Handed the text view once, for callers that need to reach it later.
     var onCreate: ((NSTextView) -> Void)?
+    var onDestroy: ((NSTextView) -> Void)?
 
     init(text: Binding<String>,
+         documentID: AnyHashable? = nil,
          selectedRange: Binding<Range<Int>?>? = nil,
          textColor: NSColor? = nil,
          textContainerInset: NSSize? = nil,
-         onCreate: ((NSTextView) -> Void)? = nil) {
+         onCreate: ((NSTextView) -> Void)? = nil,
+         onDestroy: ((NSTextView) -> Void)? = nil) {
         self._text = text
+        self.documentID = documentID
         self.selectedRange = selectedRange
         self.textColor = textColor
         self.textContainerInset = textContainerInset
         self.onCreate = onCreate
+        self.onDestroy = onDestroy
     }
 
     func makeNSView(context: Context) -> NSScrollView {
@@ -81,14 +87,21 @@ struct PlainTextEditor: NSViewRepresentable {
     }
 
     func updateNSView(_ nsView: NSScrollView, context: Context) {
-        guard let textView = nsView.documentView as? NSTextView,
-              textView.string != text,
+        update(nsView, coordinator: context.coordinator)
+    }
+
+    func update(_ nsView: NSScrollView, coordinator: Coordinator) {
+        coordinator.refresh(text: $text, selectedRange: selectedRange, onDestroy: onDestroy)
+        guard coordinator.isActive else { return }
+        guard let textView = nsView.documentView as? NSTextView else { return }
+        if coordinator.updateDocumentID(documentID) { textView.undoManager?.removeAllActions() }
+        guard textView.string != text,
               !textView.hasMarkedText() else { return }
         // Setting .string posts a selection notification, and answering it
         // here would write state from inside a view update.
-        context.coordinator.isApplyingExternalText = true
+        coordinator.isApplyingExternalText = true
         textView.string = text
-        context.coordinator.isApplyingExternalText = false
+        coordinator.isApplyingExternalText = false
         // Programmatic replaces (load, retention, restore) invalidate undo
         // entries recorded against the old storage; replaying one would
         // resurrect cleared text or throw a range exception.
@@ -96,21 +109,54 @@ struct PlainTextEditor: NSViewRepresentable {
     }
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(text: $text, selectedRange: selectedRange)
+        Coordinator(text: $text, selectedRange: selectedRange, onDestroy: onDestroy, documentID: documentID)
+    }
+
+    static func dismantleNSView(_ nsView: NSScrollView, coordinator: Coordinator) {
+        coordinator.dismantle(nsView.documentView as? NSTextView)
     }
 
     final class Coordinator: NSObject, NSTextViewDelegate {
-        private let text: Binding<String>
-        private let selectedRange: Binding<Range<Int>?>?
+        private var documentID: AnyHashable?
+        private var text: Binding<String>
+        private var selectedRange: Binding<Range<Int>?>?
+        private var onDestroy: ((NSTextView) -> Void)?
+        private(set) var isActive = true
         var isApplyingExternalText = false
 
-        init(text: Binding<String>, selectedRange: Binding<Range<Int>?>?) {
+        init(text: Binding<String>, selectedRange: Binding<Range<Int>?>?,
+             onDestroy: ((NSTextView) -> Void)? = nil, documentID: AnyHashable? = nil) {
+            self.documentID = documentID
             self.text = text
             self.selectedRange = selectedRange
+            self.onDestroy = onDestroy
+        }
+
+        func updateDocumentID(_ next: AnyHashable?) -> Bool {
+            guard isActive, documentID != next else { return false }
+            documentID = next
+            return true
+        }
+
+        func refresh(text: Binding<String>, selectedRange: Binding<Range<Int>?>?,
+                     onDestroy: ((NSTextView) -> Void)?) {
+            guard isActive else { return }
+            self.text = text
+            self.selectedRange = selectedRange
+            self.onDestroy = onDestroy
+        }
+
+        func dismantle(_ view: NSTextView?) {
+            guard isActive else { return }
+            isActive = false
+            view?.delegate = nil
+            let callback = onDestroy
+            onDestroy = nil
+            if let view { callback?(view) }
         }
 
         func textDidChange(_ notification: Notification) {
-            guard !isApplyingExternalText, let textView = notification.object as? NSTextView else { return }
+            guard isActive, !isApplyingExternalText, let textView = notification.object as? NSTextView else { return }
             let current = textView.string
             if text.wrappedValue != current { text.wrappedValue = current }
             publishSelection(of: textView, in: current)
@@ -121,7 +167,7 @@ struct PlainTextEditor: NSViewRepresentable {
         /// which for a caller that reloads its text out-of-band means
         /// writing stale content back over the fresh content.
         func textViewDidChangeSelection(_ notification: Notification) {
-            guard !isApplyingExternalText,
+            guard isActive, !isApplyingExternalText,
                   selectedRange != nil,
                   let textView = notification.object as? NSTextView else { return }
             publishSelection(of: textView, in: textView.string)

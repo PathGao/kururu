@@ -1,22 +1,22 @@
 /* macOS Automation permission prompt. */
-"NSAppleEventsUsageDescription" = "Vorssaint usa Automazione per spostare file nel Finder, spostare elementi nel Cestino e aprire comandi del Terminale quando richiedi azioni di Homebrew.";
+"NSAppleEventsUsageDescription" = "__APP_NAME__ usa Automazione per spostare file nel Finder, spostare elementi nel Cestino e aprire comandi del Terminale quando richiedi azioni di Homebrew. Also used to set Finder folder arrangement rules when you request it.";
 
 /* macOS Screen & System Audio Recording permission prompt. */
-"NSAudioCaptureUsageDescription" = "Vorssaint usa l'audio di ogni app per regolarne il volume nel mixer e per includere l'audio del Mac nelle registrazioni dello schermo che avvii. Nulla lascia il tuo Mac.";
+"NSAudioCaptureUsageDescription" = "__APP_NAME__ usa l'audio di ogni app per regolarne il volume nel mixer e per includere l'audio del Mac nelle registrazioni dello schermo che avvii. Nulla lascia il tuo Mac.";
 
 /* macOS Bluetooth permission prompt. */
-"NSBluetoothAlwaysUsageDescription" = "Vorssaint usa il Bluetooth solo per leggere la batteria delle periferiche connesse. Nulla lascia il tuo Mac.";
+"NSBluetoothAlwaysUsageDescription" = "__APP_NAME__ usa il Bluetooth solo per leggere la batteria delle periferiche connesse. Nulla lascia il tuo Mac.";
 
 /* macOS Microphone permission prompt. */
-"NSMicrophoneUsageDescription" = "Vorssaint registra il microfono solo quando lo attivi per una registrazione dello schermo. L’audio resta sul tuo Mac, a meno che tu scelga di creare un link temporaneo.";
+"NSMicrophoneUsageDescription" = "__APP_NAME__ registra il microfono solo quando lo attivi per una registrazione dello schermo. L’audio resta sul tuo Mac.";
 
 /* macOS Camera permission prompt. */
 
 /* macOS Downloads folder permission prompt. */
-"NSDownloadsFolderUsageDescription" = "Vorssaint controlla i metadati locali in Download per esaminare, organizzare o spostare nel Cestino solo i file WhatsApp confermati scelti da te.";
+"NSDownloadsFolderUsageDescription" = "__APP_NAME__ controlla i metadati locali in Download per esaminare, organizzare o spostare nel Cestino solo i file WhatsApp confermati scelti da te.";
 
 /* macOS user-selected organizer destination prompts. */
-"NSDesktopFolderUsageDescription" = "Vorssaint organizza i download WhatsApp confermati in una cartella di destinazione scelta esplicitamente da te.";
-"NSDocumentsFolderUsageDescription" = "Vorssaint organizza i download WhatsApp confermati in una cartella di destinazione scelta esplicitamente da te.";
-"NSNetworkVolumesUsageDescription" = "Vorssaint organizza i download WhatsApp confermati in una cartella di destinazione scelta esplicitamente da te.";
-"NSRemovableVolumesUsageDescription" = "Vorssaint organizza i download WhatsApp confermati in una cartella di destinazione scelta esplicitamente da te.";
+"NSDesktopFolderUsageDescription" = "__APP_NAME__ organizza i download WhatsApp confermati in una cartella di destinazione scelta esplicitamente da te.";
+"NSDocumentsFolderUsageDescription" = "__APP_NAME__ organizza i download WhatsApp confermati in una cartella di destinazione scelta esplicitamente da te.";
+"NSNetworkVolumesUsageDescription" = "__APP_NAME__ organizza i download WhatsApp confermati in una cartella di destinazione scelta esplicitamente da te.";
+"NSRemovableVolumesUsageDescription" = "__APP_NAME__ organizza i download WhatsApp confermati in una cartella di destinazione scelta esplicitamente da te.";

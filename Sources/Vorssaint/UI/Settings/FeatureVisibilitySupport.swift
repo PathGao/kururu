@@ -8,8 +8,8 @@ import Foundation
 /// below and the unit tests can reason about pages without pulling UI in.
 enum SettingsPage: Hashable {
     case features, menuBarIcon, menuBarPanel, monitor
-    case keepAwake, brightness, bluetoothSleep, cleaningMode, mouse, trackpad, switcher, dock, keyboard, cutPaste, windowBehavior, cleaner, uninstaller, homebrew, environment, media, clipboard, shelf, screenshot, radialMenu, commandBar, mixer, micMute, musicBlock, scratchpad
-    case shortcuts, advanced, about, releaseNotes, support
+    case keepAwake, brightness, bluetoothSleep, cleaningMode, mouse, trackpad, switcher, dock, keyboard, cutPaste, windowBehavior, cleaner, uninstaller, homebrew, environment, media, clipboard, urlCleaner, shelf, screenshot, radialMenu, commandBar, mixer, micMute, musicBlock, scratchpad
+    case shortcuts, advanced, about, releaseNotes
 }
 
 extension SettingsPage: CaseIterable {
@@ -29,6 +29,7 @@ extension SettingsPage: CaseIterable {
         case .commandBar: return FeatureStrings.commandBar(language).pageTitle
         case .radialMenu: return FeatureStrings.radialMenu(language).pageTitle
         case .clipboard: return FeatureStrings.clipboard(language).title
+        case .urlCleaner: return s.urlCleanerName
         case .cutPaste: return FeatureStrings.finderRename(language).pageTitle
         case .shelf: return s.shelfName
         case .scratchpad: return FeatureStrings.scratchpad(language).pageTitle
@@ -46,10 +47,9 @@ extension SettingsPage: CaseIterable {
         case .environment: return FeatureStrings.environment(language).pageTitle
         case .uninstaller: return s.uninstallerName
         case .shortcuts: return s.shortcutsPageTitle
-        case .advanced: return s.tabAdvanced
+        case .advanced: return SettingsHierarchyStrings(language: language).pageTitle
         case .about: return s.tabAbout
         case .releaseNotes: return s.tabReleaseNotes
-        case .support: return s.tabSupport
         }
     }
 }
@@ -107,7 +107,8 @@ enum SettingsSectionAnchor: String, CaseIterable, Hashable {
         case .switcher: return .switcher
         case .dock, .dockClick: return .dock
         case .finderCutPaste, .finderRename: return .cutPaste
-        case .clipboardHistory, .pastePlain, .urlCleaner: return .clipboard
+        case .clipboardHistory, .pastePlain: return .clipboard
+        case .urlCleaner: return .urlCleaner
         case .keyboardDebounce, .superKey, .textSnippets: return .keyboard
         case .screenshot, .screenRecorder, .colorPicker, .screenOCR:
             return .screenshot
@@ -244,8 +245,7 @@ extension AppFeature {
         case .finderRename:
             return FeatureSettingsDestination(.cutPaste, sectionAnchor: .finderRename)
         case .shelf: return FeatureSettingsDestination(.shelf)
-        case .urlCleaner:
-            return FeatureSettingsDestination(.clipboard, sectionAnchor: .urlCleaner)
+        case .urlCleaner: return FeatureSettingsDestination(.urlCleaner, sectionAnchor: .urlCleaner)
 
         case .mixer: return FeatureSettingsDestination(.mixer)
         case .soundOutputSwitcher:
@@ -312,7 +312,8 @@ enum FeatureVisibilitySupport {
         case .switcher: return [.switcher]
         case .dock: return [.dockPreview, .dockClick]
         case .windowBehavior: return [.windowMaximizer, .autoQuit, .quitWindowProtection]
-        case .clipboard: return [.clipboardHistory, .pastePlain, .urlCleaner]
+        case .clipboard: return [.clipboardHistory, .pastePlain]
+        case .urlCleaner: return [.urlCleaner]
         case .cutPaste: return [.finderCutPaste, .finderRename]
         case .shelf: return [.shelf]
         case .media: return [.mediaTools]
@@ -328,9 +329,20 @@ enum FeatureVisibilitySupport {
         case .screenshot: return [.screenshot, .screenRecorder, .screenOCR, .colorPicker]
         case .radialMenu: return [.radialMenu]
         case .commandBar: return [.commandBar]
-        case .features, .menuBarIcon, .menuBarPanel, .shortcuts, .advanced, .about, .releaseNotes, .support:
+        case .features, .menuBarIcon, .menuBarPanel, .shortcuts, .advanced, .about, .releaseNotes:
             return []
         }
+    }
+
+    /// Keep only the page currently being inspected alongside active modules.
+    static func isSidebarPageVisible(_ page: SettingsPage, selectedPage: SettingsPage,
+                                     isAvailable: (AppFeature) -> Bool) -> Bool {
+        page == selectedPage || isPageVisible(page, isAvailable: isAvailable)
+    }
+
+    static func configurationUnit(for page: SettingsPage) -> FeatureUnit? {
+        if page == .urlCleaner { return .clipboard }
+        return FeatureUnit.allCases.first { $0.page == page }
     }
 
     /// Callers pass the unit's availability, not the feature's: a page is

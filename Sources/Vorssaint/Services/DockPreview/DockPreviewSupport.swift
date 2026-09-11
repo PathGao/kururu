@@ -107,12 +107,13 @@ enum DockPreviewSupport {
 
     static func performCloseAction(quitAppOnClose: Bool,
                                    requestQuit: () -> Bool,
+                                   quitFailed: () -> Void,
                                    closeWindow: () -> Void) {
-        if closeAction(quitAppOnClose: quitAppOnClose) == .quitApp,
-           requestQuit() {
-            return
+        if closeAction(quitAppOnClose: quitAppOnClose) == .quitApp {
+            if !requestQuit() { quitFailed() }
+        } else {
+            closeWindow()
         }
-        closeWindow()
     }
 
     /// How long the cursor must rest on an icon before its panel opens. Long

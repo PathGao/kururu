@@ -147,33 +147,6 @@ enum BrightnessSupport {
         return writeAccepted ? .writeOnly : .dead
     }
 
-    /// Identifies one physical monitor on one connection path. A monitor may
-    /// answer DDC directly but become write-only behind a particular hub, so
-    /// neither the display fingerprint nor the port is sufficient alone.
-    static func ddcPathKey(displayFingerprint: String,
-                           ioDisplayLocation: String) -> String? {
-        guard !displayFingerprint.isEmpty, !ioDisplayLocation.isEmpty else { return nil }
-        return "\(displayFingerprint)|\(ioDisplayLocation)"
-    }
-
-    /// Keeps recent write-only paths unique and bounded. Re-adding a path
-    /// moves it to the end, while a successful reply or rejected write removes
-    /// it so a changed connection can be classified again.
-    static func updatedWriteOnlyDDCPaths(_ stored: [String],
-                                         path: String,
-                                         isWriteOnly: Bool,
-                                         limit: Int = 16) -> [String] {
-        guard !path.isEmpty, limit > 0 else { return [] }
-        var updated = stored.filter { !$0.isEmpty && $0 != path }
-        if isWriteOnly { updated.append(path) }
-        return Array(updated.suffix(limit))
-    }
-
-    static func shouldProbeDDC(pathKey: String?, writeOnlyPaths: Set<String>) -> Bool {
-        guard let pathKey else { return true }
-        return !writeOnlyPaths.contains(pathKey)
-    }
-
     // MARK: - Display switching
 
     /// Turning off the final drawable display would leave no UI path to turn
@@ -334,18 +307,37 @@ enum BrightnessSupport {
         min(max(current + delta, 0), 1)
     }
 
-    /// Whether a brightness key press aimed at a system-routed display is
-    /// stepped by the app instead of left to the system (issue #268). The
-    /// system's own key handling only ever moves its native target, so a
-    /// press the pointer routes to any other display (an Apple pipeline
-    /// external monitor, or any display in clamshell mode) has to be stepped
-    /// here or it lands on the wrong screen. The built-in panel keeps the
-    /// native handling and its animation unless the overlay replaces it.
+    /// Never substitute another screen when the pointed screen is unavailable.
+    static func commandBrightnessTarget(pointerDisplayID: UInt32?,
+                                        displays: [(id: UInt32, isBuiltIn: Bool)]) -> UInt32? {
+        guard let pointerDisplayID else { return nil }
+        return displays.first { $0.id == pointerDisplayID && !$0.isBuiltIn }?.id
+    }
+
+    struct CommandBrightnessRequest: Equatable {
+        let displayID: UInt32
+        let delta: Double
+    }
+
+    static func commandBrightnessRequest(direction: Int,
+                                         pointerDisplayID: UInt32?,
+                                         displays: [(id: UInt32, isBuiltIn: Bool)])
+        -> CommandBrightnessRequest? {
+        guard direction != 0,
+              let displayID = commandBrightnessTarget(
+                pointerDisplayID: pointerDisplayID, displays: displays)
+        else { return nil }
+        return CommandBrightnessRequest(
+            displayID: displayID,
+            delta: direction < 0 ? -brightnessKeyStep : brightnessKeyStep)
+    }
+
+    /// External system-routed displays need our step when routing or replacing
+    /// their OSD; the built-in display always keeps native key handling.
     static func stepsSystemRoutedDisplay(followsPointer: Bool,
                                          displayIsBuiltIn: Bool,
                                          overlayReplacesNative: Bool) -> Bool {
-        if followsPointer, !displayIsBuiltIn { return true }
-        return overlayReplacesNative
+        !displayIsBuiltIn && (followsPointer || overlayReplacesNative)
     }
 
     /// Sixteen segments match the system brightness steps. A non-zero value

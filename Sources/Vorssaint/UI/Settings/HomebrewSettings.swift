@@ -18,15 +18,20 @@ struct HomebrewSettings: View {
     /// answer to a question they have to ask.
     @State private var expanded: Set<String> = []
 
+    private var hierarchyText: HomebrewHierarchyStrings {
+        HomebrewHierarchyStrings(language: l10n.language)
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             pageHeader
-                .padding(.horizontal, 16)
+                .padding(.horizontal, SettingsVisualStyle.current.pageInset)
                 .padding(.vertical, 12)
-            Divider()
             content
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
+        .font(SettingsTypography.body)
+        .controlSize(.regular)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .onAppear {
             if homebrew.installed.isEmpty {
@@ -52,8 +57,6 @@ struct HomebrewSettings: View {
 
     private var pageHeader: some View {
         HStack(spacing: 8) {
-            Label(AppFeature.homebrew.name(l10n.s, language: l10n.language), systemImage: "shippingbox")
-                .font(.system(size: 14, weight: .semibold))
             Spacer(minLength: 0)
             refreshButton
             if homebrew.brewPath != nil {
@@ -64,35 +67,31 @@ struct HomebrewSettings: View {
     }
 
     private var content: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                if let tap = homebrew.untrustedTap {
-                    HomebrewTrustCard(tap: tap)
-                }
-                if let status = homebrew.operationStatus {
-                    HomebrewOperationStatusView(status: status,
-                                                log: homebrew.log,
-                                                terminalFallbackCommand: homebrew.terminalFallbackCommand,
-                                                compact: false,
-                                                showDetails: $showOperationDetails,
-                                                onCancel: homebrew.cancelOperation,
-                                                onClear: homebrew.clearLog,
-                                                onOpenTerminal: homebrew.openTerminalFallback)
-                }
-                if let error = homebrew.errorMessage, !error.isEmpty {
-                    Text(error)
-                        .font(.caption)
-                        .foregroundStyle(.red)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                if homebrew.brewPath == nil && homebrew.masPath == nil {
-                    missingState
-                } else {
-                    sections
-                }
+        SettingsForm {
+            if let tap = homebrew.untrustedTap {
+                HomebrewTrustCard(tap: tap)
             }
-            .padding(16)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            if let status = homebrew.operationStatus {
+                HomebrewOperationStatusView(status: status,
+                                            log: homebrew.log,
+                                            terminalFallbackCommand: homebrew.terminalFallbackCommand,
+                                            compact: false,
+                                            showDetails: $showOperationDetails,
+                                            onCancel: homebrew.cancelOperation,
+                                            onClear: homebrew.clearLog,
+                                            onOpenTerminal: homebrew.openTerminalFallback)
+            }
+            if let error = homebrew.errorMessage, !error.isEmpty {
+                Text(error)
+                    .font(SettingsTypography.caption)
+                    .foregroundStyle(.red)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            if homebrew.brewPath == nil && homebrew.masPath == nil {
+                missingState
+            } else {
+                sections
+            }
         }
     }
 
@@ -100,11 +99,13 @@ struct HomebrewSettings: View {
     private var sections: some View {
         if homebrew.brewPath != nil {
             packageSection(title: l10n.s.homebrewRequested,
+                           systemImage: "shippingbox",
                            packages: HomebrewPackageOrdering.updatesFirst(homebrew.requestedPackages),
                            loading: homebrew.isLoadingInstalled)
             let orphans = homebrew.orphanedPackages
             if !orphans.isEmpty {
                 packageSection(title: l10n.s.homebrewOrphans,
+                               systemImage: "shippingbox",
                                note: l10n.s.homebrewOrphansNote,
                                packages: orphans,
                                loading: homebrew.isLoadingInstalled)
@@ -112,6 +113,7 @@ struct HomebrewSettings: View {
         }
         if homebrew.masPath != nil {
             packageSection(title: l10n.s.homebrewMasApps,
+                           systemImage: "app.badge",
                            packages: homebrew.masApps,
                            loading: false)
         }
@@ -120,9 +122,9 @@ struct HomebrewSettings: View {
     private var missingState: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(l10n.s.homebrewMissingTitle)
-                .font(.system(size: 13, weight: .semibold))
+                .font(SettingsTypography.sectionTitle)
             Text(l10n.s.homebrewMissingBody)
-                .font(.caption)
+                .font(SettingsTypography.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -132,10 +134,12 @@ struct HomebrewSettings: View {
         Button {
             homebrew.refreshInstalled()
         } label: {
-            Image(systemName: "arrow.clockwise")
+            Label(hierarchyText.rereadInstalled, systemImage: "arrow.clockwise")
         }
+        .settingsAction(.secondary)
         .fixedSize()
-        .help(l10n.s.homebrewRefresh)
+        .help(hierarchyText.rereadInstalled)
+        .accessibilityLabel(hierarchyText.rereadInstalled)
         .disabled(homebrew.isBusy)
     }
 
@@ -143,41 +147,33 @@ struct HomebrewSettings: View {
         Button {
             pendingAction = HomebrewPendingAction(action: .updateHomebrew)
         } label: {
-            Label(l10n.s.homebrewUpdateHomebrew, systemImage: "arrow.triangle.2.circlepath")
+            Label(hierarchyText.updateDefinitions, systemImage: "arrow.triangle.2.circlepath")
         }
+        .settingsAction(.primary)
         .fixedSize()
-        .controlSize(.small)
+        .controlSize(.regular)
         .disabled(homebrew.isBusy)
     }
 
     private func packageSection(title: String,
+                                systemImage: String,
                                 note: String? = nil,
                                 packages: [HomebrewPackage],
                                 loading: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 6) {
-                Text(title)
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.secondary)
-                countBadge(packages.count)
-                Spacer(minLength: 0)
-            }
+        SettingsSection {
             if let note {
-                Text(note)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                SettingsExplanation(note)
             }
             if loading {
                 HStack(spacing: 8) {
                     ProgressView().controlSize(.small)
                     Text(l10n.s.homebrewLoading)
-                        .font(.caption)
+                        .font(SettingsTypography.caption)
                         .foregroundStyle(.secondary)
                 }
             } else if packages.isEmpty {
                 Text(l10n.s.homebrewNoPackages)
-                    .font(.caption)
+                    .font(SettingsTypography.caption)
                     .foregroundStyle(.secondary)
             } else {
                 LazyVStack(alignment: .leading, spacing: 2) {
@@ -191,13 +187,17 @@ struct HomebrewSettings: View {
                     }
                 }
             }
+        } header: {
+            HStack(spacing: 8) {
+                Label(title, systemImage: systemImage)
+                countBadge(packages.count)
+            }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func countBadge(_ count: Int) -> some View {
         Text("\(count)")
-            .font(.system(size: 9, weight: .semibold, design: .rounded))
+            .font(.system(size: 11, weight: .semibold, design: .rounded))
             .monospacedDigit()
             .foregroundStyle(.secondary)
             .padding(.horizontal, 5)
@@ -207,49 +207,31 @@ struct HomebrewSettings: View {
 
     private func packageRow(_ package: HomebrewPackage) -> some View {
         let dependencies = homebrew.dependencies(of: package)
-        return HStack(alignment: .firstTextBaseline, spacing: 8) {
-            disclosure(for: package, count: dependencies.count)
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 6) {
-                    Text(package.displayName)
-                        .font(.system(size: 12, weight: .medium))
-                        .lineLimit(1)
-                    if let version = package.versionText {
-                        Text(version)
-                            .font(.system(size: 10, design: .monospaced))
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                    }
-                }
-                if let desc = package.desc, !desc.isEmpty {
-                    Text(desc)
-                        .font(.caption)
+        return VStack(alignment: .leading, spacing: 4) {
+            HStack(alignment: .firstTextBaseline, spacing: 10) {
+                Text(package.displayName)
+                    .font(SettingsTypography.body.weight(.semibold))
+                    .fixedSize(horizontal: false, vertical: true)
+                if package.update == nil, let version = package.versionText {
+                    Text(version)
+                        .font(SettingsTypography.caption.monospaced())
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
+                Spacer(minLength: 8)
+                disclosure(for: package, count: dependencies.count)
+                packageUpdate(package)
             }
-            Spacer(minLength: 8)
-            if let update = package.update {
-                if package.installedOnRequest {
-                    Button {
-                        pendingAction = HomebrewPendingAction(action: .upgrade, package: package)
-                    } label: {
-                        Text("\(l10n.s.homebrewUpgrade) \(update.currentVersion)")
-                    }
-                    .controlSize(.small)
-                    .disabled(homebrew.isBusy || update.isPinned)
-                } else {
-                    Text(l10n.s.homebrewUpdateAvailableBadge)
-                        .font(.caption)
-                        .foregroundStyle(.orange)
-                }
+            if let desc = package.desc, !desc.isEmpty {
+                Text(desc)
+                    .font(SettingsTypography.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 5)
         .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())
-        .background(RoundedRectangle(cornerRadius: 6).fill(Color.primary.opacity(0.03)))
+        .settingsItemSurface()
         .contextMenu {
             Button(l10n.s.homebrewCopyName) {
                 NSPasteboard.general.clearContents()
@@ -261,9 +243,52 @@ struct HomebrewSettings: View {
         }
     }
 
-    /// The triangle that opens a package's dependencies. A package that pulled
-    /// nothing in keeps the same indent and no control, so the names stay in
-    /// one column.
+    @ViewBuilder
+    private func packageUpdate(_ package: HomebrewPackage) -> some View {
+        if let update = package.update {
+            HStack(spacing: 10) {
+                versionChange(update)
+                if package.installedOnRequest {
+                    Button {
+                        pendingAction = HomebrewPendingAction(action: .upgrade, package: package)
+                    } label: {
+                        Label(l10n.s.homebrewUpgrade, systemImage: "arrow.up.circle")
+                    }
+                    .settingsAction(.primary)
+                    .fixedSize()
+                    .disabled(homebrew.isBusy || update.isPinned)
+                    if update.isPinned {
+                        Image(systemName: "pin.fill")
+                            .foregroundStyle(.secondary)
+                            .help(l10n.s.homebrewPinnedVersion)
+                            .accessibilityLabel(l10n.s.homebrewPinnedVersion)
+                    }
+                } else {
+                    Text(l10n.s.homebrewUpdateAvailableBadge)
+                        .font(SettingsTypography.caption)
+                        .foregroundStyle(.orange)
+                }
+            }
+            .layoutPriority(1)
+        }
+    }
+
+    private func versionChange(_ update: HomebrewPackageUpdate) -> some View {
+        let installed = update.installedText.isEmpty ? "—" : update.installedText
+        let summary = "\(hierarchyText.currentVersion): \(installed), \(hierarchyText.targetVersion): \(update.currentVersion)"
+        return HStack(spacing: 5) {
+            Text(installed).foregroundStyle(.secondary)
+            Image(systemName: "arrow.right").foregroundStyle(.tertiary)
+            Text(update.currentVersion)
+        }
+        .font(SettingsTypography.caption.monospaced())
+        .textSelection(.enabled)
+        .fixedSize(horizontal: true, vertical: false)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(summary)
+        .help(summary)
+    }
+
     @ViewBuilder
     private func disclosure(for package: HomebrewPackage, count: Int) -> some View {
         if count > 0 {
@@ -275,20 +300,22 @@ struct HomebrewSettings: View {
                 }
             } label: {
                 HStack(spacing: 3) {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 9, weight: .semibold))
-                        .rotationEffect(.degrees(expanded.contains(package.id) ? 90 : 0))
+                    Image(systemName: "shippingbox")
                     Text("\(count)")
-                        .font(.system(size: 9, weight: .semibold, design: .rounded))
+                        .font(.system(size: 11, weight: .semibold, design: .rounded))
                         .monospacedDigit()
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 9, weight: .semibold))
+                        .rotationEffect(.degrees(expanded.contains(package.id) ? 180 : 0))
                 }
-                .foregroundStyle(.secondary)
-                .frame(width: 26, alignment: .leading)
-                .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
-        } else {
-            Color.clear.frame(width: 26, height: 1)
+            .settingsAction(.secondary)
+            .accessibilityLabel(HomebrewDependencyStrings(language: l10n.language)
+                .action(package: package.displayName, count: count, expanded: expanded.contains(package.id)))
+            .accessibilityValue(HomebrewDependencyStrings(language: l10n.language)
+                .state(expanded: expanded.contains(package.id)))
+            .help(HomebrewDependencyStrings(language: l10n.language)
+                .action(package: package.displayName, count: count, expanded: expanded.contains(package.id)))
         }
     }
 
@@ -301,11 +328,11 @@ struct HomebrewSettings: View {
         return VStack(alignment: .leading, spacing: 2) {
             HStack(spacing: 6) {
                 Text(dependency.displayName)
-                    .font(.system(size: 11))
+                    .font(SettingsTypography.body)
                     .lineLimit(1)
                 if let version = dependency.versionText {
                     Text(version)
-                        .font(.system(size: 10, design: .monospaced))
+                        .font(.system(size: 12, design: .monospaced))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
@@ -314,18 +341,18 @@ struct HomebrewSettings: View {
             if !shared.isEmpty {
                 HStack(spacing: 4) {
                     Image(systemName: "exclamationmark.triangle.fill")
-                        .font(.system(size: 9))
+                        .font(SettingsTypography.smallIcon)
                         .foregroundStyle(.yellow)
                     Text(String(format: l10n.s.homebrewSharedWithFormat,
                                 shared.joined(separator: ", ")))
-                        .font(.caption)
+                        .font(SettingsTypography.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                         .truncationMode(.middle)
                 }
             }
         }
-        .padding(.leading, 34)
+        .padding(.leading, 24)
         .padding(.trailing, 8)
         .padding(.vertical, 3)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -342,7 +369,7 @@ struct HomebrewSettings: View {
         guard let pendingAction else { return "" }
         switch pendingAction.action {
         case .upgrade: return l10n.s.homebrewConfirmUpgradeTitle
-        case .updateHomebrew: return l10n.s.homebrewConfirmUpdateHomebrewTitle
+        case .updateHomebrew: return hierarchyText.updateDefinitions
         case .uninstall: return l10n.s.homebrewConfirmUninstallTitle
         }
     }
@@ -353,7 +380,7 @@ struct HomebrewSettings: View {
             return String(format: l10n.s.homebrewConfirmUpgradeBodyFormat,
                           action.package?.displayName ?? "")
         case .updateHomebrew:
-            return l10n.s.homebrewConfirmUpdateHomebrewBody
+            return hierarchyText.updateDefinitionsConfirmation
         case .uninstall:
             return String(format: l10n.s.homebrewConfirmUninstallBodyFormat,
                           action.package?.displayName ?? "")
@@ -363,7 +390,7 @@ struct HomebrewSettings: View {
     private func actionTitle(for action: HomebrewPendingAction) -> String {
         switch action.action {
         case .upgrade: return l10n.s.homebrewUpgrade
-        case .updateHomebrew: return l10n.s.homebrewUpdateHomebrew
+        case .updateHomebrew: return hierarchyText.updateDefinitions
         case .uninstall: return l10n.s.homebrewUninstall
         }
     }
@@ -390,9 +417,9 @@ struct HomebrewTrustCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: compact ? 6 : 8) {
             Label(l10n.s.homebrewTrustTitle, systemImage: "checkmark.shield")
-                .font(compact ? .system(size: 11, weight: .semibold) : .headline)
+                .font(compact ? .system(size: 11, weight: .semibold) : SettingsTypography.sectionTitle)
             Text(String(format: l10n.s.homebrewTrustCaption, tap))
-                .font(compact ? .system(size: 9.5) : .caption)
+                .font(compact ? .system(size: 9.5) : SettingsTypography.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             Button {

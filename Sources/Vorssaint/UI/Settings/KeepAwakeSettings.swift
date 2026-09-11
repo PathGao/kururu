@@ -23,31 +23,15 @@ struct KeepAwakeSettings: View {
     @AppStorage(DefaultsKey.keepAwakeMouseJiggleInterval) private var keepAwakeMouseJiggleInterval = 5
 
     var body: some View {
-        Form {
+        SettingsForm {
             if AppFeature.keepAwake.isAvailable {
-                Section(l10n.s.sessionSection) {
-                    Picker(l10n.s.defaultDurationLabel, selection: $defaultDuration) {
-                        Text(l10n.s.minutes15).tag(15)
-                        Text(l10n.s.minutes30).tag(30)
-                        Text(l10n.s.hour1).tag(60)
-                        Text(l10n.s.hours2).tag(120)
-                        Text(l10n.s.hours4).tag(240)
-                        Text(l10n.s.hours8).tag(480)
-                        Text(l10n.s.indefinite).tag(0)
-                    }
+                SettingsSection(title: UXEntryStrings(l10n.language).startupAndShortcuts, systemImage: "keyboard") {
                     SettingsToggleWithCaption(title: l10n.s.keepAwakeAutoStart,
                                               caption: l10n.s.keepAwakeAutoStartCaption,
                                               isOn: $keepAwakeAutoStart)
                     SettingsToggleWithCaption(title: l10n.s.keepAwakeRightClickToggle,
                                               caption: l10n.s.keepAwakeRightClickToggleCaption,
                                               isOn: $keepAwakeRightClickToggle)
-                    // The countdown is a Keep Awake session readout, so it sits
-                    // with the session options. Under the General page's menu
-                    // bar section the label gave no clue which time it meant.
-                    Toggle(l10n.s.showCountdown, isOn: $showCountdown)
-                    SettingsToggleWithCaption(title: displaySleepStrings.allowDisplaySleep,
-                                              caption: displaySleepStrings.allowDisplaySleepCaption,
-                                              isOn: $keepAwakeAllowDisplaySleep)
                     Toggle(l10n.s.hotkeyToggle, isOn: $hotkeyEnabled)
                         .onChange(of: hotkeyEnabled) { _, enabled in
                             HotkeyManager.shared.setEnabled(enabled)
@@ -57,65 +41,89 @@ struct KeepAwakeSettings: View {
                     }
                     if hotkeyEnabled, hotkeys.registrationFailed {
                         Text(l10n.s.shortcutUnavailable)
-                            .font(.caption)
+                            .font(SettingsTypography.caption)
                             .foregroundStyle(.orange)
                     }
                     Text(l10n.s.hotkeyCaption)
-                        .font(.caption)
+                        .font(SettingsTypography.caption)
                         .foregroundStyle(.secondary)
                 }
                 .settingsSectionAnchor(.keepAwake)
-                Section(automationStrings.automationSection) {
-                    SettingsCaptionText(automationStrings.automationCaption)
-                    KeepAwakeAutomationEditor()
-                }
-                Section {
+                SettingsSection(title: l10n.s.sessionSection, systemImage: "cup.and.saucer") {
+                    SettingsControlRow(title: l10n.s.defaultDurationLabel, systemImage: "timer") {
+                        Picker(l10n.s.defaultDurationLabel, selection: $defaultDuration) {
+                            Text(l10n.s.minutes15).tag(15)
+                            Text(l10n.s.minutes30).tag(30)
+                            Text(l10n.s.hour1).tag(60)
+                            Text(l10n.s.hours2).tag(120)
+                            Text(l10n.s.hours4).tag(240)
+                            Text(l10n.s.hours8).tag(480)
+                            Text(l10n.s.indefinite).tag(0)
+                        }
+                        .labelsHidden()
+                    }
+                    SettingsToggleWithCaption(title: displaySleepStrings.allowDisplaySleep,
+                                              caption: displaySleepStrings.allowDisplaySleepCaption,
+                                              isOn: $keepAwakeAllowDisplaySleep)
                     SettingsToggleWithCaption(title: automationStrings.pauseWhenLockedToggle,
                                               caption: automationStrings.pauseWhenLockedCaption,
                                               isOn: $keepAwakePauseWhenLocked)
-                }
-                if PowerSampler.hasInternalBattery {
-                    Section(l10n.s.batteryProtectionSection) {
-                        Picker(l10n.s.batteryDisableBelow, selection: $batteryLimit) {
-                            Text(l10n.s.batteryNever).tag(0)
-                            Text("5%").tag(5)
-                            Text("10%").tag(10)
-                            Text("15%").tag(15)
-                            Text("20%").tag(20)
-                        }
-                        SettingsCaptionText(l10n.s.batteryProtectionCaption)
-                    }
-                }
-                Section(AppFeature.keepAwake.name(l10n.s, language: l10n.language)) {
-                    KeepAwakeIconPicker(iconValue: $keepAwakeActiveIcon,
-                                        tintValue: $keepAwakeIconTint)
                     SettingsToggleWithCaption(title: l10n.s.keepAwakeMouseJiggle,
                                               caption: l10n.s.keepAwakeMouseJiggleCaption,
                                               isOn: $keepAwakeMouseJiggle)
                     if keepAwakeMouseJiggle {
-                        Picker(l10n.s.keepAwakeMouseJiggleInterval, selection: $keepAwakeMouseJiggleInterval) {
-                            ForEach(Defaults.allowedKeepAwakeMouseJiggleIntervals, id: \.self) { minutes in
-                                Text(KeepAwakeMouseJiggleIntervalPicker.label(for: minutes)).tag(minutes)
+                        SettingsControlRow(title: l10n.s.keepAwakeMouseJiggleInterval,
+                                           systemImage: "computermouse") {
+                            Picker(l10n.s.keepAwakeMouseJiggleInterval, selection: $keepAwakeMouseJiggleInterval) {
+                                ForEach(Defaults.allowedKeepAwakeMouseJiggleIntervals, id: \.self) { minutes in
+                                    Text(KeepAwakeMouseJiggleIntervalPicker.label(for: minutes)).tag(minutes)
+                                }
                             }
+                            .labelsHidden()
                         }
                         if !permissions.accessibility {
                             PermissionRow(kind: .accessibility)
                         }
                     }
                 }
-                Section(l10n.s.clamshellSection) {
+                SettingsSection(title: automationStrings.automationSection, systemImage: "calendar.badge.clock") {
+                    SettingsInfo(text: automationStrings.automationCaption, systemImage: "calendar.badge.clock")
+                    KeepAwakeAutomationEditor()
+                }
+                if PowerSampler.hasInternalBattery {
+                    SettingsSection(title: l10n.s.batteryProtectionSection, systemImage: "battery.25percent") {
+                        SettingsControlRow(title: l10n.s.batteryDisableBelow,
+                                           systemImage: "battery.25percent",
+                                           caption: l10n.s.batteryProtectionCaption) {
+                            Picker(l10n.s.batteryDisableBelow, selection: $batteryLimit) {
+                                Text(l10n.s.batteryNever).tag(0)
+                                Text("5%").tag(5)
+                                Text("10%").tag(10)
+                                Text("15%").tag(15)
+                                Text("20%").tag(20)
+                            }
+                            .labelsHidden()
+                        }
+                    }
+                }
+                SettingsSection(title: UXEntryStrings(l10n.language).menuBarDisplay, systemImage: "menubar.rectangle") {
+                    KeepAwakeIconPicker(iconValue: $keepAwakeActiveIcon,
+                                        tintValue: $keepAwakeIconTint)
+                    Toggle(l10n.s.showCountdown, isOn: $showCountdown)
+                }
+                SettingsSection(title: l10n.s.clamshellSection, systemImage: "laptopcomputer") {
                     Toggle(l10n.s.clamshellTitle, isOn: $awake.clamshellPreferred)
                         .disabled(awake.clamshellSetupInProgress)
                     if awake.clamshellSetupInProgress {
                         Text(l10n.s.configuring)
-                            .font(.caption)
+                            .font(SettingsTypography.caption)
                             .foregroundStyle(.secondary)
                     } else if awake.clamshellSetupFailed {
                         Text(l10n.s.sudoersFailed)
-                            .font(.caption)
+                            .font(SettingsTypography.caption)
                             .foregroundStyle(.red)
                     }
-                    SettingsCaptionText(l10n.s.clamshellExplanation)
+                    SettingsInfo(text: l10n.s.clamshellExplanation, systemImage: "laptopcomputer")
                 }
             }
         }

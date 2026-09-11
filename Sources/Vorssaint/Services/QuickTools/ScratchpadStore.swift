@@ -15,6 +15,42 @@ struct ScratchpadStore {
         self.defaults = defaults
     }
 
+    /// Import confirmation reads the complete owned document without retention
+    /// or migration. Only a subsequent explicit save may change the JSON file.
+    mutating func loadForImport(defaultName: String) throws -> ScratchpadDocument {
+        canSave = false
+        lastSavedDocument = nil
+        guard let directoryURL else { throw ScratchpadImportError.unreadable }
+        let url = directoryURL.appendingPathComponent("Scratchpad.json")
+        let legacyURL = directoryURL.appendingPathComponent("Scratchpad.txt")
+        let document: ScratchpadDocument
+        if let data = try Self.readImportSourceIfPresent(at: url) {
+            document = try ScratchpadImportSupport.decodeDocument(data)
+            lastSavedDocument = document
+        } else if let preference = defaults.object(forKey: DefaultsKey.scratchpadDocument) {
+            guard let data = preference as? Data else { throw ScratchpadImportError.invalidDocument }
+            document = try ScratchpadImportSupport.decodeDocument(data)
+        } else if let data = try Self.readImportSourceIfPresent(at: legacyURL) {
+            guard let text = String(data: data, encoding: .utf8) else { throw ScratchpadImportError.invalidUTF8 }
+            let attributes = try FileManager.default.attributesOfItem(atPath: legacyURL.path)
+            document = .initial(defaultName: defaultName, text: text,
+                                modifiedAt: attributes[.modificationDate] as? Date)
+        } else {
+            document = .initial(defaultName: defaultName)
+        }
+        canSave = true
+        return document
+    }
+
+    private static func readImportSourceIfPresent(at url: URL) throws -> Data? {
+        do {
+            _ = try FileManager.default.attributesOfItem(atPath: url.path)
+        } catch let error as CocoaError where error.code == .fileReadNoSuchFile {
+            return nil
+        }
+        return try ScratchpadImportSupport.readData(url)
+    }
+
     mutating func load(defaultName: String,
                        retention: ScratchpadRetention,
                        now: Date) throws -> ScratchpadDocument {

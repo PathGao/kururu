@@ -3,17 +3,15 @@
 # Copyright (C) 2026 Vorssaint
 
 # Packages the built app into a styled, distributable DMG
-# (dist/Vorssaint-<version>.dmg): a window with the app icon, an arrow and
+# (dist/<product>-<version>.dmg): a window with the app icon, an arrow and
 # the Applications folder for drag-and-drop install. Run ./build.sh first.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-APP_NAME="Vorssaint"
-APP="build/stage/$APP_NAME.app"
-VOLUME="$APP_NAME"
 STAGING=""
 WORK=""
 MOUNT=""
+IDENTITY_TMP=""
 
 cleanup() {
     if [[ -n "$MOUNT" ]]; then
@@ -23,21 +21,33 @@ cleanup() {
     fi
     [[ -n "$STAGING" ]] && rm -rf "$STAGING"
     [[ -n "$WORK" ]] && rm -rf "$WORK"
+    [[ -n "$IDENTITY_TMP" ]] && rm -rf "$IDENTITY_TMP"
 }
 trap cleanup EXIT
+IDENTITY_TMP="$(mktemp -d)"
+swiftc Sources/Vorssaint/Core/ProductIdentity.swift Tools/PrintProductIdentity.swift -o "$IDENTITY_TMP/identity"
+"$IDENTITY_TMP/identity" 0 > "$IDENTITY_TMP/config.plist"
+APP_NAME="$(/usr/libexec/PlistBuddy -c 'Print :APP_NAME' "$IDENTITY_TMP/config.plist")"
+APP_BUNDLE_ID="$(/usr/libexec/PlistBuddy -c 'Print :APP_BUNDLE_ID' "$IDENTITY_TMP/config.plist")"
+APP="build/stage/$APP_NAME.app"
+VOLUME="$APP_NAME"
 
 if [[ ! -d "$APP" ]]; then
     echo "✗ $APP not found — run ./build.sh first" >&2
+    exit 1
+fi
+if [[ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Contents/Info.plist")" != "$APP_BUNDLE_ID" ]]; then
+    echo "The staged app is not the configured release product; refusing to package it." >&2
     exit 1
 fi
 xattr -cr "$APP"
 codesign --verify --deep --strict "$APP"
 
 VERSION="$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$APP/Contents/Info.plist")"
-OUT="dist/Vorssaint-$VERSION.dmg"
+OUT="dist/$APP_NAME-$VERSION.dmg"
 
 echo "▸ Rendering installer background…"
-swift Tools/MakeDMGBackground.swift build/dmg-background.png
+swift Tools/MakeDMGBackground.swift build/dmg-background.png "$APP_NAME" build/BrandMark.png
 
 echo "▸ Staging DMG contents…"
 STAGING="$(mktemp -d)"

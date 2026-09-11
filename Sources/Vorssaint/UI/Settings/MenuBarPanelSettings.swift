@@ -10,20 +10,23 @@ import UniformTypeIdentifiers
 /// does on its own.
 struct MenuBarPanelSettings: View {
     @ObservedObject private var l10n = L10n.shared
+    @ObservedObject private var features = FeatureRuntime.shared
 
     var body: some View {
-        Form {
-            Section(l10n.s.monitorOrderSection) {
-                PanelOrderEditor()
-                Text(l10n.s.monitorOrderHint)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+        SettingsForm {
+            if !PanelOrderEditor.availableOrder(PanelLayout.order).isEmpty {
+                SettingsSection(l10n.s.monitorOrderSection) {
+                    PanelOrderEditor()
+                    Text(UXEntryStrings(l10n.language).panelOrderHint)
+                        .font(SettingsTypography.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .settingsSectionAnchor(.panelConfiguration)
             }
-            .settingsSectionAnchor(.panelConfiguration)
-            Section(l10n.s.monitorPanelSection) {
-                MonitorPanelConfig()
+            SettingsSection(l10n.s.monitorPanelSection) {
+                MonitorPanelConfig(includeStandaloneSections: true)
                 Text(l10n.s.monitorPanelConfigHint)
-                    .font(.caption)
+                    .font(SettingsTypography.caption)
                     .foregroundStyle(.secondary)
             }
         }
@@ -31,18 +34,13 @@ struct MenuBarPanelSettings: View {
     }
 }
 
-/// Drag-to-reorder and show/hide list for the panel's major sections. Writes the
-/// order to `PanelLayout` and each section's visibility to its own key, both of
-/// which the live panel observes. A bounded, non-scrolling list so it sits inside
-/// the grouped Form without its own scroll area.
+/// Reorders panel sections; visibility controls live with each section's options below.
 struct PanelOrderEditor: View {
     @ObservedObject private var l10n = L10n.shared
     @ObservedObject private var features = FeatureRuntime.shared
-    @AppStorage(DefaultsKey.panelShowFanControl) private var showFanControl = true
     @State private var order: [PanelSectionID] = PanelLayout.order
     @State private var dragging: PanelSectionID?
-    /// Bumped whenever a section is shown/hidden so the dimmed titles and the
-    /// "can't hide the last one" guard recompute.
+    /// Also observes changes made on individual feature pages.
     @State private var visibilityChanges = 0
 
     var body: some View {
@@ -76,13 +74,6 @@ struct PanelOrderEditor: View {
                                                                  order: $order,
                                                                  dragging: $dragging))
 
-                        // Fan Control is governed by its own toggle on Monitor, so
-                        // it has no separate show/hide here.
-                        if id != .fanControl {
-                            SectionVisibilityEye(id: id,
-                                                 canHide: visibleCount > 1,
-                                                 onChange: { visibilityChanges += 1 })
-                        }
                     }
                     .frame(height: 46)
                     .padding(.horizontal, 8)
@@ -92,50 +83,23 @@ struct PanelOrderEditor: View {
         }
         .padding(.vertical, 2)
         .onAppear { order = PanelLayout.order }
-        .onChange(of: showFanControl) { _, _ in order = PanelLayout.order }
+        .onReceive(NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)) { _ in
+            visibilityChanges += 1
+            order = PanelLayout.order
+        }
     }
 
     private var editableOrder: [PanelSectionID] {
-        order.filter { ($0 != .fanControl || showFanControl) && $0.isAvailable }
+        Self.availableOrder(order)
+    }
+
+    static func availableOrder(_ order: [PanelSectionID]) -> [PanelSectionID] {
+        order.filter { $0.isAvailable }
     }
 
     private func isShown(_ id: PanelSectionID) -> Bool {
         _ = visibilityChanges
         return PanelLayout.isShown(id)
-    }
-
-    /// How many sections are currently visible in the panel, so the last one
-    /// can't be hidden (which would leave an empty panel).
-    private var visibleCount: Int {
-        _ = visibilityChanges
-        return editableOrder.reduce(0) { $0 + (PanelLayout.isShown($1) ? 1 : 0) }
-    }
-}
-
-/// An eye button that shows/hides one panel section, backed by that section's
-/// own visibility key so the live panel updates immediately.
-private struct SectionVisibilityEye: View {
-    @ObservedObject private var l10n = L10n.shared
-    let id: PanelSectionID
-    let canHide: Bool
-    let onChange: () -> Void
-    @AppStorage private var shown: Bool
-
-    init(id: PanelSectionID, canHide: Bool, onChange: @escaping () -> Void) {
-        self.id = id
-        self.canHide = canHide
-        self.onChange = onChange
-        _shown = AppStorage(wrappedValue: id.shownByDefault, id.visibilityKey)
-    }
-
-    var body: some View {
-        PanelInlineHideButton(isVisible: Binding(
-            get: { shown },
-            set: { shown = $0; onChange() }
-        ))
-        // Keep at least one section visible.
-        .disabled(shown && !canHide)
-        .accessibilityValue(id.title(l10n.s))
     }
 
 }
@@ -167,7 +131,6 @@ private struct PanelOrderDropDelegate: DropDelegate {
         return true
     }
 }
-
 
 
 

@@ -33,7 +33,11 @@ jobs:
         run: ./build.sh
 
       - name: Selftest
-        run: ./build/Vorssaint --selftest
+        run: |
+          bundles=(build/stage/*.app)
+          [[ ${#bundles[@]} == 1 && -d "${bundles[0]}" ]]
+          executable=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "${bundles[0]}/Contents/Info.plist")
+          "${bundles[0]}/Contents/MacOS/$executable" --selftest
 
       - name: Unit tests
         run: ./build.sh --test
@@ -51,7 +55,11 @@ jobs:
         run: ./build.sh
 
       - name: Selftest
-        run: ./build/Vorssaint --selftest
+        run: |
+          bundles=(build/stage/*.app)
+          [[ ${#bundles[@]} == 1 && -d "${bundles[0]}" ]]
+          executable=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "${bundles[0]}/Contents/Info.plist")
+          "${bundles[0]}/Contents/MacOS/$executable" --selftest
 
       - name: Package DMG
         run: ./Tools/make-dmg.sh

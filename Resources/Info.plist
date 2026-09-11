@@ -7,15 +7,15 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>Vorssaint</string>
+	<string>__APP_NAME__</string>
 	<key>CFBundleExecutable</key>
-	<string>Vorssaint</string>
+	<string>__EXECUTABLE__</string>
 	<key>CFBundleIconFile</key>
 	<string>AppIcon</string>
 	<key>CFBundleIconName</key>
 	<string>AppIcon</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.vorssaint.utils</string>
+	<string>__APP_BUNDLE_ID__</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleLocalizations</key>
@@ -35,17 +35,17 @@
 		<string>zh-HK</string>
 	</array>
 	<key>CFBundleName</key>
-	<string>Vorssaint</string>
+	<string>__APP_NAME__</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>3.3.5</string>
+	<string>0.1.0</string>
 	<key>CFBundleSupportedPlatforms</key>
 	<array>
 		<string>MacOSX</string>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>86</string>
+	<string>1</string>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.utilities</string>
 	<key>LSMinimumSystemVersion</key>
@@ -53,23 +53,23 @@
 	<key>LSUIElement</key>
 	<true/>
 	<key>NSAppleEventsUsageDescription</key>
-	<string>Vorssaint uses Automation to move files in Finder, send items to the Trash and open Terminal commands when you ask for Homebrew actions.</string>
+	<string>__APP_NAME__ uses Automation to set folder arrangement rules and move files in Finder, send items to the Trash and open Terminal commands when you ask for Homebrew actions.</string>
 	<key>NSAudioCaptureUsageDescription</key>
-	<string>Vorssaint uses each app's audio to adjust its volume in the mixer and to include the Mac's sound in the screen recordings you start. Nothing leaves your Mac.</string>
+	<string>__APP_NAME__ uses each app's audio to adjust its volume in the mixer and to include the Mac's sound in the screen recordings you start. Nothing leaves your Mac.</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>Vorssaint uses Bluetooth only to read the battery level of connected peripherals. Nothing leaves your Mac.</string>
+	<string>__APP_NAME__ uses Bluetooth only to read the battery level of connected peripherals. Nothing leaves your Mac.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Vorssaint records your microphone only when you turn it on for a screen recording. The audio stays on your Mac unless you choose to create a temporary link.</string>
+	<string>__APP_NAME__ records your microphone only when you turn it on for a screen recording. The audio stays on your Mac.</string>
 	<key>NSDownloadsFolderUsageDescription</key>
-	<string>Vorssaint checks local metadata in Downloads to review, organize or trash only confirmed WhatsApp files you choose.</string>
+	<string>__APP_NAME__ checks local metadata in Downloads to review, organize or trash only confirmed WhatsApp files you choose.</string>
 	<key>NSDesktopFolderUsageDescription</key>
-	<string>Vorssaint organizes confirmed WhatsApp downloads in a destination folder you explicitly choose.</string>
+	<string>__APP_NAME__ organizes confirmed WhatsApp downloads in a destination folder you explicitly choose.</string>
 	<key>NSDocumentsFolderUsageDescription</key>
-	<string>Vorssaint organizes confirmed WhatsApp downloads in a destination folder you explicitly choose.</string>
+	<string>__APP_NAME__ organizes confirmed WhatsApp downloads in a destination folder you explicitly choose.</string>
 	<key>NSNetworkVolumesUsageDescription</key>
-	<string>Vorssaint organizes confirmed WhatsApp downloads in a destination folder you explicitly choose.</string>
+	<string>__APP_NAME__ organizes confirmed WhatsApp downloads in a destination folder you explicitly choose.</string>
 	<key>NSRemovableVolumesUsageDescription</key>
-	<string>Vorssaint organizes confirmed WhatsApp downloads in a destination folder you explicitly choose.</string>
+	<string>__APP_NAME__ organizes confirmed WhatsApp downloads in a destination folder you explicitly choose.</string>
 	<key>NSCameraUseContinuityCameraDeviceType</key>
 	<true/>
 	<key>NSHumanReadableCopyright</key>

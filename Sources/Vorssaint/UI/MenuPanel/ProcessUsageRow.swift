@@ -32,7 +32,7 @@ struct ProcessUsageRow: View {
     /// window server, this app) never offer it.
     @ViewBuilder
     private var forceQuitItem: some View {
-        if !KillProcessSupport.isProtected(pid: row.pid, name: row.name) {
+        if row.startedAt != nil, !KillProcessSupport.isProtected(pid: row.pid, name: row.name) {
             Button(FeatureStrings.killProcess(L10n.shared.language).forceKillButton, role: .destructive) {
                 confirmForceQuit()
             }
@@ -40,6 +40,7 @@ struct ProcessUsageRow: View {
     }
 
     private func confirmForceQuit() {
+        guard let startedAt = row.startedAt else { return }
         let strings = FeatureStrings.killProcess(L10n.shared.language)
         let alert = NSAlert()
         alert.alertStyle = .critical
@@ -48,7 +49,7 @@ struct ProcessUsageRow: View {
         alert.addButton(withTitle: L10n.shared.s.uninstallerCancel)
         NSApp.activate(ignoringOtherApps: true)
         guard alert.runModal() == .alertFirstButtonReturn else { return }
-        KillProcessService.shared.kill(pid: row.pid, name: row.name, force: true)
+        KillProcessService.shared.kill(pid: row.pid, name: row.name, startedAt: startedAt, force: true)
     }
 
     private var content: some View {

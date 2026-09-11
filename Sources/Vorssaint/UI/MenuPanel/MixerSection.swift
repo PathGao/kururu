@@ -12,12 +12,10 @@ struct MixerSection: View {
     @ObservedObject private var l10n = L10n.shared
     @ObservedObject private var mixer = AppVolumeMixer.shared
     @ObservedObject private var inputManager = AudioInputDeviceManager.shared
-    @ObservedObject private var outputSwitcher = SoundOutputSwitcher.shared
     @AppStorage(DefaultsKey.mixerHideInactiveApps)
     private var hideInactiveApps = false
     @AppStorage(DefaultsKey.soundOutputSwitcherEnabled)
     private var soundOutputSwitcherEnabled = false
-    @State private var soundOutputSwitcherUIDs: [String] = []
     @State private var showListChooser = false
     @State private var optionsExpanded = false
     @State private var normalSliderTint = Color(nsColor: .controlAccentColor)
@@ -27,17 +25,15 @@ struct MixerSection: View {
     var collapsible = true
 
     private var mixerText: MixerFeatureStrings { FeatureStrings.mixer(l10n.language) }
-    private var switcherText: SoundOutputSwitcherFeatureStrings {
-        FeatureStrings.soundOutputSwitcher(l10n.language)
-    }
 
     var body: some View {
         PanelSection(.mixer, title: AppFeature.mixer.name(l10n.s, language: l10n.language), collapsible: collapsible) {
             VStack(alignment: .leading, spacing: 8) {
                 audioDevicesSection
 
-                if AppVolumeMixer.isSupported, (!visibleApps.isEmpty || mixer.needsPermission) {
+                if AppVolumeMixer.isSupported {
                     Divider()
+                    MixerAppScopePicker(hideInactiveApps: $hideInactiveApps, strings: mixerText)
                 }
 
                 if !AppVolumeMixer.isSupported {
@@ -45,7 +41,7 @@ struct MixerSection: View {
                 } else if mixer.needsPermission {
                     permissionHint
                 } else if visibleApps.isEmpty {
-                    emptyLabel(mixerText.empty)
+                    emptyLabel(hideInactiveApps ? mixerText.playingEmpty : mixerText.empty)
                 } else {
                     mixerRows
                 }
@@ -63,9 +59,6 @@ struct MixerSection: View {
         .onReceive(NotificationCenter.default.publisher(for: Notification.Name("NSSystemColorsDidChangeNotification"))) { _ in
             refreshSliderTint()
         }
-        .onAppear {
-            soundOutputSwitcherUIDs = SoundOutputSwitcher.shared.selectedDeviceUIDs()
-        }
     }
 
     private var audioDevicesSection: some View {
@@ -80,9 +73,7 @@ struct MixerSection: View {
         }
     }
 
-    /// The lists whose members are live things (outputs plugged in now, apps
-    /// running now) stay in the panel; the lasting switches sit on the mixer
-    /// settings page.
+    /// The panel exposes a compact device-selection shortcut while cycling is enabled.
     private var showsSwitcherDevices: Bool {
         AppFeature.soundOutputSwitcher.isAvailable && soundOutputSwitcherEnabled
     }
@@ -114,7 +105,7 @@ struct MixerSection: View {
             if optionsExpanded {
                 VStack(alignment: .leading, spacing: 8) {
                     if showsSwitcherDevices {
-                        soundOutputSwitcherDevices
+                        SoundOutputSwitcherDevicePicker(compact: true)
                     }
                     if showsListChooser {
                         listVisibilityFooter
@@ -283,58 +274,6 @@ struct MixerSection: View {
         )
     }
 
-    private var soundOutputSwitcherDevices: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            if outputSwitcher.lastSwitchFailed {
-                inputMessage(switcherText.noAvailableSelection,
-                             systemImage: "speaker.badge.exclamationmark")
-            }
-
-            Text(switcherText.devices)
-                .font(PanelTypography.meta)
-                .foregroundStyle(.secondary)
-
-            if universalOutputDevices.isEmpty {
-                inputMessage(mixerText.systemOutputNoDevices, systemImage: "speaker.slash")
-            } else {
-                ForEach(universalOutputDevices) { device in
-                    Toggle(isOn: soundOutputSwitcherSelectionBinding(for: device.uid)) {
-                        Text(outputDeviceTitle(device))
-                            .font(PanelTypography.meta)
-                            .lineLimit(1)
-                            .truncationMode(.middle)
-                    }
-                    .toggleStyle(.checkbox)
-                    .controlSize(.small)
-                }
-            }
-        }
-    }
-
-    private func soundOutputSwitcherSelectionBinding(for uid: String) -> Binding<Bool> {
-        Binding(
-            get: { soundOutputSwitcherUIDs.contains(uid) },
-            set: { selected in
-                var next = soundOutputSwitcherUIDs
-                if selected {
-                    if !next.contains(uid) { next.append(uid) }
-                } else {
-                    next.removeAll { $0 == uid }
-                }
-                let visibleOrder = universalOutputDevices.map(\.uid)
-                let visible = visibleOrder.filter { next.contains($0) }
-                let unavailable = next.filter { !visibleOrder.contains($0) }
-                setSoundOutputSwitcherUIDs(visible + unavailable)
-            }
-        )
-    }
-
-    private func setSoundOutputSwitcherUIDs(_ uids: [String]) {
-        let sanitized = Defaults.sanitizedSoundOutputSwitcherDeviceUIDs(uids)
-        soundOutputSwitcherUIDs = sanitized
-        SoundOutputSwitcher.shared.setSelectedDeviceUIDs(sanitized)
-    }
-
     private var microphonePicker: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 8) {
@@ -490,8 +429,6 @@ struct MixerSection: View {
     private var visibleApps: [MixerApp] {
         mixer.apps.filter { app in
             MixerRoutingSupport.shouldShowApp(isPlaying: app.isPlaying,
-                                              volume: app.volume,
-                                              selectedOutputDeviceUID: app.selectedOutputDeviceUID,
                                               hideInactiveApps: hideInactiveApps)
         }
     }
@@ -1145,3 +1082,81 @@ private struct LiquidGlassMixerSlider: View {
     }
 }
 #endif
+
+/// The same persisted list scope is available beside the rows and in Settings.
+struct MixerAppScopePicker: View {
+    @Binding var hideInactiveApps: Bool
+    let strings: MixerFeatureStrings
+
+    var body: some View {
+        Picker(strings.appScope, selection: $hideInactiveApps) {
+            Text(strings.allApps).tag(false)
+            Text(strings.playingApps).tag(true)
+        }
+        .pickerStyle(.menu)
+        .controlSize(.small)
+    }
+}
+
+/// Both settings and the live panel edit the same ordered device selection.
+struct SoundOutputSwitcherDevicePicker: View {
+    var compact = false
+    @ObservedObject private var l10n = L10n.shared
+    @ObservedObject private var mixer = AppVolumeMixer.shared
+    @ObservedObject private var switcher = SoundOutputSwitcher.shared
+
+    private var devices: [MixerOutputDevice] { mixer.outputDevices.filter(\.canBeDefaultOutput) }
+    private var text: SoundOutputSwitcherFeatureStrings { FeatureStrings.soundOutputSwitcher(l10n.language) }
+    private var mixerText: MixerFeatureStrings { FeatureStrings.mixer(l10n.language) }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: compact ? 4 : 8) {
+            if let failure = switcher.failureMessage {
+                Label(failure, systemImage: "speaker.badge.exclamationmark")
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Text(text.devices)
+                .foregroundStyle(.secondary)
+            if !AppFeature.mixer.isAvailable {
+                Label(UXEntryStrings(l10n.language).outputDevicesNeedMixer, systemImage: "info.circle")
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                FeatureSwitchRow(feature: .mixer)
+            } else if devices.isEmpty {
+                Label(mixerText.systemOutputNoDevices, systemImage: "speaker.slash")
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                ForEach(devices) { device in
+                    Toggle(isOn: selection(for: device.uid)) {
+                        Text(device.isDefault ? "\(device.name) (\(mixerText.outputCurrent))" : device.name)
+                            .lineLimit(compact ? 1 : nil)
+                            .truncationMode(.middle)
+                    }
+                }
+            }
+        }
+        .font(compact ? PanelTypography.meta : SettingsTypography.body)
+        .toggleStyle(.checkbox)
+        .controlSize(compact ? .small : .regular)
+    }
+
+    private func selection(for uid: String) -> Binding<Bool> {
+        Binding(
+            get: { switcher.selectedDeviceUIDs().contains(uid) },
+            set: { selected in
+                var next = switcher.selectedDeviceUIDs()
+                if selected {
+                    if !next.contains(uid) { next.append(uid) }
+                } else {
+                    next.removeAll { $0 == uid }
+                }
+                let visibleOrder = devices.map(\.uid)
+                let visible = visibleOrder.filter { next.contains($0) }
+                let unavailable = next.filter { !visibleOrder.contains($0) }
+                switcher.setSelectedDeviceUIDs(visible + unavailable)
+            }
+        )
+    }
+}

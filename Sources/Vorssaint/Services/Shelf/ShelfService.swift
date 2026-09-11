@@ -7,10 +7,13 @@ import Combine
 import SwiftUI
 import UniformTypeIdentifiers
 
+enum ShelfPersistenceIssue { case unreadable, saveFailed, tooLarge }
+enum ShelfImportServiceError: Error { case unavailable, changed, managedReference(String) }
+
 /// A floating "shelf" that holds files, images, text and links you drop on it,
 /// to drag back out into any app later. It's summoned at the cursor by a global
 /// shortcut or, optionally, by shaking the mouse mid-drag. Items survive
-/// relaunches (and updates): payloads persist in UserDefaults, and pasted
+/// relaunches (and updates): payload indexes persist atomically, and pasted
 /// images and GIFs are stored next to the clipboard images in Application
 /// Support.
 ///
@@ -28,7 +31,17 @@ final class ShelfService: ObservableObject {
             case batch([Item])
         }
         let payload: Payload
-        let title: String
+        let storedTitle: String
+        var title: String {
+            guard storedTitle.isEmpty else { return storedTitle }
+            switch payload {
+            case let .file(url): return url.lastPathComponent
+            case let .text(text): return String((text.split(whereSeparator: \.isNewline).first.map(String.init) ?? text).prefix(48))
+            case let .link(url): return url.host ?? url.absoluteString
+            case let .batch(children):
+                return children.first.map { "\($0.title) +\(max(0, leafCount - 1))" } ?? ""
+            }
+        }
         let icon: NSImage
         let isImage: Bool
         /// True once `icon` is a real decoded frame of the item's own
@@ -45,7 +58,7 @@ final class ShelfService: ObservableObject {
              isImage: Bool, hasContentThumbnail: Bool = false, bookmark: Data? = nil) {
             self.id = id
             self.payload = payload
-            self.title = title
+            self.storedTitle = title
             self.icon = icon
             self.isImage = isImage
             self.hasContentThumbnail = hasContentThumbnail
@@ -60,7 +73,7 @@ final class ShelfService: ObservableObject {
         /// healed URL/title after a moved or renamed file's bookmark
         /// resolves - an id-only comparison would call that unchanged.
         func hasSameContent(as other: Item) -> Bool {
-            guard id == other.id, title == other.title, isImage == other.isImage,
+            guard id == other.id, storedTitle == other.storedTitle, title == other.title, isImage == other.isImage,
                   hasContentThumbnail == other.hasContentThumbnail,
                   icon === other.icon else { return false }
             switch (payload, other.payload) {
@@ -116,8 +129,9 @@ final class ShelfService: ObservableObject {
     @Published private(set) var items: [Item] = [] {
         didSet {
             contentRevision &+= 1
-            scheduleRefit()
             schedulePersist()
+            guard !fixtureMode else { return }
+            scheduleRefit()
             // Emptying the shelf (removing or dragging out the last item) always
             // dismisses the docked shelf; only an explicit open holds an empty
             // one, and that never runs through here.
@@ -151,6 +165,20 @@ final class ShelfService: ObservableObject {
     /// I work", not "reopen a floating panel on every launch".
     @Published private(set) var isPinned = false
     @Published private(set) var automaticExclusions: [String] = []
+    @Published private(set) var persistenceIssue: ShelfPersistenceIssue? {
+        didSet {
+            guard !fixtureMode else { return }
+            scheduleRefit()
+            scheduleDockedSync()
+        }
+    }
+    @Published private(set) var isSaving = false {
+        didSet {
+            guard !fixtureMode else { return }
+            scheduleRefit()
+            scheduleDockedSync()
+        }
+    }
 
     private var panel: NSPanel?
     private var hotKeyRef: EventHotKeyRef?
@@ -163,11 +191,63 @@ final class ShelfService: ObservableObject {
     /// docked shelf hangs right under it, so this service can anchor there
     /// without reaching into the app layer.
     var statusItemFrameProvider: (() -> NSRect?)?
-    /// The shelf docked under the menu bar icon (the "keep it in the menu bar"
-    /// option). It stays put while the shelf has items and only shrinks to a
+    /// The docked shelf, either below the menu bar icon or centered beneath
+    /// the screen's usable top. It keeps one panel and only shrinks to a
     /// pill or grows back to the full card in place, never a second window and
     /// never a new menu bar icon.
     private var dockedPanel: NSPanel?
+    private var dockedPlacementState = ShelfDockPlacementState()
+    private var dockedScreenObserver: NSObjectProtocol?
+    var dockedPlacement: ShelfDockPlacement {
+        .normalized(UserDefaults.standard.string(forKey: DefaultsKey.shelfDockPlacement))
+    }
+
+    private var dockedScreens: [ShelfDockScreen] {
+        NSScreen.screens.compactMap { screen in
+            guard let id = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber else { return nil }
+            return ShelfDockScreen(id: id.uint32Value, frame: screen.frame, visibleFrame: screen.visibleFrame,
+                                   safeTopInset: screen.safeAreaInsets.top)
+        }
+    }
+
+    /// Re-resolve after a settings change, without changing contents or floating-panel semantics.
+    func syncDockedPresentation() {
+        dockedPlacementState.reset()
+        dockDwellStart = nil
+        dockedProximate = false
+        syncDockedShelf()
+    }
+
+    private func syncDockedScreenObserver() {
+        if dockedFeatureOn {
+            guard dockedScreenObserver == nil else { return }
+            dockedScreenObserver = NotificationCenter.default.addObserver(
+                forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main
+            ) { [weak self] _ in
+                guard let self else { return }
+                self.dockDwellStart = nil
+                self.dockedProximate = false
+                self.syncDockedShelf()
+            }
+        } else {
+            if let dockedScreenObserver { NotificationCenter.default.removeObserver(dockedScreenObserver) }
+            dockedScreenObserver = nil
+            dockedPlacementState.reset()
+        }
+    }
+
+    private func resolvedDockedScreen() -> ShelfDockScreen? {
+        let oldPlacement = dockedPlacementState.placement
+        let oldID = dockedPlacementState.screenID
+        let screen = dockedPlacementState.resolve(placement: dockedPlacement, screens: dockedScreens,
+                                                  mouse: NSEvent.mouseLocation, anchor: statusItemFrameProvider?())
+        if oldPlacement != dockedPlacementState.placement || oldID != screen?.id {
+            dockDwellStart = nil
+            dockedProximate = false
+        }
+        return screen
+    }
+
     /// Collapsed means the small pill; expanded means the full card. A drag in
     /// flight forces it open so there is a real target to drop onto.
     @Published private(set) var dockedCollapsed = true
@@ -229,36 +309,66 @@ final class ShelfService: ObservableObject {
     private var edgePeekMatch: ShelfEdgeMatch?
     private var edgePeekEndWork: DispatchWorkItem?
 
-    private let tempDir: URL = {
-        let id = Bundle.main.bundleIdentifier ?? "com.vorssaint.utils"
+    private static func temporaryDirectory() -> URL {
+        let id = Bundle.main.bundleIdentifier ?? ProductIdentity.unbundledStorageID
         let dir = FileManager.default.temporaryDirectory
             .appendingPathComponent("VorssaintShelf", isDirectory: true)
             .appendingPathComponent(id, isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         return dir
-    }()
+    }
+
+    private let tempDir: URL
+    private let containerDirectory: URL?
+    private let indexStore: ShelfIndexStore?
+    private let fixtureMode: Bool
 
     /// Payload files for pasted images and GIFs, next to the clipboard images:
     /// Application Support/<bundle id>/ShelfFiles. They used to live in the
     /// system temp dir, but persistent items cannot (the OS, or our own
     /// startup sweep, could delete them at any point).
-    private static let storeDirectory: URL? = PrivateFileStore.containerURL?
-        .appendingPathComponent("ShelfFiles", isDirectory: true)
+    private var storeDirectory: URL? {
+        containerDirectory?.appendingPathComponent("ShelfFiles", isDirectory: true)
+    }
 
     /// Writes coalesce per mutation cycle already; the JSON encode itself
     /// also stays off the main thread (a full shelf of large texts is real
     /// work), serialized so blobs land in mutation order.
-    private static let persistQueue = DispatchQueue(label: "com.vorssaint.utils.shelf-persist",
+    private let persistQueue = DispatchQueue(label: "com.pathgao.kururu.shelf-persist",
                                                     qos: .utility)
 
     private var persistScheduled = false
+    @Published private(set) var isImporting = false
+    private var importRequest: UUID?
+    private var publishingImport = false
+    // Owned by persistQueue until the main-thread commit or termination drain.
+    private var preparedImports: [URL: ShelfImportPrepared] = [:]
     /// Gates persistence until the restore has landed, so an early mutation
     /// cannot overwrite the saved shelf with a partial list.
     private var restoreCompleted = false
+    private var storeWritable = false
+    private var isTerminating = false
+    private var durableRevision: Int?
+    private var cleanupCandidates: [ShelfPayloadCandidate] = []
+    private var cleanupWarningLogged = false
+    private var startupSweepCutoff: Date?
+    // Only persistQueue owns this result until the main thread consumes it.
+    private var pendingRestore: (ShelfIndexLoad, [ShelfPersistedItem], Date)?
 
-    private init() {
-        automaticExclusions = Defaults.sanitizedBundleIdentifierList(
-            UserDefaults.standard.stringArray(forKey: DefaultsKey.shelfAutomaticExclusions) ?? [])
+    private convenience init() {
+        self.init(directory: PrivateFileStore.containerURL, temporary: Self.temporaryDirectory(),
+                  defaults: .standard, fixture: false)
+    }
+
+    private init(directory: URL?, temporary: URL, defaults: UserDefaults, fixture: Bool) {
+        containerDirectory = directory
+        tempDir = temporary
+        fixtureMode = fixture
+        indexStore = directory.map { ShelfIndexStore(directory: $0, legacyDefaults: defaults) }
+        if !fixture {
+            automaticExclusions = Defaults.sanitizedBundleIdentifierList(
+                defaults.stringArray(forKey: DefaultsKey.shelfAutomaticExclusions) ?? [])
+        }
         restoreItems()
     }
 
@@ -498,7 +608,10 @@ final class ShelfService: ObservableObject {
             guard automaticOpenAllowed else { return }
             lastSummon = t
             shakeSamples.removeAll()
-            DispatchQueue.main.async { [weak self] in self?.summon() }
+            DispatchQueue.main.async { [weak self] in
+                guard !ScratchpadService.shared.isAtTop else { return }
+                self?.summon()
+            }
         }
     }
 
@@ -580,7 +693,8 @@ final class ShelfService: ObservableObject {
     }
 
     private var automaticOpenAllowed: Bool {
-        ShelfInteractionSupport.allowsAutomaticOpen(
+        guard !ScratchpadService.shared.isAtTop else { return false }
+        return ShelfInteractionSupport.allowsAutomaticOpen(
             sourceBundleIdentifier: dragSourceBundleIdentifier,
             excludedBundleIdentifiers: Set(automaticExclusions))
     }
@@ -601,11 +715,8 @@ final class ShelfService: ObservableObject {
         return NSWorkspace.shared.frontmostApplication?.bundleIdentifier
     }
 
-    // MARK: - Docked shelf (under the menu bar icon)
+    // MARK: - Docked shelf
 
-    /// True while the docked shelf should show its full card rather than the
-    /// collapsed pill: either the user expanded it, or a drag needs a real
-    /// target to aim at.
     /// Whether to show the full card rather than the pill. During a drag it is
     /// governed by pointer proximity; otherwise by the user's own collapse.
     var dockedExpanded: Bool {
@@ -625,7 +736,7 @@ final class ShelfService: ObservableObject {
             && UserDefaults.standard.bool(forKey: DefaultsKey.shelfEdgeDragEnabled)
     }
 
-    /// A qualifying drag is in flight: keep the pill under the icon as a small,
+    /// A qualifying drag is in flight: keep the pill at its chosen position as a small,
     /// minimized target, and let the card open only when the pointer dwells near
     /// it. It never hides mid drag on its own account. If the classic shelf
     /// panel comes up instead (shake, shortcut, or now an edge peek), that
@@ -652,17 +763,25 @@ final class ShelfService: ObservableObject {
     private func updateDockedProximity(at now: TimeInterval) -> Bool {
         var changed = false
         let mouse = NSEvent.mouseLocation
-        let anchor = statusItemFrameProvider?()
-        let screen = anchor.flatMap { rect in
-            NSScreen.screens.first { $0.frame.intersects(rect) }
-        }?.frame ?? NSScreen.main?.frame
-
+        guard var screen = resolvedDockedScreen() else { return false }
+        let targetSize = CGSize(width: 72, height: 48)
+        if dockedPlacementState.moveForDrag(mouse: mouse, screens: dockedScreens,
+                                            targetSize: targetSize, margin: ShelfDockDragSupport.triggerMargin) {
+            dockDwellStart = nil
+            dockedProximate = false
+            changed = true
+            if let resolved = resolvedDockedScreen() { screen = resolved }
+        }
+        let anchor = dockedPlacement == .menuBar ? statusItemFrameProvider?() : nil
+        let measuredSize = dockedPanel?.frame.size ?? targetSize
+        let targetFrame = ShelfDockPlacementSupport.frame(size: measuredSize, screen: screen,
+                                                          placement: dockedPlacement, anchor: anchor)
         let near = ShelfDockDragSupport.isPointNearDock(
             point: mouse,
             isProximate: dockedProximate,
-            panelFrame: dockedPanel?.frame,
+            panelFrame: targetFrame,
             anchorFrame: anchor,
-            screenFrame: screen)
+            screenFrame: screen.frame)
 
         if dockedProximate {
             if !near {
@@ -906,8 +1025,33 @@ final class ShelfService: ObservableObject {
         scheduleDockedSync()
     }
 
+    @Published private(set) var dockedNotesAvailable = false
+
+    func openDockedNotes() {
+        guard dockedFeatureOn, dockedNotesAvailable, let screen = resolvedDockedScreen() else { return }
+        let notes = ScratchpadService.shared
+        guard notes.canChangePresentation else { return }
+        notes.onTopPresentationChange = { [weak self] in self?.scheduleDockedSync() }
+        notes.showAtTop(on: screen)
+        if notes.isAtTop {
+            endDockedDrag()
+            endEdgePeekDrag()
+            hide()
+            syncDockedShelf()
+        }
+    }
+
+    private func yieldFromTopNotes() -> Bool {
+        let notes = ScratchpadService.shared
+        guard notes.isAtTop else { return true }
+        guard notes.canChangePresentation else { return false }
+        notes.hide()
+        return true
+    }
+
     func expandDocked() {
         guard dockedFeatureOn else { summon(); return }
+        guard yieldFromTopNotes() else { return }
         // One shelf at a time: an explicit docked open takes over from a
         // classic panel left on screen.
         if isVisible { hide() }
@@ -935,12 +1079,17 @@ final class ShelfService: ObservableObject {
 
     /// Shows the docked shelf exactly when the option is on and there is a
     /// reason to (items to keep, a drag to catch, or an explicit open), keeps
-    /// it anchored under the menu bar icon, and hides it the moment the shelf
+    /// it at the chosen position, and hides it the moment the shelf
     /// empties. While the classic panel is on screen (shake or shortcut) the
     /// docked one steps aside: one shelf at a time.
     func syncDockedShelf() {
-        let wanted = dockedFeatureOn && !isVisible
-            && (itemCount > 0 || dockedDragActive || dockedForcedOpen)
+        let notesAvailable = dockedPlacement == .topCenter && AppFeature.scratchpad.isAvailable
+        if dockedNotesAvailable != notesAvailable { dockedNotesAvailable = notesAvailable }
+        syncDockedScreenObserver()
+        let wanted = ShelfDockVisibilitySupport.isWanted(
+            featureOn: dockedFeatureOn, floatingShelfVisible: isVisible, itemCount: itemCount,
+            dragging: dockedDragActive, forcedOpen: dockedForcedOpen,
+            notesAvailable: dockedNotesAvailable, notesVisible: ScratchpadService.shared.isAtTop)
         guard wanted else { hideDocked(); return }
         let panel = ensureDockedPanel()
         if panel.contentViewController == nil {
@@ -958,23 +1107,18 @@ final class ShelfService: ObservableObject {
         dockedPanel.orderOut(nil)
     }
 
-    /// Anchors the docked panel under the menu bar icon, its top edge just
-    /// below the bar, and clamps it to that screen. The top edge stays put as
-    /// it grows and shrinks, so it reads as hanging from the icon. No frame
-    /// animation: the panel resize and the SwiftUI content swap cannot be kept
+    /// Uses the same resolved placement as drag proximity. Both modes leave
+    /// system-reserved space above the panel. Its top edge stays put as it
+    /// grows and shrinks. No frame animation: the panel resize and the SwiftUI content swap cannot be kept
     /// in step, and half-synced frames read as lag.
     private func positionDocked(_ panel: NSPanel) {
         let view = panel.contentViewController!.view
         view.layoutSubtreeIfNeeded()
         let size = view.fittingSize
-        let anchor = statusItemFrameProvider?()
-        let visible = (anchor.flatMap { rect in
-            NSScreen.screens.first { $0.frame.intersects(rect) }
-        } ?? NSScreen.withMouse)?.visibleFrame ?? NSScreen.pointerVisibleFrame
-        var x = anchor.map { $0.midX - size.width / 2 } ?? (visible.maxX - size.width - 12)
-        x = min(max(visible.minX + 8, x), visible.maxX - size.width - 8)
-        let top = visible.maxY - 4
-        let frame = NSRect(x: x, y: top - size.height, width: size.width, height: size.height)
+        guard let screen = resolvedDockedScreen() else { panel.orderOut(nil); return }
+        let anchor = dockedPlacement == .menuBar ? statusItemFrameProvider?() : nil
+        let frame = ShelfDockPlacementSupport.frame(size: size, screen: screen,
+                                                    placement: dockedPlacement, anchor: anchor)
         panel.setFrame(frame, display: true)
         panel.alphaValue = 1
         panel.orderFrontRegardless()
@@ -1283,7 +1427,7 @@ final class ShelfService: ObservableObject {
                         // Title is intentionally left untouched here.
                         let face = Self.batchFace(of: mutable)
                         items[index] = Item(id: items[index].id, payload: .batch(mutable),
-                                            title: items[index].title,
+                                            title: items[index].storedTitle,
                                             icon: face.icon ?? symbol("doc.on.doc"),
                                             isImage: items[index].isImage,
                                             hasContentThumbnail: face.hasContentThumbnail)
@@ -1571,7 +1715,7 @@ final class ShelfService: ObservableObject {
             }
             guard let decoded, let self, let current = self.item(withID: id) else { return }
             self.replaceItem(Item(id: current.id, payload: current.payload,
-                                  title: current.title, icon: decoded,
+                                  title: current.storedTitle, icon: decoded,
                                   isImage: current.isImage, hasContentThumbnail: true,
                                   bookmark: current.bookmark))
         }
@@ -1603,7 +1747,7 @@ final class ShelfService: ObservableObject {
     /// dir (the item then works for this session, as it always did).
     private func storePayloadData(_ data: Data, fileExtension: String) -> URL? {
         let directory: URL
-        if let store = Self.storeDirectory {
+        if let store = storeDirectory {
             PrivateFileStore.createDirectory(at: store)
             directory = store
         } else {
@@ -1828,27 +1972,37 @@ final class ShelfService: ObservableObject {
         return false
     }
 
+    private var payloadRoots: [URL] { [storeDirectory, tempDir].compactMap { $0 } }
+
     private func retireOwnedPayloads(in removed: [Item]) {
-        let urls = removed.flatMap { ownedPayloadURLs(in: $0) }
-        guard !urls.isEmpty else { return }
-        DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + .seconds(10 * 60)) {
-            let fm = FileManager.default
-            for url in urls where self.isShelfOwnedFile(url) {
-                try? fm.removeItem(at: url)
-            }
+        guard storeWritable else { return }
+        let candidates = ShelfPayloadCleanup.capture(removed.flatMap { ownedPayloadURLs(in: $0) }, roots: payloadRoots)
+        guard !candidates.isEmpty else { return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(10 * 60)) { [weak self] in
+            self?.queueCleanup(candidates)
         }
     }
 
     private func discardOwnedPayloads(in removed: [Item]) {
-        let candidates = removed.flatMap { ownedPayloadURLs(in: $0) }
-        let referencedPaths = Set(items.flatMap { ownedPayloadURLs(in: $0) }
-            .map { $0.standardizedFileURL.path })
-        let discardablePaths = ShelfPersistenceSupport.discardablePayloadPaths(
-            candidatePaths: candidates.map { $0.standardizedFileURL.path },
-            referencedPaths: referencedPaths)
-        for url in candidates where discardablePaths.contains(url.standardizedFileURL.path) {
-            try? FileManager.default.removeItem(at: url)
+        guard storeWritable else { return }
+        queueCleanup(ShelfPayloadCleanup.capture(removed.flatMap { ownedPayloadURLs(in: $0) }, roots: payloadRoots))
+    }
+
+    private func queueCleanup(_ candidates: [ShelfPayloadCandidate]) {
+        guard storeWritable, !isTerminating else { return }
+        cleanupCandidates.append(contentsOf: candidates)
+        cleanCommittedPayloads()
+    }
+
+    private func cleanCommittedPayloads() {
+        // No queued or unsaved snapshot may still require a candidate file.
+        guard storeWritable, durableRevision == contentRevision, !persistScheduled, !isSaving else { return }
+        let keeping = Set(items.flatMap { ownedPayloadURLs(in: $0) }.map { $0.standardizedFileURL.path })
+        cleanupCandidates = ShelfPayloadCleanup.remove(cleanupCandidates, keeping: keeping, roots: payloadRoots)
+        if !cleanupCandidates.isEmpty, !cleanupWarningLogged {
+            NSLog("Shelf cleanup incomplete; owned files retained for retry.")
         }
+        cleanupWarningLogged = !cleanupCandidates.isEmpty
     }
 
     /// Payload files the shelf itself wrote (pasted images and GIFs) and may
@@ -1981,31 +2135,10 @@ final class ShelfService: ObservableObject {
         expandedBatches.formIntersection(batchIDs(in: items))
     }
 
-    private func cleanTemporaryFiles(keeping keptPaths: Set<String>) {
-        let fm = FileManager.default
-        guard let entries = try? fm.contentsOfDirectory(at: tempDir,
-                                                        includingPropertiesForKeys: nil) else { return }
-        for url in entries where isShelfOwnedFile(url) && !keptPaths.contains(url.standardizedFileURL.path) {
-            try? fm.removeItem(at: url)
-        }
-    }
-
-    private func cleanLegacyTemporaryFiles() {
-        let legacyDir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("VorssaintShelf", isDirectory: true)
-        guard legacyDir != tempDir,
-              let entries = try? FileManager.default.contentsOfDirectory(at: legacyDir,
-                                                                         includingPropertiesForKeys: nil)
-        else { return }
-        for url in entries where url.pathExtension.lowercased() == "png" {
-            try? FileManager.default.removeItem(at: url)
-        }
-    }
-
     private func isShelfOwnedFile(_ url: URL) -> Bool {
         let path = url.standardizedFileURL.path
         if path.hasPrefix(tempDir.standardizedFileURL.path + "/") { return true }
-        guard let store = Self.storeDirectory else { return false }
+        guard let store = storeDirectory else { return false }
         return path.hasPrefix(store.standardizedFileURL.path + "/")
     }
 
@@ -2015,112 +2148,316 @@ final class ShelfService: ObservableObject {
 
     // MARK: - Persistence
 
-    /// Coalesces the saves of one mutation cycle into a single write. Gated
-    /// until the restore lands so an early mutation cannot overwrite the saved
-    /// shelf with a partial list.
     private func schedulePersist() {
-        guard restoreCompleted, !persistScheduled else { return }
+        guard restoreCompleted, storeWritable, !isTerminating, !persistScheduled, !publishingImport else { return }
         persistScheduled = true
         DispatchQueue.main.async { [weak self] in
-            guard let self else { return }
+            guard let self, self.persistScheduled else { return }
             self.persistScheduled = false
             self.persistItems()
         }
     }
 
     private func persistItems() {
+        guard storeWritable else { return }
+        guard itemCount <= ShelfPersistenceSupport.maxLeaves else {
+            isSaving = false
+            persistenceIssue = .tooLarge
+            return
+        }
         let persisted = items.map(Self.persistedItem(from:))
-        Self.persistQueue.async {
-            guard let data = try? JSONEncoder().encode(persisted) else { return }
-            UserDefaults.standard.set(data, forKey: DefaultsKey.shelfItems)
+        let revision = contentRevision
+        isSaving = true
+        persistQueue.async {
+            let result = self.indexStore?.save(persisted) ?? .failure(.saveFailed)
+            DispatchQueue.main.async { self.finishPersist(result, revision: revision) }
         }
     }
 
-    /// Restores the saved shelf off the main thread (file checks and image
-    /// thumbnails touch the disk, and this runs at launch), merges it with
-    /// anything added in the meantime, then sweeps payload files that lost
-    /// their item (crash between write and save, or dropped at sanitizing).
-    /// A blob this build cannot read whole — one that will not decode at all,
-    /// and one that decoded with entries dropped — skips both the save-back
-    /// and the sweep: it is a store this build cannot read, not a shelf the
-    /// user emptied, and the entries it dropped still own payload files that
-    /// the blob it kept still points at.
-    private func restoreItems() {
-        let sweepCutoff = Date()
-        let data = UserDefaults.standard.data(forKey: DefaultsKey.shelfItems)
-        DispatchQueue.global(qos: .utility).async { [weak self] in
-            guard let self else { return }
-            // The disk work (decode, existence checks, unmounted-volume
-            // handling) belongs off the main thread. Turning each entry into an
-            // Item does not: it builds the icon with AppKit drawing,
-            // NSWorkspace and SF Symbols, which are only safe on the main
-            // thread, so that step waits for the hop below.
-            var sanitized: [ShelfPersistedItem] = []
-            let store = ShelfPersistenceSupport.load(data)
-            switch store {
-            case let .items(decoded), let .partial(decoded):
-                sanitized = ShelfPersistenceSupport.sanitized(decoded, fileExists: { path in
-                    if FileManager.default.fileExists(atPath: path) { return true }
-                    // A file on an unmounted volume is not gone: the app can
-                    // launch at login before an external or network drive
-                    // appears, and dropping the item here would lose it the
-                    // moment the pruned list is saved back.
-                    if let volumeRoot = ShelfPersistenceSupport.unmountedVolumeRoot(of: path) {
-                        return !FileManager.default.fileExists(atPath: volumeRoot)
-                    }
-                    return false
-                }, resolveBookmark: Self.resolvedBookmarkPath)
-            case .unreadable:
-                break
+    private func finishPersist(_ result: Result<Void, ShelfIndexError>, revision: Int) {
+        guard !isTerminating else { return }
+        if case .success = result { durableRevision = revision }
+        guard revision == contentRevision else { return }
+        isSaving = false
+        switch result {
+        case .success:
+            persistenceIssue = nil
+            cleanCommittedPayloads()
+            if let cutoff = startupSweepCutoff {
+                startupSweepCutoff = nil
+                let roots = payloadRoots
+                DispatchQueue.global(qos: .utility).async { [weak self] in
+                    let candidates = ShelfPayloadCleanup.collect(in: roots, writtenBefore: cutoff)
+                    DispatchQueue.main.async { self?.queueCleanup(candidates) }
+                }
             }
-            DispatchQueue.main.async {
-                let restored = sanitized.compactMap { self.restoredItem(from: $0) }
-                let liveItemCount = self.itemCount
-                self.restoreCompleted = true
-                if !restored.isEmpty {
-                    var remaining = max(0, ShelfPersistenceSupport.maxLeaves - self.itemCount)
-                    let keptRestored = restored.filter { item in
-                        guard item.leafCount <= remaining else { return false }
-                        remaining -= item.leafCount
-                        return true
+        case let .failure(error):
+            if persistenceIssue == nil { NSLog("Shelf index save failed; changes remain in memory.") }
+            persistenceIssue = error == .tooLarge ? .tooLarge : .saveFailed
+        }
+    }
+
+    func retryPersistence() {
+        guard storeWritable, !isSaving else { return }
+        schedulePersist()
+    }
+
+    @discardableResult
+    func importItems(_ selected: [ShelfPersistedItem], mappings: [ShelfImportMapping], sourceURL: URL,
+                     completion: @escaping (Result<Int, Error>) -> Void) -> UUID? {
+        finishRestore()
+        guard !isImporting, !isTerminating, restoreCompleted, storeWritable,
+              fixtureMode || AppFeature.shelf.isAvailable, let destination = containerDirectory else {
+            completion(.failure(ShelfImportServiceError.unavailable)); return nil
+        }
+        guard !selected.isEmpty else { completion(.failure(ShelfImportError.emptySelection)); return nil }
+        let request = UUID()
+        importRequest = request
+        isImporting = true
+        func finish(_ result: Result<Int, Error>) {
+            guard self.importRequest == request else { return }
+            self.importRequest = nil
+            self.isImporting = false
+            completion(result)
+        }
+        func prepare(attempt: Int) {
+            guard self.importRequest == request else { return }
+            if self.persistScheduled {
+                self.persistScheduled = false
+                self.persistItems()
+            }
+            let current = self.items.map(Self.persistedItem(from:))
+            let revision = self.contentRevision
+            let managedRoots = self.payloadRoots.map { $0.standardizedFileURL.resolvingSymlinksInPath().path + "/" }
+            self.persistQueue.async {
+                let access = sourceURL.startAccessingSecurityScopedResource()
+                let scoped = mappings.map { $0.selectedDirectory.startAccessingSecurityScopedResource() }
+                let result = Result { () throws -> ShelfImportPrepared in
+                    try ShelfImportAssets.validateSource(source: sourceURL,
+                        currentIndex: destination.appendingPathComponent("ShelfItems.json"))
+                    // Capacity is checked before reading attachments; no partial import.
+                    let merged = try ShelfImportSupport.merging(selected: selected, current: current)
+                    let copies = Array(merged.dropFirst(current.count))
+                    let assets = try ShelfImportAssets.prepare(items: copies, mappings: mappings,
+                                                               destinationDirectory: destination)
+                    let copiedPaths = Set(assets.files.keys.map { destination.appendingPathComponent("ShelfFiles").appendingPathComponent($0).path })
+                    func validateReferences(_ items: [ShelfPersistedItem]) throws {
+                        for item in items {
+                            if let path = item.path, !copiedPaths.contains(path) {
+                                let canonical = URL(fileURLWithPath: path).standardizedFileURL.resolvingSymlinksInPath().path
+                                guard !managedRoots.contains(where: { canonical.hasPrefix($0) || canonical + "/" == $0 }) else {
+                                    throw ShelfImportServiceError.managedReference(path)
+                                }
+                            }
+                            try validateReferences(item.children ?? [])
+                        }
                     }
-                    self.items = keptRestored + self.items
-                    self.startContentThumbnails(for: keptRestored)
+                    try validateReferences(assets.items)
+                    let prepared = try ShelfImportTransaction.prepare(items: current + assets.items,
+                                                                        files: assets.files, in: destination)
+                    self.preparedImports[prepared.stagingURL] = prepared
+                    return prepared
                 }
-                // A store this build could not read whole is not an empty
-                // shelf, and it is not the shelf either. Saving over it and
-                // sweeping the payload files it still references would turn
-                // entries this build cannot read into permanent loss — the
-                // dropped entry's file is still there and still referenced,
-                // unlike a `sanitized` drop, whose file is gone by definition.
-                // Both wait for a launch that can read the store again.
-                guard case .items = store else { return }
-                if ShelfPersistenceSupport.needsPersistAfterRestore(
-                    restoredIsEmpty: restored.isEmpty,
-                    liveItemCount: liveItemCount) {
-                    self.schedulePersist()
+                if access { sourceURL.stopAccessingSecurityScopedResource() }
+                for (mapping, acquired) in zip(mappings, scoped) where acquired {
+                    mapping.selectedDirectory.stopAccessingSecurityScopedResource()
                 }
-                let keptPaths = Set(self.items.flatMap { self.ownedPayloadURLs(in: $0) }
-                    .map(\.standardizedFileURL.path))
-                DispatchQueue.global(qos: .utility).async {
-                    self.sweepOwnedFiles(keeping: keptPaths, writtenBefore: sweepCutoff)
+                DispatchQueue.main.async {
+                    if case let .success(prepared) = result {
+                        self.persistQueue.async { self.preparedImports.removeValue(forKey: prepared.stagingURL) }
+                    }
+                    guard self.importRequest == request, !self.isTerminating else {
+                        if case let .success(prepared) = result { ShelfImportTransaction.discard(prepared) }
+                        return
+                    }
+                    switch result {
+                    case let .failure(error): finish(.failure(error))
+                    case let .success(prepared):
+                        guard self.storeWritable, self.fixtureMode || AppFeature.shelf.isAvailable else {
+                            ShelfImportTransaction.discard(prepared)
+                            finish(.failure(ShelfImportServiceError.unavailable)); return
+                        }
+                        guard self.contentRevision == revision else {
+                            ShelfImportTransaction.discard(prepared)
+                            if attempt < 2 { prepare(attempt: attempt + 1) }
+                            else { finish(.failure(ShelfImportServiceError.changed)) }
+                            return
+                        }
+                        do {
+                            let access = sourceURL.startAccessingSecurityScopedResource()
+                            defer { if access { sourceURL.stopAccessingSecurityScopedResource() } }
+                            try ShelfImportAssets.validateSource(source: sourceURL,
+                                currentIndex: destination.appendingPathComponent("ShelfItems.json"))
+                            // Validate every live conversion before the filesystem commit.
+                            let additions = Array(prepared.items.dropFirst(current.count)).compactMap { self.restoredItem(from: $0) }
+                            guard additions.count == prepared.items.count - current.count else { throw ShelfImportError.invalidDocument }
+                            try self.persistQueue.sync {
+                                try ShelfImportTransaction.commit(prepared, to: destination)
+                                self.indexStore?.didCommitImportedStore()
+                            }
+                            self.publishingImport = true
+                            self.items.append(contentsOf: additions)
+                            self.publishingImport = false
+                            self.durableRevision = self.contentRevision
+                            self.isSaving = false
+                            self.persistenceIssue = nil
+                            self.cleanSelectionState()
+                            self.cleanCommittedPayloads()
+                            if !self.fixtureMode { self.startContentThumbnails(for: additions) }
+                            finish(.success(additions.reduce(0) { $0 + $1.leafCount }))
+                        } catch {
+                            ShelfImportTransaction.discard(prepared)
+                            finish(.failure(error))
+                        }
+                    }
                 }
             }
         }
+        prepare(attempt: 0)
+        return request
     }
+
+    func cancelImport(_ request: UUID) {
+        guard importRequest == request else { return }
+        importRequest = nil
+        isImporting = false
+    }
+
+    private func stopImports() {
+        importRequest = nil
+        isImporting = false
+        persistQueue.sync {
+            for prepared in preparedImports.values { ShelfImportTransaction.discard(prepared) }
+            preparedImports.removeAll()
+        }
+    }
+
+    private func restoreItems() {
+        let cutoff = Date()
+        persistQueue.async {
+            let loaded = self.indexStore?.load()
+                ?? ShelfIndexLoad(store: .unreadable, source: .empty, canWrite: false)
+            var sanitized: [ShelfPersistedItem] = []
+            switch loaded.store {
+            case let .items(decoded), let .partial(decoded):
+                sanitized = ShelfPersistenceSupport.sanitized(decoded, fileExists: { path in
+                    if FileManager.default.fileExists(atPath: path) { return true }
+                    if let volume = ShelfPersistenceSupport.unmountedVolumeRoot(of: path) {
+                        return !FileManager.default.fileExists(atPath: volume)
+                    }
+                    return false
+                }, resolveBookmark: Self.resolvedBookmarkPath)
+            case .unreadable: break
+            }
+            self.pendingRestore = (loaded, sanitized, cutoff)
+            DispatchQueue.main.async { self.finishRestore() }
+        }
+    }
+
+    private func finishRestore() {
+        guard !restoreCompleted, !isTerminating else { return }
+        let result = persistQueue.sync { () -> (ShelfIndexLoad, [ShelfPersistedItem], Date)? in
+            defer { pendingRestore = nil }
+            return pendingRestore
+        }
+        guard let (loaded, sanitized, cutoff) = result else { return }
+        let restored = sanitized.compactMap { restoredItem(from: $0) }
+        // Set this gate before publishing items: didSet can schedule a write.
+        storeWritable = loaded.canWrite
+        persistenceIssue = storeWritable ? nil : .unreadable
+        if !storeWritable { NSLog("Shelf index is not fully readable; original data is protected.") }
+        restoreCompleted = true
+        if !restored.isEmpty {
+            items = restored + items
+            if !fixtureMode { startContentThumbnails(for: restored) }
+        }
+        if storeWritable {
+            startupSweepCutoff = cutoff
+            schedulePersist()
+        }
+    }
+
+    func flushBeforeTermination() {
+        guard !isTerminating else { return }
+        stopImports()
+        finishRestore()
+        isTerminating = true
+        guard storeWritable else { return }
+        // Consume any main-queue save and serialize behind already queued writes.
+        persistScheduled = false
+        let revision = contentRevision
+        let persisted = items.map(Self.persistedItem(from:))
+        let fits = itemCount <= ShelfPersistenceSupport.maxLeaves
+        let result: Result<Void, ShelfIndexError> = persistQueue.sync {
+            guard fits else { return .failure(.tooLarge) }
+            return indexStore?.save(persisted) ?? .failure(.saveFailed)
+        }
+        isSaving = false
+        switch result {
+        case .success:
+            durableRevision = revision
+            persistenceIssue = nil
+        case let .failure(error):
+            persistenceIssue = error == .tooLarge ? .tooLarge : .saveFailed
+        }
+    }
+
+    func stopPersistenceForRemoval() {
+        stopImports()
+        isTerminating = true
+        persistScheduled = false
+        persistQueue.sync { pendingRestore = nil }
+        storeWritable = false
+        isSaving = false
+        cleanupCandidates.removeAll()
+    }
+
+
+#if VORSSAINT_DEVELOPMENT
+    convenience init(fixtureDirectory: URL, legacyDefaults: UserDefaults) {
+        self.init(directory: fixtureDirectory, temporary: fixtureDirectory.appendingPathComponent("TemporaryShelf"),
+                  defaults: legacyDefaults, fixture: true)
+    }
+
+    var hasRestoredForFixture: Bool { restoreCompleted }
+
+    func holdPersistenceForFixture() -> () -> Void {
+        precondition(fixtureMode)
+        let gate = DispatchSemaphore(value: 0)
+        persistQueue.async { _ = gate.wait(timeout: .now() + 5) }
+        return { gate.signal() }
+    }
+
+    func replaceItemsForFixture(_ records: [ShelfPersistedItem]) {
+        precondition(fixtureMode)
+        items = records.compactMap { restoredItem(from: $0) }
+    }
+
+    func cleanupForFixture(_ candidates: [ShelfPayloadCandidate]) {
+        precondition(fixtureMode)
+        queueCleanup(candidates)
+    }
+
+    func whenPersistenceDrained(_ completion: @escaping () -> Void) {
+        precondition(fixtureMode)
+        DispatchQueue.main.async {
+            self.persistQueue.async { DispatchQueue.main.async(execute: completion) }
+        }
+    }
+#endif
 
     private static func persistedItem(from item: Item) -> ShelfPersistedItem {
         switch item.payload {
         case let .file(url):
-            return ShelfPersistedItem(id: item.id, kind: .file, title: item.title,
+            return ShelfPersistedItem(id: item.id, kind: .file, title: item.storedTitle,
                                       path: url.path, bookmark: item.bookmark)
         case let .text(text):
-            return ShelfPersistedItem(id: item.id, kind: .text, title: item.title, text: text)
+            return ShelfPersistedItem(id: item.id, kind: .text, title: item.storedTitle, text: text)
         case let .link(url):
-            return ShelfPersistedItem(id: item.id, kind: .link, title: item.title,
+            return ShelfPersistedItem(id: item.id, kind: .link, title: item.storedTitle,
                                       url: url.absoluteString)
         case let .batch(children):
-            return ShelfPersistedItem(id: item.id, kind: .batch, title: item.title,
+            return ShelfPersistedItem(id: item.id, kind: .batch, title: item.storedTitle,
                                       children: children.map(persistedItem(from:)))
         }
     }
@@ -2130,48 +2467,25 @@ final class ShelfService: ObservableObject {
         case .file:
             guard let path = persisted.path else { return nil }
             return fileItem(for: URL(fileURLWithPath: path), id: persisted.id,
-                            title: persisted.title.isEmpty ? nil : persisted.title,
+                            title: persisted.title,
                             bookmark: persisted.bookmark,
                             deferImageThumbnail: true)
         case .text:
             guard let text = persisted.text else { return nil }
-            let firstLine = text.split(whereSeparator: \.isNewline).first.map(String.init) ?? text
-            let title = persisted.title.isEmpty ? String(firstLine.prefix(48)) : persisted.title
-            return Item(id: persisted.id, payload: .text(text), title: title,
+            return Item(id: persisted.id, payload: .text(text), title: persisted.title,
                         icon: symbol("doc.plaintext"), isImage: false)
         case .link:
             guard let raw = persisted.url, let url = URL(string: raw) else { return nil }
-            let title = persisted.title.isEmpty ? (url.host ?? url.absoluteString) : persisted.title
-            return Item(id: persisted.id, payload: .link(url), title: title,
+            return Item(id: persisted.id, payload: .link(url), title: persisted.title,
                         icon: symbol("link"), isImage: false)
         case .batch:
             let children = (persisted.children ?? []).compactMap { restoredItem(from: $0) }
             guard !children.isEmpty else { return nil }
-            guard children.count > 1 else { return children[0] }
-            return batchItem(id: persisted.id, children: children)
+            let face = Self.batchFace(of: children)
+            return Item(id: persisted.id, payload: .batch(children), title: persisted.title,
+                        icon: face.icon ?? symbol("doc.on.doc"), isImage: false,
+                        hasContentThumbnail: face.hasContentThumbnail)
         }
-    }
-
-    /// Deletes shelf-written payload files no restored item references, plus
-    /// the temp dirs earlier versions used for pasted images. Only files
-    /// written before the reference snapshot are touched: the sweep runs on a
-    /// background queue, and a payload pasted between the snapshot and the
-    /// enumeration must not be deleted out from under its fresh item.
-    private func sweepOwnedFiles(keeping keptPaths: Set<String>, writtenBefore cutoff: Date) {
-        let fm = FileManager.default
-        if let store = Self.storeDirectory,
-           let entries = try? fm.contentsOfDirectory(at: store,
-                                                     includingPropertiesForKeys: [.contentModificationDateKey]) {
-            for url in entries where !keptPaths.contains(url.standardizedFileURL.path) {
-                let modified = (try? url.resourceValues(forKeys: [.contentModificationDateKey]))?
-                    .contentModificationDate ?? .distantPast
-                if modified < cutoff {
-                    try? fm.removeItem(at: url)
-                }
-            }
-        }
-        cleanTemporaryFiles(keeping: keptPaths)
-        cleanLegacyTemporaryFiles()
     }
 
     // MARK: - Panel
@@ -2196,7 +2510,8 @@ final class ShelfService: ObservableObject {
     /// up and comes back when it closes.
     func summon() {
         guard AppFeature.shelf.isAvailable,
-              UserDefaults.standard.bool(forKey: DefaultsKey.shelfEnabled) else { return }
+              UserDefaults.standard.bool(forKey: DefaultsKey.shelfEnabled),
+              yieldFromTopNotes() else { return }
         let panel = ensurePanel()
         cancelAutoHide()
         position(panel)

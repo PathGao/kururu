@@ -1,22 +1,22 @@
 /* macOS Automation permission prompt. */
-"NSAppleEventsUsageDescription" = "Vorssaint 使用自動化在 Finder 中移動檔案、將項目移至垃圾桶，並在你要求 Homebrew 動作時開啟終端機指令。";
+"NSAppleEventsUsageDescription" = "__APP_NAME__ 使用自動化在 Finder 中移動檔案、將項目移至垃圾桶，並在你要求 Homebrew 動作時開啟終端機指令。 Also used to set Finder folder arrangement rules when you request it.";
 
 /* macOS Screen & System Audio Recording permission prompt. */
-"NSAudioCaptureUsageDescription" = "Vorssaint 會使用個別 App 的音訊，用作在混音器中調整它們的音量，以及在你開始的螢幕錄製中加入 Mac 的聲音。不會有任何資料離開你的 Mac。";
+"NSAudioCaptureUsageDescription" = "__APP_NAME__ 會使用個別 App 的音訊，用作在混音器中調整它們的音量，以及在你開始的螢幕錄製中加入 Mac 的聲音。不會有任何資料離開你的 Mac。";
 
 /* macOS Bluetooth permission prompt. */
-"NSBluetoothAlwaysUsageDescription" = "Vorssaint 只會使用藍牙讀取已連接周邊裝置的電池電量。不會有任何資料離開你的 Mac。";
+"NSBluetoothAlwaysUsageDescription" = "__APP_NAME__ 只會使用藍牙讀取已連接周邊裝置的電池電量。不會有任何資料離開你的 Mac。";
 
 /* macOS Microphone permission prompt. */
-"NSMicrophoneUsageDescription" = "Vorssaint 只會在你為螢幕錄製開啟咪高風時錄音。除非你選擇建立臨時連結，否則音訊只會保留在 Mac 上。";
+"NSMicrophoneUsageDescription" = "__APP_NAME__ 只會在你為螢幕錄製開啟咪高風時錄音。音訊只會保留在 Mac 上。";
 
 /* macOS Camera permission prompt. */
 
 /* macOS Downloads folder permission prompt. */
-"NSDownloadsFolderUsageDescription" = "Vorssaint 檢查下載項目中的本機中繼資料，只檢視、整理或移至垃圾桶你選擇的已確認 WhatsApp 檔案。";
+"NSDownloadsFolderUsageDescription" = "__APP_NAME__ 檢查下載項目中的本機中繼資料，只檢視、整理或移至垃圾桶你選擇的已確認 WhatsApp 檔案。";
 
 /* macOS user-selected organizer destination prompts. */
-"NSDesktopFolderUsageDescription" = "Vorssaint 會將已確認的 WhatsApp 下載項目整理到你明確選擇的目標資料夾。";
-"NSDocumentsFolderUsageDescription" = "Vorssaint 會將已確認的 WhatsApp 下載項目整理到你明確選擇的目標資料夾。";
-"NSNetworkVolumesUsageDescription" = "Vorssaint 會將已確認的 WhatsApp 下載項目整理到你明確選擇的目標資料夾。";
-"NSRemovableVolumesUsageDescription" = "Vorssaint 會將已確認的 WhatsApp 下載項目整理到你明確選擇的目標資料夾。";
+"NSDesktopFolderUsageDescription" = "__APP_NAME__ 會將已確認的 WhatsApp 下載項目整理到你明確選擇的目標資料夾。";
+"NSDocumentsFolderUsageDescription" = "__APP_NAME__ 會將已確認的 WhatsApp 下載項目整理到你明確選擇的目標資料夾。";
+"NSNetworkVolumesUsageDescription" = "__APP_NAME__ 會將已確認的 WhatsApp 下載項目整理到你明確選擇的目標資料夾。";
+"NSRemovableVolumesUsageDescription" = "__APP_NAME__ 會將已確認的 WhatsApp 下載項目整理到你明確選擇的目標資料夾。";

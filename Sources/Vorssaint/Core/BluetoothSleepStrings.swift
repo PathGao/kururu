@@ -12,7 +12,7 @@ struct BluetoothSleepStrings {
     var enable: String = "Turn Bluetooth off when the Mac sleeps"
     var enableCaption: String = "Bluetooth already off before sleep is left alone and stays off on wake."
     var restoreToggle: String = "Turn Bluetooth back on when the Mac wakes"
-    var restoreCaption: String = "Only when Vorssaint was the one that switched it off."
+    var restoreCaption: String = "Only when \(AppInfo.name) was the one that switched it off."
     var unsupported: String = "This Mac has no Bluetooth controller."
 }
 
@@ -45,7 +45,7 @@ extension BluetoothSleepStrings {
         enable: "Desligar o Bluetooth quando o Mac dormir",
         enableCaption: "O Bluetooth que já estava desligado antes do repouso não é tocado e continua desligado ao acordar.",
         restoreToggle: "Ligar o Bluetooth de volta quando o Mac acordar",
-        restoreCaption: "Apenas quando foi o Vorssaint que o desligou.",
+        restoreCaption: "Apenas quando foi o \(AppInfo.name) que o desligou.",
         unsupported: "Este Mac não tem controlador Bluetooth."
     )
 
@@ -55,7 +55,7 @@ extension BluetoothSleepStrings {
         enable: "Mac uyuduğunda Bluetooth’u kapat",
         enableCaption: "Uykudan önce zaten kapalı olan Bluetooth’a dokunulmaz ve uyanışta kapalı kalır.",
         restoreToggle: "Mac uyandığında Bluetooth’u yeniden aç",
-        restoreCaption: "Yalnızca kapatan Vorssaint olduğunda.",
+        restoreCaption: "Yalnızca kapatan \(AppInfo.name) olduğunda.",
         unsupported: "Bu Mac’te Bluetooth denetleyicisi yok."
     )
 
@@ -65,7 +65,7 @@ extension BluetoothSleepStrings {
         enable: "Выключать Bluetooth, когда Mac засыпает",
         enableCaption: "Bluetooth, уже выключенный до сна, не трогается и остаётся выключенным после пробуждения.",
         restoreToggle: "Включать Bluetooth обратно при пробуждении Mac",
-        restoreCaption: "Только если его выключил сам Vorssaint.",
+        restoreCaption: "Только если его выключил сам \(AppInfo.name).",
         unsupported: "На этом Mac нет контроллера Bluetooth."
     )
 
@@ -75,7 +75,7 @@ extension BluetoothSleepStrings {
         enable: "Apagar el Bluetooth cuando el Mac entre en reposo",
         enableCaption: "El Bluetooth que ya estaba apagado antes del reposo no se toca y sigue apagado al despertar.",
         restoreToggle: "Volver a encender el Bluetooth cuando el Mac despierte",
-        restoreCaption: "Solo cuando fue Vorssaint quien lo apagó.",
+        restoreCaption: "Solo cuando fue \(AppInfo.name) quien lo apagó.",
         unsupported: "Este Mac no tiene controlador Bluetooth."
     )
 
@@ -85,7 +85,7 @@ extension BluetoothSleepStrings {
         enable: "Bluetooth ausschalten, wenn der Mac in den Ruhezustand geht",
         enableCaption: "Bereits vor dem Ruhezustand ausgeschaltetes Bluetooth bleibt unberührt und beim Aufwachen aus.",
         restoreToggle: "Bluetooth wieder einschalten, wenn der Mac aufwacht",
-        restoreCaption: "Nur wenn Vorssaint es ausgeschaltet hat.",
+        restoreCaption: "Nur wenn \(AppInfo.name) es ausgeschaltet hat.",
         unsupported: "Dieser Mac hat keinen Bluetooth-Controller."
     )
 
@@ -95,7 +95,7 @@ extension BluetoothSleepStrings {
         enable: "Couper le Bluetooth quand le Mac se met en veille",
         enableCaption: "Un Bluetooth déjà coupé avant la veille n’est pas touché et reste coupé au réveil.",
         restoreToggle: "Rallumer le Bluetooth au réveil du Mac",
-        restoreCaption: "Uniquement si c’est Vorssaint qui l’a coupé.",
+        restoreCaption: "Uniquement si c’est \(AppInfo.name) qui l’a coupé.",
         unsupported: "Ce Mac n’a pas de contrôleur Bluetooth."
     )
 
@@ -105,7 +105,7 @@ extension BluetoothSleepStrings {
         enable: "Spegni il Bluetooth quando il Mac va in stop",
         enableCaption: "Il Bluetooth già spento prima dello stop resta intoccato e spento alla riattivazione.",
         restoreToggle: "Riaccendi il Bluetooth quando il Mac si riattiva",
-        restoreCaption: "Solo quando è stato Vorssaint a spegnerlo.",
+        restoreCaption: "Solo quando è stato \(AppInfo.name) a spegnerlo.",
         unsupported: "Questo Mac non ha un controller Bluetooth."
     )
 
@@ -115,7 +115,7 @@ extension BluetoothSleepStrings {
         enable: "Macがスリープしたら Bluetooth を切る",
         enableCaption: "スリープ前からオフだったBluetoothはそのままで、復帰後もオフのままです。",
         restoreToggle: "Macの復帰時に Bluetooth を戻す",
-        restoreCaption: "Vorssaintが切った場合のみ戻します。",
+        restoreCaption: "\(AppInfo.name)が切った場合のみ戻します。",
         unsupported: "このMacにはBluetoothコントローラがありません。"
     )
 
@@ -125,7 +125,7 @@ extension BluetoothSleepStrings {
         enable: "Mac이 잠자기에 들어가면 Bluetooth 끄기",
         enableCaption: "잠자기 전에 이미 꺼져 있던 Bluetooth는 건드리지 않고 깨어난 뒤에도 꺼진 채로 둡니다.",
         restoreToggle: "Mac이 깨어나면 Bluetooth 다시 켜기",
-        restoreCaption: "Vorssaint가 껐을 때만 다시 켭니다.",
+        restoreCaption: "\(AppInfo.name)가 껐을 때만 다시 켭니다.",
         unsupported: "이 Mac에는 Bluetooth 컨트롤러가 없습니다."
     )
 
@@ -135,7 +135,7 @@ extension BluetoothSleepStrings {
         enable: "Mac 进入睡眠时关闭蓝牙",
         enableCaption: "睡眠前就已关闭的蓝牙不会被改动，唤醒后仍保持关闭。",
         restoreToggle: "Mac 唤醒时重新打开蓝牙",
-        restoreCaption: "仅在蓝牙是由 Vorssaint 关闭时。",
+        restoreCaption: "仅在蓝牙是由 \(AppInfo.name) 关闭时。",
         unsupported: "这台 Mac 没有蓝牙控制器。"
     )
 
@@ -145,7 +145,7 @@ extension BluetoothSleepStrings {
         enable: "Mac 進入睡眠時關閉藍牙",
         enableCaption: "睡眠前就已關閉的藍牙不會被更動，喚醒後仍保持關閉。",
         restoreToggle: "Mac 喚醒時重新開啟藍牙",
-        restoreCaption: "僅在藍牙是由 Vorssaint 關閉時。",
+        restoreCaption: "僅在藍牙是由 \(AppInfo.name) 關閉時。",
         unsupported: "這台 Mac 沒有藍牙控制器。"
     )
 
@@ -155,7 +155,7 @@ extension BluetoothSleepStrings {
         enable: "Mac 進入睡眠時關閉藍牙",
         enableCaption: "睡眠前已經關閉的藍牙不會被更動，喚醒後仍然保持關閉。",
         restoreToggle: "Mac 喚醒時重新開啟藍牙",
-        restoreCaption: "只在藍牙是由 Vorssaint 關閉時。",
+        restoreCaption: "只在藍牙是由 \(AppInfo.name) 關閉時。",
         unsupported: "這部 Mac 沒有藍牙控制器。"
     )
 }

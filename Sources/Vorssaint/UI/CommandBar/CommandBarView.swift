@@ -111,6 +111,10 @@ struct CommandBarView: View {
     var body: some View {
         VStack(spacing: 0) {
             searchBar
+            if let failure = service.destinationFailure {
+                Divider()
+                destinationFailureNotice(failure)
+            }
             switch service.mode {
             case .search:
                 if showsCategoryChips {
@@ -162,6 +166,25 @@ struct CommandBarView: View {
 
     private func focusSearch() {
         DispatchQueue.main.async { searchFocused = true }
+    }
+
+    private func destinationFailureNotice(_ failure: CommandBarDestinationFailure) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: "exclamationmark.triangle")
+            VStack(alignment: .leading, spacing: 3) {
+                Text(failure.target)
+                    .font(.system(size: 12, weight: .semibold))
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                Text(failure.message)
+                    .font(.system(size: 11))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+        }
+        .foregroundStyle(.orange)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
     }
 
     // MARK: - Field
@@ -243,7 +266,10 @@ struct CommandBarView: View {
     /// Everything that can be done to the selected row, in the same list
     /// shape as the results so there is nothing new to learn.
     private var actionsList: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        let actions = service.actionRows
+        let breaks = actions.indices.filter { $0 > 0 && actions[$0 - 1].group != actions[$0].group }
+        let listHeight = min(Self.listCeiling, CGFloat(actions.count * 45 + breaks.count * 9 + 16))
+        return VStack(alignment: .leading, spacing: 0) {
             Text(text.actionsTitle.uppercased())
                 .font(.system(size: 9, weight: .bold))
                 .tracking(0.5)
@@ -251,43 +277,56 @@ struct CommandBarView: View {
                 .padding(.horizontal, 16)
                 .padding(.top, 10)
                 .padding(.bottom, 2)
-            VStack(spacing: 1) {
-                ForEach(Array(service.actionRows.enumerated()), id: \.element.id) { index, action in
-                    Button {
-                        service.runAction(action)
-                    } label: {
-                        HStack(spacing: 10) {
-                            Image(systemName: action.symbolName)
-                                .font(.system(size: 13.5, weight: .semibold))
-                                .foregroundStyle(action.isDestructive
-                                                 ? Color.red : Color.primary.opacity(0.85))
-                                .frame(width: 30, height: 30)
-                            Text(action.title)
-                                .font(.system(size: 13, weight: .medium))
-                                .foregroundStyle(action.isDestructive ? Color.red : Color.primary)
-                            Spacer(minLength: 12)
-                            Image(systemName: "return")
-                                .font(.system(size: 10, weight: .semibold))
-                                .foregroundStyle(.tertiary)
-                                .opacity(index == service.actionIndex ? 1 : 0)
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(spacing: 1) {
+                        ForEach(Array(actions.enumerated()), id: \.element.id) { index, action in
+                            if breaks.contains(index) { Divider().padding(.vertical, 4) }
+                            Button {
+                                service.runAction(action)
+                            } label: {
+                                HStack(spacing: 10) {
+                                    Image(systemName: action.symbolName)
+                                        .font(.system(size: 13.5, weight: .semibold))
+                                        .foregroundStyle(action.isDestructive
+                                                         ? Color.red : Color.primary.opacity(0.85))
+                                        .frame(width: 30, height: 30)
+                                    Text(action.title)
+                                        .lineLimit(1)
+                                        .truncationMode(.middle)
+                                        .font(.system(size: 13, weight: .medium))
+                                        .foregroundStyle(action.isDestructive ? Color.red : Color.primary)
+                                    Spacer(minLength: 12)
+                                    Image(systemName: "return")
+                                        .font(.system(size: 10, weight: .semibold))
+                                        .foregroundStyle(.tertiary)
+                                        .opacity(index == service.actionIndex ? 1 : 0)
+                                }
+                                .padding(.horizontal, 9)
+                                .padding(.vertical, 7)
+                                .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                .background(
+                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                        .fill(index == service.actionIndex
+                                              ? (action.isDestructive
+                                                 ? Color.red.opacity(0.12)
+                                                 : Color.accentColor.opacity(0.14))
+                                              : .clear)
+                                )
+                            }
+                            .buttonStyle(.plain)
+                            .id(action.id)
                         }
-                        .padding(.horizontal, 9)
-                        .padding(.vertical, 7)
-                        .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                        .background(
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .fill(index == service.actionIndex
-                                      ? (action.isDestructive
-                                         ? Color.red.opacity(0.12)
-                                         : Color.accentColor.opacity(0.14))
-                                      : .clear)
-                        )
                     }
-                    .buttonStyle(.plain)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 8)
+                }
+                .frame(height: listHeight)
+                .onChange(of: service.actionIndex) { _, index in
+                    guard actions.indices.contains(index) else { return }
+                    proxy.scrollTo(actions[index].id)
                 }
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 8)
         }
     }
 
@@ -745,9 +784,9 @@ struct CommandBarView: View {
                 .padding(.horizontal, 17)
                 .padding(.top, 12)
             }
-            Text(text.argumentHint)
+            Text(service.argumentSubmission.isRejected ? text.argumentInvalid : text.argumentHint)
                 .font(.system(size: 10.5))
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(service.argumentSubmission.isRejected ? Color.red : Color.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 17)
                 .padding(.bottom, 12)
@@ -791,8 +830,15 @@ struct CommandBarView: View {
 
     // MARK: - Footer
 
+    private var showsFooterNavigation: Bool {
+        switch service.mode {
+        case .search, .actions: return true
+        default: return false
+        }
+    }
+
     private var footer: some View {
-        HStack(spacing: 5) {
+        HStack(spacing: 6) {
             Image(systemName: "keyboard")
                 .font(.system(size: 8.5))
                 .foregroundStyle(.tertiary)
@@ -800,29 +846,42 @@ struct CommandBarView: View {
                                       fallback: .commandBarDefault).displayString)
                 .font(.system(size: 9, weight: .semibold, design: .rounded))
                 .foregroundStyle(.tertiary)
-            Spacer()
-            if service.canOpenActions {
-                Text("⌘K")
+                .fixedSize()
+            Spacer(minLength: 8)
+            if showsFooterNavigation {
+                Text(service.isShowingSuggestions && !service.categoryChips.isEmpty ? "⌃P ⌃N ↑↓ ←→" : "⌃P ⌃N ↑↓")
                     .font(.system(size: 9, weight: .semibold, design: .rounded))
                     .foregroundStyle(.tertiary)
-                Text(text.actionsHint)
+                    .fixedSize()
+            }
+            if service.canOpenActions {
+                Text("⌘K " + text.actionsHint)
                     .font(.system(size: 9))
                     .foregroundStyle(.tertiary)
+                    .fixedSize()
                     .padding(.trailing, 4)
             }
-            Text(service.isShowingSuggestions && !service.categoryChips.isEmpty ? "⌃P ⌃N ↑↓ ←→" : "⌃P ⌃N ↑↓")
-                .font(.system(size: 9, weight: .semibold, design: .rounded))
-                .foregroundStyle(.tertiary)
-            Image(systemName: "return")
-                .font(.system(size: 8))
-                .foregroundStyle(.tertiary)
+            if let title = service.returnActionTitle {
+                Image(systemName: "return")
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                Text(title)
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .help(title)
+            }
             Text("Esc")
                 .font(.system(size: 9, weight: .semibold, design: .rounded))
                 .foregroundStyle(.tertiary)
+                .fixedSize()
         }
+        .frame(height: 14)
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
     }
+
 }
 
 /// App and file icons resolved once and kept; NSWorkspace re-reads them from

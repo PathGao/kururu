@@ -9,6 +9,7 @@ import Foundation
 enum DefaultsKey {
     static let language = "appLanguage"                   // AppLanguage.rawValue
     static let appearance = "appAppearance"               // AppAppearance.rawValue
+    static let importedInterfaceTheme = "importedInterfaceTheme" // Data: normalized colors; empty uses built-in colors
     static let liquidGlassEnabled = "liquidGlassEnabled"  // Liquid Glass visual styling on macOS 26+
     static let clamshellPreferred = "clamshellPreferred"  // apply closed-lid mode to every session
     static let onboardingStep = "onboardingStep"          // resume point if onboarding is interrupted
@@ -107,7 +108,6 @@ enum DefaultsKey {
     static let switcherPreviewSize = "switcherPreviewSize" // app switcher thumbnail size
     static let dockPreviewSize = "dockPreviewSize"        // dock preview thumbnail size
     static let autoCheckUpdates = "autoCheckUpdates"
-    static let includeBetaUpdates = "includeBetaUpdates"
     static let releaseNotesOnUpdate = "releaseNotesOnUpdate" // show What's New after an update
     static let appVolumes = "appVolumes"                  // [bundle id: 0...2]
     static let appOutputDevices = "appOutputDevices"      // [bundle id: audio device UID]
@@ -150,6 +150,7 @@ enum DefaultsKey {
     static let shelfShortcut = "shelfShortcut"            // GlobalShortcut storage value
     static let shelfShakeToOpen = "shelfShakeToOpen"
     static let shelfDropZoneEnabled = "shelfDropZoneEnabled"
+    static let shelfDockPlacement = "shelfDockPlacement"
     static let shelfEdgeDragEnabled = "shelfEdgeDragEnabled"
     static let shelfCloseAfterDrop = "shelfCloseAfterDrop"
     static let shelfRemoveAfterDrop = "shelfRemoveAfterDrop"
@@ -178,6 +179,7 @@ enum DefaultsKey {
     // while asleep still gets it back on the next launch.
     static let bluetoothSleepRestorePending = "bluetoothSleepRestorePending"
     static let musicBlockEnabled = "musicBlockEnabled"
+    static let musicBlockBundleIDs = "musicBlockBundleIDs"
     static let musicBlockReplacementPath = "musicBlockReplacementPath"  // app bundle path ("" = none)
     static let cleanerScheduleFrequency = "cleanerScheduleFrequency"    // off | daily | weekly
     static let cleanerScheduleHour = "cleanerScheduleHour"
@@ -541,8 +543,7 @@ enum DefaultsKey {
     static let screenshotCopyToClipboard = "screenshotCopyToClipboard"
     static let screenshotPreviewPosition = "screenshotPreviewPosition"
     static let screenshotSharingEnabled = "screenshotSharingEnabled"
-    // Developer-only endpoint for an isolated test tunnel. The official app
-    // ignores it, and settings backups must never carry it to another Mac.
+    // Retired upload preferences remain named only for migration and backup filtering.
     static let screenshotSharingDeveloperEndpoint = "screenshotSharingDeveloperEndpoint"
     static let panelUtilityScreenshot = "panelUtilityScreenshot"
 
@@ -594,17 +595,14 @@ enum DefaultsKey {
     /// `Defaults.migrateFeatureUnits` and deleted.
     static func featureAvailable(_ id: String) -> String { "featureAvailable.\(id)" }
 
-    // Switches of features that share a unit's page and have no single
-    // enable key of their own (`AppFeature.switchKey`). Off is the old
-    // per-feature uninstall with the switch left on the page.
+    // Resource-owning members that can stop independently of their unit.
     static let fanControlEnabled = "fanControlEnabled"
     static let mixerEnabled = "mixerEnabled"
+    // Retired availability gates, accepted only for upgrades and old backups.
     static let screenshotEnabled = "screenshotEnabled"
     static let recorderEnabled = "recorderEnabled"
     static let colorPickerEnabled = "colorPickerEnabled"
     static let screenOCREnabled = "screenOCREnabled"
-    // Members whose enable keys are options (an axis, a Dock click mode) get a
-    // switch above them; the plain `<feature>Enabled` name was already taken.
     static let scrollInverterSwitchEnabled = "scrollInverterSwitchEnabled"
     static let mouseButtonShortcutsSwitchEnabled = "mouseButtonShortcutsSwitchEnabled"
     static let finderCutPasteSwitchEnabled = "finderCutPasteSwitchEnabled"
@@ -771,7 +769,9 @@ enum PreviewSizing {
 
 enum Defaults {
     static let finderBundleIdentifier = "com.apple.finder"
-    static let mandatoryAutoQuitExceptionBundleIDs = [finderBundleIdentifier]
+    // Quitting Phone during a window-less incoming Continuity call disconnects it.
+    static let phoneBundleIdentifier = "com.apple.mobilephone"
+    static let mandatoryAutoQuitExceptionBundleIDs = [finderBundleIdentifier, phoneBundleIdentifier]
 
     static let allowedDurations = [0, 15, 30, 60, 120, 240, 480]
     static let allowedKeepAwakeMouseJiggleIntervals = [1, 2, 5, 10, 15]
@@ -802,6 +802,7 @@ enum Defaults {
 
     static let registeredDefaults: [String: Any] = [
         DefaultsKey.appearance: AppAppearance.fallback.rawValue,
+        DefaultsKey.importedInterfaceTheme: Data(),
         DefaultsKey.liquidGlassEnabled: false,
         DefaultsKey.clamshellPreferred: false,
         DefaultsKey.defaultDuration: 0,
@@ -878,7 +879,6 @@ enum Defaults {
         DefaultsKey.switcherPreviewSize: "normal",
         DefaultsKey.dockPreviewSize: "normal",
         DefaultsKey.autoCheckUpdates: true,
-        DefaultsKey.includeBetaUpdates: false,
         DefaultsKey.releaseNotesOnUpdate: true,
         DefaultsKey.updateShowcaseIntroVersion: "",
         DefaultsKey.updateShowcaseMediaOverride: "",
@@ -915,6 +915,7 @@ enum Defaults {
         // On by default (owner's call): it costs nothing until the shelf itself
         // is on, and then the shelf lives handily under the menu bar icon.
         DefaultsKey.shelfDropZoneEnabled: true,
+        DefaultsKey.shelfDockPlacement: "menuBar",
         // New Shelf behavior stays opt-in for existing users.
         DefaultsKey.shelfEdgeDragEnabled: false,
         // Closing after a drop is new behavior, so it arrives OFF for people
@@ -927,6 +928,7 @@ enum Defaults {
         DefaultsKey.brightnessControlEnabled: false,
         DefaultsKey.brightnessKeysEnabled: false,
         DefaultsKey.brightnessOSDEnabled: false,
+        BrightnessShortcutPreferenceKey.enabled: false,
         DefaultsKey.keyboardBrightnessShortcutsEnabled: false,
         DefaultsKey.keyboardBrightnessDecreaseShortcut: "option+command:27",
         DefaultsKey.keyboardBrightnessIncreaseShortcut: "option+command:24",
@@ -934,6 +936,7 @@ enum Defaults {
         DefaultsKey.bluetoothSleepRestoreOnWake: true,
         DefaultsKey.bluetoothSleepRestorePending: false,
         DefaultsKey.musicBlockEnabled: false,
+        DefaultsKey.musicBlockBundleIDs: MusicLaunchSupport.defaultBlockedBundleIDs,
         DefaultsKey.musicBlockReplacementPath: "",
         DefaultsKey.cleanerScheduleFrequency: "off",
         DefaultsKey.cleanerScheduleHour: 9,
@@ -1063,17 +1066,6 @@ enum Defaults {
         // except the fan control opt-in.
         DefaultsKey.fanControlEnabled: false,
         DefaultsKey.mixerEnabled: true,
-        DefaultsKey.screenshotEnabled: true,
-        DefaultsKey.recorderEnabled: true,
-        DefaultsKey.colorPickerEnabled: true,
-        DefaultsKey.screenOCREnabled: true,
-        // Off until an option under it is on (`migrateFeatureUnits`).
-        DefaultsKey.scrollInverterSwitchEnabled: false,
-        DefaultsKey.mouseButtonShortcutsSwitchEnabled: false,
-        DefaultsKey.finderCutPasteSwitchEnabled: false,
-        DefaultsKey.quitProtectionSwitchEnabled: false,
-        DefaultsKey.textSnippetsSwitchEnabled: false,
-        DefaultsKey.dockClickEnabled: false,
         DefaultsKey.fanControlMode: FanControlMode.system.rawValue,
         DefaultsKey.fanControlCoolingLevel: FanControlPolicy.defaultCoolingLevel,
         DefaultsKey.fanControlCurves: FanControlConfiguration.defaultCurvesStorage,
@@ -1280,12 +1272,10 @@ enum Defaults {
         DefaultsKey.screenshotOpenEditorDirectly: false,
         DefaultsKey.screenshotCopyToClipboard: false,
         DefaultsKey.screenshotPreviewPosition: ScreenshotSupport.QuickPreviewPosition.automatic.rawValue,
-        DefaultsKey.screenshotSharingEnabled: true,
         DefaultsKey.panelUtilityScreenshot: true,
     ]
 
-    static func register() {
-        let defaults = UserDefaults.standard
+    static func register(in defaults: UserDefaults = .standard) {
         migrateFanControlVisibility(in: defaults)
         migrateMetricPlacementSwitches(in: defaults)
         migrateFeatureUnits(in: defaults)
@@ -1298,7 +1288,6 @@ enum Defaults {
         migrateBatteryTemperatureVisibility(in: defaults)
         defaults.register(defaults: registeredDefaults)
         defaults.register(defaults: FeatureUnit.availabilityDefaults)
-        activateBetaChannelIfRunningBeta(in: defaults)
         migrateLegacyMenuBarTemperatureMetric(in: defaults)
         migrateLegacySwitcherWindowShortcut(in: defaults)
         migrateLegacyKeyboardDebounceWindow(in: defaults)
@@ -1307,6 +1296,7 @@ enum Defaults {
         migrateUnifiedScreenCaptureShortcut(in: defaults)
         migrateRestoredScreenCaptureShortcuts(in: defaults)
         migrateOrphanedCaptureShortcut(in: defaults)
+        migrateRetiredFeatureSwitches(in: defaults)
         migrateSilentHeadphonesDisconnectVolume(in: defaults)
         migrateSwitcherWindowlessFinder(in: defaults)
         migrateSplitWindowPreviewPreferences(in: defaults)
@@ -1316,22 +1306,6 @@ enum Defaults {
         guard defaults.object(forKey: DefaultsKey.monitorPwrTemperature) == nil else { return }
         defaults.set(defaults.object(forKey: DefaultsKey.monitorSysTemps) as? Bool ?? true,
                      forKey: DefaultsKey.monitorPwrTemperature)
-    }
-
-    /// When the user installs or runs a beta pre-release, activate the beta
-    /// channel default once so they seamlessly receive subsequent beta builds.
-    static func activateBetaChannelIfRunningBeta(in defaults: UserDefaults,
-                                                 version: String = AppInfo.version,
-                                                 isBeta: Bool = AppInfo.isBeta) {
-        let isPre = isBeta || {
-            let v = version.lowercased()
-            return v.contains("-beta") || v.contains("-rc") || v.contains("-alpha")
-        }()
-        guard isPre else { return }
-        let markerKey = "betaChannelActivatedFor.\(version)"
-        guard !defaults.bool(forKey: markerKey) else { return }
-        defaults.set(true, forKey: markerKey)
-        defaults.set(true, forKey: DefaultsKey.includeBetaUpdates)
     }
 
     /// The downloads cleanup for a messaging app used to sit in Cleaner for
@@ -1413,9 +1387,10 @@ enum Defaults {
         "cameraPreviewShortcutEnabled",
         "cameraPreviewShortcut",
         "panelUtilityCameraPreview",
-        // Temporary share links for recordings: an upload to a server, which
-        // is not something this app does any more.
+        // Retired capture uploads.
         "recorderSharingEnabled",
+        DefaultsKey.screenshotSharingEnabled,
+        DefaultsKey.screenshotSharingDeveloperEndpoint,
         // App updates (other apps', never this one's)
         DefaultsKey.featureAvailable("appUpdates"),
         DefaultsKey.unitAvailable("appUpdates"),
@@ -1491,13 +1466,54 @@ enum Defaults {
             defaults.set(members.contains(where: \.wasAvailable), forKey: unit.availabilityKey)
         }
         for (feature, wasAvailable) in former {
-            if let key = feature.switchKey {
+            if let key = feature.switchKey ?? retiredFeatureSwitchKeys[feature] {
                 defaults.set(wasAvailable && feature.isEngaged(in: defaults), forKey: key)
             } else if !wasAvailable, defaults.bool(forKey: feature.unit.availabilityKey) {
                 feature.enabledKeys.forEach { defaults.set(false, forKey: $0) }
             }
             defaults.removeObject(forKey: DefaultsKey.featureAvailable(feature.rawValue))
         }
+    }
+
+    /// Legacy state is consumed again when an old backup is imported. No
+    /// version flag can replace removing the keys: a restored off gate must
+    /// still stop actions after this Mac has already upgraded once.
+    static let retiredFeatureSwitchKeys: [AppFeature: String] = [
+        .scrollInverter: DefaultsKey.scrollInverterSwitchEnabled,
+        .mouseButtonShortcuts: DefaultsKey.mouseButtonShortcutsSwitchEnabled,
+        .finderCutPaste: DefaultsKey.finderCutPasteSwitchEnabled,
+        .quitWindowProtection: DefaultsKey.quitProtectionSwitchEnabled,
+        .textSnippets: DefaultsKey.textSnippetsSwitchEnabled,
+        .dockClick: DefaultsKey.dockClickEnabled,
+        .screenshot: DefaultsKey.screenshotEnabled,
+        .screenRecorder: DefaultsKey.recorderEnabled,
+        .screenOCR: DefaultsKey.screenOCREnabled,
+        .colorPicker: DefaultsKey.colorPickerEnabled,
+    ]
+
+    static func migrateRetiredFeatureSwitches(in defaults: UserDefaults) {
+        let disabled = Set(retiredFeatureSwitchKeys.compactMap { feature, key in
+            (defaults.object(forKey: key) as? Bool) == false ? feature : nil
+        })
+        for feature in disabled {
+            let keys: [String]
+            switch feature {
+            case .screenshot:
+                keys = [DefaultsKey.screenshotShortcutEnabled,
+                        DefaultsKey.screenshotFullScreenShortcutEnabled,
+                        DefaultsKey.screenshotLastCaptureShortcutEnabled,
+                        DefaultsKey.screenshotClipboardShortcutEnabled]
+            case .screenRecorder: keys = [DefaultsKey.recorderShortcutEnabled]
+            case .screenOCR: keys = [DefaultsKey.screenOCRShortcutEnabled]
+            case .colorPicker: keys = [DefaultsKey.colorPickerShortcutEnabled]
+            default: keys = feature.enabledKeys
+            }
+            for key in keys { defaults.set(false, forKey: key) }
+        }
+        if disabled.contains(.screenshot), disabled.contains(.screenRecorder) {
+            defaults.set(false, forKey: DefaultsKey.recentCapturesShortcutEnabled)
+        }
+        for key in retiredFeatureSwitchKeys.values { defaults.removeObject(forKey: key) }
     }
 
     /// Window maximizer and quit/close protection became one unit, Window
@@ -1533,8 +1549,12 @@ enum Defaults {
         // what it does: on for a setup that had ⌘Q or ⌘W protected, off for
         // everyone else. A setup that never touched the hub has no unit key,
         // and the shortcuts still answer for it.
-        defaults.set(quit != false && AppFeature.quitWindowProtection.isEngaged(in: defaults),
-                     forKey: DefaultsKey.quitProtectionSwitchEnabled)
+        if quit == false {
+            defaults.set(false, forKey: DefaultsKey.quitProtectionSwitchEnabled)
+        } else if defaults.object(forKey: DefaultsKey.quitProtectionSwitchEnabled) == nil {
+            defaults.set(AppFeature.quitWindowProtection.isEngaged(in: defaults),
+                         forKey: DefaultsKey.quitProtectionSwitchEnabled)
+        }
     }
 
     /// Key debounce, snippets and the super key each had a unit and a page of
@@ -1562,9 +1582,12 @@ enum Defaults {
         // Snippets had no member switch before, because it was a page of its
         // own: it gets one that reads as what it was doing, with its two
         // toggles staying as the options underneath.
-        let snippets = defaults.object(forKey: DefaultsKey.unitAvailable("textSnippets")) as? Bool
-        defaults.set(snippets != false && AppFeature.textSnippets.isEngaged(in: defaults),
-                     forKey: DefaultsKey.textSnippetsSwitchEnabled)
+        if stored[1] == false {
+            defaults.set(false, forKey: DefaultsKey.textSnippetsSwitchEnabled)
+        } else if defaults.object(forKey: DefaultsKey.textSnippetsSwitchEnabled) == nil {
+            defaults.set(AppFeature.textSnippets.isEngaged(in: defaults),
+                         forKey: DefaultsKey.textSnippetsSwitchEnabled)
+        }
     }
 
     /// Cleaning a copied link joined the clipboard page. Uninstalling it used
@@ -1681,7 +1704,7 @@ enum Defaults {
             defaults.set(true, forKey: DefaultsKey.orphanedCaptureShortcutMigrated)
         }
         guard defaults.bool(forKey: DefaultsKey.screenshotShortcutEnabled),
-              !AppFeature.screenshot.isAvailable(in: defaults)
+              !captureWasAvailable(.screenshot, in: defaults)
         else { return }
         let shortcut = defaults.string(forKey: DefaultsKey.screenshotShortcut)
             ?? GlobalShortcut.screenshotDefault.storageValue
@@ -1699,13 +1722,18 @@ enum Defaults {
              GlobalShortcut.colorPickerDefault.storageValue),
         ]
         guard let target = candidates.first(where: {
-            $0.feature.isAvailable(in: defaults)
+            captureWasAvailable($0.feature, in: defaults)
                 && !defaults.bool(forKey: $0.enabled)
                 && (defaults.string(forKey: $0.shortcut) ?? $0.unset) == $0.unset
         }) else { return }
         defaults.set(true, forKey: target.enabled)
         defaults.set(shortcut, forKey: target.shortcut)
         defaults.set(false, forKey: DefaultsKey.screenshotShortcutEnabled)
+    }
+
+    private static func captureWasAvailable(_ feature: AppFeature, in defaults: UserDefaults) -> Bool {
+        defaults.bool(forKey: feature.unit.availabilityKey)
+            && (retiredFeatureSwitchKeys[feature].flatMap { defaults.object(forKey: $0) as? Bool } ?? true)
     }
 
     static func migrateLegacySwitcherWindowShortcut(in defaults: UserDefaults) {

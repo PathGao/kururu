@@ -10,8 +10,7 @@ struct FeedbackView: View {
     @State private var kind: FeedbackKind
     @State private var message = ""
     @State private var includeDiagnostics = false
-    @State private var isSending = false
-    @State private var wasSent = false
+    @State private var copied = false
     @State private var errorMessage: String?
 
     private let diagnostics = FeedbackDiagnostics.current()
@@ -22,21 +21,18 @@ struct FeedbackView: View {
     }
 
     private var strings: FeedbackStrings { FeatureStrings.feedback(l10n.language) }
+    private var local: LocalFeedbackCopy { .strings(language: l10n.language.rawValue) }
     private var count: Int { message.utf16.count }
-    private var canSend: Bool {
+    private var canCopy: Bool {
         let trimmedCount = message.trimmingCharacters(in: .whitespacesAndNewlines).utf16.count
-        return trimmedCount >= 10 && count <= 2_000 && !isSending
+        return trimmedCount > 0 && count <= 2_000
     }
 
     var body: some View {
         VStack(spacing: 0) {
             header
             Divider()
-            if wasSent {
-                sentView
-            } else {
-                form
-            }
+            form
         }
         .frame(width: 600, height: 650)
     }
@@ -46,7 +42,7 @@ struct FeedbackView: View {
             Image(systemName: "bubble.left.and.text.bubble.right.fill")
                 .font(.title2)
                 .foregroundStyle(.tint)
-            Text(strings.windowTitle)
+            Text(local.title)
                 .font(.title2.weight(.semibold))
             Spacer()
             Button(strings.done, action: onClose)
@@ -102,19 +98,16 @@ struct FeedbackView: View {
                     }
 
                     VStack(alignment: .leading, spacing: 12) {
-                        Label(strings.whatSentTitle, systemImage: "eye")
+                        Label(local.preview, systemImage: "eye")
                             .font(.headline)
-                        Label(strings.whatSentBasic, systemImage: "text.alignleft")
+                        Label(strings.previewBasic, systemImage: "text.alignleft")
                         if includeDiagnostics {
-                            Label(strings.whatSentDiagnostics, systemImage: "info.circle")
+                            Label(strings.previewDiagnostics, systemImage: "info.circle")
                             diagnosticsPreview
                                 .padding(.leading, 26)
                         }
                         Divider()
-                        Label(strings.privacyNote, systemImage: "hand.raised")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Label(strings.retentionNote, systemImage: "clock")
+                        Label(local.explanation, systemImage: "hand.raised")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -125,29 +118,33 @@ struct FeedbackView: View {
             }
 
             Divider()
-            HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 10) {
                 if let errorMessage {
                     Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
                         .font(.caption)
                         .foregroundStyle(.red)
-                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                } else if copied {
+                    Text(local.copied)
+                        .font(.caption)
+                        .foregroundStyle(.green)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-                Spacer()
-                if isSending {
-                    ProgressView()
-                        .controlSize(.small)
-                    Text(strings.sending)
-                        .foregroundStyle(.secondary)
+                HStack(spacing: 12) {
+                    Link(local.issues, destination: FeedbackDraftSupport.issuesURL)
+                    Spacer()
+                    Button(local.copy) { copyFeedback() }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.large)
+                        .disabled(!canCopy)
+                        .keyboardShortcut(.return, modifiers: [.command])
                 }
-                Button(strings.sendButton) { send() }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
-                    .disabled(!canSend)
-                    .keyboardShortcut(.return, modifiers: [.command])
             }
             .padding(.horizontal, 24)
             .padding(.vertical, 16)
         }
+        .onChange(of: kind) { _, _ in copied = false }
+        .onChange(of: includeDiagnostics) { _, _ in copied = false }
         .onChange(of: message) { oldValue, newValue in
             if newValue.utf16.count > 2_000 {
                 var limited = ""
@@ -162,12 +159,13 @@ struct FeedbackView: View {
                 message = limited.isEmpty ? oldValue : limited
             }
             if errorMessage != nil { errorMessage = nil }
+            copied = false
         }
     }
 
     private var diagnosticsPreview: some View {
         Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 5) {
-            diagnosticRow("Vorssaint", "\(diagnostics.appVersion) (\(diagnostics.appBuild))")
+            diagnosticRow(AppInfo.name, "\(diagnostics.appVersion) (\(diagnostics.appBuild))")
             diagnosticRow("macOS", diagnostics.macOS)
             if let model = diagnostics.macModel { diagnosticRow("Mac", model) }
             diagnosticRow(l10n.s.languageLabel, diagnostics.language)
@@ -186,47 +184,21 @@ struct FeedbackView: View {
         }
     }
 
-    private var sentView: some View {
-        VStack(spacing: 14) {
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 54))
-                .foregroundStyle(.green)
-            Text(strings.sentTitle)
-                .font(.title2.weight(.semibold))
-            Text(strings.sentCaption)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: 400)
-            Button(strings.done, action: onClose)
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-                .padding(.top, 8)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(40)
-    }
-
-    private func send() {
-        guard canSend else { return }
-        isSending = true
-        errorMessage = nil
-        Task {
-            do {
-                try await FeedbackService.shared.submit(
-                    kind: kind,
-                    message: message,
-                    diagnostics: includeDiagnostics ? diagnostics : nil
-                )
-                wasSent = true
-                message = ""
-            } catch FeedbackError.rateLimited {
-                errorMessage = strings.rateLimitError
-            } catch FeedbackError.unavailable {
-                errorMessage = strings.unavailableError
-            } catch {
-                errorMessage = strings.genericError
-            }
-            isSending = false
-        }
+    private func copyFeedback() {
+        guard canCopy else { return }
+        var details = [
+            AppInfo.name: "\(diagnostics.appVersion) (\(diagnostics.appBuild))",
+            "macOS": diagnostics.macOS,
+            "Language": diagnostics.language,
+            "Beta": diagnostics.isBeta ? "true" : "false",
+            "Channel": diagnostics.updateChannel,
+        ]
+        if let model = diagnostics.macModel { details["Mac"] = model }
+        let text = FeedbackDraftSupport.text(
+            category: kind == .bug ? strings.bugTitle : strings.featureTitle,
+            message: message, diagnostics: details, includeDiagnostics: includeDiagnostics)
+        NSPasteboard.general.clearContents()
+        copied = NSPasteboard.general.setString(text, forType: .string)
+        errorMessage = copied ? nil : local.copyFailed
     }
 }

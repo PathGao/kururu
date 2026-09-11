@@ -52,12 +52,6 @@ struct MenuBarMetricsPreview: View {
 
         ScrollView(.horizontal) {
           HStack(spacing: 12) {
-            Image(systemName: "wifi")
-                .foregroundStyle(.secondary)
-            if PowerSampler.hasInternalBattery {
-                Image(systemName: "battery.75")
-                    .foregroundStyle(.secondary)
-            }
             HStack(spacing: 5) {
                 glyph
                     .frame(width: BlackHoleGlyph.pointSize.width,
@@ -78,10 +72,10 @@ struct MenuBarMetricsPreview: View {
         }
           .font(.system(size: 12))
           .padding(.horizontal, 14)
-          .frame(height: 44)
+          .frame(height: 32)
         }
         .defaultScrollAnchor(.trailing)
-        .frame(height: 48)
+        .frame(height: 36)
         .frame(maxWidth: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)

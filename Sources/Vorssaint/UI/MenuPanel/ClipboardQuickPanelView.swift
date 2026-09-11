@@ -8,21 +8,21 @@ struct ClipboardQuickPanelView: View {
     @ObservedObject private var history = ClipboardHistoryService.shared
     @FocusState private var searchFocused: Bool
     @State private var hoveredEntryID: UUID?
-    @State private var previewEntryID: UUID?
     @State private var previewIsEditing = false
+    @AppStorage(DefaultsKey.clipboardHistoryEnabled) private var captureEnabled = false
 
     private var text: ClipboardFeatureStrings {
         FeatureStrings.clipboard(l10n.language)
     }
+
+    private var flowText: UXTaskFlowStrings { UXTaskFlowStrings(language: l10n.language) }
 
     private var filtered: [ClipboardHistoryEntry] {
         history.filteredQuickEntries
     }
 
     private var previewEntry: ClipboardHistoryEntry? {
-        ClipboardHistorySelection.previewEntry(preferredID: previewEntryID,
-                                               visibleEntries: filtered,
-                                               selectedEntry: history.selectedQuickEntry)
+        history.selectedQuickEntry
     }
 
     private var canReorderEntries: Bool {
@@ -43,6 +43,10 @@ struct ClipboardQuickPanelView: View {
                 VStack(spacing: 0) {
                     content
                     Divider()
+                    if let message = history.actionMessage {
+                        Text(message).font(.caption).foregroundStyle(.orange)
+                            .fixedSize(horizontal: false, vertical: true).padding(10)
+                    }
                     footer
                 }
                 if history.quickPreviewPresented {
@@ -50,7 +54,10 @@ struct ClipboardQuickPanelView: View {
                     ClipboardEntryPreviewSidebar(text: text,
                                                  entry: previewEntry,
                                                  isEditing: $previewIsEditing,
-                                                 onClose: { history.setQuickPreviewPresented(false) })
+                                                 onClose: { history.setQuickPreviewPresented(false) },
+                                                 isEntryCurrent: { id in
+                                                     history.quickPreviewPresented && previewEntry?.id == id
+                                                 })
                         .frame(width: 280)
                         .transition(.opacity)
                 }
@@ -61,23 +68,14 @@ struct ClipboardQuickPanelView: View {
         .ignoresSafeArea(.container, edges: .top)
         .onAppear {
             hoveredEntryID = nil
-            previewEntryID = history.selectedQuickEntryID
             DispatchQueue.main.async { searchFocused = true }
         }
         .onDisappear {
             hoveredEntryID = nil
-            previewEntryID = nil
             previewIsEditing = false
-        }
-        .onChange(of: history.quickSelectionIndex) { _, _ in
-            previewEntryID = history.selectedQuickEntryID
-        }
-        .onChange(of: history.quickQuery) { _, _ in
-            previewEntryID = history.selectedQuickEntryID
         }
         .onChange(of: history.quickWindowPresentationID) { _, _ in
             hoveredEntryID = nil
-            previewEntryID = history.selectedQuickEntryID
         }
     }
 
@@ -117,7 +115,8 @@ struct ClipboardQuickPanelView: View {
     @ViewBuilder
     private var content: some View {
         if filtered.isEmpty {
-            emptyState(history.entries.isEmpty ? text.empty : text.noResults)
+            emptyState(ClipboardViewerEmptyState.resolve(query: history.quickQuery,
+                                                         captureEnabled: captureEnabled))
         } else {
             ScrollViewReader { proxy in
                 ScrollView {
@@ -163,7 +162,7 @@ struct ClipboardQuickPanelView: View {
             section(title: text.recent, entries: history.recentEntries,
                     followsSection: !history.pinnedEntries.isEmpty)
         } else {
-            section(title: text.newestFirst, entries: filtered)
+            section(title: text.searchResults, entries: filtered)
         }
     }
 
@@ -190,10 +189,8 @@ struct ClipboardQuickPanelView: View {
                               isBatchSelected: history.isQuickBatchSelected(entry),
                               isHovered: hoveredEntryID == entry.id,
                               canReorderEntries: canReorderEntries,
-                              previewIsEditing: previewIsEditing,
                               language: l10n.language,
-                              hoveredEntryID: $hoveredEntryID,
-                              previewEntryID: $previewEntryID)
+                              hoveredEntryID: $hoveredEntryID)
                     .equatable()
                     .id(entry.id)
                 if index < entries.count - 1 {
@@ -205,54 +202,50 @@ struct ClipboardQuickPanelView: View {
         }
     }
 
-    private func emptyState(_ message: String) -> some View {
+    private func emptyState(_ state: ClipboardViewerEmptyState) -> some View {
         VStack(spacing: 10) {
             Image(systemName: "doc.on.clipboard")
                 .font(.system(size: 27, weight: .light))
                 .foregroundStyle(.tertiary)
-            Text(message)
+            Text(emptyMessage(for: state))
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+            switch state {
+            case .capturePaused:
+                Button(flowText.enableCapture) {
+                    captureEnabled = true
+                    ClipboardHistoryService.shared.syncWithPreferences()
+                }
+            case .noMatches:
+                Button(flowText.clearSearch) { history.quickQuery = "" }
+            case .waitingForCopy:
+                EmptyView()
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
+    private func emptyMessage(for state: ClipboardViewerEmptyState) -> String {
+        switch state {
+        case .capturePaused: return flowText.emptyCapturePaused
+        case .waitingForCopy: return flowText.emptyWaitingForCopy
+        case .noMatches: return flowText.emptyNoMatches
+        }
+    }
+
 
     private var footer: some View {
-        HStack(spacing: 8) {
-            if history.quickBatchCount > 0 {
-                Button(String(format: text.pasteSelectedFormat, history.quickBatchCount)) {
-                    history.copySelectedQuickEntry()
-                }
-                .buttonStyle(.borderedProminent)
-                Button(String(format: text.copySelectedFormat, history.quickBatchCount)) {
-                    history.copySelectedQuickEntryOnly()
-                }
-                Button(String(format: text.deleteSelectedFormat, history.quickBatchCount), role: .destructive) {
-                    history.removeSelectedQuickEntries()
-                }
-                Button(text.clearSelection) {
-                    history.clearQuickBatchSelection()
-                }
-            } else {
-                Button {
-                    history.clearRecent()
-                } label: {
-                    Label(text.clearRecent, systemImage: "trash")
-                }
-                .disabled(history.recentEntries.isEmpty)
-            }
-            Spacer()
-            HStack(spacing: 5) {
-                Image(systemName: "doc.on.clipboard")
-                Text("\(history.entries.count)")
-            }
-            .font(PanelTypography.meta)
-            .foregroundStyle(.secondary)
-        }
-        .controlSize(.small)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
+        ClipboardQuickFooter(text: text,
+                             batchCount: history.quickBatchCount,
+                             totalCount: history.entries.count,
+                             paste: history.copySelectedQuickEntry,
+                             copy: history.copySelectedQuickEntryOnly,
+                             clearSelection: history.clearQuickBatchSelection,
+                             delete: history.removeSelectedQuickEntries,
+                             hasSelection: history.selectedQuickEntry != nil,
+                             copyLabel: ClipboardActionStrings.copyOriginal(history.selectedQuickEntry?.kind ?? .text))
+            .disabled(history.actionInFlight)
     }
 
     private func shortcutIndex(for entry: ClipboardHistoryEntry) -> Int? {
@@ -280,17 +273,8 @@ private struct QuickEntryRow: View, Equatable {
     let isBatchSelected: Bool
     let isHovered: Bool
     let canReorderEntries: Bool
-    let previewIsEditing: Bool
     let language: AppLanguage
     @Binding var hoveredEntryID: UUID?
-    @Binding var previewEntryID: UUID?
-    /// The pane follows a row only once the pointer has rested on it: while
-    /// rows stream under a still pointer during a scroll, every one of them
-    /// would otherwise redraw the pane, and a long entry costs a frame or two
-    /// each time.
-    @State private var previewFollowTask: Task<Void, Never>?
-    private static let previewFollowDelay: Duration = .milliseconds(120)
-
     private var history: ClipboardHistoryService { .shared }
     private var l10n: L10n { .shared }
     private var text: ClipboardFeatureStrings { FeatureStrings.clipboard(language) }
@@ -304,7 +288,6 @@ private struct QuickEntryRow: View, Equatable {
             && lhs.isBatchSelected == rhs.isBatchSelected
             && lhs.isHovered == rhs.isHovered
             && lhs.canReorderEntries == rhs.canReorderEntries
-            && lhs.previewIsEditing == rhs.previewIsEditing
             && lhs.language == rhs.language
     }
 
@@ -347,14 +330,6 @@ private struct QuickEntryRow: View, Equatable {
             if hovering, NSEvent.mouseLocation == history.keyboardSelectionPointer { return }
             withAnimation(.easeOut(duration: 0.1)) {
                 hoveredEntryID = hovering ? entry.id : (hoveredEntryID == entry.id ? nil : hoveredEntryID)
-            }
-            previewFollowTask?.cancel()
-            guard hovering, !previewIsEditing else { return }
-            let id = entry.id
-            previewFollowTask = Task { @MainActor in
-                try? await Task.sleep(for: Self.previewFollowDelay)
-                guard !Task.isCancelled else { return }
-                previewEntryID = id
             }
         }
         .onTapGesture { activate(entry) }
@@ -445,7 +420,7 @@ private struct QuickEntryRow: View, Equatable {
                         .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 6))
                 }
                 .buttonStyle(.plain)
-                .help(text.copy)
+                .help(ClipboardActionStrings.copyOriginal(entry.kind))
                 Menu {
                     entryActions(entry)
                 } label: {
@@ -477,7 +452,7 @@ private struct QuickEntryRow: View, Equatable {
         Button(l10n.s.menuPaste) {
             history.copyQuickEntry(entry)
         }
-        Button(text.copy) {
+        Button(ClipboardActionStrings.copyOriginal(entry.kind)) {
             history.copyOnlyQuickEntry(entry)
         }
         Divider()
@@ -499,17 +474,13 @@ private struct QuickEntryRow: View, Equatable {
     }
 
     private func activate(_ entry: ClipboardHistoryEntry) {
-        // Finder muscle memory: ⌘-click and ⇧-click build a selection.
-        // A plain click pastes; on a selected row it pastes the selection.
         let modifiers = NSEvent.modifierFlags.intersection([.command, .shift])
         if modifiers.contains(.command) {
             history.toggleQuickBatchSelection(entry)
         } else if modifiers.contains(.shift) {
             history.extendQuickBatchSelection(to: entry)
-        } else if history.isQuickBatchSelected(entry) {
-            history.copySelectedQuickEntry()
         } else {
-            history.copyQuickEntry(entry)
+            history.selectQuickEntry(entry)
         }
     }
 

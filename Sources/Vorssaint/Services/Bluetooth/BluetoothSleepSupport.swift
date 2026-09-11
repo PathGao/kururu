@@ -27,7 +27,9 @@ enum BluetoothSleepSupport {
     /// Whether waking (or a launch that finds a restore still owed, because
     /// the Mac was shut down while asleep) should switch Bluetooth back on.
     /// Bluetooth the user turned on themselves in the meantime is left alone.
-    static func restores(owesRestore: Bool, isPoweredOn: Bool) -> Bool {
-        owesRestore && !isPoweredOn
+    // Read controller power only when a previous action actually owes a restore.
+    // A fresh launch must not wait for IOBluetooth initialization.
+    static func restores(owesRestore: Bool, isPoweredOn: @autoclosure () -> Bool) -> Bool {
+        owesRestore && !isPoweredOn()
     }
 }

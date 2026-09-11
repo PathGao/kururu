@@ -106,6 +106,7 @@ final class AppSwitcher: ObservableObject {
     /// Alive only while the Switcher's tap needs layout labels off main.
     private var keyboardLayoutObserver: NSObjectProtocol?
     private var wakeObserver: NSObjectProtocol?
+    private var terminationObserver: NSObjectProtocol?
     private var wakeRetry: DispatchWorkItem?
 
     /// The little state the tap thread needs to route an event without
@@ -549,9 +550,23 @@ final class AppSwitcher: ObservableObject {
                 return verdict
             }
             if type == .leftMouseDown || type == .rightMouseDown || type == .otherMouseDown || type == .otherMouseUp {
+                // A click discards a session that is still enumerating, so that
+                // pointing at something else while it prepares does not open a
+                // panel over it. On the Accessibility Keyboard the next Tab *is*
+                // a click, and it arrives before the enumeration finishes: it
+                // would cancel the opening it was meant to advance, and the step
+                // it carried would be lost with it.
+                //
+                // Only asked when a start is actually pending, so the window
+                // scan stays off the mouse-down path of everyone who is not
+                // mid-open. Without the keyboard, only the process lookup runs.
+                let startPending = routeLock.withLock {
+                    !routeSessionActive && routePendingSessionStart != nil
+                }
+                let clickPressedAKey = startPending && AssistiveKeyboard.ownsPoint(event.location)
                 let stillInactive = routeLock.withLock { () -> Bool in
                     guard !routeSessionActive else { return false }
-                    routePendingSessionStart = nil
+                    if !clickPressedAKey { routePendingSessionStart = nil }
                     return true
                 }
                 if stillInactive { return Unmanaged.passUnretained(event) }
@@ -701,7 +716,7 @@ final class AppSwitcher: ObservableObject {
                 return nil
             }
             swallowingMiddleMouseUp = false
-            dismissForClickOutsidePanel()
+            dismissForClickOutsidePanel(event)
             return Unmanaged.passUnretained(event)
         case .otherMouseUp:
             let shouldSwallow = SwitcherSupport.shouldSwallowMiddleMouseUp(
@@ -1008,6 +1023,7 @@ final class AppSwitcher: ObservableObject {
             }
         }
 
+        startObservingTermination(generation: generation)
         if pending.commitWhenReady {
             commitSession()
         } else if capturesPreviews {
@@ -1319,15 +1335,42 @@ final class AppSwitcher: ObservableObject {
         closeWindow(windows[selectedIndex])
     }
 
-    /// Quits the app owning the selected window (⌘Tab → Q), removes its windows
-    /// from the grid and keeps the session open — mirroring the system switcher.
+    /// Requests quitting (⌘Tab → Q). Windows stay until termination is confirmed.
     private func quitSelectedApp() {
         guard windows.indices.contains(selectedIndex) else { return }
-        let pid = windows[selectedIndex].pid
+        let item = windows[selectedIndex]
+        let pid = item.pid
         guard let app = NSRunningApplication(processIdentifier: pid),
               app.bundleIdentifier != Defaults.finderBundleIdentifier else { return }
-        app.terminate()
+        guard app.terminate() else {
+            QuickToolHUD.show(icon: "exclamationmark.triangle",
+                              message: String(format: L10n.shared.s.appQuitFailedFormat,
+                                              item.appName))
+            return
+        }
+    }
 
+    private func startObservingTermination(generation: UInt64) {
+        stopObservingTermination()
+        terminationObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didTerminateApplicationNotification, object: nil, queue: .main
+        ) { [weak self] note in
+            guard let self, self.sessionActive,
+                  self.routeLock.withLock({ self.sessionStartGeneration == generation }),
+                  let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
+            else { return }
+            self.removeTerminatedApp(pid: app.processIdentifier)
+        }
+    }
+
+    private func stopObservingTermination() {
+        guard let terminationObserver else { return }
+        NSWorkspace.shared.notificationCenter.removeObserver(terminationObserver)
+        self.terminationObserver = nil
+    }
+
+    private func removeTerminatedApp(pid: pid_t) {
+        guard sessionActive, sessionItems.contains(where: { $0.pid == pid }) else { return }
         let removedIDs = Set(sessionItems.lazy.filter { $0.pid == pid }.map(\.id))
         closingItemIDs.subtract(removedIDs)
         let removedBeforeSelection = windows[..<selectedIndex].filter { $0.pid == pid }.count
@@ -1492,6 +1535,7 @@ final class AppSwitcher: ObservableObject {
     }
 
     private func endSession() {
+        stopObservingTermination()
         cancelLetterConfirmation()
         SwitcherAppIconCache.endSession()
         sessionActive = false
@@ -1555,8 +1599,13 @@ final class AppSwitcher: ObservableObject {
     /// tap. This preserves the click and prevents a nearly simultaneous Command
     /// release from committing the highlighted window first (issues #384 and
     /// #539).
-    private func dismissForClickOutsidePanel() {
+    private func dismissForClickOutsidePanel(_ event: CGEvent) {
         guard sessionActive, let panel else { return }
+        // On the Accessibility Keyboard a modifier is latched by double-clicking
+        // it and every other key is then pressed with the mouse. Those clicks
+        // land outside the panel, but they are the user driving the switcher,
+        // not dismissing it: without this the session dies on the second Tab.
+        if AssistiveKeyboard.ownsPoint(event.location) { return }
         guard SwitcherSupport.shouldDismissForClick(panelIsVisible: panel.isVisible,
                                                     panelFrame: panel.frame,
                                                     location: NSEvent.mouseLocation)

@@ -3,12 +3,20 @@
 
 import Foundation
 
-/// Decides whether a music-app launch was caused by a media key. The system
-/// launches that app on play, next, previous, fast-forward and rewind when no
-/// other player is around; a recent press of one of those keys is what the
-/// blocker is for. Opening the app from the Dock, Spotlight or a double-click
-/// has no such press, so it must be left alone.
+/// A recent media key is evidence for blocking a selected app's launch, not
+/// proof of its origin. Manual launches within the same window also match.
 enum MusicLaunchSupport {
+    enum ReplacementChoice: Equatable {
+        case selected(String)
+        case blocked
+    }
+
+    static func replacementChoice(path: String, bundleID: String?, blockedBundleIDs: [String]) -> ReplacementChoice {
+        if let bundleID, blockedBundleIDs.contains(bundleID) { return .blocked }
+        return .selected(path)
+    }
+
+    static let defaultBlockedBundleIDs = ["com.apple.Music"]
     static let systemDefinedEventTypeRawValue: UInt32 = 14
     static let auxiliaryControlButtonsSubtype = 8
     static let keyDownState = 10
@@ -38,8 +46,14 @@ enum MusicLaunchSupport {
         return musicLaunchKeyCodes.contains(keyCode)
     }
 
+    static func shouldBlockLaunch(bundleID: String, blockedBundleIDs: [String],
+                                  now: TimeInterval, lastTriggerAt: TimeInterval?) -> Bool {
+        blockedBundleIDs.contains(bundleID)
+            && shouldBlockLaunch(now: now, lastTriggerAt: lastTriggerAt)
+    }
+
     static func shouldBlockLaunch(now: TimeInterval, lastTriggerAt: TimeInterval?) -> Bool {
         guard let lastTriggerAt else { return false }
-        return now - lastTriggerAt <= launchArmWindow
+        return (0...launchArmWindow).contains(now - lastTriggerAt)
     }
 }

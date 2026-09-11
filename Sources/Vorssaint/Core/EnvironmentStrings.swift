@@ -28,6 +28,8 @@ struct EnvironmentFeatureStrings {
     var copyPath: String = "Copy path"
     var copyReport: String = "Copy diagnostic report"
     var refresh: String = "Check again"
+    var copied: String = "Copied"
+    var copyFailed: String = "Copy failed. Try again."
 }
 
 extension FeatureStrings {
@@ -146,7 +148,9 @@ extension EnvironmentFeatureStrings {
         cachesEmpty: "No hay carpetas de caché.",
         copyPath: "Copiar ruta",
         copyReport: "Copiar informe de diagnóstico",
-        refresh: "Volver a comprobar"
+        refresh: "Volver a comprobar",
+        copied: "Copiado",
+        copyFailed: "No se pudo copiar. Inténtalo de nuevo."
     )
 
     static let de = EnvironmentFeatureStrings(
@@ -170,7 +174,9 @@ extension EnvironmentFeatureStrings {
         cachesEmpty: "Keine Cache-Ordner.",
         copyPath: "Pfad kopieren",
         copyReport: "Diagnosebericht kopieren",
-        refresh: "Erneut prüfen"
+        refresh: "Erneut prüfen",
+        copied: "Kopiert",
+        copyFailed: "Kopieren fehlgeschlagen. Erneut versuchen."
     )
 
     static let fr = EnvironmentFeatureStrings(
@@ -194,7 +200,9 @@ extension EnvironmentFeatureStrings {
         cachesEmpty: "Aucun dossier de cache.",
         copyPath: "Copier le chemin",
         copyReport: "Copier le rapport de diagnostic",
-        refresh: "Vérifier à nouveau"
+        refresh: "Vérifier à nouveau",
+        copied: "Copié",
+        copyFailed: "Échec de la copie. Réessayez."
     )
 
     static let it = EnvironmentFeatureStrings(
@@ -242,7 +250,9 @@ extension EnvironmentFeatureStrings {
         cachesEmpty: "キャッシュフォルダはありません。",
         copyPath: "パスをコピー",
         copyReport: "診断レポートをコピー",
-        refresh: "再確認"
+        refresh: "再確認",
+        copied: "コピーしました",
+        copyFailed: "コピーできませんでした。再試行してください。"
     )
 
     static let ko = EnvironmentFeatureStrings(
@@ -290,7 +300,9 @@ extension EnvironmentFeatureStrings {
         cachesEmpty: "没有缓存目录。",
         copyPath: "复制路径",
         copyReport: "复制诊断报告",
-        refresh: "重新检查"
+        refresh: "重新检查",
+        copied: "已复制",
+        copyFailed: "复制失败，请重试。"
     )
 
     static let zhTW = EnvironmentFeatureStrings(

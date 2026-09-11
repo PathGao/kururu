@@ -60,6 +60,7 @@ final class MenuPanelFocus: ObservableObject {
 /// Content of the menu bar popover: keep-awake controls, the volume mixer and
 /// the system monitor.
 struct MenuPanelView: View {
+    @ObservedObject private var themePreferences = ThemePreferences.shared
     @ObservedObject private var l10n = L10n.shared
     @ObservedObject private var updates = UpdateService.shared
     @ObservedObject private var panelFocus = MenuPanelFocus.shared
@@ -95,12 +96,13 @@ struct MenuPanelView: View {
 
     var body: some View {
         Group {
-            if selectedMetric != nil {
+            if selectedMetric != nil, activeSection != nil {
                 metricPanel
             } else {
                 navigablePanel
             }
         }
+        .kururuTheme()
         .onAppear {
             applyFocus(panelFocus.request)
             KeepAwakeManager.shared.refreshPasswordlessStatus()
@@ -131,6 +133,7 @@ struct MenuPanelView: View {
     }
 
     private var monitorNeeds: SystemMonitorPanelNeeds {
+        guard activeSection != nil else { return .none }
         if let selectedMetric {
             return selectedMetric.monitorNeeds
         }
@@ -183,8 +186,14 @@ struct MenuPanelView: View {
                 .frame(width: 52, height: navigableScrollHeight)
 
                 OverlayScrollView(measuredHeight: $navigableContentHeight) {
-                    section(for: activeSection, collapsible: false)
-                        .frame(width: contentWidth)
+                    Group {
+                        if let activeSection {
+                            section(for: activeSection, collapsible: false)
+                        } else {
+                            emptyPanel
+                        }
+                    }
+                    .frame(width: contentWidth)
                 }
                 .frame(width: contentWidth, height: navigableScrollHeight)
             }
@@ -192,6 +201,33 @@ struct MenuPanelView: View {
         .padding(16)
         .frame(width: panelWidth, height: navigablePanelHeight)
         .panelGlassSurface(cornerRadius: 24)
+    }
+
+    private var emptyPanel: some View {
+        let hub = FeatureStrings.hub(l10n.language)
+        let hasHiddenGroups = PanelSectionID.allCases.contains { $0.isAvailable && !PanelLayout.isShown($0) }
+        let entry = UXEntryStrings(l10n.language)
+        return VStack(alignment: .leading, spacing: 16) {
+            Text(hasHiddenGroups ? entry.emptyPanel : entry.emptyPanelInactive)
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            if hasHiddenGroups {
+                Button(entry.panelLayout) {
+                    SettingsRouter.shared.request(FeatureSettingsDestination(.menuBarPanel, sectionAnchor: .panelConfiguration))
+                    appDelegate()?.openSettingsWindow()
+                }
+                .buttonStyle(.borderedProminent)
+            }
+            Button(hub.tabFeatures) { openFeatureLibrary() }
+                .buttonStyle(.bordered)
+        }
+        .padding(.vertical, 16)
+    }
+
+    private func openFeatureLibrary() {
+        SettingsRouter.shared.page = .features
+        appDelegate()?.openSettingsWindow()
     }
 
     private var metricPanel: some View {
@@ -229,8 +265,8 @@ struct MenuPanelView: View {
         orderedSections.filter(isSectionVisible)
     }
 
-    private var activeSection: PanelSectionID {
-        visibleSections.contains(selectedSection) ? selectedSection : (visibleSections.first ?? .keepAwake)
+    private var activeSection: PanelSectionID? {
+        visibleSections.contains(selectedSection) ? selectedSection : visibleSections.first
     }
 
     private var navigableScrollHeight: CGFloat {
@@ -260,6 +296,7 @@ struct MenuPanelView: View {
 
     private var estimatedNavigableContentHeight: CGFloat {
         switch activeSection {
+        case nil: return 180
         case .keepAwake: return 250
         case .brightness: return 140
         case .mixer: return 250
@@ -329,16 +366,10 @@ struct MenuPanelView: View {
                     selectedSection = id
                     focusedSection = id
                 } label: {
-                    VStack(spacing: 5) {
-                        Image(systemName: id.symbolName)
-                            .font(.system(size: 17, weight: .medium))
-                        Text(id.title(l10n.s))
-                            .font(PanelTypography.meta)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.75)
-                    }
-                    .frame(width: 44, height: 52)
-                    .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    Image(systemName: id.symbolName)
+                        .font(.system(size: 17, weight: .medium))
+                        .frame(width: 44, height: 52)
+                        .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
                 .buttonStyle(.plain)
                 .focused($focusedSection, equals: id)
@@ -582,7 +613,7 @@ struct UtilitiesSection: View {
     private var hostedSettingsPage: SettingsPage? {
         if showUninstaller { return .uninstaller }
         if showCleanerPanel { return .cleaner }
-        if showURLCleaner { return .clipboard }
+        if showURLCleaner { return .urlCleaner }
         if showMediaPanel { return .media }
         if showClipboardPanel { return .clipboard }
         if showRecentCapturesPanel { return .screenshot }
@@ -804,17 +835,19 @@ struct UtilitiesSection: View {
                                 })
         case .micMute:
             let micMuteText = FeatureStrings.micMute(l10n.language)
-            UtilityActionButton(title: micMute.isMuted ? micMuteText.unmuteName
-                                    : AppFeature.micMute.name(l10n.s, language: l10n.language),
-                                caption: micMuteText.caption,
-                                systemImage: micMute.isMuted ? "mic.slash.fill" : "mic",
+            UtilityActionButton(title: micMuteText.actionTitle(isMuteRequested: micMute.isMuteRequested, result: micMute.lastResult),
+                                caption: micMute.isApplying ? micMuteText.applyingStatus
+                                    : micMute.lastResult.map { micMuteText.resultMessage(for: $0) } ?? micMuteText.caption,
+                                systemImage: micMute.lastResult.map { micMuteText.resultSymbol(for: $0) } ?? "mic",
                                 isEditing: editing,
                                 showsDragHandle: true,
                                 visibility: $showMicMute,
                                 shortcutHint: shortcutHint(.micMute),
                                 action: {
+                                    guard !micMute.isApplying else { return }
                                     MicMuteService.shared.toggle()
                                 })
+                .disabled(micMute.isApplying)
         case .commandBar:
             UtilityActionButton(title: AppFeature.commandBar.name(l10n.s, language: l10n.language),
                                 caption: FeatureStrings.commandBar(l10n.language).panelCaption,
@@ -837,8 +870,9 @@ struct UtilitiesSection: View {
     /// feature and its shortcut toggle), so the badge never advertises a
     /// combo that does nothing.
     private func shortcutHint(_ role: GlobalShortcutRole) -> String? {
-        guard role.isAvailable(using: { $0.isAvailable }),
-              role.requiredEnableKeys.allSatisfy({ UserDefaults.standard.bool(forKey: $0) })
+        guard role.isActive(isOn: { UserDefaults.standard.bool(forKey: $0) },
+                            isAvailable: { $0.isAvailable },
+                            hasClipboardHistory: { !ClipboardHistoryService.shared.entries.isEmpty })
         else { return nil }
         return role.savedShortcut.displayString
     }

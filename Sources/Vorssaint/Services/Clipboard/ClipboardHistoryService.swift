@@ -7,6 +7,7 @@ import Combine
 import CoreGraphics
 import CryptoKit
 import Foundation
+import Darwin
 import ImageIO
 import SwiftUI
 
@@ -26,7 +27,14 @@ final class ClipboardHistoryService: ObservableObject {
     @Published private(set) var entries: [ClipboardHistoryEntry] = [] {
         didSet { entriesStamp &+= 1 }
     }
+    @Published private(set) var actionMessage: String?
+    @Published private(set) var actionInFlight = false
     @Published private(set) var isRunning = false
+    @Published private(set) var isImporting = false
+    private var importRequest: UUID?
+    private var importDestinationReadable = true
+    // Accessed only on persistQueue, including the termination drain.
+    private var preparedImports: [URL: ClipboardImportPrepared] = [:]
     @Published private(set) var shortcutRegistrationFailed = false
     @Published private(set) var quickBatchEntryIDs: Set<UUID> = []
     @Published var quickQuery = "" {
@@ -36,12 +44,16 @@ final class ClipboardHistoryService: ObservableObject {
             }
         }
     }
-    @Published private(set) var quickSelectionIndex = 0
+    private var quickSelectedID: UUID?
+    @Published private(set) var quickSelectionIndex = 0 {
+        didSet {
+            let matches = filteredQuickEntries
+            quickSelectedID = matches.indices.contains(quickSelectionIndex) ? matches[quickSelectionIndex].id : nil
+        }
+    }
     @Published private(set) var quickSelectionIsVisible = false
     @Published private(set) var quickWindowPresentationID = UUID()
-    @Published private(set) var quickPreviewPresented = UserDefaults.standard.bool(
-        forKey: DefaultsKey.clipboardHistoryQuickPreview
-    )
+    @Published private(set) var quickPreviewPresented = false
 
     private var timer: Timer?
     private var lastChangeCount = 0
@@ -69,6 +81,7 @@ final class ClipboardHistoryService: ObservableObject {
     /// serialized so blobs land in mutation order.
     private static let persistQueue = DispatchQueue(label: "com.vorssaint.utils.clipboard-persist",
                                                     qos: .utility)
+    private var persistenceStoppedForRemoval = false
     private var persistScheduled = false
     private var persistenceGeneration = 0
     /// True while the history still lives in the legacy UserDefaults blob;
@@ -77,18 +90,54 @@ final class ClipboardHistoryService: ObservableObject {
     private var migrateLegacyBlob = false
 
     private init() {
+        quickPreviewPresented = UserDefaults.standard.bool(forKey: DefaultsKey.clipboardHistoryQuickPreview)
         load()
     }
 
+    #if VORSSAINT_DEVELOPMENT
+    private var fixtureDirectory: URL?
+
+    init(initialEntries: [ClipboardHistoryEntry], selectedIDs: Set<UUID>, fixtureDirectory: URL) {
+        self.fixtureDirectory = fixtureDirectory
+        entries = initialEntries
+        quickBatchEntryIDs = selectedIDs
+    }
+
+    /// Enqueues behind the coalesced save and its main-thread cleanup.
+    func whenPersistenceDrained(_ completion: @escaping () -> Void) {
+        DispatchQueue.main.async {
+            Self.persistQueue.async { DispatchQueue.main.async(execute: completion) }
+        }
+    }
+
+    /// Holds only this fixture's shared serial write lane for a bounded race test.
+    func holdPersistenceForFixture() -> () -> Void {
+        precondition(fixtureDirectory != nil)
+        let gate = DispatchSemaphore(value: 0)
+        Self.persistQueue.async { _ = gate.wait(timeout: .now() + 5) }
+        return { gate.signal() }
+    }
+
+    private var snapshotSink: (([ClipboardHistoryEntry]) -> Void)?
+
+    /// Exercises real mutations without loading user data or scheduling disk/image cleanup.
+    init(initialEntries: [ClipboardHistoryEntry], selectedIDs: Set<UUID>,
+         persistSnapshot: @escaping ([ClipboardHistoryEntry]) -> Void) {
+        entries = initialEntries
+        quickBatchEntryIDs = selectedIDs
+        snapshotSink = persistSnapshot
+    }
+    #endif
+
     func syncWithPreferences() {
+        guard !persistenceStoppedForRemoval else { return }
         if AppFeature.clipboardHistory.isAvailable,
            UserDefaults.standard.bool(forKey: DefaultsKey.clipboardHistoryEnabled) {
             start()
-            syncHotkey()
         } else {
             stop()
-            unregisterHotkey()
         }
+        syncHotkey()
     }
 
     /// Skips capturing pasteboard changes up to the given change count. Quick
@@ -126,19 +175,20 @@ final class ClipboardHistoryService: ObservableObject {
             completion(false)
             return
         }
-        GeneralPasteboardAccess.shared.async({ () -> Int in
+        GeneralPasteboardAccess.shared.async({ () -> (Int, Bool) in
             let pasteboard = NSPasteboard.general
             pasteboard.clearContents()
-            write(pasteboard)
-            return pasteboard.changeCount
-        }, then: { [weak self] changeCount in
+            let success = write(pasteboard)
+            return (pasteboard.changeCount, success)
+        }, then: { [weak self] result in
+            let (changeCount, success) = result
             // lastChangeCount stays owned by the main queue, where the capture
             // poll compares against it. Assigning it on the lane would let a
             // copy's own change count land after the poll had already read the
             // old one, and history would record the app's own write as a new
             // copy by the user.
             if let self { self.lastChangeCount = max(self.lastChangeCount, changeCount) }
-            completion(true)
+            completion(success)
         })
     }
 
@@ -149,7 +199,7 @@ final class ClipboardHistoryService: ObservableObject {
     /// write may need — RTFD attachments, TIFF rendering — on the main thread
     /// it has always run on; only the pasteboard calls move to the lane.
     private static func plannedWrite(for list: [ClipboardHistoryEntry])
-        -> ((NSPasteboard) -> Void)? {
+        -> ((NSPasteboard) -> Bool)? {
         if list.count == 1, let entry = list.first {
             switch entry.kind {
             case .text:
@@ -160,14 +210,15 @@ final class ClipboardHistoryService: ObservableObject {
                 // TIFF alongside PNG: some paste targets only take TIFF.
                 let tiff = NSBitmapImageRep(data: data)?.tiffRepresentation
                 return { pasteboard in
-                    pasteboard.setData(data, forType: .png)
-                    if let tiff { pasteboard.setData(tiff, forType: .tiff) }
+                    let success = pasteboard.setData(data, forType: .png)
+                    if let tiff { _ = pasteboard.setData(tiff, forType: .tiff) }
+                    return success
                 }
             case .files:
                 let urls = entry.filePaths
                     .map { URL(fileURLWithPath: $0) }
                     .filter { FileManager.default.fileExists(atPath: $0.path) }
-                guard !urls.isEmpty else { return nil }
+                guard !urls.isEmpty, urls.count == entry.filePaths.count else { return nil }
                 return { $0.writeObjects(urls as [NSURL]) }
             }
         }
@@ -179,7 +230,7 @@ final class ClipboardHistoryService: ObservableObject {
         case let .files(paths):
             let urls = paths.map { URL(fileURLWithPath: $0) }
                 .filter { FileManager.default.fileExists(atPath: $0.path) }
-            guard !urls.isEmpty else { return nil }
+            guard !urls.isEmpty, urls.count == paths.count else { return nil }
             return { $0.writeObjects(urls as [NSURL]) }
         case let .text(combined):
             return { $0.setString(combined, forType: .string) }
@@ -187,8 +238,9 @@ final class ClipboardHistoryService: ObservableObject {
             guard let rich = richBatchAttributedString(parts) else { return nil }
             let plain = ClipboardHistoryBatch.richPlainText(parts)
             return { pasteboard in
-                pasteboard.writeObjects([rich])
-                if !plain.isEmpty { pasteboard.setString(plain, forType: .string) }
+                let success = pasteboard.writeObjects([rich])
+                if !plain.isEmpty { _ = pasteboard.setString(plain, forType: .string) }
+                return success
             }
         case nil:
             guard let first = list.first else { return nil }
@@ -236,26 +288,23 @@ final class ClipboardHistoryService: ObservableObject {
         }
     }
 
-    func togglePin(_ entry: ClipboardHistoryEntry) {
-        guard let index = entries.firstIndex(where: { $0.id == entry.id }) else { return }
-        let previousEntries = entries
-        var updated = entries.remove(at: index)
-        if updated.isPinned {
-            updated.pinnedAt = nil
-            entries.insert(updated, at: firstRecentIndex)
-        } else {
-            updated.pinnedAt = Date()
-            entries.insert(updated, at: 0)
+    func togglePin(_ entry: ClipboardHistoryEntry, completion: @escaping (Bool) -> Void = { _ in }) {
+        func finish(_ success: Bool) {
+            if !success {
+                QuickToolHUD.show(icon: "pin.slash", message: FeatureStrings.clipboard(L10n.shared.language).pinFailed)
+            }
+            completion(success)
         }
-        normalizeEntryOrder()
-        trimToLimit()
-        guard entries.contains(where: { $0.id == entry.id }),
-              ClipboardHistoryEditing.preservesPinnedEntries(from: previousEntries, in: entries)
-        else {
-            entries = previousEntries
+        guard let index = entries.firstIndex(where: { $0.id == entry.id }) else {
+            finish(false)
             return
         }
-        save()
+        var candidate = entries
+        var updated = candidate.remove(at: index)
+        updated.pinnedAt = updated.isPinned ? nil : Date()
+        let insertion = updated.isPinned ? 0 : (candidate.firstIndex { !$0.isPinned } ?? candidate.endIndex)
+        candidate.insert(updated, at: insertion)
+        commitValidatedEntries(candidate, protecting: entry.id, completion: finish)
     }
 
     func remove(_ entry: ClipboardHistoryEntry) {
@@ -266,34 +315,64 @@ final class ClipboardHistoryService: ObservableObject {
         save()
     }
 
-    @discardableResult
-    func updateText(_ entry: ClipboardHistoryEntry, to draft: String) -> Bool {
-        guard entry.kind == .text,
+    func updateText(_ entry: ClipboardHistoryEntry, to draft: String, isCurrent: @escaping () -> Bool = { true },
+                    completion: @escaping (Bool) -> Void) {
+        guard !persistenceStoppedForRemoval, !isImporting,
+              entry.kind == .text,
               let text = ClipboardHistoryEditing.storableText(draft),
               let index = entries.firstIndex(where: { $0.id == entry.id })
-        else { return false }
-        if entries[index].text == text { return true }
-        let previousEntries = entries
-        entries[index].text = text
-        trimToLimit()
-        guard entries.contains(where: { $0.id == entry.id }),
-              ClipboardHistoryEditing.preservesPinnedEntries(from: previousEntries, in: entries)
         else {
-            entries = previousEntries
-            return false
+            completion(false)
+            return
         }
-        save()
-        return true
+        if entries[index].text == text {
+            completion(true)
+            return
+        }
+        var candidate = entries
+        candidate[index].text = text
+        commitValidatedEntries(candidate, protecting: entry.id, isCurrent: isCurrent, completion: completion)
     }
 
-    func clearRecent() {
-        entries.removeAll { !$0.isPinned }
+    private func commitValidatedEntries(_ candidate: [ClipboardHistoryEntry], protecting targetID: UUID,
+                                        isCurrent: @escaping () -> Bool = { true }, completion: @escaping (Bool) -> Void) {
+        guard !persistenceStoppedForRemoval, !isImporting,
+              let original = entries.first(where: { $0.id == targetID }) else {
+            completion(false)
+            return
+        }
+        let generation = persistenceGeneration
+        let stamp = entriesStamp
+        let requiredIDs = Set(entries.filter(\.isPinned).map(\.id)).union([targetID])
+        let limit = Defaults.sanitizedClipboardHistoryLimit(
+            UserDefaults.standard.integer(forKey: DefaultsKey.clipboardHistoryLimit)
+        )
+        Self.persistQueue.async { [weak self] in
+            let trimmed = ClipboardHistoryEditing.retainedEntries(candidate, recentLimit: limit)
+            let encoded = ClipboardHistoryEditing.entriesWithinEncodedLimit(trimmed)
+            let accepted = encoded.flatMap { requiredIDs.isSubset(of: Set($0.map(\.id))) ? $0 : nil }
+            DispatchQueue.main.async {
+                guard let self, isCurrent(), !self.persistenceStoppedForRemoval, !self.isImporting,
+                      Defaults.sanitizedClipboardHistoryLimit(
+                          UserDefaults.standard.integer(forKey: DefaultsKey.clipboardHistoryLimit)
+                      ) == limit,
+                      self.persistenceGeneration == generation, self.entriesStamp == stamp,
+                      self.entries.first(where: { $0.id == targetID }) == original,
+                      let accepted else {
+                    completion(false)
+                    return
+                }
+                self.entries = accepted
+                self.save()
+                completion(true)
+            }
+        }
+    }
+
+    func clearRecent(confirmedIDs: Set<UUID>? = nil) {
+        entries.removeAll { !$0.isPinned && (confirmedIDs == nil || confirmedIDs!.contains($0.id)) }
         pruneQuickBatchSelection()
         save()
-    }
-
-    func clearAll() {
-        clearRecent()
     }
 
     func canMove(_ entry: ClipboardHistoryEntry, _ direction: ClipboardHistoryMoveDirection) -> Bool {
@@ -331,7 +410,8 @@ final class ClipboardHistoryService: ObservableObject {
     var selectedQuickEntry: ClipboardHistoryEntry? {
         let matches = filteredQuickEntries
         guard !matches.isEmpty else { return nil }
-        return matches[clampedQuickSelectionIndex(for: matches.count)]
+        return matches.first { $0.id == quickSelectedID }
+            ?? matches[clampedQuickSelectionIndex(for: matches.count)]
     }
 
     func isQuickBatchSelected(_ entry: ClipboardHistoryEntry) -> Bool {
@@ -356,7 +436,8 @@ final class ClipboardHistoryService: ObservableObject {
     func extendQuickBatchSelection(to entry: ClipboardHistoryEntry) {
         let matches = filteredQuickEntries
         guard let target = matches.firstIndex(where: { $0.id == entry.id }) else { return }
-        let anchor = clampedQuickSelectionIndex(for: matches.count)
+        let selectedID = selectedQuickEntryID
+        let anchor = matches.firstIndex { $0.id == selectedID } ?? clampedQuickSelectionIndex(for: matches.count)
         let ids = ClipboardHistoryBatch.rangeSelectionIDs(allIDs: matches.map(\.id),
                                                           anchor: anchor,
                                                           target: target)
@@ -472,49 +553,86 @@ final class ClipboardHistoryService: ObservableObject {
             quickSelectionIsVisible = true
             return
         }
-        quickSelectionIndex = min(max(quickSelectionIndex + delta, 0), count - 1)
+        let selectedID = selectedQuickEntryID
+        let current = filteredQuickEntries.firstIndex { $0.id == selectedID } ?? quickSelectionIndex
+        quickSelectionIndex = min(max(current + delta, 0), count - 1)
     }
 
-    /// The window leaves the screen at once; the paste waits for the write,
-    /// because pasting before it lands would paste whatever the user had
-    /// copied before. A stale entry leaves the clipboard untouched and pastes
-    /// nothing at all.
-    func copyQuickEntry(_ entry: ClipboardHistoryEntry) {
-        let target = pasteTargetApp
-        hideHistoryWindow()
-        pasteTargetApp = nil
-        copy(entry) { [weak self] copied in
-            guard copied else { return }
-            self?.pasteIntoPreviousApp(target)
-        }
+    func selectQuickEntry(_ entry: ClipboardHistoryEntry) {
+        guard let index = filteredQuickEntries.firstIndex(where: { $0.id == entry.id }) else { return }
+        quickSelectionIndex = index
+        quickSelectionIsVisible = true
+        clearQuickBatchSelection()
     }
+
+    func copyQuickEntry(_ entry: ClipboardHistoryEntry) { copyQuickEntries([entry]) }
 
     func copyQuickEntries(_ selectedEntries: [ClipboardHistoryEntry]) {
-        let target = pasteTargetApp
-        hideHistoryWindow()
-        pasteTargetApp = nil
+        guard !actionInFlight else { return }
+        guard let target = pasteTargetApp, !target.isTerminated, AXIsProcessTrusted() else {
+            actionMessage = ClipboardActionStrings.pasteUnavailable
+            return
+        }
+        actionMessage = nil
+        actionInFlight = true
+        let presentation = quickWindowPresentationID
         copy(selectedEntries) { [weak self] copied in
-            guard copied else { return }
-            self?.pasteIntoPreviousApp(target)
+            guard let self else { return }
+            guard self.quickWindowPresentationID == presentation else {
+                self.actionInFlight = false
+                return
+            }
+            guard copied else {
+                self.actionInFlight = false
+                self.actionMessage = ClipboardActionStrings.copyFailed
+                return
+            }
+            // Release the nonactivating panel's key focus before posting ⌘V.
+            // Keep selection and presentation intact in case activation fails.
+            self.removeKeyMonitor()
+            self.removeDismissMonitors()
+            self.panel?.orderOut(nil)
+            self.pasteIntoPreviousApp(target, presentation: presentation) { pasted in
+                self.actionInFlight = false
+                guard self.quickWindowPresentationID == presentation else { return }
+                if pasted {
+                    self.clearQuickBatchSelection()
+                    self.pasteTargetApp = nil
+                } else {
+                    self.actionMessage = ClipboardActionStrings.pasteFailed
+                    if let panel = self.panel {
+                        self.installKeyMonitor(for: panel)
+                        self.installDismissMonitors(for: panel)
+                        panel.orderFrontRegardless()
+                        panel.makeKey()
+                    }
+                }
+            }
         }
     }
 
-    /// No paste follows these two, so nothing has to wait for the write: the
-    /// window closes now and a stale entry simply leaves the clipboard as the
-    /// user left it.
-    func copyOnlyQuickEntry(_ entry: ClipboardHistoryEntry) {
-        copy(entry) { _ in }
-        hideHistoryWindow()
-        pasteTargetApp = nil
-    }
+    func copyOnlyQuickEntry(_ entry: ClipboardHistoryEntry) { copyOnlyQuickEntries([entry]) }
 
     func copyOnlyQuickEntries(_ selectedEntries: [ClipboardHistoryEntry]) {
-        copy(selectedEntries) { _ in }
-        hideHistoryWindow()
-        pasteTargetApp = nil
+        guard !actionInFlight else { return }
+        actionMessage = nil
+        actionInFlight = true
+        let presentation = quickWindowPresentationID
+        copy(selectedEntries) { [weak self] copied in
+            guard let self else { return }
+            self.actionInFlight = false
+            guard self.quickWindowPresentationID == presentation else { return }
+            guard copied else {
+                self.actionMessage = ClipboardActionStrings.copyFailed
+                return
+            }
+            self.hideHistoryWindow()
+            self.pasteTargetApp = nil
+        }
     }
 
     private func start() {
+        guard !persistenceStoppedForRemoval else { return }
         guard timer == nil else {
             isRunning = true
             return
@@ -830,6 +948,20 @@ final class ClipboardHistoryService: ObservableObject {
         PrivateFileStore.containerURL?.appendingPathComponent("ClipboardHistory.json")
     }
 
+    private var persistenceStoreURL: URL? {
+        #if VORSSAINT_DEVELOPMENT
+        if let fixtureDirectory { return fixtureDirectory.appendingPathComponent("ClipboardHistory.json") }
+        #endif
+        return Self.storeURL
+    }
+
+    private var persistenceImageDirectory: URL? {
+        #if VORSSAINT_DEVELOPMENT
+        if let fixtureDirectory { return fixtureDirectory.appendingPathComponent("ClipboardImages", isDirectory: true) }
+        #endif
+        return ClipboardImageStore.directory
+    }
+
     private static func storedHistoryData(at url: URL) -> Data? {
         guard let values = try? url.resourceValues(
             forKeys: [.fileSizeKey, .isRegularFileKey, .isSymbolicLinkKey]),
@@ -845,15 +977,20 @@ final class ClipboardHistoryService: ObservableObject {
     private func load() {
         let fileData = Self.storeURL.flatMap { Self.storedHistoryData(at: $0) }
         var data = fileData
-        if data == nil,
-           let legacy = UserDefaults.standard.data(forKey: DefaultsKey.clipboardHistoryEntries) {
-            data = legacy
-            migrateLegacyBlob = Self.storeURL != nil
+        if let url = Self.storeURL, fileData == nil {
+            var info = stat()
+            if lstat(url.path, &info) == 0 || errno != ENOENT { importDestinationReadable = false }
         }
-        guard let data,
-              ClipboardHistoryEditing.canLoadEncodedHistory(byteCount: data.count),
+        if data == nil, let legacy = UserDefaults.standard.object(forKey: DefaultsKey.clipboardHistoryEntries) {
+            if let legacyData = legacy as? Data {
+                data = legacyData
+                migrateLegacyBlob = Self.storeURL != nil
+            } else { importDestinationReadable = false }
+        }
+        guard let data else { return }
+        guard ClipboardHistoryEditing.canLoadEncodedHistory(byteCount: data.count),
               let decoded = try? JSONDecoder().decode([ClipboardHistoryEntry].self, from: data)
-        else { return }
+        else { importDestinationReadable = false; return }
         if fileData != nil,
            UserDefaults.standard.object(forKey: DefaultsKey.clipboardHistoryEntries) != nil {
             // The file decoded and is the durable source. A legacy blob still
@@ -866,7 +1003,8 @@ final class ClipboardHistoryService: ObservableObject {
         trimToLimit()
         // Sweep image files that lost their entry (crash between write and save).
         ClipboardImageStore.cleanup(keeping: Set(entries.compactMap(\.imageFile)),
-                                    filePaths: Set(entries.flatMap(\.filePaths)))
+                                    filePaths: Set(entries.flatMap(\.filePaths)),
+                                    directory: persistenceImageDirectory)
         // A history read from the legacy blob migrates right away instead of
         // waiting for the next copy: launching once is enough to leave
         // UserDefaults behind.
@@ -877,20 +1015,31 @@ final class ClipboardHistoryService: ObservableObject {
 
     /// Coalesces the saves of one mutation cycle into a single persist.
     private func save() {
+        guard !persistenceStoppedForRemoval else { return }
         persistenceGeneration &+= 1
+        #if VORSSAINT_DEVELOPMENT
+        if let snapshotSink {
+            snapshotSink(entries)
+            return
+        }
+        #endif
+        syncHotkey()
         guard !persistScheduled else { return }
         persistScheduled = true
         DispatchQueue.main.async { [weak self] in
-            guard let self else { return }
+            guard let self, self.persistScheduled else { return }
             self.persistScheduled = false
             self.persist()
         }
     }
 
     private func persist() {
+        guard !persistenceStoppedForRemoval else { return }
         let snapshot = entries
         let generation = persistenceGeneration
         let retireLegacyBlob = migrateLegacyBlob
+        let targetURL = persistenceStoreURL
+        let imageDirectory = persistenceImageDirectory
         Self.persistQueue.async { [weak self] in
             guard let encoded = ClipboardHistoryEditing.encodedHistory(snapshot) else { return }
             let data = encoded.data
@@ -903,20 +1052,25 @@ final class ClipboardHistoryService: ObservableObject {
             func finishPersist() {
                 DispatchQueue.main.async {
                     guard let self else { return }
-                    if self.persistenceGeneration == generation,
-                       encoded.entries != snapshot {
+                    // A newer mutation may still be waiting to land. Its in-memory
+                    // list cannot authorize deletion of images owned by this JSON.
+                    guard self.persistenceGeneration == generation else { return }
+                    if encoded.entries != snapshot {
                         self.entries = encoded.entries
+                        self.syncHotkey()
                     }
                     ClipboardImageStore.cleanup(keeping: Set(self.entries.compactMap(\.imageFile)),
-                                                filePaths: Set(self.entries.flatMap(\.filePaths)))
+                                                filePaths: Set(self.entries.flatMap(\.filePaths)),
+                                                directory: imageDirectory)
                 }
             }
-            guard let url = Self.storeURL else {
+            guard let url = targetURL else {
                 UserDefaults.standard.set(data, forKey: DefaultsKey.clipboardHistoryEntries)
                 finishPersist()
                 return
             }
-            PrivateFileStore.createDirectory(at: url.deletingLastPathComponent())
+            PrivateFileStore.createDirectory(at: url.deletingLastPathComponent(),
+                                             container: url.deletingLastPathComponent())
             // Only a write that really landed retires the legacy blob, so a
             // failed save leaves the history readable from somewhere.
             guard PrivateFileStore.write(data, to: url) else { return }
@@ -928,23 +1082,152 @@ final class ClipboardHistoryService: ObservableObject {
         }
     }
 
+    private var importAvailable: Bool {
+        #if VORSSAINT_DEVELOPMENT
+        if fixtureDirectory != nil { return true }
+        #endif
+        return AppFeature.clipboardHistory.isAvailable
+    }
+
+    private var importRecentLimit: Int {
+        #if VORSSAINT_DEVELOPMENT
+        if fixtureDirectory != nil { return 0 }
+        #endif
+        return Defaults.sanitizedClipboardHistoryLimit(
+            UserDefaults.standard.integer(forKey: DefaultsKey.clipboardHistoryLimit))
+    }
+
+    /// Prepares on the existing write lane, then commits only an unchanged snapshot.
+    @discardableResult
+    func importEntries(_ selected: [ClipboardHistoryEntry], images: [String: Data], sourceURL: URL,
+                       completion: @escaping (Result<Int, Error>) -> Void) -> UUID? {
+        guard !persistenceStoppedForRemoval, !isImporting, importDestinationReadable,
+              importAvailable, let destination = persistenceStoreURL?.deletingLastPathComponent()
+        else { completion(.failure(ClipboardImportError.unavailable)); return nil }
+        guard !selected.isEmpty else { completion(.failure(ClipboardImportError.emptySelection)); return nil }
+        let request = UUID()
+        importRequest = request
+        isImporting = true
+        func finish(_ result: Result<Int, Error>) {
+            guard self.importRequest == request else { return }
+            self.importRequest = nil
+            self.isImporting = false
+            completion(result)
+        }
+        func prepare(attempt: Int) {
+            guard self.importRequest == request else { return }
+            if self.persistScheduled {
+                self.persistScheduled = false
+                self.persist()
+            }
+            let current = self.entries
+            let stamp = self.entriesStamp
+            let generation = self.persistenceGeneration
+            let limit = self.importRecentLimit
+            Self.persistQueue.async {
+                let result = Result { () throws -> ClipboardImportPrepared in
+                    try ClipboardImportSupport.validateSource(sourceURL,
+                        destination: destination.appendingPathComponent("ClipboardHistory.json"))
+                    let candidate = try ClipboardImportSupport.prepare(selected: selected, images: images,
+                                                                       current: current, recentLimit: limit)
+                    let prepared = try ClipboardImportTransaction.prepare(candidate, in: destination)
+                    self.preparedImports[prepared.stagingURL] = prepared
+                    return prepared
+                }
+                DispatchQueue.main.async {
+                    if case let .success(prepared) = result {
+                        Self.persistQueue.async { self.preparedImports.removeValue(forKey: prepared.stagingURL) }
+                    }
+                    guard self.importRequest == request else {
+                        if case let .success(prepared) = result { ClipboardImportTransaction.discard(prepared) }
+                        return
+                    }
+                    switch result {
+                    case let .failure(error): finish(.failure(error))
+                    case let .success(prepared):
+                        guard self.importAvailable else {
+                            ClipboardImportTransaction.discard(prepared)
+                            finish(.failure(ClipboardImportError.unavailable))
+                            return
+                        }
+                        let currentLimit = self.importRecentLimit
+                        guard self.entriesStamp == stamp, self.persistenceGeneration == generation,
+                              currentLimit == limit else {
+                            ClipboardImportTransaction.discard(prepared)
+                            if attempt < 2 { prepare(attempt: attempt + 1) }
+                            else { finish(.failure(ClipboardImportError.changed)) }
+                            return
+                        }
+                        do {
+                            try ClipboardImportSupport.validateSource(sourceURL,
+                                destination: destination.appendingPathComponent("ClipboardHistory.json"))
+                            try ClipboardImportTransaction.commit(prepared, to: destination)
+                            self.persistenceGeneration &+= 1
+                            self.entries = prepared.candidate.entries
+                            self.syncHotkey()
+                            self.quickBatchEntryIDs.formIntersection(Set(self.entries.map(\.id)))
+                            self.quickSelectionIndex = self.clampedQuickSelectionIndex(for: self.filteredQuickEntries.count)
+                            finish(.success(selected.count))
+                        } catch {
+                            ClipboardImportTransaction.discard(prepared)
+                            finish(.failure(error))
+                        }
+                    }
+                }
+            }
+        }
+        prepare(attempt: 0)
+        return request
+    }
+
+    func cancelImport(_ request: UUID) {
+        guard importRequest == request else { return }
+        importRequest = nil
+        isImporting = false
+    }
+
+    func stopPersistenceForRemoval() {
+        persistenceStoppedForRemoval = true
+        stop()
+        unregisterHotkey()
+        persistenceGeneration &+= 1
+        persistScheduled = false
+        importRequest = nil
+        isImporting = false
+        Self.persistQueue.sync {
+            for prepared in preparedImports.values { ClipboardImportTransaction.discard(prepared) }
+            preparedImports.removeAll()
+        }
+    }
+
     /// Runs any deferred persist right now and waits for the write to land.
     /// Quit must not race the async pipeline: the last mutation of a session
     /// (often a privacy minded Clear) has to be durable before the process
     /// dies.
     func flushBeforeTermination() {
+        guard !persistenceStoppedForRemoval else { return }
+        importRequest = nil
+        isImporting = false
         if persistScheduled {
             persistScheduled = false
             persist()
         }
-        Self.persistQueue.sync {}
+        Self.persistQueue.sync {
+            for prepared in preparedImports.values { ClipboardImportTransaction.discard(prepared) }
+            preparedImports.removeAll()
+        }
     }
 
     // MARK: - Shortcut
 
     func syncHotkey() {
-        let wanted = UserDefaults.standard.bool(forKey: DefaultsKey.clipboardHistoryEnabled)
+        #if VORSSAINT_DEVELOPMENT
+        guard fixtureDirectory == nil, snapshotSink == nil else { return }
+        #endif
+        let wanted = !persistenceStoppedForRemoval && !ShortcutCapture.isCapturing
+            && AppFeature.clipboardHistory.isAvailable
             && UserDefaults.standard.bool(forKey: DefaultsKey.clipboardHistoryShortcutEnabled)
+            && (UserDefaults.standard.bool(forKey: DefaultsKey.clipboardHistoryEnabled) || !entries.isEmpty)
         wanted ? registerHotkey() : unregisterHotkey()
     }
 
@@ -1026,6 +1309,7 @@ final class ClipboardHistoryService: ObservableObject {
     func showHistoryWindow() {
         let panel = ensurePanel()
         rememberPasteTarget()
+        actionMessage = nil
         quickWindowPresentationID = UUID()
         quickQuery = ""
         clearQuickBatchSelection()
@@ -1039,6 +1323,7 @@ final class ClipboardHistoryService: ObservableObject {
     }
 
     func hideHistoryWindow() {
+        quickWindowPresentationID = UUID()
         removeKeyMonitor()
         removeDismissMonitors()
         panel?.orderOut(nil)
@@ -1058,15 +1343,18 @@ final class ClipboardHistoryService: ObservableObject {
         pasteTargetApp = app
     }
 
-    private func pasteIntoPreviousApp(_ app: NSRunningApplication?) {
-        guard let app, !app.isTerminated else { return }
-        app.activate(options: [])
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
-            Self.postPasteShortcut()
+    private func pasteIntoPreviousApp(_ app: NSRunningApplication, presentation: UUID, completion: @escaping (Bool) -> Void) {
+        guard !app.isTerminated, app.activate(options: []) else { completion(false); return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) { [weak self] in
+            guard self?.quickWindowPresentationID == presentation,
+                  !app.isTerminated,
+                  NSWorkspace.shared.frontmostApplication?.processIdentifier == app.processIdentifier,
+                  AXIsProcessTrusted() else { completion(false); return }
+            completion(Self.postPasteShortcut())
         }
     }
 
-    private static func postPasteShortcut() {
+    private static func postPasteShortcut() -> Bool {
         guard let source = CGEventSource(stateID: .hidSystemState),
               let keyDown = CGEvent(keyboardEventSource: source,
                                     virtualKey: CGKeyCode(kVK_ANSI_V),
@@ -1074,11 +1362,12 @@ final class ClipboardHistoryService: ObservableObject {
               let keyUp = CGEvent(keyboardEventSource: source,
                                   virtualKey: CGKeyCode(kVK_ANSI_V),
                                   keyDown: false)
-        else { return }
+        else { return false }
         keyDown.flags = .maskCommand
         keyUp.flags = .maskCommand
         keyDown.post(tap: .cghidEventTap)
         keyUp.post(tap: .cghidEventTap)
+        return true
     }
 
     private func ensurePanel() -> NSPanel {
@@ -1147,15 +1436,13 @@ final class ClipboardHistoryService: ObservableObject {
         removeKeyMonitor()
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self, weak panel] event in
             guard let self, let panel, event.window === panel else { return event }
-            // A multiline editor owns its normal editing keys, and any field
-            // still composing owns them too. Outside composition the search
-            // box keeps the list's shortcuts, as does the read-only preview:
-            // only ⌘C and ⌘A, which the list declines below when nothing is
-            // batch-selected, reach it.
+            // The actual focused text view owns its text keys. A read-only
+            // preview still returns Escape to the list's dismissal handling.
             if let textView = panel.firstResponder as? NSTextView,
                ClipboardHistoryFocus.textViewOwnsKeys(isComposing: textView.hasMarkedText(),
                                                       isFieldEditor: textView.isFieldEditor,
-                                                      isEditable: textView.isEditable) {
+                                                      isEditable: textView.isEditable,
+                                                      isEscape: event.keyCode == UInt16(kVK_Escape)) {
                 return event
             }
             let modifiers = event.modifierFlags.intersection([.command, .option, .shift, .control])
@@ -1237,15 +1524,18 @@ final class ClipboardHistoryService: ObservableObject {
         removeDismissMonitors()
         let mouseEvents: NSEvent.EventTypeMask = [.leftMouseDown, .rightMouseDown, .otherMouseDown]
         localClickMonitor = NSEvent.addLocalMonitorForEvents(matching: mouseEvents) { [weak self, weak panel] event in
-            guard let self, let panel, panel.isVisible else { return event }
+            guard let self, let panel, panel.isVisible, panel.attachedSheet == nil else { return event }
             if event.window !== panel, !Self.mouseIsInside(panel) {
                 self.hideHistoryWindow()
             }
             return event
         }
         outsideClickMonitor = NSEvent.addGlobalMonitorForEvents(matching: mouseEvents) { [weak self, weak panel] event in
-            guard let self, let panel, panel.isVisible else { return }
-            if event.windowNumber != panel.windowNumber, !Self.mouseIsInside(panel) {
+            guard let self, let panel, panel.isVisible, panel.attachedSheet == nil else { return }
+            if event.windowNumber != panel.windowNumber, !Self.mouseIsInside(panel),
+               // Every key on the Accessibility Keyboard is a click outside this
+               // panel. Dismissing on those makes the panel impossible to type into.
+               !AssistiveKeyboard.ownsCocoaPoint(NSEvent.mouseLocation) {
                 self.hideHistoryWindow()
             }
         }
@@ -1256,7 +1546,8 @@ final class ClipboardHistoryService: ObservableObject {
         ) { [weak self] notification in
             guard let self,
                   let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication,
-                  app.bundleIdentifier != Bundle.main.bundleIdentifier
+                  app.bundleIdentifier != Bundle.main.bundleIdentifier,
+                  app.bundleIdentifier != AssistiveKeyboard.bundleID
             else { return }
             self.hideHistoryWindow()
         }
@@ -1328,7 +1619,10 @@ final class ClipboardHistoryService: ObservableObject {
     }
 
     private func clampedQuickSelectionIndex(for count: Int) -> Int {
-        min(max(quickSelectionIndex, 0), max(count - 1, 0))
+        if let index = filteredQuickEntries.firstIndex(where: { $0.id == quickSelectedID }) {
+            return index
+        }
+        return min(max(quickSelectionIndex, 0), max(count - 1, 0))
     }
 }
 
@@ -1461,7 +1755,7 @@ enum ClipboardImageStore {
         return ByteCountFormatter.string(fromByteCount: Int64(bytes), countStyle: .file)
     }
 
-    static func cleanup(keeping names: Set<String>, filePaths: Set<String>) {
+    static func cleanup(keeping names: Set<String>, filePaths: Set<String>, directory: URL? = directory) {
         for path in fileIconPaths where !filePaths.contains(path) {
             fileIcons.removeObject(forKey: path as NSString)
         }

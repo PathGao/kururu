@@ -40,6 +40,10 @@ struct ShelfView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 11) {
             header
+            if let issue = shelf.persistenceIssue {
+                ShelfPersistenceNotice(issue: issue, isSaving: shelf.isSaving,
+                                       strings: .text(l10n.language), onRetry: { shelf.retryPersistence() })
+            }
             tiles
             if !shelf.items.isEmpty {
                 bottomBar
@@ -176,13 +180,15 @@ struct ShelfView: View {
 
     private var bottomBar: some View {
         HStack(spacing: 8) {
+            clearButton
             Text(l10n.s.shelfHint)
                 .font(.system(size: 10))
                 .foregroundStyle(.tertiary)
                 .lineLimit(1)
-            Spacer(minLength: 8)
+                .help(l10n.s.shelfHint)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 8)
             shareButton
-            clearButton
         }
         .frame(minHeight: 30)
     }
@@ -206,7 +212,7 @@ struct ShelfView: View {
     }
 
     private var clearButton: some View {
-        Button(action: trashAction) {
+        Button(role: .destructive, action: trashAction) {
             footerButtonFace(systemImage: shelf.selection.isEmpty ? "trash" : "trash.fill",
                              tint: .red,
                              hovered: clearButtonHovered)
@@ -215,6 +221,7 @@ struct ShelfView: View {
         .foregroundStyle(clearButtonHovered ? Color.red.opacity(0.82) : Color.secondary)
         .onHover { clearButtonHovered = $0 }
         .help(shelf.selection.isEmpty ? l10n.s.shelfClearAll : l10n.s.shelfRemoveSelected)
+        .accessibilityLabel(shelf.selection.isEmpty ? l10n.s.shelfClearAll : l10n.s.shelfRemoveSelected)
     }
 
     /// The shared face of the footer's two buttons.

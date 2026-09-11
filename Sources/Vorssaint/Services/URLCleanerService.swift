@@ -7,14 +7,6 @@ import UniformTypeIdentifiers
 
 final class URLCleanerService: ObservableObject {
     static let shared = URLCleanerService()
-    private static let automaticRewriteTypes: Set<NSPasteboard.PasteboardType> = [
-        .string,
-        NSPasteboard.PasteboardType(UTType.url.identifier),
-        NSPasteboard.PasteboardType("public.url-name"),
-        NSPasteboard.PasteboardType("NSStringPboardType"),
-        NSPasteboard.PasteboardType("NSURLPboardType"),
-    ]
-
     @Published private(set) var isRunning = false
     @Published private(set) var lastCleaned: String?
     /// Names the last automatic clean took out, so Settings can say what the
@@ -38,10 +30,7 @@ final class URLCleanerService: ObservableObject {
         }
     }
 
-    private struct PollResult {
-        let changeCount: Int
-        let cleaned: URLCleaning.Result?
-    }
+    private typealias PollResult = URLAutomaticCleaning.Result
 
     private var timer: Timer?
     private var lastChangeCount = 0
@@ -143,31 +132,11 @@ final class URLCleanerService: ObservableObject {
         }
     }
 
-    /// Runs only on GeneralPasteboardAccess. Reading the change count, types
-    /// and payload plus any rewrite is one serialized transaction.
+    /// Runs on GeneralPasteboardAccess, serializing this app’s pasteboard operations.
+    /// The helper also checks for external changes immediately before rewriting.
     private static func pollPasteboard(sinceChangeCount: Int, token: PollToken) -> PollResult? {
-        let pasteboard = NSPasteboard.general
-        let changeCount = pasteboard.changeCount
-        guard !token.isCancelled else { return nil }
-        guard changeCount != sinceChangeCount else {
-            return PollResult(changeCount: changeCount, cleaned: nil)
-        }
-
-        guard let text = pasteboard.string(forType: .string),
-              let cleaned = URLCleaning.clean(text, rules: rules),
-              cleaned.url != text.trimmingCharacters(in: .whitespacesAndNewlines),
-              canSafelyRewriteAutomatically(pasteboard),
-              !token.isCancelled else {
-            return PollResult(changeCount: changeCount, cleaned: nil)
-        }
-
-        let rewrittenChangeCount = writeToPasteboard(cleaned.url)
-        return PollResult(changeCount: rewrittenChangeCount, cleaned: cleaned)
-    }
-
-    private static func canSafelyRewriteAutomatically(_ pasteboard: NSPasteboard) -> Bool {
-        guard let types = pasteboard.types, !types.isEmpty else { return false }
-        return Set(types).isSubset(of: automaticRewriteTypes)
+        URLAutomaticCleaning.poll(NSPasteboard.general, sinceChangeCount: sinceChangeCount,
+                                  rules: rules, isCancelled: { token.isCancelled })
     }
 
     private static var rules: URLCleaning.Rules {

@@ -301,7 +301,9 @@ struct ShortcutPreferenceRow: View {
         self.includeInactiveConflicts = includeInactiveConflicts
         self.additionalConflict = additionalConflict
         self.onChange = onChange
-        _rawValue = AppStorage(wrappedValue: role.defaultShortcut.storageValue, role.storageKey)
+        _rawValue = AppStorage(
+            wrappedValue: role.startsUnassigned ? "" : role.defaultShortcut.storageValue,
+            role.storageKey)
     }
 
     var body: some View {
@@ -318,6 +320,10 @@ struct ShortcutPreferenceRow: View {
                         ShortcutRecorderButton(shortcut: shortcut,
                                                isEnabled: isEnabled,
                                                waitingTitle: l10n.s.shortcutPressKeys,
+                                               emptyTitle: configuredShortcut == nil
+                                                   ? BrightnessShortcutStrings
+                                                       .localized(l10n.language).notSet : nil,
+                                               clearAction: role.startsUnassigned ? clear : nil,
                                                notCapturedAction: { errorText = l10n.s.shortcutNotCaptured },
                                                recordingChanged: { recording in
                                                    isRecording = recording
@@ -330,16 +336,18 @@ struct ShortcutPreferenceRow: View {
                             .frame(width: 108)
                             .disabled(!isEnabled)
                         Button(l10n.s.shortcutReset) {
-                            rawValue = role.defaultShortcut.storageValue
+                            rawValue = role.startsUnassigned
+                                ? "" : role.defaultShortcut.storageValue
                             errorText = nil
                             onChange()
                         }
-                        .disabled(!isEnabled || shortcut == role.defaultShortcut)
+                        .disabled(!isEnabled || (role.startsUnassigned
+                            ? configuredShortcut == nil : shortcut == role.defaultShortcut))
                     }
                     if let alternative = superKeyAlternative {
                         Text(String(format: FeatureStrings.shortcuts(l10n.language)
                             .superKeyAlternativeFormat, alternative))
-                            .font(.caption2)
+                            .font(SettingsTypography.caption)
                             .foregroundStyle(.secondary)
                             .accessibilityLabel(alternative)
                     }
@@ -348,11 +356,11 @@ struct ShortcutPreferenceRow: View {
 
             if let errorText {
                 Text(errorText)
-                    .font(.caption)
+                    .font(SettingsTypography.caption)
                     .foregroundStyle(.orange)
             } else if isRecording {
-                Text(ShortcutRecordingCaption.text(l10n.s, canClear: false))
-                    .font(.caption)
+                Text(ShortcutRecordingCaption.text(l10n.s, canClear: role.startsUnassigned))
+                    .font(SettingsTypography.caption)
                     .foregroundStyle(.secondary)
             }
         }
@@ -360,11 +368,16 @@ struct ShortcutPreferenceRow: View {
     }
 
     private var shortcut: GlobalShortcut {
-        GlobalShortcut(storageValue: rawValue) ?? role.defaultShortcut
+        configuredShortcut ?? role.defaultShortcut
+    }
+
+    private var configuredShortcut: GlobalShortcut? {
+        GlobalShortcut(storageValue: rawValue)
     }
 
     private var superKeyAlternative: String? {
         guard showsSuperKeyAlternative else { return nil }
+        guard configuredShortcut != nil || !role.startsUnassigned else { return nil }
         return shortcut.superKeyAlternative(
             sourceLabel: FeatureStrings.superKey(l10n.language).sourceLabel(superKey.source),
             superKeyModifiers: superKeyModifiers)
@@ -373,7 +386,8 @@ struct ShortcutPreferenceRow: View {
     private func save(_ shortcut: GlobalShortcut) {
         if let conflict = GlobalShortcutRole.conflict(for: shortcut,
                                                       excluding: role,
-                                                      includeInactive: includeInactiveConflicts) {
+                                                      includeInactive: includeInactiveConflicts,
+                                                      hasClipboardHistory: { !ClipboardHistoryService.shared.entries.isEmpty }) {
             errorText = String(format: l10n.s.shortcutConflictFormat, conflict.title(l10n.s))
             return
         }
@@ -386,6 +400,12 @@ struct ShortcutPreferenceRow: View {
             return
         }
         rawValue = shortcut.storageValue
+        errorText = nil
+        onChange()
+    }
+
+    private func clear() {
+        rawValue = ""
         errorText = nil
         onChange()
     }
@@ -422,7 +442,7 @@ struct ShortcutRowLabel: View {
                             Text(statusText)
                         }
                     }
-                    .font(.caption)
+                    .font(SettingsTypography.caption)
                     .foregroundStyle(.secondary)
                 }
             }

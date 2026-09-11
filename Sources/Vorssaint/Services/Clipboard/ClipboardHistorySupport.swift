@@ -189,29 +189,50 @@ enum ClipboardHistoryEditing {
     /// on the actual bytes rather than estimated from the strings.
     static func encodedHistory(_ entries: [ClipboardHistoryEntry],
                                byteLimit: Int = maxEncodedHistoryBytes) -> EncodedHistory? {
+        encode(entries, byteLimit: byteLimit, includeData: true)
+    }
+
+    /// Uses the same byte budget as persistence without assembling a second
+    /// full JSON buffer. Call on the persistence queue for large histories.
+    static func entriesWithinEncodedLimit(_ entries: [ClipboardHistoryEntry],
+                                         byteLimit: Int = maxEncodedHistoryBytes) -> [ClipboardHistoryEntry]? {
+        encode(entries, byteLimit: byteLimit, includeData: false)?.entries
+    }
+
+    private static func encode(_ entries: [ClipboardHistoryEntry],
+                               byteLimit: Int,
+                               includeData: Bool) -> EncodedHistory? {
         guard byteLimit >= 2 else { return nil }
         let encoder = JSONEncoder()
         let ordered = entries.filter(\.isPinned) + entries.filter { !$0.isPinned }
         var retained: [ClipboardHistoryEntry] = []
         var encodedEntries: [Data] = []
-        var encodedSize = 2 // Opening and closing brackets.
+        var encodedSize = 2
 
         for entry in ordered {
             guard let encoded = try? encoder.encode(entry) else { return nil }
-            let addedSize = encoded.count + (encodedEntries.isEmpty ? 0 : 1)
-            guard encodedSize + addedSize <= byteLimit else { continue }
+            let addedSize = encoded.count + (retained.isEmpty ? 0 : 1)
+            guard encodedSize + addedSize <= byteLimit else {
+                // A fixed item is never an expendable history row. Leave the
+                // previous persisted snapshot intact if it cannot fit.
+                if entry.isPinned { return nil }
+                continue
+            }
             retained.append(entry)
-            encodedEntries.append(encoded)
+            if includeData { encodedEntries.append(encoded) }
             encodedSize += addedSize
         }
 
-        var data = Data(capacity: encodedSize)
-        data.append(0x5B)
-        for (index, encoded) in encodedEntries.enumerated() {
-            if index > 0 { data.append(0x2C) }
-            data.append(encoded)
+        var data = Data()
+        if includeData {
+            data.reserveCapacity(encodedSize)
+            data.append(0x5B)
+            for (index, encoded) in encodedEntries.enumerated() {
+                if index > 0 { data.append(0x2C) }
+                data.append(encoded)
+            }
+            data.append(0x5D)
         }
-        data.append(0x5D)
         return EncodedHistory(entries: retained, data: data)
     }
 }
@@ -344,11 +365,11 @@ enum ClipboardHistoryFocus {
     /// the quick panel. A composing input method always wins: Return confirms
     /// the candidate, the arrows walk it and Esc drops it, so claiming those
     /// keys leaves the search field unusable in Chinese, Japanese and Korean.
-    /// Outside composition the multiline editor keeps its editing keys, while
-    /// the search field (a field editor) and the read-only preview leave the
-    /// list's shortcuts intact.
-    static func textViewOwnsKeys(isComposing: Bool, isFieldEditor: Bool, isEditable: Bool) -> Bool {
-        isComposing || (isEditable && !isFieldEditor)
+    /// A focused preview owns selection and navigation even before any text
+    /// is selected. Escape still belongs to the list outside editing or IME.
+    static func textViewOwnsKeys(isComposing: Bool, isFieldEditor: Bool, isEditable: Bool,
+                                isEscape: Bool = false) -> Bool {
+        isComposing || (!isFieldEditor && (isEditable || !isEscape))
     }
 }
 

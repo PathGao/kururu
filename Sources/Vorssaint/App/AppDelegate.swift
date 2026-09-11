@@ -20,6 +20,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
     private var metricAnchorSwitchSerial = 0
     private var popoverCloseCompletions: [() -> Void] = []
     private var isTerminating = false
+    private var presentingUnsavedNotesAlert = false
     private var cancellables = Set<AnyCancellable>()
     private var settingsWindow: NSWindow?
     private var settingsKeepsAppRegular = false
@@ -48,10 +49,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
         }
         beginStartupWatch()
         Self.boundAccessibilityWaits()
-        // Resolve the Accessibility Keyboard's pid now. The lookup is async, so
-        // a feature that asks first and has no second chance — the switcher
-        // judges a click only after cancelSession() has already run — would
-        // otherwise be told "not running" once per launch.
+        // Pay the first AppKit process lookup before an input callback needs
+        // it. Each click still resolves the current process independently.
         _ = AssistiveKeyboard.isRunning
 
         // Finish the on-disk rename for installs carried over from a pre-2.5
@@ -173,6 +172,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
         let skipStartupWindows = startupOfPreviousRunDidNotFinish
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
+            if VisualReviewConfiguration.current != nil {
+                SettingsRouter.shared.page = .clipboard
+                self.openSettingsWindow()
+                return
+            }
             if !defaults.bool(forKey: DefaultsKey.hasOnboarded) {
                 guard !skipStartupWindows else { return }
                 self.showOnboarding(mode: .full)
@@ -226,6 +230,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
         UserDefaults.standard.removeObject(forKey: DefaultsKey.startupDidNotFinish)
     }
 
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        guard !presentingUnsavedNotesAlert else { return .terminateCancel }
+        guard !ScratchpadService.shared.prepareForTermination() else { return .terminateNow }
+        presentingUnsavedNotesAlert = true
+        defer { presentingUnsavedNotesAlert = false }
+        let text = ScratchpadSaveStrings.text(L10n.shared.language)
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = text.quitTitle
+        alert.informativeText = text.quitMessage
+        alert.addButton(withTitle: text.cancelQuit).keyEquivalent = "\r"
+        let discard = alert.addButton(withTitle: text.discardAndQuit)
+        discard.hasDestructiveAction = true
+        discard.keyEquivalent = ""
+        sender.activate(ignoringOtherApps: true)
+        return alert.runModal() == .alertSecondButtonReturn ? .terminateNow : .terminateCancel
+    }
+
     func applicationWillTerminate(_ notification: Notification) {
         isTerminating = true
         // Quitting properly means the start worked, whenever it happened.
@@ -268,6 +290,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
         if AppFeature.clipboardHistory.isAvailable {
             ClipboardHistoryService.shared.flushBeforeTermination()
         }
+        ShelfService.shared.flushBeforeTermination()
         KeepAwakeManager.shared.deactivate(reason: .quit)
     }
 
@@ -383,6 +406,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
             MenuPanelFocus.shared.showNormalPanel()
         }
         togglePopover()
+    }
+
+    func openMonitorPanel() -> Bool {
+        let sections: [PanelSectionID] = [.system, .network, .disk, .power, .fanControl]
+        if let section = sections.first(where: { $0.isAvailable && PanelLayout.isShown($0) }) {
+            MenuPanelFocus.shared.focus(section)
+        } else {
+            MenuPanelFocus.shared.showNormalPanel()
+        }
+        if popover.isShown { return true }
+        guard let anchor = statusController.panelAnchorButton else { return false }
+        showPopover(anchor: anchor, allowRecentClose: true)
+        return popover.isShown
     }
 
     private func showMetricPanel(for metric: MenuBarMetric, anchoredTo button: NSStatusBarButton) {
@@ -1351,7 +1387,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
             window.delegate = self
             settingsWindow = window
         }
-        settingsWindow?.title = L10n.shared.s.settingsTitle
+        settingsWindow?.title = VisualReviewConfiguration.current != nil ? AppInfo.name : L10n.shared.s.settingsTitle
         if let window = settingsWindow {
             positionSettingsWindow(window, force: createdWindow)
         }
@@ -1368,6 +1404,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
     }
 
     func openFeedbackWindow(kind: FeedbackKind = .bug) {
+        // Capture the initiating screen before dismissal or the new window can change focus.
+        let sourceVisibleFrame = (NSApp.currentEvent?.window?.screen ?? NSApp.keyWindow?.screen
+                                  ?? NSApp.mainWindow?.screen)?.visibleFrame
         closePopover()
         let host = NSHostingController(rootView: FeedbackView(initialKind: kind) { [weak self] in
             self?.feedbackWindow?.close()
@@ -1381,10 +1420,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
             window.isReleasedWhenClosed = false
             window.isRestorable = false
             window.delegate = self
-            window.center()
+            window.contentView?.layoutSubtreeIfNeeded()
+            window.setFrameOrigin(FeedbackDraftSupport.initialWindowOrigin(
+                size: window.frame.size, sourceVisibleFrame: sourceVisibleFrame,
+                fallback: NSScreen.pointerVisibleFrame))
             feedbackWindow = window
         }
-        feedbackWindow?.title = FeatureStrings.feedback(L10n.shared.language).windowTitle
+        feedbackWindow?.title = LocalFeedbackCopy.strings(language: L10n.shared.language.rawValue).title
         NSApp.activate(ignoringOtherApps: true)
         feedbackWindow?.makeKeyAndOrderFront(nil)
     }
@@ -1392,7 +1434,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
     private func positionSettingsWindow(_ window: NSWindow, force: Bool) {
         window.contentView?.layoutSubtreeIfNeeded()
         let popoverWindow = popover.isShown ? popover.contentViewController?.view.window : nil
-        let visible = (popoverWindow?.screen ?? window.screen)?.visibleFrame ?? NSScreen.pointerVisibleFrame
+        let reviewScreen = VisualReviewConfiguration.current == nil ? nil : NSScreen.screens.first { screen in
+            guard let id = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber else { return false }
+            return CGDisplayIsBuiltin(id.uint32Value) != 0
+        }
+        let visible = (force ? reviewScreen : nil)?.visibleFrame
+            ?? (popoverWindow?.screen ?? window.screen)?.visibleFrame ?? NSScreen.pointerVisibleFrame
         let margin: CGFloat = 40
         let availableWidth = max(1, visible.width - margin)
         let availableHeight = max(1, visible.height - margin)
@@ -1551,12 +1598,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
         }
     }
 
-    /// On launch after an update, keep the short support prompt visible once per
-    /// version. The changelog itself is already shown before download.
     private func presentUpdateIntros() {
-        if showUpdateHighlightsIfNeeded() { return }
-        if showSupportUpdateIntroIfNeeded() { return }
-        if showUpdateShowcaseIntroIfNeeded() { return }
+        _ = showUpdateHighlightsIfNeeded()
     }
 
     private func showUpdateHighlightsIfNeeded() -> Bool {
@@ -1578,13 +1621,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
         let host = NSHostingController(rootView: UpdateHighlightsView(
             onFinish: { [weak self] in
                 guard let self else { return }
-                let previousWindow = self.updateHighlightsWindow
-                previousWindow?.close()
-                self.showSupportUpdateIntro()
-                if let previousWindow, let supportWindow = self.supportIntroWindow {
-                    supportWindow.setFrameOrigin(previousWindow.frame.origin)
-                    self.positionTourBesideSettings(supportWindow)
-                }
+                self.updateHighlightsWindow?.close()
             }
         ))
         host.sizingOptions = .preferredContentSize
@@ -1710,7 +1747,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
         ))
         host.sizingOptions = .preferredContentSize
         let window = NSPanel(contentViewController: host)
-        window.title = L10n.shared.s.supportIntroTitle
+        window.title = AppInfo.name
         window.styleMask = [.titled, .fullSizeContentView]
         window.standardWindowButton(.closeButton)?.isHidden = true
         window.titlebarAppearsTransparent = true

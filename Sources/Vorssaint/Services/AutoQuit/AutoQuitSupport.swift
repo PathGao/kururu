@@ -129,6 +129,16 @@ enum AutoQuitSupport {
         keyCode == commandWKeyCode && command && !control
     }
 
+    // Keep Phone protected on every system, but hide its row when it is absent.
+    static func shouldDisplayException(bundleID: String, isInstalled: Bool) -> Bool {
+        bundleID != Defaults.phoneBundleIdentifier || isInstalled
+    }
+
+    static func visibleExceptions(_ bundleIDs: [String],
+                                  isInstalled: (String) -> Bool) -> [String] {
+        bundleIDs.filter { shouldDisplayException(bundleID: $0, isInstalled: isInstalled($0)) }
+    }
+
     /// Whether a window the screen is not showing still counts as a window the
     /// user has. A window parked on another Space is one swipe away, so it
     /// keeps the app running; a window the app only hid sits on the Space that

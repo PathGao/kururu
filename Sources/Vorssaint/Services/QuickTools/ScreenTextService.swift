@@ -70,8 +70,19 @@ final class ScreenTextService: ObservableObject {
                     // the panel offers copy and, for a link, open.
                     QRResultController.shared.show(reading: reading)
                 case .text(let text):
-                    Self.copyToPasteboard(text)
-                    QuickToolHUD.show(icon: "text.viewfinder", message: strings.ocrCopied)
+                    let resultPresentationID = QRResultController.shared.presentationID
+                    QRResultController.copyText(text) { [weak self] copied in
+                        guard self?.recognitionGeneration == generation,
+                              QRResultController.shared.presentationID == resultPresentationID
+                        else { return }
+                        if copied {
+                            QuickToolHUD.show(icon: "text.viewfinder", message: strings.ocrCopied)
+                        } else {
+                            QRResultController.shared.show(text: text)
+                            QuickToolHUD.show(icon: "text.viewfinder",
+                                              message: FeatureStrings.commandBar(L10n.shared.language).copyFailed)
+                        }
+                    }
                 case .empty:
                     QuickToolHUD.show(icon: "text.viewfinder", message: strings.ocrNoText)
                 }
@@ -91,21 +102,28 @@ final class ScreenTextService: ObservableObject {
             return .qr(reading)
         }
 
-        var lines = recognizedLines(in: image,
-                                    level: .accurate,
-                                    automaticallyDetectLanguage: true,
-                                    preferredLanguages: fallbackLanguages)
-        if lines.isEmpty {
-            // The fast path uses a different recognition model. It is a
-            // separate second chance when the accurate model returns no text.
-            lines = recognizedLines(in: image,
-                                    level: .fast,
-                                    automaticallyDetectLanguage: false,
-                                    preferredLanguages: fallbackLanguages)
-        }
-        let text = QuickToolsSupport.joinedRecognizedText(lines,
-                                                         removingLineBreaks: removeLineBreaks)
+        let text = (try? recognizedText(in: image, removeLineBreaks: removeLineBreaks,
+                                        fallbackLanguages: fallbackLanguages)) ?? ""
         return text.isEmpty ? .empty : .text(text)
+    }
+
+    static func recognizedText(in image: CGImage,
+                               removeLineBreaks: Bool = false,
+                               fallbackLanguages: [String] = ["en-US"]) throws -> String {
+        try Task.checkCancellation()
+        var lines = (try? recognizedLines(in: image,
+                                        level: .accurate,
+                                        automaticallyDetectLanguage: true,
+                                        preferredLanguages: fallbackLanguages)) ?? []
+        try Task.checkCancellation()
+        if lines.isEmpty {
+            lines = try recognizedLines(in: image,
+                                        level: .fast,
+                                        automaticallyDetectLanguage: false,
+                                        preferredLanguages: fallbackLanguages)
+        }
+        try Task.checkCancellation()
+        return QuickToolsSupport.joinedRecognizedText(lines, removingLineBreaks: removeLineBreaks)
     }
 
     private static func recognizedLines(
@@ -113,7 +131,7 @@ final class ScreenTextService: ObservableObject {
         level: VNRequestTextRecognitionLevel,
         automaticallyDetectLanguage: Bool,
         preferredLanguages: [String] = []
-    ) -> [QuickToolsSupport.RecognizedLine] {
+    ) throws -> [QuickToolsSupport.RecognizedLine] {
         let request = VNRecognizeTextRequest()
         request.recognitionLevel = level
         request.usesLanguageCorrection = true
@@ -125,7 +143,7 @@ final class ScreenTextService: ObservableObject {
         }
 
         let handler = VNImageRequestHandler(cgImage: image, options: [:])
-        guard (try? handler.perform([request])) != nil else { return [] }
+        try handler.perform([request])
 
         return (request.results ?? []).compactMap { observation -> QuickToolsSupport.RecognizedLine? in
             guard let candidate = observation.topCandidates(1).first else { return nil }
@@ -135,9 +153,4 @@ final class ScreenTextService: ObservableObject {
         }
     }
 
-    private static func copyToPasteboard(_ value: String) {
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        pasteboard.setString(value, forType: .string)
-    }
 }

@@ -76,10 +76,9 @@ final class FeatureRuntime: ObservableObject {
         FeatureUnit.allCases.filter { $0.isHardwareSupported || $0.isAvailable }.count
     }
 
-    /// The one gate every install passes, whichever surface asks: the hub
-    /// row, the hub's install-all button, a preset and the first-run picker
-    /// all decide here. A unit the Mac cannot run never installs, so a
-    /// disabled row cannot be walked around from the button above it.
+    /// Unit installs pass this hardware gate. The first-run feature picker
+    /// checks each member through its shared `installBlockedReason` before
+    /// applying the same catalog preferences.
     ///
     /// Uninstalls are never refused and an existing install is never revoked:
     /// the check reads hardware and can be wrong, and a wrong answer that
@@ -120,7 +119,24 @@ final class FeatureRuntime: ObservableObject {
         finishAvailabilityChange()
     }
 
-    /// Applies a hub preset: its units become the installed set, with the
+    /// Apply all preference gates before any binding runs, so enabling one
+    /// member cannot briefly start its unselected siblings.
+    func applyOnboardingSelection(_ selected: Set<AppFeature>) {
+        let accepted = Set(selected.filter { $0.installBlockedReason == nil })
+        let previouslyAvailable = Set(AppFeature.allCases.filter(\.isAvailable))
+        let defaults = UserDefaults.standard
+        let changes = OnboardingFeatureSelection.preferenceChanges(for: accepted,
+                                                                     isEnabled: defaults.bool(forKey:))
+        for (key, value) in changes { defaults.set(value, forKey: key) }
+        let available = Set(AppFeature.allCases.filter(\.isAvailable))
+        loadedThisSession.formUnion(available)
+        for feature in previouslyAvailable.union(available) {
+            Self.bindings[feature]?()
+        }
+        finishAvailabilityChange()
+    }
+
+    /// Applies a preserved preset definition: its units become the installed set, with the
     /// enable keys it names switched on so they work right away, and
     /// everything else uninstalls. Nothing is deleted, so any unit returns
     /// with one click, settings intact.
@@ -261,7 +277,10 @@ final class FeatureRuntime: ObservableObject {
             RecentCaptureService.shared.syncWithPreferences()
         },
         .radialMenu: { RadialMenuService.shared.syncWithPreferences() },
-        .scratchpad: { ScratchpadService.shared.syncWithPreferences() },
+        .scratchpad: {
+            ScratchpadService.shared.syncWithPreferences()
+            ShelfService.shared.syncDockedShelf()
+        },
         .commandBar: { CommandBarService.shared.syncWithPreferences() },
         .cleaner: {
             CleanerScheduler.shared.syncWithPreferences()

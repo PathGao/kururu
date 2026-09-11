@@ -4,9 +4,20 @@
 import Foundation
 
 struct ShortcutSettingsStrings {
-    var active: String = "Active"
-    var inactive: String = "Inactive"
+    var active: String = "Enabled"
+    var inactive: String = "Disabled"
     var superKeyAlternativeFormat: String = "or %@"
+    static func registrationIssue(_ language: AppLanguage, multiple: Bool = false) -> String {
+        switch language {
+        case .zhHans: return multiple ? "部分快捷键未生效" : "快捷键未生效"
+        case .zhTW, .zhHK: return multiple ? "部分快捷鍵未生效" : "快捷鍵未生效"
+        case .de: return multiple ? "Einige Tastenkürzel sind nicht verfügbar" : "Tastenkürzel nicht verfügbar"
+        case .fr: return multiple ? "Certains raccourcis sont indisponibles" : "Raccourci indisponible"
+        case .es: return multiple ? "Algunos atajos no están disponibles" : "Atajo no disponible"
+        case .ja: return multiple ? "一部のショートカットは使用できません" : "ショートカットは使用できません"
+        default: return multiple ? "Some shortcuts are unavailable" : "Shortcut unavailable"
+        }
+    }
 }
 
 extension FeatureStrings {
@@ -87,8 +98,8 @@ extension ShortcutSettingsStrings {
     )
 
     static let zhHans = ShortcutSettingsStrings(
-        active: "已启用",
-        inactive: "未启用",
+        active: "已开启",
+        inactive: "未开启",
         superKeyAlternativeFormat: "或 %@"
     )
 

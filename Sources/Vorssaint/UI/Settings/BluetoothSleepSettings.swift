@@ -10,10 +10,10 @@ struct BluetoothSleepSettings: View {
     @AppStorage(DefaultsKey.bluetoothSleepRestoreOnWake) private var bluetoothSleepRestoreOnWake = true
 
     var body: some View {
-        Form {
+        SettingsForm {
             if AppFeature.bluetoothSleep.isAvailable {
                 let strings = FeatureStrings.bluetoothSleep(l10n.language)
-                Section(AppFeature.bluetoothSleep.name(l10n.s, language: l10n.language)) {
+                SettingsSection(AppFeature.bluetoothSleep.name(l10n.s, language: l10n.language)) {
                     if BluetoothSleepService.isSupported {
                         SettingsToggleWithCaption(title: strings.enable,
                                                   caption: strings.enableCaption,

@@ -24,14 +24,14 @@ enum MicMuteSupport {
     /// silence, which is how a re-applied mute could strand a microphone.
     static func shouldSaveVolume(_ volume: Float?) -> Bool {
         guard let volume else { return false }
-        return volume > 0.01
+        return volume.isFinite && volume > 0 && volume <= 1
     }
 
     static func volumeToRestore(uid: String,
                                 saved: [String: Double],
                                 legacy: Double) -> Float {
-        if let value = saved[uid], value > 0.01 { return Float(value) }
-        if legacy > 0.01 { return Float(legacy) }
+        if let value = saved[uid], value.isFinite, value > 0, value <= 1 { return Float(value) }
+        if legacy.isFinite, legacy > 0, legacy <= 1 { return Float(legacy) }
         return fallbackVolume
     }
 

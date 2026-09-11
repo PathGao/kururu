@@ -26,24 +26,17 @@ struct OnboardingView: View {
     /// Persisted so the flow resumes where it stopped — macOS relaunches the
     /// app when Screen Recording is granted mid-onboarding.
     @AppStorage(DefaultsKey.onboardingStep) private var index = 0
-    @State private var selectedUnits: Set<FeatureUnit>
-    @State private var selectedPreset: FeaturePreset?
+    @State private var selectedFeatures: Set<AppFeature>
 
     init(mode: OnboardingMode = .full, onFinish: @escaping () -> Void) {
         self.mode = mode
         self.onFinish = onFinish
         let defaults = UserDefaults.standard
-        let selectionWasApplied = defaults.bool(forKey: DefaultsKey.hasOnboarded)
-            || defaults.integer(forKey: DefaultsKey.onboardingStep) >= 2
-        let units = selectionWasApplied
-            ? Set(FeatureUnit.allCases.filter(\.isAvailable))
-            : FeaturePreset.essential.units
-        _selectedUnits = State(initialValue: units)
-        _selectedPreset = State(initialValue: selectionWasApplied ? nil : .essential)
+        _selectedFeatures = State(initialValue: OnboardingFeatureSelection.currentSelection(in: defaults))
     }
 
     private var setupPermissions: [AppPermission] {
-        let permissions = Set(selectedUnits.flatMap(\.features).flatMap(\.onboardingPermissions))
+        let permissions = Set(selectedFeatures.flatMap(\.onboardingPermissions))
         return [.accessibility, .screenRecording].filter { permissions.contains($0) }
     }
     private var steps: [OnboardingStep] {
@@ -81,9 +74,8 @@ struct OnboardingView: View {
     private var content: some View {
         switch current {
         case .welcome: WelcomeStep()
-        case .purpose: PurposeStep(selectedUnits: $selectedUnits,
-                                   selectedPreset: $selectedPreset)
-        case .permissions: SelectedPermissionsStep(units: selectedUnits,
+        case .purpose: PurposeStep(selectedFeatures: $selectedFeatures)
+        case .permissions: SelectedPermissionsStep(features: selectedFeatures,
                                                    permissions: setupPermissions)
         case .done: DoneStep()
         }
@@ -115,9 +107,7 @@ struct OnboardingView: View {
                     onFinish()
                 } else {
                     if current == .purpose {
-                        FeatureRuntime.shared.replaceAvailable(
-                            with: selectedUnits,
-                            enabling: selectedPreset?.enableKeys ?? [])
+                        FeatureRuntime.shared.applyOnboardingSelection(selectedFeatures)
                     }
                     withAnimation(.easeInOut(duration: 0.2)) { index += 1 }
                 }
@@ -207,15 +197,12 @@ private struct WelcomeStep: View {
 
 // MARK: - Purpose step
 
-/// Presets are quick starts, while the catalog below allows an exact choice.
-/// Both use the Features hub's own names and descriptions so setup stays
-/// consistent with what the person can change later.
 private struct PurposeStep: View {
     @ObservedObject private var l10n = L10n.shared
-    @Binding var selectedUnits: Set<FeatureUnit>
-    @Binding var selectedPreset: FeaturePreset?
+    @Binding var selectedFeatures: Set<AppFeature>
 
     private var hub: FeatureHubStrings { FeatureStrings.hub(l10n.language) }
+    private var text: OnboardingFeatureStrings { OnboardingFeatureStrings.text(l10n.language) }
 
     var body: some View {
         VStack(spacing: 16) {
@@ -223,21 +210,16 @@ private struct PurposeStep: View {
                        title: l10n.s.obPurposeTitle,
                        subtitle: l10n.s.obPurposeBody)
 
-            VStack(spacing: 8) {
-                ForEach(FeaturePreset.allCases) { preset in
-                    bundleCard(preset)
-                }
-            }
-            .padding(.horizontal, 28)
-
             HStack {
                 Text(hub.tabFeatures.uppercased())
                     .font(.system(size: 11, weight: .bold))
                     .foregroundStyle(.secondary)
                     .tracking(1)
                 Spacer()
-                Text(String(format: hub.activeCountFormat,
-                            selectedUnits.count, FeatureRuntime.shared.installableCount))
+                Text(String(format: hub.activeCountFormat, selectedFeatures.count,
+                            OnboardingFeatureSelection.options.filter {
+                                $0.isHardwareSupported || selectedFeatures.contains($0)
+                            }.count))
                     .font(.caption)
                     .foregroundStyle(.tertiary)
             }
@@ -249,126 +231,61 @@ private struct PurposeStep: View {
                         Text(group.title(hub))
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(.secondary)
-                        ForEach(group.units, id: \.self) { unit in
-                            unitCard(unit)
+                        ForEach(OnboardingFeatureSelection.options.filter { $0.group == group }, id: \.self) { feature in
+                            featureCard(feature)
                         }
                     }
                 }
             }
             .padding(.horizontal, 28)
 
+            Text(text.onDemand)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 36)
             Text(l10n.s.obPurposeSkip)
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 36)
                 .padding(.bottom, 12)
-
-            Spacer()
         }
     }
 
-    private func name(_ preset: FeaturePreset) -> String {
-        switch preset {
-        case .essential: return hub.presetEssentialName
-        case .windows: return hub.presetWindowsName
-        case .battery: return hub.presetBatteryName
-        }
-    }
-
-    private func caption(_ preset: FeaturePreset) -> String {
-        switch preset {
-        case .essential: return hub.presetEssentialDesc
-        case .windows: return hub.presetWindowsDesc
-        case .battery: return hub.presetBatteryDesc
-        }
-    }
-
-    private func bundleCard(_ preset: FeaturePreset) -> some View {
-        let selected = selectedPreset == preset
-        return Button {
-            selectedPreset = preset
-            selectedUnits = preset.units
-        } label: {
-            HStack(spacing: 12) {
-                Image(systemName: preset.symbolName)
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(Color.accentColor)
-                    .frame(width: 26)
-                    .accessibilityHidden(true)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(name(preset))
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.primary)
-                    Text(caption(preset))
-                        .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                Spacer()
-                if selected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(Color.accentColor)
-                        .accessibilityHidden(true)
-                }
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .background(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(selected ? Color.accentColor.opacity(0.12) : Color.primary.opacity(0.05))
-            )
-            .overlay {
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .strokeBorder(selected ? Color.accentColor.opacity(0.45) : .clear,
-                                  lineWidth: 1)
-            }
-            .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("\(name(preset)). \(caption(preset))")
-        .accessibilityAddTraits(selected ? .isSelected : [])
-        .animation(.easeOut(duration: 0.15), value: selectedPreset)
-    }
-
-    private func unitCard(_ unit: FeatureUnit) -> some View {
-        let selected = selectedUnits.contains(unit)
-        let title = unit.title(l10n.s, language: l10n.language)
-        let description = unit.hubDescription(hub, l10n.s, language: l10n.language)
-        // The picker writes availability through the same runtime gate as the
-        // hub, so a unit this Mac cannot run would silently stay off after
-        // being ticked here. It is shown and refused instead, exactly as the
-        // hub row does it.
-        let blocked = unit.installBlockedReason
+    private func featureCard(_ feature: AppFeature) -> some View {
+        let selected = selectedFeatures.contains(feature)
+        let title = feature == .monitorCPU
+            ? FeatureUnit.monitor.title(l10n.s, language: l10n.language)
+            : feature == .screenshot
+                ? FeatureStrings.screenshot(l10n.language).screenCaptureTitle
+                : feature.name(l10n.s, language: l10n.language)
+        let description = feature == .monitorCPU ? text.monitor
+            : feature == .screenshot ? text.capture : feature.hubDescription(hub)
+        let blocked = feature.installBlockedReason
         let card = Button {
-            selectedPreset = nil
-            if selected {
-                selectedUnits.remove(unit)
-            } else {
-                selectedUnits.insert(unit)
-            }
+            selectedFeatures = OnboardingFeatureSelection.toggling(feature, in: selectedFeatures)
         } label: {
-            HStack(spacing: 10) {
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(selected
-                          ? AnyShapeStyle(Theme.spaceGradient)
-                          : AnyShapeStyle(Color.secondary.opacity(0.16)))
-                    .frame(width: 32, height: 32)
-                    .overlay {
-                        Image(systemName: unit.symbolName)
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(selected ? AnyShapeStyle(.white) : AnyShapeStyle(.secondary))
-                            .accessibilityHidden(true)
-                    }
-                VStack(alignment: .leading, spacing: 2) {
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: feature.symbolName)
+                    .font(.system(size: 14))
+                    .foregroundStyle(selected ? Color.accentColor : .secondary)
+                    .frame(width: 28, height: 28)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 3) {
                     Text(title)
                         .font(.system(size: 12.5, weight: .semibold))
                         .foregroundStyle(.primary)
                     Text(description)
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                        .lineLimit(2)
                         .fixedSize(horizontal: false, vertical: true)
+                    if let note = note(for: feature) {
+                        Text(note)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
                 Spacer(minLength: 8)
                 Image(systemName: selected ? "checkmark.circle.fill" : "circle")
@@ -378,28 +295,40 @@ private struct PurposeStep: View {
             }
             .padding(.horizontal, 11)
             .padding(.vertical, 8)
-            .background(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(selected ? Color.accentColor.opacity(0.09) : Color.primary.opacity(0.035))
-            )
+            .background(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(selected ? Color.accentColor.opacity(0.09) : Color.primary.opacity(0.035)))
             .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
         .buttonStyle(.plain)
-        .disabled(blocked != nil)
+        .disabled(!selected && blocked != nil)
         .opacity(blocked == nil ? 1 : 0.4)
-        .saturation(blocked == nil ? 1 : 0)
-        .accessibilityLabel("\(title). \(description)" + (blocked.map { ". \($0)" } ?? ""))
+        .accessibilityLabel("\(title). \(description)" + (note(for: feature).map { ". \($0)" } ?? "")
+                            + (blocked.map { ". \($0)" } ?? ""))
         .accessibilityAddTraits(selected ? .isSelected : [])
-        // .help() never fires on a disabled control, so the tooltip sits on a
-        // wrapper outside it, the same way the Features hub row does it.
         return HStack(spacing: 0) { card }.help(blocked ?? "")
     }
+
+    private func note(for feature: AppFeature) -> String? {
+        switch feature {
+        case .scrollInverter: return text.vertical
+        case .mouseButtonShortcuts: return text.mouseButtons
+        case .finderCutPaste: return text.finder
+        case .quitWindowProtection: return text.quit
+        case .textSnippets: return text.snippets
+        case .dockClick: return text.dock
+        case .fanControl: return text.fan
+        case .musicBlock:
+            return MusicLaunchBlocker.blockedBundleIDs.isEmpty ? text.appList : nil
+        default: return nil
+        }
+    }
 }
+
 
 private struct SelectedPermissionsStep: View {
     @ObservedObject private var l10n = L10n.shared
     @State private var showingOtherPermissions = false
-    let units: Set<FeatureUnit>
+    let features: Set<AppFeature>
     let permissions: [AppPermission]
 
     private var hub: FeatureHubStrings { FeatureStrings.hub(l10n.language) }
@@ -480,7 +409,7 @@ private struct SelectedPermissionsStep: View {
     }
 
     private func featureNames(for permission: AppPermission) -> String {
-        units.flatMap(\.features)
+        features
             .filter { $0.onboardingPermissions.contains(permission) }
             .map { $0.name(l10n.s, language: l10n.language) }
             // Localized: a plain sort orders by Unicode scalar, which throws

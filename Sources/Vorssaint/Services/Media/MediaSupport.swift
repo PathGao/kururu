@@ -8,7 +8,7 @@ import ImageIO
 import UniformTypeIdentifiers
 
 enum MediaTool: String, CaseIterable, Identifiable {
-    case videoCompressor, gifMaker, imageCompressor, textExtractor
+    case videoCompressor, gifMaker, imageCompressor, textExtractor, pdfMerger, pdfCompressor
 
     var id: String { rawValue }
 }
@@ -384,6 +384,18 @@ enum MediaSupport {
 
     static func sanitizedTool(_ value: String) -> MediaTool {
         MediaTool(rawValue: value) ?? .videoCompressor
+    }
+
+    static func inputTypes(for tool: MediaTool) -> [UTType] {
+        switch tool {
+        case .videoCompressor, .gifMaker: return [.movie, .video, .mpeg4Movie, .quickTimeMovie]
+        case .imageCompressor, .textExtractor: return [.image]
+        case .pdfMerger, .pdfCompressor: return [.pdf]
+        }
+    }
+
+    static func allowsMultipleInputs(for tool: MediaTool) -> Bool {
+        tool == .imageCompressor || tool == .pdfMerger
     }
 
     static func sanitizedQuality(_ value: Double) -> Double {

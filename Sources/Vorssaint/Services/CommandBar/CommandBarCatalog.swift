@@ -61,6 +61,8 @@ struct CommandBarEntry: Identifiable {
     /// True for the few rows whose whole point is to leave the field standing:
     /// they put something INTO the bar instead of doing something with it.
     let keepsBarOpen: Bool
+    /// An existing search waits for this destination's result; a row shortcut still runs without a panel.
+    let waitsForOpenResult: Bool
     /// True for a row that reads whatever is typed after its own name, the way
     /// a saved search does. The ranking has to score it against everything
     /// typed, or the words of the argument drop it from the list at the exact
@@ -98,6 +100,7 @@ struct CommandBarEntry: Identifiable {
                         confirmationPrompt: confirmationPrompt, answerValue: answerValue,
                         isAnswer: isAnswer, countsUsage: countsUsage,
                         matchTitle: matchTitle, keepsBarOpen: keepsBarOpen,
+                        waitsForOpenResult: waitsForOpenResult,
                         takesArgument: takesArgument, revealPath: revealPath, run: run)
     }
 
@@ -127,6 +130,7 @@ struct CommandBarEntry: Identifiable {
          countsUsage: Bool = true,
          matchTitle: String? = nil,
          keepsBarOpen: Bool = false,
+         waitsForOpenResult: Bool = false,
          takesArgument: Bool = false,
          revealPath: String? = nil,
          run: @escaping (Int?) -> Void) {
@@ -148,6 +152,7 @@ struct CommandBarEntry: Identifiable {
         self.countsUsage = countsUsage
         self.matchTitle = matchTitle
         self.keepsBarOpen = keepsBarOpen
+        self.waitsForOpenResult = waitsForOpenResult
         self.takesArgument = takesArgument
         self.revealPath = revealPath
         self.run = run
@@ -273,8 +278,9 @@ enum CommandBarCatalog {
         /// A shortcut is only shown while it actually fires (its enables on),
         /// so the bar never teaches a dead combination.
         func roleShortcut(_ role: GlobalShortcutRole) -> GlobalShortcut? {
-            guard role.isAvailable(using: { $0.isAvailable }),
-                  role.requiredEnableKeys.allSatisfy({ UserDefaults.standard.bool(forKey: $0) })
+            guard role.isActive(isOn: { UserDefaults.standard.bool(forKey: $0) },
+                                isAvailable: { $0.isAvailable },
+                                hasClipboardHistory: { !ClipboardHistoryService.shared.entries.isEmpty })
             else { return nil }
             return role.savedShortcut
         }
@@ -357,10 +363,11 @@ enum CommandBarCatalog {
                 title: AppFeature.clipboardHistory.name(s, language: language),
                 subtitle: area(.clipboardHistory, under: AppFeature.clipboardHistory.name(s, language: language)),
                 icon: .symbol("doc.on.clipboard"),
-                shortcut: keepsHistory ? roleShortcut(.clipboard) : nil,
+                shortcut: canUseHistory ? roleShortcut(.clipboard) : nil,
                 trouble: canUseHistory ? nil
                     : .needsSetup(featureTitle: AppFeature.clipboardHistory.name(s, language: language), page: .clipboard),
                 run: { _ in afterBeat(0.1) { ClipboardHistoryService.shared.showHistoryWindow() } }))
+            let unpinnedIDs = Set(ClipboardHistoryService.shared.recentEntries.map(\.id))
             entries.append(CommandBarEntry(
                 id: "action.clipboardClearRecent",
                 title: clipboard.clearRecent,
@@ -370,8 +377,8 @@ enum CommandBarCatalog {
                 icon: .symbol("trash"),
                 trouble: canUseHistory ? nil
                     : .needsSetup(featureTitle: AppFeature.clipboardHistory.name(s, language: language), page: .clipboard),
-                confirmationPrompt: clipboard.clearRecent,
-                run: { _ in ClipboardHistoryService.shared.clearRecent() }))
+                confirmationPrompt: ClipboardActionStrings.clearMessage(unpinnedIDs.count),
+                run: { _ in ClipboardHistoryService.shared.clearRecent(confirmedIDs: unpinnedIDs) }))
         }
         if AppFeature.textSnippets.isAvailable {
             entries.append(CommandBarEntry(
@@ -460,15 +467,20 @@ enum CommandBarCatalog {
         }
 
         if AppFeature.micMute.isAvailable {
-            let muted = MicMuteService.shared.isMuted
+            let mic = MicMuteService.shared
+            let text = FeatureStrings.micMute(language)
             entries.append(CommandBarEntry(
                 id: "action.micMute",
-                title: muted ? FeatureStrings.micMute(language).unmuteName : AppFeature.micMute.name(s, language: language),
-                subtitle: area(.micMute),
-                icon: .symbol(muted ? "mic.slash.fill" : "mic"),
+                title: text.actionTitle(isMuteRequested: mic.isMuteRequested, result: mic.lastResult),
+                subtitle: mic.isApplying ? text.applyingStatus
+                    : mic.lastResult.map { text.resultMessage(for: $0) } ?? area(.micMute),
+                icon: .symbol(mic.lastResult.map { text.resultSymbol(for: $0) } ?? "mic"),
                 shortcut: roleShortcut(.micMute),
-                isActive: muted,
-                run: { _ in MicMuteService.shared.toggle() }))
+                isActive: mic.isMuted,
+                run: { _ in
+                    guard !MicMuteService.shared.isApplying else { return }
+                    MicMuteService.shared.toggle()
+                }))
         }
 
         if AppFeature.brightness.isAvailable {
@@ -547,7 +559,13 @@ enum CommandBarCatalog {
                     keywords: bar.soundOutputSubtitle,
                     icon: .symbol(device.isHeadphones ? "headphones" : "hifispeaker"),
                     isActive: device.isDefault,
-                    run: { _ in AppVolumeMixer.shared.setUniversalOutputDeviceUID(device.uid) }))
+                    run: { _ in
+                        if !AppVolumeMixer.shared.setUniversalOutputDeviceUID(device.uid) {
+                            QuickToolHUD.show(icon: "exclamationmark.circle",
+                                              message: String(format: FeatureStrings.soundOutputSwitcher(language).switchFailedFormat,
+                                                              device.name))
+                        }
+                    }))
             }
         }
 
@@ -715,8 +733,9 @@ enum CommandBarCatalog {
                 keywords: bar.kindFolder,
                 icon: .filePath(folder.url.path),
                 countsUsage: true,
+                waitsForOpenResult: true,
                 revealPath: folder.url.path,
-                run: { _ in NSWorkspace.shared.open(folder.url) }))
+                run: { _ in CommandBarService.shared.openDestination(folder.url, title: folder.name) }))
         }
 
         entries.append(contentsOf: dateAnswerEntries(bar: bar))
@@ -791,13 +810,10 @@ enum CommandBarCatalog {
                 keywords: bar.sourceFiles,
                 icon: .filePath(path),
                 countsUsage: false,
+                waitsForOpenResult: true,
                 revealPath: path,
                 run: { _ in
-                    guard FileManager.default.fileExists(atPath: path) else {
-                        QuickToolHUD.show(icon: "doc.questionmark", message: url.lastPathComponent)
-                        return
-                    }
-                    NSWorkspace.shared.open(url)
+                    CommandBarService.shared.openDestination(url, title: url.lastPathComponent)
                 })
         }
     }
@@ -817,12 +833,10 @@ enum CommandBarCatalog {
                 subtitle: bar.sourceMacSettings,
                 keywords: pane.keywords,
                 icon: .symbol("gearshape.2"),
+                waitsForOpenResult: true,
                 run: { _ in
-                    guard let url = CommandBarSystemSettings.url(for: pane.bundleID) else {
-                        NSSound.beep()
-                        return
-                    }
-                    NSWorkspace.shared.open(url)
+                    CommandBarService.shared.openDestination(
+                        CommandBarSystemSettings.url(for: pane.bundleID), title: pane.name)
                 })
         }
     }
@@ -880,12 +894,10 @@ enum CommandBarCatalog {
                 keywords: keywords,
                 icon: .appIcon(path: app.url.path),
                 isActive: isRunning,
+                waitsForOpenResult: true,
                 revealPath: app.url.path,
                 run: { _ in
-                    NSWorkspace.shared.openApplication(at: app.url,
-                                                       configuration: NSWorkspace.OpenConfiguration()) { _, error in
-                        if error != nil { DispatchQueue.main.async { NSSound.beep() } }
-                    }
+                    CommandBarService.shared.openApplicationDestination(at: app.url, title: app.name)
                 })
         }
     }
@@ -1136,9 +1148,10 @@ enum CommandBarCatalog {
     private static func copyAnswer(_ value: String) {
         GeneralPasteboardAccess.shared.async({
             NSPasteboard.general.clearContents()
-            NSPasteboard.general.setString(value, forType: .string)
-        }, then: {
-            QuickToolHUD.show(icon: "doc.on.doc", message: value)
+            return NSPasteboard.general.setString(value, forType: .string)
+        }, then: { copied in
+            QuickToolHUD.show(icon: copied ? "doc.on.doc" : "exclamationmark.circle",
+                              message: copied ? value : FeatureStrings.commandBar(L10n.shared.language).copyFailed)
         })
     }
 
@@ -1194,6 +1207,7 @@ enum CommandBarCatalog {
                 // A saved search, or a script, may still need to be told what
                 // to look for, and it cannot ask from behind a closed panel.
                 keepsBarOpen: link.takesArgument,
+                waitsForOpenResult: link.kind != .script,
                 // Only a search or a script reads the words that follow its
                 // name; a plain site or folder opens the same either way.
                 takesArgument: link.takesArgument,
@@ -1222,29 +1236,19 @@ enum CommandBarCatalog {
             service.prefill(link.name + " ")
             return
         }
-        // Everything below opens something, so the bar is done. A row that
-        // takes a query is still on screen; one that does not was already
-        // hidden, and hiding twice costs nothing. It goes now, not when the
-        // clipboard answers, which may be never.
         let date = DateFormatter.localizedString(from: Date(), dateStyle: .short, timeStyle: .none)
         let selection = service.selectionWhenRun
-        service.hide()
+        let attempt = service.beginDestinationAttempt()
         withClipboard(neededBy: link.destination) { copied in
+            guard service.acceptsDestinationAttempt(attempt) else { return }
             let expanded = CommandBarLinks.expand(link.destination,
                                                   kind: link.kind,
                                                   query: argument,
                                                   clipboard: copied,
                                                   selection: selection,
                                                   date: date)
-            guard let url = CommandBarLinks.url(for: link, expanded: expanded) else {
-                NSSound.beep()
-                return
-            }
-            if link.kind == .place, !FileManager.default.fileExists(atPath: url.path) {
-                QuickToolHUD.show(icon: "folder.badge.questionmark", message: link.name)
-                return
-            }
-            NSWorkspace.shared.open(url)
+            service.openDestination(CommandBarLinks.url(for: link, expanded: expanded),
+                                    title: link.name, attempt: attempt)
         }
     }
 
@@ -1400,7 +1404,8 @@ enum CommandBarCatalog {
     /// Puts the selection on the shelf without disturbing what the person has
     /// copied: a pasteboard of our own carries it across.
     private static func keepOnShelf(_ text: String) {
-        let board = NSPasteboard(name: NSPasteboard.Name("com.vorssaint.commandbar.selection"))
+        let namespace = Bundle.main.bundleIdentifier ?? ProductIdentity.unbundledStorageID
+        let board = NSPasteboard(name: NSPasteboard.Name(namespace + ".commandbar.selection"))
         board.clearContents()
         board.setString(text, forType: .string)
         guard ShelfService.shared.accept(pasteboard: board) else {
@@ -1462,7 +1467,8 @@ enum CommandBarCatalog {
             subtitle: bar.openInBrowser,
             icon: .symbol("globe"),
             countsUsage: false,
-            run: { _ in NSWorkspace.shared.open(url) })
+            waitsForOpenResult: true,
+            run: { _ in CommandBarService.shared.openDestination(url, title: trimmed) })
     }
 
     // MARK: - Clipboard history
@@ -1577,14 +1583,22 @@ enum CommandBarCatalog {
         })
     }
 
-    /// Brightness lands on the display under the pointer, the screen where
-    /// the bar was just used. The routes may need one refresh when the panel
-    /// or Settings never opened this session.
-    private static func applyBrightness(percent: Int, retried: Bool = false) {
+    /// Keep the original target across a refresh so moving the pointer cannot
+    /// redirect a command that is already waiting for its display's route.
+    private static func applyBrightness(percent: Int, retried: Bool = false,
+                                        displayID: UInt32? = nil) {
+        let pointerScreen = NSScreen.screens.first { $0.frame.contains(NSEvent.mouseLocation) }
+        let pointerID = (pointerScreen?.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value
+        guard let requestedID = displayID ?? pointerID,
+              CGDisplayIsBuiltin(requestedID) == 0 else {
+            NSSound.beep()
+            return
+        }
         let service = BrightnessService.shared
-        let value = Double(percent) / 100
-        if let display = pointerDisplay(in: service.displays) {
-            service.setBrightness(value, for: display.id, showOSD: true)
+        if let target = BrightnessSupport.commandBrightnessTarget(
+            pointerDisplayID: requestedID,
+            displays: service.displays.map { (id: $0.id, isBuiltIn: $0.isBuiltIn) }) {
+            service.setBrightness(Double(percent) / 100, for: target, showOSD: true)
             return
         }
         guard !retried else {
@@ -1593,17 +1607,7 @@ enum CommandBarCatalog {
         }
         service.refresh()
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
-            applyBrightness(percent: percent, retried: true)
+            applyBrightness(percent: percent, retried: true, displayID: requestedID)
         }
-    }
-
-    private static func pointerDisplay(in displays: [BrightnessDisplay]) -> BrightnessDisplay? {
-        guard !displays.isEmpty else { return nil }
-        let pointerScreen = NSScreen.screens.first { $0.frame.contains(NSEvent.mouseLocation) }
-        if let number = pointerScreen?.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber,
-           let match = displays.first(where: { $0.id == number.uint32Value }) {
-            return match
-        }
-        return displays.first
     }
 }

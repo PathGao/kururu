@@ -11,6 +11,7 @@ import SwiftUI
 /// so ⌘C on a fragment keeps working.
 struct ClipboardTextPreview: NSViewRepresentable {
     let text: String
+    var monospaced = false
 
     func makeNSView(context: Context) -> NSScrollView {
         let scroll = NSTextView.scrollableTextView()
@@ -23,7 +24,7 @@ struct ClipboardTextPreview: NSViewRepresentable {
         textView.isEditable = false
         textView.isSelectable = true
         textView.isRichText = false
-        textView.font = .systemFont(ofSize: 12)
+        textView.font = monospaced ? .monospacedSystemFont(ofSize: 12, weight: .regular) : .systemFont(ofSize: 12)
         textView.textContainerInset = NSSize(width: 8, height: 12)
         textView.textContainer?.lineFragmentPadding = 4
         textView.textContainer?.widthTracksTextView = true
@@ -32,7 +33,9 @@ struct ClipboardTextPreview: NSViewRepresentable {
     }
 
     func updateNSView(_ scroll: NSScrollView, context: Context) {
-        guard let textView = scroll.documentView as? NSTextView, textView.string != text else { return }
+        guard let textView = scroll.documentView as? NSTextView else { return }
+        textView.font = monospaced ? .monospacedSystemFont(ofSize: 12, weight: .regular) : .systemFont(ofSize: 12)
+        guard textView.string != text else { return }
         textView.string = text
         textView.scroll(.zero)
     }

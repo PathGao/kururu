@@ -115,12 +115,9 @@ extension AppFeature {
         }
     }
 
-    /// Metrics with no switch of their own: putting one in the menu bar icon
-    /// or in the panel is what turns it on, and taking it out of both is what
-    /// turns it off. The sampler has always worked this way — `currentPlan`
-    /// reads the placement keys and the alert keys, never an availability one —
-    /// so a switch here saved nothing and only created a state where a metric
-    /// was installed and invisible at once.
+    /// These metrics use placement controls instead of member switch rows.
+    /// Collection follows the monitor unit's availability so hidden metrics
+    /// still retain history; placement only controls where they appear.
     var isSwitchedByPlacement: Bool {
         switch self {
         case .monitorCPU, .monitorGPU, .monitorMemory, .monitorNetwork, .monitorDisk, .monitorPower:
@@ -130,35 +127,21 @@ extension AppFeature {
         }
     }
 
-    /// Present only on members of a multi-feature unit that have no single
-    /// enable key of their own: the switch that took over from the feature's
-    /// former availability. Off is uninstalled in every respect but one, the
-    /// switch itself staying on the unit's page. A member with several enable
-    /// keys keeps them as options under its switch.
+    /// Resource-owning members that can be stopped independently of their
+    /// unit. On-demand tools and groups of action toggles need no extra gate.
     var switchKey: String? {
         switch self {
-        case .scrollInverter: return DefaultsKey.scrollInverterSwitchEnabled
-        case .mouseButtonShortcuts: return DefaultsKey.mouseButtonShortcutsSwitchEnabled
-        case .finderCutPaste: return DefaultsKey.finderCutPasteSwitchEnabled
-        case .quitWindowProtection: return DefaultsKey.quitProtectionSwitchEnabled
-        case .textSnippets: return DefaultsKey.textSnippetsSwitchEnabled
-        case .dockClick: return DefaultsKey.dockClickEnabled
         // The six read-only metrics have no switch: see `isSwitchedByPlacement`.
         // Fan control keeps one, because it writes to the SMC through a
         // privileged helper rather than just reading a number.
         case .fanControl: return DefaultsKey.fanControlEnabled
         case .mixer: return DefaultsKey.mixerEnabled
-        case .screenshot: return DefaultsKey.screenshotEnabled
-        case .screenRecorder: return DefaultsKey.recorderEnabled
-        case .colorPicker: return DefaultsKey.colorPickerEnabled
-        case .screenOCR: return DefaultsKey.screenOCREnabled
         default: return nil
         }
     }
 
-    /// The key the switch row on the unit's page flips: the member's own
-    /// switch, else its one enable key. Every member of a multi-feature unit
-    /// has one, so the row list is the whole unit.
+    /// A single behavior toggle, when the member has one. Groups with several
+    /// actions expose those actions directly instead of adding another gate.
     var pageSwitchKey: String? {
         switchKey ?? (enabledKeys.count == 1 ? enabledKeys[0] : nil)
     }
@@ -500,7 +483,7 @@ extension AppFeature {
         switch self {
         case .keepAwake, .brightness, .radialMenu, .cleaner,
              .uninstaller, .homebrew, .environment, .mixer,
-             .micMute, .cleaningMode:
+             .micMute, .cleaningMode, .screenshot, .screenRecorder, .screenOCR, .colorPicker:
             return []
         default:
             return permissions.filter { $0 == .accessibility || $0 == .screenRecording }
@@ -527,6 +510,9 @@ extension AppFeature {
             case (.switcher, .screenRecording):
                 return !boolFor(DefaultsKey.switcherSimpleMode)
             case (.radialMenu, .accessibility):
+                if let profiles = RadialMenuSupport.decodedStoredProfiles(dataFor(DefaultsKey.radialMenuProfiles)) {
+                    return RadialMenuSupport.needsAccessibility(profiles)
+                }
                 return RadialMenuSupport.needsAccessibility(
                     RadialMenuSupport.decode(dataFor(DefaultsKey.radialMenuItems)))
                     || RadialMenuMouseTrigger.sanitized(

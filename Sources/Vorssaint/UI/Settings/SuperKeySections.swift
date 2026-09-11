@@ -3,7 +3,7 @@
 
 import SwiftUI
 
-/// The super key half of the keyboard page; its switch is the page's own.
+/// Modifier mapping and its runtime switch.
 struct SuperKeySections: View {
     @ObservedObject private var l10n = L10n.shared
     @ObservedObject private var permissions = Permissions.shared
@@ -32,37 +32,43 @@ struct SuperKeySections: View {
 
     var body: some View {
         Group {
-            Section(AppFeature.superKey.name(l10n.s, language: l10n.language)) {
+            SettingsSection {
+                FeatureSwitchRow(feature: .superKey)
+                if enabled, !permissions.accessibility {
+                    PermissionRow(kind: .accessibility)
+                }
+                Text(text.holdHint).font(SettingsTypography.sectionTitle)
+                    .accessibilityAddTraits(.isHeader)
                 Picker(text.sourceKey, selection: sourceBinding) {
                     ForEach(SuperKeySource.allCases) { source in
                         Text(text.sourceLabel(source)).tag(source)
                     }
                 }
                 Text(text.enableCaption)
-                    .font(.caption)
+                    .font(SettingsTypography.caption)
                     .foregroundStyle(.secondary)
                 Label(text.modifierKeysNote, systemImage: "info.circle")
-                    .font(.caption)
+                    .font(SettingsTypography.caption)
                     .foregroundStyle(.secondary)
                 diagram
                 if enabled, let failure = superKey.mappingFailure {
                     Label(text.mappingFailure(failure),
                           systemImage: "exclamationmark.triangle.fill")
-                        .font(.caption)
+                        .font(SettingsTypography.caption)
                         .foregroundStyle(.orange)
                 } else if enabled, superKey.isPausedForApplication {
                     Label(FeatureStrings.mouseExceptions(l10n.language).pausedSuperKey,
                           systemImage: "pause.circle")
-                        .font(.caption)
+                        .font(SettingsTypography.caption)
                         .foregroundStyle(.secondary)
                 } else if enabled, superKey.isRunning {
                     Label(text.activeNow, systemImage: "checkmark.circle.fill")
-                        .font(.caption)
+                        .font(SettingsTypography.caption)
                         .foregroundStyle(.green)
                 }
-            }
-
-            Section(text.soloSection) {
+                Divider()
+                Text(text.soloSection).font(SettingsTypography.sectionTitle)
+                    .accessibilityAddTraits(.isHeader)
                 Picker(text.soloSection, selection: soloBinding) {
                     Text(text.soloNothing).tag(SuperKeySoloAction.none)
                     Text(text.soloCapsLock).tag(SuperKeySoloAction.capsLock)
@@ -72,20 +78,12 @@ struct SuperKeySections: View {
                 .labelsHidden()
                 .pickerStyle(.radioGroup)
                 Text(text.soloCaption)
-                    .font(.caption)
+                    .font(SettingsTypography.caption)
                     .foregroundStyle(.secondary)
-            }
-            .disabled(!enabled)
-
-            if enabled {
+                Divider()
                 MouseExceptionsList(scope: .superKey)
             }
 
-            if enabled, !permissions.accessibility {
-                Section(l10n.s.permissionRequired) {
-                    PermissionRow(kind: .accessibility)
-                }
-            }
         }
         .settingsSectionAnchor(.superKey)
     }
@@ -163,7 +161,7 @@ struct SuperKeySections: View {
                 )
         }
         .buttonStyle(.plain)
-        .disabled(!enabled || (selected && !canRemove(choice.modifier)))
+        .disabled(selected && !canRemove(choice.modifier))
         .help(choice.name)
         .accessibilityLabel(choice.name)
         .accessibilityAddTraits(selected ? .isSelected : [])

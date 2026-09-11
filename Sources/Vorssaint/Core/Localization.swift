@@ -117,19 +117,19 @@ final class L10n: ObservableObject {
 /// or as little as it wants.
 struct Strings {
     // MARK: Menu bar & context menu
-    var statusIdleTooltip: String = "Vorssaint: normal sleep"
-    var statusActiveUntil: String = "Vorssaint: awake until"      // + time
-    var statusActiveIndefinite: String = "Vorssaint: awake indefinitely"
+    var statusIdleTooltip: String = "\(AppInfo.name): normal sleep"
+    var statusActiveUntil: String = "\(AppInfo.name): awake until"      // + time
+    var statusActiveIndefinite: String = "\(AppInfo.name): awake indefinitely"
     var menuEnableAwake: String = "Enable keep awake"
     var menuDisableAwake: String = "Disable keep awake"
     var menuActivateFor: String = "Activate for…"
     var menuSettings: String = "Settings…"
-    var menuAbout: String = "About Vorssaint"
-    var menuQuit: String = "Quit Vorssaint"
+    var menuAbout: String = "About \(AppInfo.name)"
+    var menuQuit: String = "Quit \(AppInfo.name)"
     // Standard application menu bar (App / Edit / Window) shown while one of the
     // app's own windows is focused. Without it, an accessory app has no main menu
     // and the standard shortcuts (Cmd+H/M/W/Q, Cmd+C/V/X/A) do nothing.
-    var menuHide: String = "Hide Vorssaint"
+    var menuHide: String = "Hide \(AppInfo.name)"
     var menuHideOthers: String = "Hide Others"
     var menuShowAll: String = "Show All"
     var menuEdit: String = "Edit"
@@ -178,7 +178,7 @@ struct Strings {
     var keepAwakeMouseJiggleCaption: String = "During a session, moves the pointer a little at the chosen interval."
     var keepAwakeMouseJiggleInterval: String = "Interval"
     var keepAwakeActiveIconLabel: String = "Active icon"
-    var keepAwakeActiveIconVorssaint: String = "Vorssaint"
+    var keepAwakeActiveIconVorssaint: String = "\(AppInfo.name)"
     var keepAwakeActiveIconCoffee: String = "Coffee"
     var keepAwakeActiveIconEye: String = "Eye"
     var keepAwakeActiveIconMoon: String = "Moon"
@@ -219,18 +219,18 @@ struct Strings {
     // MARK: Notifications
     var notifySessionEndedTitle: String = "Session ended"
     var notifySessionEndedBody: String = "Time is up. The Mac will sleep normally again."
-    var notifyBatteryTitle: String = "Vorssaint disabled"
+    var notifyBatteryTitle: String = "\(AppInfo.name) disabled"
     var notifyBatteryBody: String = "Low battery. Normal sleep was restored to protect the charge."
 
     // MARK: Administrator prompts (shown by macOS password dialogs)
-    var adminPromptClamshellOff: String = "Vorssaint needs your password to restore the Mac’s normal sleep."
-    var adminPromptRecover: String = "Vorssaint quit while the Mac’s sleep was disabled. Enter the password to restore normal sleep."
-    var adminPromptUpdate: String = "Vorssaint needs your password to install the update."
-    var adminPromptSudoersInstall: String = "Vorssaint will create a restricted rule (pmset disablesleep only) to toggle closed-lid mode without asking for a password. This is the only time the password is needed."
-    var adminPromptSudoersRemove: String = "Vorssaint will remove the password-free closed-lid rule."
+    var adminPromptClamshellOff: String = "\(AppInfo.name) needs your password to restore the Mac’s normal sleep."
+    var adminPromptRecover: String = "\(AppInfo.name) quit while the Mac’s sleep was disabled. Enter the password to restore normal sleep."
+    var adminPromptUpdate: String = "\(AppInfo.name) needs your password to install the update."
+    var adminPromptSudoersInstall: String = "\(AppInfo.name) will create a restricted rule (pmset disablesleep only) to toggle closed-lid mode without asking for a password. This is the only time the password is needed."
+    var adminPromptSudoersRemove: String = "\(AppInfo.name) will remove the password-free closed-lid rule."
 
     // MARK: Settings — window & tabs
-    var settingsTitle: String = "Vorssaint Settings"
+    var settingsTitle: String = "\(AppInfo.name) Settings"
     var tabGeneral: String = "General"
     var tabMouse: String = "Mouse"
     var tabDock: String = "Dock"
@@ -243,18 +243,18 @@ struct Strings {
 
     // MARK: Settings — advanced
     var advancedResetSection: String = "Permissions"
-    var advancedResetDescription: String = "Removes every permission you granted Vorssaint (Accessibility, Screen Recording, Full Disk Access and others), the login item and the closed-lid rule. Useful to start fresh or before uninstalling. The app stays installed."
+    var advancedResetDescription: String = "Removes every permission you granted \(AppInfo.name) (Accessibility, Screen Recording, Full Disk Access and others), the login item and the closed-lid rule. Useful to start fresh or before uninstalling. The app stays installed."
     var advancedClearButton: String = "Clear all permissions"
     var advancedCleared: String = "Permissions cleared."
     var advancedClearConfirmTitle: String = "Clear all permissions?"
     var advancedClearConfirmBody: String = "Features that need permissions will stop working until you grant them again. Your settings are kept."
     var advancedUninstallSection: String = "Uninstall"
-    var advancedUninstallDescription: String = "Does all of the above, then removes the preferences and moves Vorssaint to the Trash, leaving nothing behind. The app quits when done. You can reinstall anytime."
-    var advancedUninstallButton: String = "Uninstall Vorssaint completely"
-    var advancedUninstallConfirmTitle: String = "Uninstall Vorssaint?"
-    var advancedUninstallConfirmBody: String = "Vorssaint will clear its permissions, remove its preferences and move to the Trash, then quit. This can’t be undone from the app, but it stays in the Trash until you empty it."
+    var advancedUninstallDescription: String = "Attempts to remove this app’s permissions, login item and password-free closed-lid rule, and clear its preferences and local app data. After the app quits, it attempts to move itself to the Trash. Separately saved backups and exports are not deleted."
+    var advancedUninstallButton: String = "Uninstall \(AppInfo.name) completely"
+    var advancedUninstallConfirmTitle: String = "Uninstall \(AppInfo.name)?"
+    var advancedUninstallConfirmBody: String = "\(AppInfo.name) will clear its permissions, remove its preferences and move to the Trash, then quit. This can’t be undone from the app, but it stays in the Trash until you empty it."
     var advancedUninstallFailedTitle: String = "Uninstall stopped"
-    var advancedUninstallFailedBody: String = "Vorssaint could not put back a system setting it changed: sleep, fan speed or mouse acceleration. Nothing was removed. Try again and allow the password request if it appears."
+    var advancedUninstallFailedBody: String = "\(AppInfo.name) could not put back a system setting it changed: sleep, fan speed or mouse acceleration. Nothing was removed. Try again and allow the password request if it appears."
 
     // MARK: Settings — general
     var launchAtLogin: String = "Launch at login"
@@ -266,7 +266,7 @@ struct Strings {
     // MARK: Settings — energy
     var sessionSection: String = "Session"
     var defaultDurationLabel: String = "Default duration"
-    var keepAwakeAutoStart: String = "Keep Awake when Vorssaint opens"
+    var keepAwakeAutoStart: String = "Keep Awake when \(AppInfo.name) opens"
     var keepAwakeAutoStartCaption: String = "Starts a session with the default duration."
     var batteryProtectionSection: String = "Battery protection"
     var batteryDisableBelow: String = "Disable when battery drops below"
@@ -287,7 +287,6 @@ struct Strings {
     var smoothScrollName: String = "Smooth scrolling"
     var smoothScrollCaption: String = "Turns each mouse wheel step into a short, gentle glide. The trackpad is not affected."
     var smoothScrollStepLabel: String = "Scrolling speed"
-    var mouseNavigationSection: String = "Navigation"
     var mouseNavigationEnable: String = "Use side buttons for Back and Forward"
     var mouseNavigationCaption: String = "Turns the mouse Back and Forward buttons into navigation commands in Finder, browsers and compatible apps."
     var middleClickSection: String = "Middle click"
@@ -314,9 +313,10 @@ struct Strings {
 
     // MARK: Settings — switcher
     var switcherSection: String = "App switcher"
-    var switcherEnable: String = "Use the Vorssaint switcher"
+    var switcherEnable: String = "Use the \(AppInfo.name) switcher"
     var switcherEnableCaption: String = "Switch between apps and windows, including minimized windows and multiple windows from the same app."
     var switcherNoWindows: String = "No open windows"
+    var appQuitFailedFormat: String = "Could not request quitting %@."
     var switcherIconRowMode: String = "Show %@ with large icons"
     var switcherIconRowModeCaption: String = "Shows one icon per app with that app’s window previews above it."
     var switcherSimpleMode: String = "Simple app switcher"
@@ -325,7 +325,7 @@ struct Strings {
     var switcherShortcutHintWindows: String = "Windows"
     var switcherWindowShortcutCaption: String = "Opens a switcher for the frontmost app’s windows. While the Apps switcher is open, jumps between the selected app’s windows."
     var switcherTakeOverSystemShortcuts: String = "Replace macOS ⌘Tab and ⌘`"
-    var switcherTakeOverSystemShortcutsCaption: String = "Disables the matching macOS app and window shortcuts only while Vorssaint’s switcher is active. All running apps stay reachable."
+    var switcherTakeOverSystemShortcutsCaption: String = "Disables the matching macOS app and window shortcuts only while \(AppInfo.name)’s switcher is active. All running apps stay reachable."
     var switcherAppearanceDelay: String = "Appearance delay"
     var switcherAppearanceDelayCaption: String = "How long the shortcut must be held before the switcher appears."
     var switcherMergeTabs: String = "Show one entry per app"
@@ -365,7 +365,6 @@ struct Strings {
     var autoQuitEnable: String = "Quit an app when its last window closes"
     var autoQuitEnableCaption: String = "Closing an app’s last window also quits it."
     var autoQuitActiveNow: String = "Active now"
-    var autoQuitHowTitle: String = "How it works"
     var autoQuitStep1: String = "Close an app’s last window (⌘W or the red button)."
     var autoQuitStep2: String = "The app quits on its own. “Save changes?” dialogs still appear."
     var autoQuitPredictableNote: String = "Apps that normally run without a window are never quit."
@@ -387,7 +386,7 @@ struct Strings {
     var uninstallerEmptyNote: String = "Nothing is removed without your confirmation."
     var uninstallerFDANote: String = "Grant Full Disk Access for a more thorough scan."
     var uninstallerFDAGrant: String = "Grant access…"
-    var uninstallerFDAHint: String = "Turn Vorssaint on in the list. If it isn’t there, click + and pick Vorssaint from Applications. Access only applies after you reopen the app."
+    var uninstallerFDAHint: String = "Turn \(AppInfo.name) on in the list. If it isn’t there, click + and pick \(AppInfo.name) from Applications. Access only applies after you reopen the app."
     var uninstallerFDARelaunch: String = "Relaunch now"
     var uninstallerScanning: String = "Scanning files…"
     var uninstallerRemoving: String = "Moving to the Trash…"
@@ -396,8 +395,9 @@ struct Strings {
     var uninstallerRemove: String = "Move to Trash"
     var uninstallerCancel: String = "Cancel"
     var uninstallerDoneTitle: String = "Done!"
-    var uninstallerFreedFormat: String = "%@ recovered"      // + size string
+    var uninstallerFreedFormat: String = "Data removed: %@"      // + size string
     var uninstallerSomeFailed: String = "Some items couldn’t be moved to the Trash."
+    var uninstallerConfirmationExpired: String = "This confirmation is no longer valid. Review the current items and confirm again."
     var uninstallerFailedNeedsFDA: String = "Sandboxed app data can only be moved with Full Disk Access. The administrator password does not stand in for it."
     var uninstallerFailedMoreFormat: String = "and %d more"
     var uninstallerAnother: String = "Uninstall another"
@@ -412,7 +412,7 @@ struct Strings {
 
     // MARK: Feature — URL cleaner
     var urlCleanerName: String = "Clean URL"
-    var urlCleanerEnable: String = "Clean URLs as you copy them"
+    var urlCleanerEnable: String = "Clean URLs automatically on copy"
     var urlCleanerEnableCaption: String = "Removes tracking parameters from a link the moment it reaches the clipboard."
     var urlCleanerActiveNow: String = "Active now"
     var urlCleanerManualTitle: String = "Clean now"
@@ -432,7 +432,6 @@ struct Strings {
     var homebrewName: String = "Homebrew"
     var homebrewMissingTitle: String = "Homebrew not found"
     var homebrewMissingBody: String = "Homebrew is not installed. Once it is, the packages it manages show up here."
-    var homebrewRefresh: String = "Refresh"
     var homebrewRequested: String = "Installed by you"
     var homebrewSharedWithFormat: String = "Shared with %@"      // + one or more package names
     var homebrewOrphans: String = "Left behind"
@@ -445,7 +444,7 @@ struct Strings {
     var homebrewNoPackages: String = "No packages found"
     var homebrewUninstall: String = "Uninstall"
     var homebrewUpgrade: String = "Update"
-    var homebrewUpdateHomebrew: String = "Update Homebrew"
+    var homebrewPinnedVersion: String = "Version pinned"
     var homebrewAllPackages: String = "packages"
     var homebrewOpenTerminal: String = "Open Terminal"
     var homebrewCancelOperation: String = "Cancel"
@@ -456,9 +455,7 @@ struct Strings {
     var homebrewConfirmUninstallBodyFormat: String = "Homebrew will uninstall %@. Configuration files may remain on the system."
     var homebrewConfirmUpgradeTitle: String = "Update with Homebrew?"
     var homebrewConfirmUpgradeBodyFormat: String = "Homebrew will download and apply the latest version of %@. Dependencies may also be updated."
-    var homebrewConfirmUpdateHomebrewTitle: String = "Update Homebrew?"
-    var homebrewConfirmUpdateHomebrewBody: String = "Homebrew will fetch the latest information and then reload your packages."
-    var homebrewTerminalFallback: String = "This operation needs Terminal to ask for the administrator password. Vorssaint does not capture passwords."
+    var homebrewTerminalFallback: String = "This operation needs Terminal to ask for the administrator password. \(AppInfo.name) does not capture passwords."
     var homebrewLoading: String = "Loading…"
     var homebrewOperationUninstallFormat: String = "Uninstalling %@"
     var homebrewOperationUpgradeFormat: String = "Updating %@"
@@ -604,8 +601,6 @@ struct Strings {
     // MARK: Settings — updates
     var updatesSection: String = "Updates"
     var autoCheckToggle: String = "Check for updates automatically"
-    var includeBetaUpdatesToggle: String = "Receive beta updates"
-    var includeBetaUpdatesCaption: String = "Beta versions include features in development and may contain bugs or incomplete behavior."
     var betaBadgeLabel: String = "Beta"
     var checkNowButton: String = "Check now"
     var updateChecking: String = "Checking…"
@@ -616,10 +611,10 @@ struct Strings {
     var updateInstalling: String = "Installing and restarting…"
     var updateFailedPrefix: String = "Couldn’t check:"
     var updateLastChecked: String = "Last checked:"
-    var updateNotifyTitle: String = "Vorssaint update"
+    var updateNotifyTitle: String = "\(AppInfo.name) update"
     var updateInstallFailedBody: String = "The update was downloaded but could not be applied. Download the latest version from the GitHub releases page and drag the app over the current one."
-    var updateNeedsApplicationsTitle: String = "Move Vorssaint to Applications"
-    var updateNeedsApplicationsBody: String = "The app is running from a place that cannot be updated, such as the disk image or a temporary system location. Drag Vorssaint to the Applications folder, open it from there and try again."
+    var updateNeedsApplicationsTitle: String = "Move \(AppInfo.name) to Applications"
+    var updateNeedsApplicationsBody: String = "The app is running from a place that cannot be updated, such as the disk image or a temporary system location. Drag \(AppInfo.name) to the Applications folder, open it from there and try again."
     var menuCheckUpdates: String = "Check for updates…"
 
     // MARK: Permissions (shared by Settings & onboarding)
@@ -642,8 +637,8 @@ struct Strings {
     // MARK: Onboarding
     var obContinue: String = "Continue"
     var obBack: String = "Back"
-    var obStart: String = "Open Vorssaint"
-    var obStepWelcomeTitle: String = "Welcome to Vorssaint"
+    var obStart: String = "Open \(AppInfo.name)"
+    var obStepWelcomeTitle: String = "Welcome to \(AppInfo.name)"
     var obStepWelcomeBody: String = "A discreet menu bar utility that makes everyday macOS more practical."
     var obWelcomeBullet1Title: String = "Energy under control"
     var obWelcomeBullet1Body: String = "Keep the Mac awake for as long as you want, even with the lid closed."
@@ -653,12 +648,12 @@ struct Strings {
     var obWelcomeBullet3Body: String = "Reversed mouse scrolling and a window switcher with thumbnails."
     var obLanguageLabel: String = "Language"
     var obStepDoneTitle: String = "All set!"
-    var obStepDoneBody: String = "Vorssaint is already looking after your Mac."
-    var obDoneHint: String = "Look for the black hole in the menu bar, at the top right of the screen."
+    var obStepDoneBody: String = "\(AppInfo.name) is already looking after your Mac."
+    var obDoneHint: String = "Look for the octopus icon in the menu bar, at the top right of the screen."
     var obWhatsNewTitle: String = "What’s new in this version"
     var obWhatsNewFallback: String = "This update includes the latest fixes and improvements."
     var obPurposeTitle: String = "What brought you here?"
-    var obPurposeBody: String = "Choose a ready setup or select exactly what you want to use."
+    var obPurposeBody: String = "Select individual features to enable. Your existing options are kept."
     var obPurposeSkip: String = "You can add or remove features later in Settings."
 
     // MARK: Settings — monitor / menu bar metrics
@@ -786,8 +781,8 @@ struct Strings {
     var panelCategoryWindows: String = "Windows"
     var panelCategoryInput: String = "Mouse and keyboard"
     var panelCategoryFiles: String = "Files"
-    var windowMaximizeName: String = "Maximize windows"
-    var windowMaximizeCaption: String = "The green button maximizes without creating another Space."
+    var windowMaximizeName: String = "Green button maximizes windows"
+    var windowMaximizeCaption: String = "Click the green button in the upper-left corner to enlarge the window on the current desktop without entering full screen."
     var keyDebounceName: String = "Debounce"
     var keyDebounceEnable: String = "Filter duplicate keys"
     var keyDebounceCaption: String = "Filters very fast duplicate key presses."
@@ -808,39 +803,23 @@ struct Strings {
     var cleaningKeepScreenVisibleCaption: String = "Shows a discreet indicator in the corner of the screen instead of blacking out content."
     var cleaningStartNow: String = "Lock keyboard now"
     var cleaningNeedsAxTitle: String = "Accessibility needed"
-    var cleaningNeedsAxBody: String = "To lock the keyboard safely, Vorssaint needs Accessibility permission. Grant it in System Settings and try again."
+    var cleaningNeedsAxBody: String = "To lock the keyboard safely, \(AppInfo.name) needs Accessibility permission. Grant it in System Settings and try again."
 
     // MARK: Support / donate
-    var tabSupport: String = "Support"
-    var shortcutsPageCaption: String = "Edit every global shortcut from the features installed on this Mac. Inactive shortcuts stay saved but do not run."
+    var shortcutsPageCaption: String = "Edit every global shortcut from the features enabled on this Mac. Inactive shortcuts stay saved but do not run."
     var shortcutsPageTitle: String = "Keyboard shortcuts"
     var settingsSearchPlaceholder: String = "Search settings"
-    var donateHeading: String = "Help Vorssaint keep growing"
-    var donateMessage: String = "Vorssaint is free, independent and built in my spare time. If you would like to contribute financially, Buy Me a Coffee directly helps me keep development moving forward."
-    var donateButton: String = "Support on Buy Me a Coffee"
-    var donateThanks: String = "Thank you for being here. 🖤"
-    var supportIntroTitle: String = "Help Vorssaint keep growing"
-    var supportIntroMessage: String = "If you would like to support development financially, Buy Me a Coffee is the one place to do it."
-    var supportIntroStarButton: String = "Star Vorssaint on GitHub"
-    var supportIntroStarMessage: String = "Financial support is never expected. A star on GitHub helps more people discover Vorssaint and makes a real difference to its development."
-    var supportIntroCoffeeButton: String = "Support on Buy Me a Coffee"
     var supportIntroLaterButton: String = "Not now"
     var supportIntroDoneButton: String = "Done"
-    var discordIntroTitle: String = "The Vorssaint Discord community is just getting started"
-    var discordIntroMessage: String = "The Vorssaint community is new and still being built. Join early to meet other users and help build a welcoming space around the app."
-    var discordIntroJoinButton: String = "Join the Discord community"
-    var communityIntroTitle: String = "See it before everyone else"
-    var communityIntroMessage: String = "People who already followed me on X saw several changes in this update before anyone else. I post previews of what is coming and show how it works, so you already know the basics before the update ships. Follow along and see what comes next!"
-    var communityIntroFollowButton: String = "Follow @vorssaint on X"
     var updateShowcaseTitle: String = "What’s new in 3.1.4"
     var updateShowcaseMessage: String = "Take a quick look at the main improvements in this update."
     var updateShowcaseUnavailable: String = "The video could not load right now. You can still continue."
     var updateShowcaseRestart: String = "Restart"
     var showMenuBarIcon: String = "Show menu bar icon"
-    var showMenuBarIconCaption: String = "If Vorssaint’s icon disappears (macOS can hide menu bar icons when the bar runs out of room, common on Macs with a notch), reopen Vorssaint from Applications or Spotlight: that rebuilds the icon and, if it’s still hidden, opens this window."
+    var showMenuBarIconCaption: String = "If \(AppInfo.name)’s icon disappears (macOS can hide menu bar icons when the bar runs out of room, common on Macs with a notch), reopen \(AppInfo.name) from Applications or Spotlight: that rebuilds the icon and, if it’s still hidden, opens this window."
     var menuBarIconStillHiddenTitle: String = "The icon is still hidden"
     var menuBarIconStillHiddenBody: String = "The icon was rebuilt, but macOS did not give it a visible spot. The menu bar is probably out of room: remove some menu bar icons (or close apps with long menus) and try again."
-    var menuBarIconManagerHintFormat: String = "%@ is open and may be keeping the icon in its hidden section. Look for Vorssaint there, or set %@ to always show Vorssaint."  // + manager name (twice)
+    var menuBarIconManagerHintFormat: String = "%@ is open and may be keeping the icon in its hidden section. Look for \(AppInfo.name) there, or set %@ to always show \(AppInfo.name)."  // + manager name (twice)
 
     // MARK: Configurable shortcuts
     var shortcutRecording: String = "Press the new shortcut"
@@ -876,6 +855,8 @@ struct Strings {
     var cleanerCatDeviceBackups: String = "iPhone backups"
     var cleanerDeviceBackupsCaption: String = "Old iPhone and iPad backups take a big slice of the storage macOS calls Other. Remove only the ones you no longer need; a new backup is made when you plug the device in again."
     var cleanerNothingFound: String = "Nothing to clean. Your Mac is tidy."
+    var cleanerIncompleteTitle: String = "Cleanup incomplete"
+    var cleanerFailedNote: String = "These items could not be cleaned. Scan again to review what remains."
     var cleanerDoneNote: String = "Items went to the Trash and can be recovered from there."
     var cleanerAgain: String = "Scan again"
     var cleanerRevealInFinder: String = "Reveal in Finder"
@@ -895,15 +876,13 @@ struct Strings {
     var cleanerScheduleDaily: String = "Daily"
     var cleanerScheduleWeekly: String = "Weekly"
     var cleanerScheduleCaption: String = "Cleans only the safe part on its own at the chosen time and sends everything to the Trash."
-    var cleanerScheduleLastFormat: String = "The last automatic cleanup freed %@."   // + size string
     var cleanerAutoNotificationFormat: String = "%@ freed and sent to the Trash."  // + size string
     var cleanerScheduleNextFormat: String = "Next cleanup %@."   // + relative date and time
-    var cleanerScheduleRanFormat: String = "Last automatic cleanup %@."    // + relative date and time
     var cleanerScheduleNotifyToggle: String = "Notify when done"
-    var cleanerNotifDenied: String = "Vorssaint notifications are turned off in the system."
+    var cleanerNotifDenied: String = "\(AppInfo.name) notifications are turned off in the system."
     var cleanerNotifOpenSettings: String = "Open Notification Settings…"
-    var launchAtLoginNeedsApplications: String = "The app is running from a place that cannot open at login. Drag Vorssaint to the Applications folder, open it from there and turn this on again."
-    var launchAtLoginNeedsApproval: String = "The login item is registered but still switched off in System Settings. Open System Settings › General › Login Items & Extensions and turn Vorssaint on under Open at Login."
+    var launchAtLoginNeedsApplications: String = "The app is running from a place that cannot open at login. Drag \(AppInfo.name) to the Applications folder, open it from there and turn this on again."
+    var launchAtLoginNeedsApproval: String = "The login item is registered but still switched off in System Settings. Open System Settings › General › Login Items & Extensions and turn \(AppInfo.name) on under Open at Login."
     var ocrRemoveLineBreaksToggle: String = "Remove line breaks"
     var ocrRemoveLineBreaksCaption: String = "Removes line breaks so copied text pastes as one paragraph."
     var ocrQRToggle: String = "Read QR codes"
@@ -932,14 +911,10 @@ struct Strings {
     var urlCleanerRulesCaption: String = "A site attaches these parameters to its own share links to track where the link came from. Switched on, a name is removed when a link is cleaned; switched off, it stays. Names you add can be deleted."
     var urlCleanerRulesCoverageCaption: String = "The list covers a site’s different share paths (the web page, the app, a live room), which is why it is long; a real link usually carries only two to four of them."
     var urlCleanerRulesAllSites: String = "All sites"
-    var urlCleanerRulesCountSingular: String = "1 parameter"
-    var urlCleanerRulesCountPluralFormat: String = "%d parameters"   // + count
     var urlCleanerRulesAddSite: String = "Add a site"
     var urlCleanerRulesParameterPlaceholder: String = "Parameter name"
     var urlCleanerRulesMatchCaption: String = "Write the name to the left of the = , like utm_source. A name that matches takes that one parameter out of the link and leaves the rest as it was."
     var urlCleanerRulesAddButton: String = "Add"
-    var urlCleanerRulesRemoveButton: String = "Delete name"
-    var urlCleanerRulesRemoveSiteButton: String = "Turn off every rule for this site"
     var urlCleanerRemovedFormat: String = "Removed %@"            // + comma separated names
     var switcherSearchPin: String = "Pin search with S"
     var switcherSearchPinCaption: String = "S starts a search and pins the switcher open, so typing no longer produces special characters when your shortcut uses ⌥, and a search starting with Q or W no longer closes the window or quits the app by mistake."
@@ -965,7 +940,7 @@ struct Strings {
     var switcherScreenPlacementCaption: String = "Which display the switcher opens on when more than one is connected."
     var smoothScrollResponseLabel: String = "Response"
     var mouseAccelerationName: String = "Disable mouse acceleration"
-    var mouseAccelerationCaption: String = "Removes pointer acceleration for connected mice. Your previous setting returns when this is turned off or Vorssaint quits."
+    var mouseAccelerationCaption: String = "Removes pointer acceleration for connected mice. Your previous setting returns when this is turned off or \(AppInfo.name) quits."
     var shelfClearOnClose: String = "Clear when closed"
     var shelfClearOnCloseCaption: String = "Empties the shelf only when you click its close button. Automatic hiding and collapsing keep the items."
 }
@@ -974,16 +949,16 @@ struct Strings {
 
 extension Strings {
     static let ptBR = Strings(
-        statusIdleTooltip: "Vorssaint: suspensão normal",
-        statusActiveUntil: "Vorssaint: ativo até",
-        statusActiveIndefinite: "Vorssaint: ativo indefinidamente",
+        statusIdleTooltip: "\(AppInfo.name): suspensão normal",
+        statusActiveUntil: "\(AppInfo.name): ativo até",
+        statusActiveIndefinite: "\(AppInfo.name): ativo indefinidamente",
         menuEnableAwake: "Ativar manter acordado",
         menuDisableAwake: "Desativar manter acordado",
         menuActivateFor: "Ativar por…",
         menuSettings: "Ajustes…",
-        menuAbout: "Sobre o Vorssaint",
-        menuQuit: "Sair do Vorssaint",
-        menuHide: "Ocultar o Vorssaint",
+        menuAbout: "Sobre o \(AppInfo.name)",
+        menuQuit: "Sair do \(AppInfo.name)",
+        menuHide: "Ocultar o \(AppInfo.name)",
         menuHideOthers: "Ocultar Outros",
         menuShowAll: "Mostrar Tudo",
         menuEdit: "Editar",
@@ -1027,7 +1002,7 @@ extension Strings {
         keepAwakeMouseJiggleCaption: "Durante uma sessão, move o cursor um pouco no intervalo escolhido.",
         keepAwakeMouseJiggleInterval: "Intervalo",
         keepAwakeActiveIconLabel: "Ícone ativo",
-        keepAwakeActiveIconVorssaint: "Vorssaint",
+        keepAwakeActiveIconVorssaint: "\(AppInfo.name)",
         keepAwakeActiveIconCoffee: "Café",
         keepAwakeActiveIconEye: "Olho",
         keepAwakeActiveIconMoon: "Lua",
@@ -1066,15 +1041,15 @@ extension Strings {
 
         notifySessionEndedTitle: "Sessão encerrada",
         notifySessionEndedBody: "O tempo acabou. O Mac voltará a suspender normalmente.",
-        notifyBatteryTitle: "Vorssaint desativado",
+        notifyBatteryTitle: "\(AppInfo.name) desativado",
         notifyBatteryBody: "Bateria baixa. A suspensão normal foi restaurada para proteger a carga.",
-        adminPromptClamshellOff: "O Vorssaint precisa da sua senha para reativar a suspensão normal do Mac.",
-        adminPromptRecover: "O Vorssaint foi encerrado com a suspensão do Mac desativada. Digite a senha para restaurar a suspensão normal.",
-        adminPromptUpdate: "O Vorssaint precisa da sua senha para instalar a atualização.",
-        adminPromptSudoersInstall: "O Vorssaint vai criar uma regra restrita (somente pmset disablesleep) para alternar a tampa fechada sem pedir senha. Esta é a única vez que a senha será necessária.",
-        adminPromptSudoersRemove: "O Vorssaint vai remover a regra de tampa fechada sem senha.",
+        adminPromptClamshellOff: "O \(AppInfo.name) precisa da sua senha para reativar a suspensão normal do Mac.",
+        adminPromptRecover: "O \(AppInfo.name) foi encerrado com a suspensão do Mac desativada. Digite a senha para restaurar a suspensão normal.",
+        adminPromptUpdate: "O \(AppInfo.name) precisa da sua senha para instalar a atualização.",
+        adminPromptSudoersInstall: "O \(AppInfo.name) vai criar uma regra restrita (somente pmset disablesleep) para alternar a tampa fechada sem pedir senha. Esta é a única vez que a senha será necessária.",
+        adminPromptSudoersRemove: "O \(AppInfo.name) vai remover a regra de tampa fechada sem senha.",
 
-        settingsTitle: "Ajustes do Vorssaint",
+        settingsTitle: "Ajustes do \(AppInfo.name)",
         tabGeneral: "Geral",
         tabMouse: "Mouse",
         tabDock: "Dock",
@@ -1085,18 +1060,18 @@ extension Strings {
         tabAbout: "Sobre",
         tabReleaseNotes: "Novidades",
         advancedResetSection: "Permissões",
-        advancedResetDescription: "Remove todas as permissões que você concedeu ao Vorssaint (Acessibilidade, Gravação de Tela, Acesso Total ao Disco e outras), o item de início e a regra de tampa fechada. Útil para começar do zero ou antes de desinstalar. O app continua instalado.",
+        advancedResetDescription: "Remove todas as permissões que você concedeu ao \(AppInfo.name) (Acessibilidade, Gravação de Tela, Acesso Total ao Disco e outras), o item de início e a regra de tampa fechada. Útil para começar do zero ou antes de desinstalar. O app continua instalado.",
         advancedClearButton: "Limpar todas as permissões",
         advancedCleared: "Permissões limpas.",
         advancedClearConfirmTitle: "Limpar todas as permissões?",
         advancedClearConfirmBody: "Os recursos que dependem de permissão vão parar de funcionar até você conceder de novo. As suas configurações são mantidas.",
         advancedUninstallSection: "Desinstalar",
-        advancedUninstallDescription: "Faz tudo acima e ainda apaga as preferências e move o Vorssaint para a Lixeira, sem deixar rastro no sistema. O app fecha ao final. Você pode reinstalar quando quiser.",
-        advancedUninstallButton: "Desinstalar o Vorssaint completamente",
-        advancedUninstallConfirmTitle: "Desinstalar o Vorssaint?",
-        advancedUninstallConfirmBody: "O Vorssaint vai limpar as permissões, apagar as preferências e ir para a Lixeira, e então fechar. Esta ação não pode ser desfeita pelo app, mas ele fica na Lixeira até você esvaziá-la.",
+        advancedUninstallDescription: "Attempts to remove this app’s permissions, login item and password-free closed-lid rule, and clear its preferences and local app data. After the app quits, it attempts to move itself to the Trash. Separately saved backups and exports are not deleted.",
+        advancedUninstallButton: "Desinstalar o \(AppInfo.name) completamente",
+        advancedUninstallConfirmTitle: "Desinstalar o \(AppInfo.name)?",
+        advancedUninstallConfirmBody: "O \(AppInfo.name) vai limpar as permissões, apagar as preferências e ir para a Lixeira, e então fechar. Esta ação não pode ser desfeita pelo app, mas ele fica na Lixeira até você esvaziá-la.",
         advancedUninstallFailedTitle: "A desinstalação parou",
-        advancedUninstallFailedBody: "O Vorssaint não conseguiu restaurar uma configuração do sistema que ele mudou: repouso, velocidade das ventoinhas ou aceleração do mouse. Nada foi removido. Tente de novo e permita o pedido de senha, se ele aparecer.",
+        advancedUninstallFailedBody: "O \(AppInfo.name) não conseguiu restaurar uma configuração do sistema que ele mudou: repouso, velocidade das ventoinhas ou aceleração do mouse. Nada foi removido. Tente de novo e permita o pedido de senha, se ele aparecer.",
 
         launchAtLogin: "Iniciar junto com o Mac",
         languageLabel: "Idioma",
@@ -1106,7 +1081,7 @@ extension Strings {
 
         sessionSection: "Sessão",
         defaultDurationLabel: "Duração padrão",
-        keepAwakeAutoStart: "Manter acordado ao abrir o Vorssaint",
+        keepAwakeAutoStart: "Manter acordado ao abrir o \(AppInfo.name)",
         keepAwakeAutoStartCaption: "Inicia uma sessão com a duração padrão.",
         batteryProtectionSection: "Proteção de bateria",
         batteryDisableBelow: "Desativar com bateria abaixo de",
@@ -1126,7 +1101,6 @@ extension Strings {
         smoothScrollName: "Rolagem suave",
         smoothScrollCaption: "Transforma cada passo da rodinha do mouse em um deslize curto e macio. O trackpad não muda.",
         smoothScrollStepLabel: "Velocidade da rolagem",
-        mouseNavigationSection: "Navegação",
         mouseNavigationEnable: "Usar botões laterais para voltar e avançar",
         mouseNavigationCaption: "Converte os botões Voltar e Avançar do mouse em comandos de navegação no Finder, navegadores e apps compatíveis.",
         middleClickSection: "Botão do meio",
@@ -1152,7 +1126,7 @@ extension Strings {
         pastePlainCaption: "Cola o que foi copiado sem cores, fontes ou formatação. O conteúdo original continua no clipboard.",
 
         switcherSection: "Alternador de apps",
-        switcherEnable: "Usar o alternador do Vorssaint",
+        switcherEnable: "Usar o alternador do \(AppInfo.name)",
         switcherEnableCaption: "Troque de app ou janela, inclusive janelas minimizadas e várias janelas do mesmo app.",
         switcherNoWindows: "Nenhuma janela aberta",
         switcherIconRowMode: "Mostrar %@ com ícones grandes",
@@ -1163,7 +1137,7 @@ extension Strings {
         switcherShortcutHintWindows: "Janelas",
         switcherWindowShortcutCaption: "Abre um seletor das janelas do app em primeiro plano. Com o seletor de apps aberto, pula entre as janelas do app selecionado.",
         switcherTakeOverSystemShortcuts: "Substituir ⌘Tab e ⌘` do macOS",
-        switcherTakeOverSystemShortcutsCaption: "Desativa os atalhos correspondentes de apps e janelas do macOS somente enquanto o alternador do Vorssaint estiver ativo. Todos os apps abertos continuam acessíveis.",
+        switcherTakeOverSystemShortcutsCaption: "Desativa os atalhos correspondentes de apps e janelas do macOS somente enquanto o alternador do \(AppInfo.name) estiver ativo. Todos os apps abertos continuam acessíveis.",
         switcherAppearanceDelay: "Atraso de exibição",
         switcherAppearanceDelayCaption: "Quanto tempo o atalho precisa ficar pressionado antes de o alternador aparecer.",
         switcherMergeTabs: "Mostrar uma entrada por app",
@@ -1201,7 +1175,6 @@ extension Strings {
         autoQuitEnable: "Encerrar o app ao fechar a última janela",
         autoQuitEnableCaption: "Fechar a última janela de um app também o encerra.",
         autoQuitActiveNow: "Ativo agora",
-        autoQuitHowTitle: "Como funciona",
         autoQuitStep1: "Feche a última janela de um app (⌘W ou o botão vermelho).",
         autoQuitStep2: "O app é encerrado sozinho. Diálogos de “salvar?” continuam aparecendo.",
         autoQuitPredictableNote: "Apps que normalmente rodam sem janela nunca são encerrados.",
@@ -1222,7 +1195,7 @@ extension Strings {
         uninstallerEmptyNote: "Nada é removido sem a sua confirmação.",
         uninstallerFDANote: "Conceda Acesso Total ao Disco para uma análise mais completa.",
         uninstallerFDAGrant: "Conceder acesso…",
-        uninstallerFDAHint: "Ative o Vorssaint na lista. Se ele não aparecer, clique no + e escolha o Vorssaint em Aplicativos. O acesso só vale depois de reabrir o app.",
+        uninstallerFDAHint: "Ative o \(AppInfo.name) na lista. Se ele não aparecer, clique no + e escolha o \(AppInfo.name) em Aplicativos. O acesso só vale depois de reabrir o app.",
         uninstallerFDARelaunch: "Reabrir agora",
         uninstallerScanning: "Analisando arquivos…",
         uninstallerRemoving: "Movendo para a Lixeira…",
@@ -1231,7 +1204,7 @@ extension Strings {
         uninstallerRemove: "Mover para a Lixeira",
         uninstallerCancel: "Cancelar",
         uninstallerDoneTitle: "Pronto!",
-        uninstallerFreedFormat: "%@ recuperados",
+        uninstallerFreedFormat: "Dados removidos: %@",
         uninstallerSomeFailed: "Alguns itens não puderam ser movidos para a Lixeira.",
         uninstallerFailedNeedsFDA: "Os dados de apps em área restrita só podem ser movidos com Acesso Total ao Disco. A senha de administrador não substitui essa permissão.",
         uninstallerFailedMoreFormat: "e mais %d",
@@ -1265,7 +1238,6 @@ extension Strings {
         homebrewName: "Homebrew",
         homebrewMissingTitle: "Homebrew não encontrado",
         homebrewMissingBody: "O Homebrew não está instalado. Quando estiver, os pacotes que ele gerencia aparecem aqui.",
-        homebrewRefresh: "Atualizar",
         homebrewRequested: "Instalados por você",
         homebrewMasApps: "App Store",
         homebrewCopyName: "Copiar nome",
@@ -1275,7 +1247,6 @@ extension Strings {
         homebrewNoPackages: "Nenhum pacote encontrado",
         homebrewUninstall: "Desinstalar",
         homebrewUpgrade: "Atualizar",
-        homebrewUpdateHomebrew: "Atualizar Homebrew",
         homebrewAllPackages: "pacotes",
         homebrewOpenTerminal: "Abrir Terminal",
         homebrewCancelOperation: "Cancelar",
@@ -1286,9 +1257,7 @@ extension Strings {
         homebrewConfirmUninstallBodyFormat: "O Homebrew vai desinstalar %@. Arquivos de configuração podem permanecer no sistema.",
         homebrewConfirmUpgradeTitle: "Atualizar pelo Homebrew?",
         homebrewConfirmUpgradeBodyFormat: "O Homebrew vai baixar e aplicar a versão mais recente de %@. Dependências também podem ser atualizadas.",
-        homebrewConfirmUpdateHomebrewTitle: "Atualizar Homebrew?",
-        homebrewConfirmUpdateHomebrewBody: "O Homebrew vai buscar as informações mais recentes e depois recarregar seus pacotes.",
-        homebrewTerminalFallback: "Esta operação precisa do Terminal para pedir a senha de administrador. O Vorssaint não captura senhas.",
+        homebrewTerminalFallback: "Esta operação precisa do Terminal para pedir a senha de administrador. O \(AppInfo.name) não captura senhas.",
         homebrewLoading: "Carregando…",
         homebrewOperationUninstallFormat: "Desinstalando %@",
         homebrewOperationUpgradeFormat: "Atualizando %@",
@@ -1424,8 +1393,6 @@ extension Strings {
 
         updatesSection: "Atualizações",
         autoCheckToggle: "Procurar atualizações automaticamente",
-        includeBetaUpdatesToggle: "Receber atualizações beta",
-        includeBetaUpdatesCaption: "Versões beta incluem novidades em desenvolvimento e podem apresentar instabilidades ou comportamentos incompletos.",
         betaBadgeLabel: "Beta",
         checkNowButton: "Procurar agora",
         updateChecking: "Procurando…",
@@ -1436,10 +1403,10 @@ extension Strings {
         updateInstalling: "Instalando e reiniciando…",
         updateFailedPrefix: "Não foi possível verificar:",
         updateLastChecked: "Última verificação:",
-        updateNotifyTitle: "Atualização do Vorssaint",
+        updateNotifyTitle: "Atualização do \(AppInfo.name)",
         updateInstallFailedBody: "A atualização foi baixada, mas não pôde ser aplicada. Baixe a versão mais recente na página de releases do GitHub e arraste o app por cima do atual.",
-        updateNeedsApplicationsTitle: "Mova o Vorssaint para Aplicativos",
-        updateNeedsApplicationsBody: "O app está rodando de um lugar que não dá para atualizar, como a imagem de disco ou uma área temporária do sistema. Arraste o Vorssaint para a pasta Aplicativos, abra de lá e tente de novo.",
+        updateNeedsApplicationsTitle: "Mova o \(AppInfo.name) para Aplicativos",
+        updateNeedsApplicationsBody: "O app está rodando de um lugar que não dá para atualizar, como a imagem de disco ou uma área temporária do sistema. Arraste o \(AppInfo.name) para a pasta Aplicativos, abra de lá e tente de novo.",
         menuCheckUpdates: "Procurar atualizações…",
 
         permissionRequired: "Permissão necessária",
@@ -1459,8 +1426,8 @@ extension Strings {
 
         obContinue: "Continuar",
         obBack: "Voltar",
-        obStart: "Abrir o Vorssaint",
-        obStepWelcomeTitle: "Bem-vindo ao Vorssaint",
+        obStart: "Abrir o \(AppInfo.name)",
+        obStepWelcomeTitle: "Bem-vindo ao \(AppInfo.name)",
         obStepWelcomeBody: "Um utilitário discreto na barra de menus que deixa o macOS mais prático no dia a dia.",
         obWelcomeBullet1Title: "Energia sob controle",
         obWelcomeBullet1Body: "Mantenha o Mac acordado por quanto tempo quiser, até com a tampa fechada.",
@@ -1470,12 +1437,12 @@ extension Strings {
         obWelcomeBullet3Body: "Rolagem invertida no mouse e um alternador de janelas com miniaturas.",
         obLanguageLabel: "Idioma",
         obStepDoneTitle: "Tudo pronto!",
-        obStepDoneBody: "O Vorssaint já está cuidando do seu Mac.",
-        obDoneHint: "Procure o buraco negro na barra de menus, no canto superior direito da tela.",
+        obStepDoneBody: "O \(AppInfo.name) já está cuidando do seu Mac.",
+        obDoneHint: "Look for the octopus icon in the menu bar, at the top right of the screen.",
         obWhatsNewTitle: "Novidades nesta versão",
         obWhatsNewFallback: "Esta atualização inclui as correções e melhorias mais recentes.",
         obPurposeTitle: "O que te trouxe aqui?",
-        obPurposeBody: "Escolha uma configuração pronta ou marque exatamente o que quer usar.",
+        obPurposeBody: "Selecione os recursos que deseja ativar. Suas opções atuais serão mantidas.",
         obPurposeSkip: "Você pode adicionar ou remover recursos depois nos Ajustes.",
 
         tabMonitor: "Monitor",
@@ -1617,38 +1584,22 @@ extension Strings {
         cleaningKeepScreenVisibleCaption: "Exibe um indicador discreto no canto da tela em vez de escurecer o conteúdo.",
         cleaningStartNow: "Bloquear teclado agora",
         cleaningNeedsAxTitle: "Precisa de Acessibilidade",
-        cleaningNeedsAxBody: "Para bloquear o teclado com segurança, o Vorssaint precisa da permissão de Acessibilidade. Conceda em Ajustes do Sistema e tente de novo.",
+        cleaningNeedsAxBody: "Para bloquear o teclado com segurança, o \(AppInfo.name) precisa da permissão de Acessibilidade. Conceda em Ajustes do Sistema e tente de novo.",
 
-        tabSupport: "Apoiar",
-        shortcutsPageCaption: "Edite aqui todos os atalhos globais dos recursos instalados neste Mac. Os inativos continuam salvos, mas não funcionam.",
+        shortcutsPageCaption: "Edite aqui todos os atalhos globais dos recursos ativados neste Mac. Os inativos continuam salvos, mas não funcionam.",
         shortcutsPageTitle: "Atalhos de teclado",
         settingsSearchPlaceholder: "Buscar ajustes",
-        donateHeading: "Ajude o Vorssaint a continuar crescendo",
-        donateMessage: "O Vorssaint é gratuito, independente e desenvolvido no meu tempo livre. Se você quiser contribuir financeiramente, o Buy Me a Coffee ajuda diretamente a manter o desenvolvimento avançando.",
-        donateButton: "Apoiar no Buy Me a Coffee",
-        donateThanks: "Obrigado por estar aqui. 🖤",
-        supportIntroTitle: "Ajude o Vorssaint a continuar crescendo",
-        supportIntroMessage: "Se você quiser apoiar financeiramente o desenvolvimento, o Buy Me a Coffee é o único lugar para fazer isso.",
-        supportIntroStarButton: "Dar uma estrela no GitHub",
-        supportIntroStarMessage: "Apoio financeiro nunca é esperado. Dar uma estrela no GitHub ajuda mais pessoas a encontrar o Vorssaint e faz uma diferença enorme no desenvolvimento.",
-        supportIntroCoffeeButton: "Apoiar no Buy Me a Coffee",
         supportIntroLaterButton: "Agora não",
         supportIntroDoneButton: "Concluir",
-        discordIntroTitle: "A comunidade do Vorssaint no Discord está começando",
-        discordIntroMessage: "A comunidade do Vorssaint é nova e ainda está em desenvolvimento. Entre desde o começo para conhecer outros usuários e ajudar a construir um espaço acolhedor em torno do app.",
-        discordIntroJoinButton: "Entrar na comunidade no Discord",
-        communityIntroTitle: "Vem ver antes de todo mundo",
-        communityIntroMessage: "Quem já me seguia no X viu várias novidades desta atualização antes de todo mundo. Lá eu posto prévias do que vem depois e mostro como funciona, para você já saber o básico antes mesmo da atualização sair. Segue lá e veja o que vem depois!",
-        communityIntroFollowButton: "Seguir @vorssaint no X",
         updateShowcaseTitle: "Novidades da 3.1.4",
         updateShowcaseMessage: "Veja uma prévia rápida das principais melhorias desta atualização.",
         updateShowcaseUnavailable: "Não foi possível carregar o vídeo agora. Você ainda pode continuar.",
         updateShowcaseRestart: "Voltar ao início",
         showMenuBarIcon: "Mostrar ícone na barra de menus",
-        showMenuBarIconCaption: "Se o ícone do Vorssaint sumir (o macOS pode esconder ícones quando a barra de menus fica sem espaço, comum em Macs com notch), reabra o Vorssaint pela pasta Aplicativos ou pelo Spotlight: isso recria o ícone e, se ele ainda estiver escondido, abre esta janela.",
+        showMenuBarIconCaption: "Se o ícone do \(AppInfo.name) sumir (o macOS pode esconder ícones quando a barra de menus fica sem espaço, comum em Macs com notch), reabra o \(AppInfo.name) pela pasta Aplicativos ou pelo Spotlight: isso recria o ícone e, se ele ainda estiver escondido, abre esta janela.",
         menuBarIconStillHiddenTitle: "O ícone continua escondido",
         menuBarIconStillHiddenBody: "O ícone foi recriado, mas o macOS não deu um lugar visível a ele. A barra de menus provavelmente está sem espaço: remova alguns ícones da barra (ou feche apps com menus longos) e tente de novo.",
-        menuBarIconManagerHintFormat: "O %@ está aberto e pode estar guardando o ícone na seção oculta dele. Procure o Vorssaint lá, ou configure o %@ para sempre mostrar o Vorssaint.",
+        menuBarIconManagerHintFormat: "O %@ está aberto e pode estar guardando o ícone na seção oculta dele. Procure o \(AppInfo.name) lá, ou configure o %@ para sempre mostrar o \(AppInfo.name).",
         shortcutRecording: "Pressione o novo atalho",
         shortcutReset: "Redefinir",
         shortcutNone: "Nenhum",
@@ -1699,15 +1650,13 @@ extension Strings {
         cleanerScheduleDaily: "Diária",
         cleanerScheduleWeekly: "Semanal",
         cleanerScheduleCaption: "Limpa sozinha só a parte segura no horário escolhido e manda tudo para a Lixeira.",
-        cleanerScheduleLastFormat: "A última limpeza automática liberou %@.",
         cleanerAutoNotificationFormat: "%@ liberados e enviados para a Lixeira.",
         cleanerScheduleNextFormat: "Próxima limpeza %@.",
-        cleanerScheduleRanFormat: "Última limpeza automática %@.",
         cleanerScheduleNotifyToggle: "Avisar quando terminar",
-        cleanerNotifDenied: "As notificações do Vorssaint estão desativadas no sistema.",
+        cleanerNotifDenied: "As notificações do \(AppInfo.name) estão desativadas no sistema.",
         cleanerNotifOpenSettings: "Abrir Ajustes de Notificações…",
-        launchAtLoginNeedsApplications: "O app está rodando de um lugar que não permite abrir no login. Arraste o Vorssaint para a pasta Aplicativos, abra de lá e ligue de novo.",
-        launchAtLoginNeedsApproval: "O item de login está registrado, mas continua desligado nos Ajustes do Sistema. Abra Ajustes do Sistema › Geral › Itens de Início e Extensões e ligue o Vorssaint em “Abrir ao iniciar sessão”.",
+        launchAtLoginNeedsApplications: "O app está rodando de um lugar que não permite abrir no login. Arraste o \(AppInfo.name) para a pasta Aplicativos, abra de lá e ligue de novo.",
+        launchAtLoginNeedsApproval: "O item de login está registrado, mas continua desligado nos Ajustes do Sistema. Abra Ajustes do Sistema › Geral › Itens de Início e Extensões e ligue o \(AppInfo.name) em “Abrir ao iniciar sessão”.",
         ocrRemoveLineBreaksToggle: "Remover quebras de linha",
         ocrRemoveLineBreaksCaption: "Remove as quebras de linha para que o texto copiado seja colado como um único parágrafo.",
         ocrQRToggle: "Ler QR codes",
@@ -1736,14 +1685,10 @@ extension Strings {
         urlCleanerRulesCaption: "Um site anexa estes parâmetros aos próprios links de compartilhamento para rastrear de onde o link veio. Ligado, o nome é removido ao limpar um link; desligado, ele permanece. Os nomes que você adicionar podem ser excluídos.",
         urlCleanerRulesCoverageCaption: "A lista cobre os diferentes caminhos de compartilhamento de um site (a página, o app, uma sala ao vivo), por isso é longa; um link real costuma carregar apenas dois a quatro deles.",
         urlCleanerRulesAllSites: "Todos os sites",
-        urlCleanerRulesCountSingular: "1 parâmetro",
-        urlCleanerRulesCountPluralFormat: "%d parâmetros",
         urlCleanerRulesAddSite: "Adicionar site",
         urlCleanerRulesParameterPlaceholder: "Nome do parâmetro",
         urlCleanerRulesMatchCaption: "Escreva o nome à esquerda do = , como utm_source. Um nome que corresponde tira aquele parâmetro do link e deixa o resto como está.",
         urlCleanerRulesAddButton: "Adicionar",
-        urlCleanerRulesRemoveButton: "Excluir nome",
-        urlCleanerRulesRemoveSiteButton: "Desativar todas as regras deste site",
         urlCleanerRemovedFormat: "Removidos %@",
         switcherSearchPin: "Fixar busca com S",
         switcherSearchPinCaption: "S inicia uma busca e fixa o alternador aberto, assim digitar não produz mais caracteres especiais quando o atalho usa ⌥, e uma busca que comece com Q ou W não fecha a janela nem encerra o app por engano.",
@@ -1769,7 +1714,7 @@ extension Strings {
         switcherScreenPlacementCaption: "Em qual tela o alternador abre quando há mais de uma conectada.",
         smoothScrollResponseLabel: "Resposta",
         mouseAccelerationName: "Desativar aceleração do mouse",
-        mouseAccelerationCaption: "Remove a aceleração do cursor para os mouses conectados. A configuração anterior volta ao desligar esta opção ou sair do Vorssaint.",
+        mouseAccelerationCaption: "Remove a aceleração do cursor para os mouses conectados. A configuração anterior volta ao desligar esta opção ou sair do \(AppInfo.name).",
         shelfClearOnClose: "Limpar ao fechar",
         shelfClearOnCloseCaption: "Esvazia a área somente quando você clica no botão de fechar. Ocultar automaticamente e encolher preservam os itens."
     )
