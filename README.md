@@ -1,26 +1,109 @@
-# kururu
+<p align="center">
+  <img src="Resources/Brand/logo.png" alt="kururu octopus icon" width="128" height="128">
+</p>
 
-Forked from vorssaint-utils and currently under rapid, active development. Still in BETA.  
+<h1 align="center">kururu</h1>
 
-A macOS utility workspace for controls, monitoring, input, captures and everyday file work. Features can be selected independently. The current direction is one consistent interface: explain what runs in the background, keep configuration visible while paused, and show the result of each action where it happens.
+<p align="center">
+  <strong>Everyday Mac tools, together in your menu bar.</strong><br>
+  System monitoring, window controls, clipboard, captures and file tools.<br>
+  Free and open source. Built with Swift and native macOS frameworks.
+</p>
 
-Current release: [kururu 0.1.0](https://github.com/PathGao/kururu/releases/tag/v0.1.0), for Apple Silicon on macOS 14 or later. The downloadable app is locally signed and has not been notarized by Apple.
+<p align="center">
+  <a href="https://github.com/PathGao/kururu/releases/latest">Download</a> ·
+  <a href="#features">Features</a> ·
+  <a href="docs/PRIVACY.md">Privacy</a> ·
+  <a href="#build-and-verify">Build</a> ·
+  <a href="https://github.com/PathGao/kururu/issues">Feedback</a> ·
+  <a href="README.zh-Hans.md">简体中文</a>
+</p>
 
-This repository is under active integration. The [roadmap](docs/ROADMAP.md) distinguishes implemented work from remaining interaction checks. Existing screenshots and release notes inherited from upstream are historical references, not previews of the current kururu build.
+<p align="center">
+  <img src="https://img.shields.io/badge/macOS-14%2B-111827" alt="macOS 14 or later">
+  <img src="https://img.shields.io/badge/Apple_Silicon-arm64-111827" alt="Apple Silicon, arm64">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0--or--later-111827" alt="License: GPL-3.0-or-later"></a>
+</p>
 
-## Current capabilities
+kururu brings the small tasks around your work into one place: check what's using memory, adjust an app's volume, find something you copied, capture text from the screen, or collect files for later. Choose the feature pages you need and configure them in a shared settings interface.
 
-- System and battery monitoring, display controls, local TCP/UDP port inspection, per-app audio and microphone controls.
-- Window, Dock, keyboard and mouse utilities, a command bar, and radial menus with shortcut, mouse and trackpad entry points.
-- Clipboard history, snippets, notes, a file shelf, screen capture, recording, text recognition and color picking.
-- Local media conversion and editing, ordered PDF merging, and PDF image optimization with a no-savings result when a smaller verified copy cannot be produced.
-- Cleaner, uninstaller and an installed Homebrew package list, with upgrades for explicitly requested packages.
+Forked from [Vorssaint](https://github.com/vorssaint/vorssaint-utils), kururu is in **beta** and under rapid, active development. The [roadmap](docs/ROADMAP.md) tracks implemented work and remaining interaction checks. Screenshots and demos inherited from upstream are historical references, not previews of the current kururu build.
 
-Availability depends on the selected features, macOS permissions and hardware. Privileged fan control and kururu self-updates are unavailable until this product has its own release signing configuration. Temporary upload links have been removed. Feedback can be prepared and copied locally; opening the project issue page does not submit it.
+## Install
+
+**[Download kururu for Apple Silicon](https://github.com/PathGao/kururu/releases/latest)**
+
+Requires **macOS 14 or later** on an **Apple Silicon Mac**. The current release is [0.1.0](https://github.com/PathGao/kururu/releases/tag/v0.1.0).
+
+1. Download the DMG from the release page.
+2. Open it and drag kururu to Applications.
+3. Launch kururu, choose your features, and grant the permissions they need.
+
+> **Early release:** the downloadable app is locally signed and has not been notarized by Apple, so macOS may block first launch. Automatic updates are currently unavailable; download new versions from the release page.
+
+## Features
+
+### Monitor your Mac
+
+CPU, GPU, memory, network, disk and power readings, with history graphs for checking changes over time. Inspect battery health and activity, or look up local TCP listening and UDP bound ports when you need to identify a process.
+
+### Windows, Dock and input
+
+Switch between windows, preview them from the Dock, and configure Dock clicks and window behavior. Adjust mouse scrolling and buttons, use a three-finger middle click, expand text snippets, or configure a Super key for shortcuts.
+
+### Clipboard and everyday files
+
+Search clipboard history, keep frequently used items, and paste plain text. Collect files on the shelf, write quick notes, and use Finder cut-and-paste and rename tools without leaving your workflow.
+
+### Capture and process content
+
+Take screenshots, record the screen, recognize text on screen and pick colors. Convert and edit media locally, merge PDFs in a chosen order, and optimize PDF images. PDF optimization reports when it cannot produce a smaller verified copy.
+
+### Sound, displays and focus
+
+Adjust volume per app, switch audio outputs and mute microphones. Access display controls, keep-awake options, Bluetooth sleep behavior and a cleaning mode for input devices.
+
+### Apps and maintenance
+
+Find cleanup candidates, inspect app leftovers with the uninstaller, and review installed Homebrew packages. Upgrade packages you explicitly installed, and inspect local development tools in the environment page. Homebrew may also upgrade dependencies as part of a requested package upgrade.
+
+### Your choice of entry point
+
+Use the menu bar for frequent controls, the command bar to find actions, or radial menus for shortcut, mouse and trackpad access. Feature pages can be enabled separately; settings remain available while a page is disabled.
+
+Feature availability depends on your selections, macOS permissions and hardware. Privileged fan control is unavailable until kururu has its own release signing configuration. Temporary upload links are disabled.
+
+## Privacy and permissions
+
+Preferences, clipboard history, notes and shelf data stay in kururu's own local storage. Screen text recognition uses Apple's on-device Vision framework. There is no account, subscription or automatic telemetry.
+
+Network access belongs to specific actions: an internet speed test, Homebrew operations, or websites and scripts you configure in the command bar. Feedback is prepared locally for you to review and copy; opening the issue page does not submit it.
+
+Grant macOS permissions for the features you use and review them in **System Settings → Privacy & Security**. See the [privacy policy](docs/PRIVACY.md) for storage details and the scope of network access.
+
+## Existing settings and data
+
+kururu has its own application identity. It does not automatically take over another application's data, permissions, login item or privileged helper.
+
+To transfer supported preferences, export a settings file from the existing app and import it in kururu under **General & appearance** (通用与外观). Settings backups do not include clipboard history, notes or shelf files.
+
+<details>
+<summary><strong>Import formats and what stays separate</strong></summary>
+
+| Data | Supported import | Behavior |
+|---|---|---|
+| Preferences | Exported settings file | Excludes login registration and machine restoration records. Enable launch at login separately. |
+| Notes | JSON or UTF-8 text | Preview selected records and append copies. |
+| Clipboard history | JSON or a legacy preferences plist | Preview selected records and append copies. Images need their source image directory. |
+| Shelf | JSON or a legacy preferences plist | Select whole groups, map each source folder, then choose references or copied attachments. Folders support references only. |
+
+These imports do not move or remove the source data. Imported shelf groups retain their stored titles and hierarchy across relaunches. Some import interactions still need live verification; see the [roadmap](docs/ROADMAP.md) for the remaining checks.
+
+</details>
 
 ## Build and verify
 
-Requires Apple Silicon, macOS 14 or newer, and Xcode Command Line Tools.
+Requires Apple Silicon, macOS 14 or later, and Xcode Command Line Tools. The app builds with `swiftc` and native macOS frameworks, without external package dependencies or an Xcode project. `Package.swift` supports editor indexing.
 
 ```sh
 git clone https://github.com/PathGao/kururu.git
@@ -29,22 +112,27 @@ cd kururu
 ./build.sh --dev
 ```
 
-The development app is staged at `build/stage/kururu (Developer).app`. Development builds require an already configured local signing identity; the build does not create a certificate or change the keychain. `./build.sh` assembles the release variant locally. Neither command publishes a release or installs the app. Installation is a separate explicit `--install` action.
+The development app is staged at `build/stage/kururu (Developer).app`. **Development builds require an existing usable signing identity.** The build does not create certificates or change the keychain. See [Contributing](CONTRIBUTING.md#build-identity-and-signing) for signing requirements.
+
+Run the app's self-checks:
+
+```sh
+"./build/stage/kururu (Developer).app/Contents/MacOS/kururuDeveloper" --selftest
+```
+
+<details>
+<summary><strong>Build variants and removal</strong></summary>
+
+`./build.sh` assembles the release variant locally. Neither build command publishes or installs the app. Add `--install` explicitly to install it.
 
 | Variant | Bundle identifier | Executable |
 |---|---|---|
 | Release | `com.pathgao.kururu` | `kururu` |
 | Development | `com.pathgao.kururu.dev` | `kururuDeveloper` |
 
-Both variants derive their metadata from `Sources/Vorssaint/Core/ProductIdentity.swift`. The internal source directory name remains stable to keep integration changes reviewable.
+Both variants derive their metadata from [`ProductIdentity.swift`](Sources/Vorssaint/Core/ProductIdentity.swift). The internal `Sources/Vorssaint/` directory name is retained to keep integration changes reviewable.
 
-## Existing settings and data
-
-kururu starts with its own preferences and storage. It does not automatically take over another application's data, permissions, login item or privileged helper. To transfer supported preferences, export a settings file from the existing app and import it through General & appearance settings (通用与外观) in kururu. Login registration and machine restoration records are excluded. Select login at startup explicitly in the new app if needed.
-
-Clipboard history, notes and shelf files are separate from settings backups and remain with their original application. Notes can be explicitly imported from JSON or UTF-8 text, and clipboard history from JSON or a legacy preferences plist. Clipboard images require their source image directory. These imports preview selected records and append copies; they do not move or remove the source data. Shelf settings also provide explicit JSON or legacy-plist import with whole-group selection. For each source folder, choose its current location and whether to reference originals or copy attachments. Folder items support references only. Imported groups keep their stored titles and hierarchy across relaunches. These import flows still need live window interaction verification.
-
-To inspect an uninstall plan without changing anything:
+Inspect an uninstall plan without changing anything:
 
 ```sh
 ./Tools/uninstall.sh --dev --app "build/stage/kururu (Developer).app" --dry-run
@@ -52,11 +140,21 @@ To inspect an uninstall plan without changing anything:
 
 Removing `--dry-run` performs the uninstall after identity checks. The script targets only the selected kururu variant.
 
-## Documentation and provenance
+</details>
 
-- [Roadmap](docs/ROADMAP.md): current product scope and remaining work.
-- [Privacy](docs/PRIVACY.md): local storage and feature-specific network access.
-- [Contributing](CONTRIBUTING.md): source layout and development conventions.
-- [Project repository](https://github.com/PathGao/kururu): source and issue tracking.
+## Contributing and feedback
 
-kururu is derived from [Vorssaint](https://github.com/vorssaint/vorssaint-utils). Upstream copyright notices and the [GPL-3.0-or-later license](LICENSE) are retained. The upstream [trademark notice](TRADEMARKS.md) remains available as provenance. This fork has its own product name, identifiers and octopus mark; it is not an official Vorssaint release.
+Bug reports, focused improvements and translations are welcome. For a bug report, include your kururu version, macOS version, steps to reproduce and what you expected to happen. In-app feedback can prepare a local draft for you to copy into a [GitHub issue](https://github.com/PathGao/kururu/issues).
+
+| Resource | What it covers |
+|---|---|
+| [Contributing](CONTRIBUTING.md) | Source layout, build conventions and contribution workflow |
+| [Roadmap](docs/ROADMAP.md) | Product scope, implemented work and pending verification |
+| [Privacy](docs/PRIVACY.md) | Local storage, imports and network access |
+| [Releases](https://github.com/PathGao/kururu/releases) | Downloads and release-specific notes |
+
+## Acknowledgments and license
+
+kururu is derived from **[Vorssaint](https://github.com/vorssaint/vorssaint-utils)**. Thanks to its author and contributors for the foundation this project builds on.
+
+The code is licensed under **[GPL-3.0-or-later](LICENSE)**, with upstream copyright notices retained. kururu has its own product name, application identifiers and octopus mark, and is not an official Vorssaint release. The upstream [trademark notice](TRADEMARKS.md) is retained as provenance.
