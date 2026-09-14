@@ -3582,14 +3582,14 @@ UninstallerSelectionTests.run { expect($0, $1) }
         // decision above is made consciously, never by omission.
         let releasePlist = NSDictionary(contentsOfFile: "Resources/Info.plist")
         let plistVersion = (releasePlist?["CFBundleShortVersionString"] as? String) ?? ""
-        expect(plistVersion == "0.1.0",
+        expect(plistVersion == "0.1.1",
                "bumping the app version requires re-deciding the support prompt pin above")
         let plistBuild = (releasePlist?["CFBundleVersion"] as? String) ?? ""
-        expect(plistBuild == "1",
+        expect(plistBuild == "2",
                "every app version needs its own incremented bundle build")
         expect(!SupportUpdateIntroInfo.shouldShow(appVersion: plistVersion, lastSeenVersion: nil)
                && !UpdateHighlightsInfo.shouldShow(appVersion: plistVersion, lastSeenVersion: nil),
-               "kururu first release never shows an upstream update introduction")
+               "kururu releases never show an upstream update introduction")
         expect(SupportUpdateIntroInfo.releaseVersion == "3.3.2",
                "the support prompt remains deliberately pinned to 3.3.2")
         // 3.3.3 adds several headline features, so the tour is re-curated

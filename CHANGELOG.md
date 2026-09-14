@@ -21,6 +21,29 @@ newest release first. The app and release workflow read these version headings.
     - Removed capabilities or compatibility.
 -->
 
+## [0.1.1] - 2026-09-15
+
+### Added
+- Custom linear tracking speed for supported mice, with restoration of the previous device settings when disabled.
+- Precise, Balanced, and Long Glide scrolling presets, finer adjustments, a response curve preview, and a scrolling test area.
+- An optional three-finger spread gesture to open a selected radial menu. The gesture pauses while macOS three-finger dragging is enabled.
+- Native file-promise delivery to the Shelf, with cancellation, independent stored filenames, and preserved order for mixed drops.
+
+### Changed
+- Moved graph visibility and history duration controls to Menu Bar Panel settings. Graph buttons sit beside the display switches and show a persistent selected state.
+- Graph controls become unavailable when their item or section is hidden, while preserving the saved graph preference.
+- Refreshed the project documentation and added a Simplified Chinese README.
+
+### Fixed
+- Improved menu bar icon recovery while macOS is still placing a recreated status item.
+- Aligned recording video and audio timelines, preserved per-sample timing, and finalized recording duration when capture stops.
+- Kept the app switcher icon row stable and brought selected previews into view after resizing, searching, or closing windows.
+- Made screenshot content windows follow visibility preferences and prevented tool changes from accepting stale frames or selections.
+- Distinguished confirmed app removal from inaccessible paths and dangling links when reporting uninstall results.
+- Protected localized folders throughout cleaner scanning and removal.
+- Preserved mouse recovery records across disconnections and custom-speed changes.
+- Reclaimed orphaned Shelf attachments without removing active deliveries or files referenced by the saved index.
+
 ## [0.1.0] - 2026-09-11
 
 ### kururu

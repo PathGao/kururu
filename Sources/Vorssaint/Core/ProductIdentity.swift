@@ -10,7 +10,7 @@ enum ProductIdentity {
     static let developmentBundleID = "com.pathgao.kururu.dev"
     static let repositoryURL = URL(string: "https://github.com/PathGao/kururu")!
     /// Changelog entry describing this product build; numbered entries retain upstream history.
-    static let currentReleaseNotesVersion = "0.1.0"
+    static let currentReleaseNotesVersion = "0.1.1"
     static let allowsSelfUpdates = false
     static let signingTeamID: String? = nil
 
