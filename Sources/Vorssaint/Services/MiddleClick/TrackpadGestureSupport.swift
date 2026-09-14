@@ -72,6 +72,7 @@ struct TrackpadTapRecognizer {
 struct TrackpadTapStream {
     private var devices: [UInt: TrackpadTapRecognizer] = [:]
     mutating func reset() { devices.removeAll() }
+    mutating func suppressTap(device: UInt) { devices[device]?.buttonPressed() }
     mutating func buttonPressed() {
         for key in Array(devices.keys) { devices[key]?.buttonPressed() }
     }
@@ -87,5 +88,47 @@ struct TrackpadTapStream {
         if count == 0 { devices.removeValue(forKey: device) }
         else { devices[device] = recognizer }
         return result
+    }
+}
+
+/// A spread is opt-in and requires three settled contacts. Any incompatible
+/// contact or press cancels the sequence until every finger has lifted.
+struct TrackpadSpreadRecognizer {
+    private var origin: TrackpadTapRecognizer.Geometry?
+    private var started: TimeInterval?
+    private var blocked = false
+    private(set) var didFire = false
+
+    mutating func cancel() { blocked = true }
+
+    mutating func frame(count: Int, geometry: TrackpadTapRecognizer.Geometry?, now: TimeInterval,
+                        buttonDown: Bool = false, systemDragGestureEnabled: Bool = false,
+                        secondsSinceLastKeyDown: TimeInterval = .infinity) -> Bool {
+        if count == 0 { self = Self(); return false }
+        guard !blocked else { return false }
+        guard !buttonDown, !systemDragGestureEnabled, secondsSinceLastKeyDown >= 0.3,
+              count <= 3, now.isFinite else { blocked = true; return false }
+        if count < 3 {
+            if origin != nil { blocked = true }
+            return false
+        }
+        guard let geometry, geometry.spread.isFinite,
+              geometry.center.x.isFinite, geometry.center.y.isFinite else {
+            blocked = true; return false
+        }
+        guard let origin, let started else {
+            self.origin = geometry; self.started = now; return false
+        }
+        let duration = now - started
+        guard duration >= 0, duration <= 0.8,
+              abs(geometry.center.x - origin.center.x) <= 0.08,
+              abs(geometry.center.y - origin.center.y) <= 0.08,
+              geometry.spread >= origin.spread - 0.02 else { blocked = true; return false }
+        guard duration >= 0.08,
+              geometry.spread - origin.spread >= 0.06,
+              geometry.spread >= origin.spread * 1.35 else { return false }
+        blocked = true
+        didFire = true
+        return true
     }
 }

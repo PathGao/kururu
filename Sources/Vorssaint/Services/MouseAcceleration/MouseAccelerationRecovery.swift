@@ -33,7 +33,7 @@ enum MouseAccelerationRecovery {
                                         in: services,
                                         servicesByID: servicesByID,
                                         reservedRegistryIDs: reservedRegistryIDs) else { continue }
-            if setAndVerify(entry.original, key: entry.key, on: service) {
+            if restore(entry, on: service) {
                 journal.remove(registryID: entry.registryID)
             }
         }
@@ -103,12 +103,16 @@ enum MouseAccelerationRecovery {
 
     static func captureEntry(for service: IOHIDServiceClient,
                              registryID: UInt64,
-                             identity: MouseAccelerationDeviceIdentity) -> MouseAccelerationRecoveryEntry? {
+                             identity: MouseAccelerationDeviceIdentity,
+                             captureTracking: Bool = false) -> MouseAccelerationRecoveryEntry? {
         if let value = storedValue(for: MouseAccelerationSupport.linearScalingKey, on: service) {
-            return MouseAccelerationRecoveryEntry(registryID: registryID,
-                                                  identity: identity,
-                                                  key: MouseAccelerationSupport.linearScalingKey,
-                                                  original: value)
+            var entry = MouseAccelerationRecoveryEntry(registryID: registryID,
+                identity: identity, key: MouseAccelerationSupport.linearScalingKey, original: value)
+            if captureTracking {
+                guard let updated = Self.captureTracking(for: entry, on: service) else { return nil }
+                entry = updated
+            }
+            return entry
         }
         let key = accelerationKey(for: service)
         guard let value = storedValue(for: key, on: service) else { return nil }
@@ -118,19 +122,32 @@ enum MouseAccelerationRecovery {
                                               original: value)
     }
 
+    /// A mouse can reconnect with an older mode-only recovery record after
+    /// custom speed was enabled while it was offline. Keep its original mode.
+    static func captureTracking(for entry: MouseAccelerationRecoveryEntry,
+                                on service: IOHIDServiceClient) -> MouseAccelerationRecoveryEntry? {
+        guard entry.key == MouseAccelerationSupport.linearScalingKey else { return nil }
+        let key = accelerationKey(for: service)
+        guard let original = storedValue(for: key, on: service) else { return nil }
+        var updated = entry
+        updated.trackingKey = key
+        updated.trackingOriginal = original
+        return updated
+    }
+
     static func applyTarget(for entry: MouseAccelerationRecoveryEntry,
-                            to service: IOHIDServiceClient) -> Bool {
-        setAndVerify(MouseAccelerationSupport.targetValue(
-                         for: entry.key,
-                         originalIsBoolean: entry.original.isBoolean
-                     ),
-                     key: entry.key,
-                     on: service)
+                            to service: IOHIDServiceClient, trackingSpeed: Double = 0) -> Bool {
+        guard setAndVerify(MouseAccelerationSupport.targetValue(for: entry.key,
+            originalIsBoolean: entry.original.isBoolean), key: entry.key, on: service) else { return false }
+        if let key = entry.trackingKey, entry.trackingOriginal != nil, trackingSpeed > 0 {
+            return setAndVerify(MouseAccelerationSupport.trackingValue(trackingSpeed), key: key, on: service)
+        }
+        return true
     }
 
     static func restore(_ entry: MouseAccelerationRecoveryEntry,
                         on service: IOHIDServiceClient) -> Bool {
-        setAndVerify(entry.original, key: entry.key, on: service)
+        entry.restore { key, original in setAndVerify(original, key: key, on: service) }
     }
 
     private static var journalURL: URL? {
@@ -154,6 +171,11 @@ enum MouseAccelerationRecovery {
               journal.entries.allSatisfy({
                   MouseAccelerationSupport.validatedRegistryID($0.registryID) != nil
                       && MouseAccelerationSupport.isRestorableKey($0.key)
+                      && (($0.trackingKey == nil && $0.trackingOriginal == nil)
+                          || ($0.key == MouseAccelerationSupport.linearScalingKey
+                              && $0.trackingOriginal != nil
+                              && ($0.trackingKey == MouseAccelerationSupport.mouseAccelerationKey
+                                  || $0.trackingKey == MouseAccelerationSupport.pointerAccelerationKey)))
               }) else { return nil }
         return journal
     }

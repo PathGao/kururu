@@ -523,6 +523,10 @@ struct MouseSettings: View {
     @ObservedObject private var permissions = Permissions.shared
     @ObservedObject private var inverter = ScrollInverter.shared
     @ObservedObject private var smoothScroll = SmoothScrollService.shared
+    @ObservedObject private var mouseAcceleration = MouseAccelerationService.shared
+    @AppStorage(DefaultsKey.mouseLinearSpeed) private var mouseLinearSpeed = 0.0
+    @AppStorage(DefaultsKey.mouseAccelerationDisabled) private var mouseAccelerationDisabled = false
+    private var tuningText: InputTuningStrings { InputTuningStrings(language: l10n.language) }
     @ObservedObject private var mouseNavigation = MouseNavigationService.shared
     @AppStorage(DefaultsKey.scrollInverterEnabled) private var invertVertical = false
     @AppStorage(DefaultsKey.scrollInverterHorizontalEnabled) private var invertHorizontal = false
@@ -611,25 +615,31 @@ struct MouseSettings: View {
                         SettingsCaptionText(l10n.s.smoothScrollCaption)
                     }
                     Group {
+                        HStack {
+                            Button(tuningText.precision) { setScrollPreset(step: 20, response: 90) }
+                            Button(tuningText.balanced) { setScrollPreset(step: SmoothScrollSupport.defaultStep, response: SmoothScrollSupport.defaultResponse) }
+                            Button(tuningText.glide) { setScrollPreset(step: 60, response: 30) }
+                        }
+                        SettingsCaptionText(tuningText.scrollHint)
                         SettingsControlRow(title: l10n.s.smoothScrollStepLabel, systemImage: "arrow.up.and.down") {
                             Slider(value: smoothScrollStepBinding,
                                    in: Double(SmoothScrollSupport.stepRange.lowerBound)...Double(SmoothScrollSupport.stepRange.upperBound),
-                                   step: 10) {
+                                   step: 1) {
                                 Text(l10n.s.smoothScrollStepLabel)
                             }
                             .labelsHidden()
                             .frame(width: 150)
-                            Text("\(SmoothScrollSupport.sanitizedStep(smoothScrollStep))")
+                            Text("\(SmoothScrollSupport.sanitizedStep(smoothScrollStep)) pt")
                                 .font(SettingsTypography.caption.monospacedDigit())
                                 .foregroundStyle(.secondary)
-                                .frame(width: 34, alignment: .trailing)
+                                .frame(width: 52, alignment: .trailing)
                         }
                         DisclosureGroup(isExpanded: $smoothScrollMoreOptionsExpanded) {
                             SettingsControlRow(title: l10n.s.smoothScrollResponseLabel, systemImage: "waveform.path") {
                                 Slider(value: smoothScrollResponseBinding,
                                        in: Double(SmoothScrollSupport.responseRange.lowerBound)
                                            ... Double(SmoothScrollSupport.responseRange.upperBound),
-                                       step: 5) {
+                                       step: 1) {
                                     Text(l10n.s.smoothScrollResponseLabel)
                                 }
                                 .labelsHidden()
@@ -643,6 +653,14 @@ struct MouseSettings: View {
                         } label: {
                             Text(mouseClickDebounceText.moreOptions)
                         }
+                        ScrollResponsePreview(step: smoothScrollStep, response: smoothScrollResponse, title: tuningText.curve)
+                        ScrollView {
+                            VStack(alignment: .leading, spacing: 12) {
+                                ForEach(1...30, id: \.self) { value in
+                                    Text("\(value)  ·  \(tuningText.test)").frame(maxWidth: .infinity, alignment: .leading)
+                                }
+                            }.padding(12)
+                        }.frame(height: 120).background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 8))
                         MouseExceptionsList(scope: .smoothScroll)
                     }
                 }
@@ -654,6 +672,25 @@ struct MouseSettings: View {
                         FeatureSwitchRow(feature: .mouseAcceleration)
                         SettingsCaptionText(l10n.s.mouseAccelerationCaption)
                     }
+                    Toggle(tuningText.tracking, isOn: Binding(
+                        get: { mouseLinearSpeed > 0 },
+                        set: { mouseLinearSpeed = $0 ? 1 : 0; mouseAcceleration.syncWithPreferences() }))
+                        .disabled(!mouseAccelerationDisabled)
+                    if mouseLinearSpeed > 0 {
+                        HStack {
+                            Slider(value: Binding(get: { max(0.1, MouseAccelerationSupport.sanitizedTrackingSpeed(mouseLinearSpeed)) },
+                                                  set: { mouseLinearSpeed = $0 }), in: 0.1...10, step: 0.1, onEditingChanged: { editing in
+                                if !editing { mouseAcceleration.syncWithPreferences() }
+                            }) { Text(tuningText.tracking) }.labelsHidden()
+                            Text(mouseLinearSpeed, format: .number.precision(.fractionLength(1)))
+                                .monospacedDigit().frame(width: 40)
+                            Button(tuningText.reset) { mouseLinearSpeed = 0; mouseAcceleration.syncWithPreferences() }
+                        }.disabled(!mouseAccelerationDisabled)
+                        if mouseAccelerationDisabled, mouseAcceleration.trackingDeviceCount == 0 {
+                            SettingsCaptionText(tuningText.unsupported)
+                        }
+                    }
+                    SettingsCaptionText(tuningText.trackingHint)
                 }
                 .settingsSectionAnchor(.mouseAcceleration)
             }
@@ -728,6 +765,11 @@ struct MouseSettings: View {
 
     private var scrollDirectionEnabled: Bool {
         invertVertical || invertHorizontal
+    }
+
+    private func setScrollPreset(step: Int, response: Int) {
+        smoothScrollStep = step
+        smoothScrollResponse = response
     }
 
     private var smoothScrollStepBinding: Binding<Double> {

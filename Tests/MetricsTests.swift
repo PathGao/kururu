@@ -13324,6 +13324,33 @@ UninstallerSelectionTests.run { expect($0, $1) }
             key: MouseAccelerationSupport.mouseAccelerationKey,
             original: MouseAccelerationStoredValue(rawValue: 45_056, isBoolean: false)
         )
+        expect(MouseAccelerationSupport.sanitizedTrackingSpeed(.nan) == 0
+                && MouseAccelerationSupport.sanitizedTrackingSpeed(-1) == 0
+                && MouseAccelerationSupport.sanitizedTrackingSpeed(20) == 10
+                && MouseAccelerationSupport.sanitizedTrackingSpeed(0.01) == 0.1,
+               "tracking speed rejects invalid input and bounds device values")
+        expect(MouseAccelerationSupport.trackingValue(1).rawValue == 65536
+                && MouseAccelerationSupport.trackingValue(0.5).rawValue == 32768,
+               "tracking speed uses HID 16.16 fixed point units")
+        var speedRecovery = mouseRecovery
+        speedRecovery.trackingKey = MouseAccelerationSupport.pointerAccelerationKey
+        speedRecovery.trackingOriginal = MouseAccelerationStoredValue(rawValue: 65536, isBoolean: false)
+        var restoredProperties: [String] = []
+        let partialRestore = speedRecovery.restore { key, _ in
+            restoredProperties.append(key)
+            return key != speedRecovery.trackingKey
+        }
+        expect(!partialRestore && restoredProperties == [speedRecovery.trackingKey!, speedRecovery.key],
+               "failed speed restore still restores mode and retains recovery debt")
+        expect(speedRecovery.restore { _, _ in true }, "recovery completes only after both properties restore")
+        if let data = try? JSONEncoder().encode(speedRecovery) {
+            expect((try? JSONDecoder().decode(MouseAccelerationRecoveryEntry.self, from: data)) == speedRecovery,
+                   "recovery preserves both mode and tracking speed through serialization")
+        } else { expect(false, "recovery record encodes") }
+        if let data = try? JSONEncoder().encode(mouseRecovery) {
+            expect((try? JSONDecoder().decode(MouseAccelerationRecoveryEntry.self, from: data)) == mouseRecovery,
+                   "legacy recovery records without tracking properties remain readable")
+        } else { expect(false, "legacy record encodes") }
         var mouseJournal = MouseAccelerationRecoveryJournal(bootTime: 7, entries: [])
         mouseJournal.upsert(mouseRecovery)
         expect(mouseJournal.entry(registryID: 42, identity: mouseIdentity) == mouseRecovery,

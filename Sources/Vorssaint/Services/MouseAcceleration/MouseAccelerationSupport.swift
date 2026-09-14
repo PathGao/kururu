@@ -41,6 +41,16 @@ struct MouseAccelerationRecoveryEntry: Codable, Equatable {
     let identity: MouseAccelerationDeviceIdentity
     let key: String
     let original: MouseAccelerationStoredValue
+    var trackingKey: String? = nil
+    var trackingOriginal: MouseAccelerationStoredValue? = nil
+
+    func restore(using write: (String, MouseAccelerationStoredValue) -> Bool) -> Bool {
+        let trackingRestored: Bool
+        if let trackingKey, let trackingOriginal { trackingRestored = write(trackingKey, trackingOriginal) }
+        else { trackingRestored = true }
+        let modeRestored = write(key, original)
+        return trackingRestored && modeRestored
+    }
 }
 
 struct MouseAccelerationRecoveryJournal: Codable, Equatable {
@@ -103,6 +113,15 @@ struct MouseAccelerationReapplySchedule {
 }
 
 enum MouseAccelerationSupport {
+    static func sanitizedTrackingSpeed(_ value: Double) -> Double {
+        guard value.isFinite, value > 0 else { return 0 }
+        return min(10, max(0.1, value))
+    }
+
+    static func trackingValue(_ speed: Double) -> MouseAccelerationStoredValue {
+        MouseAccelerationStoredValue(rawValue: Int64((sanitizedTrackingSpeed(speed) * 65536).rounded()), isBoolean: false)
+    }
+
     static let linearScalingKey = "HIDUseLinearScalingMouseAcceleration"
     static let pointerAccelerationTypeKey = "HIDPointerAccelerationType"
     static let pointerAccelerationKey = "HIDPointerAcceleration"

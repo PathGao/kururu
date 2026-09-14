@@ -318,7 +318,7 @@ final class RadialMenuService: ObservableObject {
 
     /// The Settings page's try-it button: a sticky session with the saved
     /// placement, exactly like a quick press of the shortcut.
-    func toggleFromTrackpad(profileID: UUID) {
+    func toggleFromTrackpad(profileID: UUID, spread: Bool = false) {
         let defaults = UserDefaults.standard
         guard AppFeature.radialMenu.isAvailable,
               defaults.bool(forKey: DefaultsKey.radialMenuEnabled),
@@ -327,11 +327,15 @@ final class RadialMenuService: ObservableObject {
               AXIsProcessTrusted() else { return }
         let profiles = RadialMenuSupport.decodeProfiles(defaults.data(forKey: DefaultsKey.radialMenuProfiles),
                                                        defaults: defaults)
-        guard let profile = profiles.first(where: { $0.id == profileID }),
-              TrackpadGestureRouting.owner(fingers: profile.trackpadTapFingers,
-                  middleClickTapFingers: Defaults.sanitizedMiddleClickTapFingers(
-                      defaults.integer(forKey: DefaultsKey.middleClickTapFingers)),
-                  profiles: profiles) == .radial(profileID) else { return }
+        guard let profile = profiles.first(where: { $0.id == profileID }) else { return }
+        if spread {
+            guard defaults.string(forKey: DefaultsKey.trackpadSpreadProfile) == profileID.uuidString else { return }
+        } else {
+            guard TrackpadGestureRouting.owner(fingers: profile.trackpadTapFingers,
+                middleClickTapFingers: Defaults.sanitizedMiddleClickTapFingers(
+                    defaults.integer(forKey: DefaultsKey.middleClickTapFingers)),
+                profiles: profiles) == .radial(profileID) else { return }
+        }
         if sessionActive, activeProfile?.id == profileID {
             endSession()
         } else {

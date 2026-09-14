@@ -3,11 +3,14 @@
 
 import AppKit
 import Foundation
+import Combine
 import HIDEventSystem
 
 /// Applies macOS's per-device linear pointer mode to ordinary mouse devices.
 /// Trackpads are deliberately excluded.
-final class MouseAccelerationService {
+final class MouseAccelerationService: ObservableObject {
+    @Published private(set) var trackingDeviceCount = 0
+    private var trackingSpeed: Double = 0
     static let shared = MouseAccelerationService()
 
     private let defaults = UserDefaults.standard
@@ -28,6 +31,11 @@ final class MouseAccelerationService {
     }
 
     func syncWithPreferences() {
+        let requestedSpeed = MouseAccelerationSupport.sanitizedTrackingSpeed(defaults.double(forKey: DefaultsKey.mouseLinearSpeed))
+        if requestedSpeed != trackingSpeed {
+            _ = pauseAndRestore()
+            trackingSpeed = requestedSpeed
+        }
         guard featureWanted else {
             stop()
             return
@@ -78,6 +86,7 @@ final class MouseAccelerationService {
             _ = MouseAccelerationRecovery.restorePending()
         }
         client = nil
+        trackingDeviceCount = 0
         if let recoveryGuard {
             _ = recoveryGuard.stop()
             self.recoveryGuard = nil
@@ -96,11 +105,12 @@ final class MouseAccelerationService {
             return
         }
 
+        var supportedCount = 0
         for service in services where MouseAccelerationRecovery.isMouse(service) {
             guard let id = MouseAccelerationRecovery.registryID(of: service),
                   let identity = MouseAccelerationRecovery.identity(of: service) else { continue }
 
-            let entry: MouseAccelerationRecoveryEntry
+            var entry: MouseAccelerationRecoveryEntry
             if let existing = journal.entry(registryID: id, identity: identity) {
                 entry = existing
             } else {
@@ -112,7 +122,8 @@ final class MouseAccelerationService {
                       let captured = MouseAccelerationRecovery.captureEntry(
                           for: service,
                           registryID: id,
-                          identity: identity
+                          identity: identity,
+                          captureTracking: trackingSpeed > 0
                       ),
                       MouseAccelerationRecovery.record(captured, in: &journal) else {
                     continue
@@ -120,17 +131,26 @@ final class MouseAccelerationService {
                 entry = captured
             }
 
+            if trackingSpeed > 0, entry.key == MouseAccelerationSupport.linearScalingKey,
+               entry.trackingOriginal == nil {
+                guard let updated = MouseAccelerationRecovery.captureTracking(for: entry, on: service),
+                      MouseAccelerationRecovery.record(updated, in: &journal) else { continue }
+                entry = updated
+            }
+
             guard ensureRecoveryGuard() else {
                 pauseAndRestore()
                 return
             }
-            guard MouseAccelerationRecovery.applyTarget(for: entry, to: service) else {
+            guard MouseAccelerationRecovery.applyTarget(for: entry, to: service, trackingSpeed: trackingSpeed) else {
                 if MouseAccelerationRecovery.restore(entry, on: service) {
                     _ = MouseAccelerationRecovery.remove(registryID: id, from: &journal)
                 }
                 continue
             }
+            if entry.trackingKey != nil { supportedCount += 1 }
         }
+        trackingDeviceCount = supportedCount
 
         if journal.entries.isEmpty, let recoveryGuard {
             _ = recoveryGuard.stop()

@@ -47,6 +47,29 @@ enum TrackpadGestureTests {
         _ = stream.frame(device: 1, count: 3, geometry: still, now: 2)
         stream.reset()
         expect(stream.frame(device: 1, count: 0, geometry: nil, now: 2.1) == nil, "stream reset cancels all devices")
+        var spread = TrackpadSpreadRecognizer()
+        expect(!spread.frame(count: 3, geometry: still, now: 0), "spread begins without firing")
+        expect(spread.frame(count: 3, geometry: ((0.5, 0.5), 0.19), now: 0.2), "outward three finger spread opens menu")
+        expect(!spread.frame(count: 3, geometry: ((0.5, 0.5), 0.25), now: 0.3), "spread fires once until lift")
+        _ = spread.frame(count: 0, geometry: nil, now: 0.4)
+        _ = spread.frame(count: 3, geometry: still, now: 1)
+        expect(spread.frame(count: 3, geometry: ((0.5, 0.5), 0.19), now: 1.2), "lifting arms a new spread")
+        var cancelledSpread = TrackpadSpreadRecognizer()
+        _ = cancelledSpread.frame(count: 4, geometry: still, now: 0)
+        _ = cancelledSpread.frame(count: 3, geometry: still, now: 0.1)
+        expect(!cancelledSpread.frame(count: 3, geometry: ((0.5, 0.5), 0.25), now: 0.3), "four finger gesture stays rejected after one finger lifts")
+        for invalid in ["four", "move", "pinch", "button", "drag", "typing", "missing", "slow"] {
+            var candidate = TrackpadSpreadRecognizer()
+            _ = candidate.frame(count: 3, geometry: still, now: 0)
+            var sample = still
+            sample.center.x = invalid == "move" ? 0.8 : 0.5
+            sample.spread = invalid == "pinch" ? 0.02 : 0.19
+            let result = candidate.frame(count: invalid == "four" ? 4 : 3,
+                geometry: invalid == "missing" ? nil : sample,
+                now: invalid == "slow" ? 2 : 0.2, buttonDown: invalid == "button",
+                systemDragGestureEnabled: invalid == "drag", secondsSinceLastKeyDown: invalid == "typing" ? 0.1 : 1)
+            expect(!result, "spread rejects \(invalid)")
+        }
         var first = RadialMenuProfile(); first.trackpadTapFingers = 3
         var second = RadialMenuProfile(); second.trackpadTapFingers = 3
         expect(TrackpadGestureRouting.owner(fingers: 3, middleClickTapFingers: 0, profiles: [first]) == .radial(first.id), "single profile owns saved tap")

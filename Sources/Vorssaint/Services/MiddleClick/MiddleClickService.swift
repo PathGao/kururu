@@ -69,6 +69,8 @@ final class MiddleClickService: ObservableObject {
     private var threeFingersSince: TimeInterval?
 
     private var touchStream = TrackpadTapStream()
+    private var spreadStreams: [UInt: TrackpadSpreadRecognizer] = [:]
+    private var spreadProfileID: UUID?
     private var gestureOwners: [Int: TrackpadGestureOwner] = [:]
     private var gestureGeneration: UInt64 = 0
     private var middleClickEnabled = false
@@ -102,14 +104,16 @@ final class MiddleClickService: ObservableObject {
         stateLock.lock()
         let previouslyEnabled = middleClickEnabled
         middleClickEnabled = enabled
+        spreadProfileID = radialEnabled ? profiles.first { $0.id.uuidString == defaults.string(forKey: DefaultsKey.trackpadSpreadProfile) }?.id : nil
         gestureOwners = owners
         gestureGeneration &+= 1
         touchStream.reset()
+        spreadStreams.removeAll()
         stateLock.unlock()
         if previouslyEnabled && !enabled { releaseHeldMiddleButton() }
         refreshDragGestureConflict()
         if SessionActivitySupport.tapShouldRun(
-            featureWanted: (enabled || !owners.isEmpty) && !CleaningModeManager.shared.isActive,
+            featureWanted: (enabled || !owners.isEmpty || spreadProfileID != nil) && !CleaningModeManager.shared.isActive,
             accessibilityGranted: AXIsProcessTrusted(),
             sessionIsActive: SessionActivity.shared.isActive
         ) {
@@ -208,7 +212,9 @@ final class MiddleClickService: ObservableObject {
         stateLock.withLock {
             gestureGeneration &+= 1
             gestureOwners.removeAll()
+            spreadProfileID = nil
             touchStream.reset()
+            spreadStreams.removeAll()
         }
         // Close a transformed press while this process and its event tap are
         // still alive, before tearing down either source.
@@ -238,6 +244,7 @@ final class MiddleClickService: ObservableObject {
         threeFingersSince = nil
         gestureGeneration &+= 1
         touchStream.reset()
+        spreadStreams.removeAll()
         stateLock.unlock()
         isRunning = false
     }
@@ -249,6 +256,7 @@ final class MiddleClickService: ObservableObject {
         stateLock.withLock {
             gestureGeneration &+= 1
             touchStream.reset()
+            spreadStreams.removeAll()
         }
         stopMultitouch()
         startMultitouch()
@@ -354,8 +362,19 @@ final class MiddleClickService: ObservableObject {
         } else { threeFingersSince = nil }
         fingerCount = count
         lastFrameUptime = now
-        if !gestureOwners.isEmpty {
+        if !gestureOwners.isEmpty || spreadProfileID != nil {
             let geometry = Multitouch.touchGeometry(touches: touches, count: count)
+            if let profileID = spreadProfileID {
+                var spread = spreadStreams[device] ?? TrackpadSpreadRecognizer()
+                if spread.frame(count: count, geometry: geometry, now: now, buttonDown: physicalButtonDown,
+                    systemDragGestureEnabled: dragConflict,
+                    secondsSinceLastKeyDown: CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: .keyDown)) {
+                    touchStream.suppressTap(device: device)
+                    delivery = (.radial(profileID), 0, gestureGeneration)
+                }
+                if count == 0 { spreadStreams.removeValue(forKey: device) }
+                else { spreadStreams[device] = spread }
+            }
             if let fingers = touchStream.frame(device: device, count: count, geometry: geometry, now: now, buttonDown: physicalButtonDown,
                 systemDragGestureEnabled: dragConflict,
                 secondsSinceLastKeyDown: CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: .keyDown)),
@@ -379,12 +398,12 @@ final class MiddleClickService: ObservableObject {
                   AXIsProcessTrusted() else { return }
             // The system gesture may have changed since the contact frame.
             // Read on main at delivery so the first three-finger tap yields too.
-            if fingers == 3 {
+            if fingers == 3 || fingers == 0 {
                 self.refreshDragGestureConflict()
                 guard !self.systemDragGestureConflict else { return }
             }
             if case .radial(let profileID) = owner {
-                RadialMenuService.shared.toggleFromTrackpad(profileID: profileID)
+                RadialMenuService.shared.toggleFromTrackpad(profileID: profileID, spread: fingers == 0)
                 return
             }
             guard AppFeature.middleClick.isAvailable,
@@ -416,7 +435,7 @@ final class MiddleClickService: ObservableObject {
     private func handle(type: CGEventType, event: CGEvent) -> Unmanaged<CGEvent>? {
         if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
             releaseHeldMiddleButton()
-            let enabled = stateLock.withLock { middleClickEnabled || !gestureOwners.isEmpty }
+            let enabled = stateLock.withLock { middleClickEnabled || !gestureOwners.isEmpty || spreadProfileID != nil }
             let shouldRearm = SessionActivitySupport.tapShouldRun(
                 featureWanted: enabled && !CleaningModeManager.shared.isActive,
                 accessibilityGranted: AXIsProcessTrusted(),
@@ -440,6 +459,7 @@ final class MiddleClickService: ObservableObject {
                 physicalButtonDown = true
                 gestureGeneration &+= 1
                 touchStream.buttonPressed()
+                for device in Array(spreadStreams.keys) { spreadStreams[device]?.cancel() }
             }
         }
         if type == .leftMouseUp || type == .rightMouseUp {
@@ -482,10 +502,12 @@ final class MiddleClickService: ObservableObject {
                 return Unmanaged.passUnretained(event)
             }
             stateLock.lock()
+            let spreadActive = spreadStreams.values.contains { $0.didFire }
             let count = fingerCount
             let age = now - lastFrameUptime
             let settledFor = threeFingersSince.map { now - $0 } ?? 0
             stateLock.unlock()
+            if spreadActive { return Unmanaged.passUnretained(event) }
             let sinceLastTransformEnd = tapStateLock.withLock { lastTransformEnd }
             let action = MiddleClickSupport.actionForClick(
                 fingerCount: count,
