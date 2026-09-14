@@ -146,7 +146,7 @@ Removing `--dry-run` performs the uninstall after identity checks. The script ta
 
 Bug reports, focused improvements and translations are welcome. For a bug report, include your kururu version, macOS version, steps to reproduce and what you expected to happen. In-app feedback can prepare a local draft for you to copy into a [GitHub issue](https://github.com/PathGao/kururu/issues).
 
-Support is provided on a best-effort basis, without a guaranteed response time. For feature requests, describe the problem you want solved. Please keep vulnerability details out of public issues and read the [security policy](CONTRIBUTING.md#security-reports) first.
+Support is provided on a best-effort basis, without a guaranteed response time. For feature requests, describe the problem you want solved. Please keep vulnerability details out of public issues and read the [security policy](.github/SECURITY.md) first.
 
 | Resource | What it covers |
 |---|---|

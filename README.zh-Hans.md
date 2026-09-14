@@ -146,7 +146,7 @@ cd kururu
 
 欢迎提交问题报告、有明确范围的改进和翻译。报告问题时，请提供 kururu 版本、macOS 版本、复现步骤和预期行为。应用内反馈可以生成本地草稿，供你复制到 [GitHub issue](https://github.com/PathGao/kururu/issues)。
 
-项目按维护者精力提供支持，不承诺响应时间。提出功能建议时，请说明希望解决的问题。请勿在公开 issue 中披露漏洞细节，先阅读[安全政策](CONTRIBUTING.md#security-reports)。
+项目按维护者精力提供支持，不承诺响应时间。提出功能建议时，请说明希望解决的问题。请勿在公开 issue 中披露漏洞细节，先阅读[安全政策](.github/SECURITY.md)。
 
 | 资料 | 内容 |
 |---|---|
