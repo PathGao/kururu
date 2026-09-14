@@ -42,7 +42,7 @@ build repair. kururu uses its own application identity and does not inherit
 another application's permission grants.
 
 Official signing, notarization and release configuration remain pending in
-the [roadmap](docs/ROADMAP.md). An existing local signing certificate or a
+the [roadmap](ROADMAP.md). An existing local signing certificate or a
 successful development build is not evidence that distribution is configured.
 
 ## Project layout
@@ -65,7 +65,7 @@ A few conventions to keep in mind.
 - Comments explain *why*, not *what*. Keep them rare and useful.
 - No new dependencies without talking it over first in an issue.
 - Working with an agent? [Contributing with an
-  agent](docs/AI-CONTRIBUTIONS.md) is the process that gets that work merged
+  agent](AI-CONTRIBUTIONS.md) is the process that gets that work merged
   here, and it is written to be read by the agent as much as by you.
 
 ## Strings and translations
@@ -121,7 +121,7 @@ For general help and every support channel, see [support](SUPPORT.md).
 
 ## Pull requests
 
-1. Follow the current [roadmap](docs/ROADMAP.md). Reference applications and
+1. Follow the current [roadmap](ROADMAP.md). Reference applications and
    historical upstream decisions do not independently authorize new scope.
 2. Keep one reviewable topic per change. Describe the trigger, resulting
    behavior, relevant validation and remaining limitations.
@@ -140,7 +140,11 @@ For general help and every support channel, see [support](SUPPORT.md).
 
 ## Releases (maintainers)
 
-Release readiness is tracked in the [roadmap](docs/ROADMAP.md). Confirm
+Release readiness is tracked in the [roadmap](ROADMAP.md). Confirm
 kururu's own signing, notarization, updater and publishing configuration
 before enabling a release workflow. A local build does not authorize tagging,
 pushing, publishing or changing repository secrets.
+
+When preparing a release, fill in the template in [CHANGELOG.md](CHANGELOG.md)
+with the version, date and user-facing changes. The build bundles this file,
+and the release workflow uses the matching section for GitHub release notes.

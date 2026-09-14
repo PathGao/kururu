@@ -27,7 +27,7 @@
 
 kururu brings the small tasks around your work into one place: check what's using memory, adjust an app's volume, find something you copied, capture text from the screen, or collect files for later. Choose the feature pages you need and configure them in a shared settings interface.
 
-Forked from [Vorssaint](https://github.com/vorssaint/vorssaint-utils), kururu is in **beta** and under rapid, active development. The [roadmap](docs/ROADMAP.md) tracks implemented work and remaining interaction checks. Screenshots and demos inherited from upstream are historical references, not previews of the current kururu build.
+Forked from [Vorssaint](https://github.com/vorssaint/vorssaint-utils), kururu is in **beta** and under rapid, active development. The [roadmap](ROADMAP.md) tracks implemented work and remaining interaction checks.
 
 ## Install
 
@@ -97,7 +97,7 @@ To transfer supported preferences, export a settings file from the existing app 
 | Clipboard history | JSON or a legacy preferences plist | Preview selected records and append copies. Images need their source image directory. |
 | Shelf | JSON or a legacy preferences plist | Select whole groups, map each source folder, then choose references or copied attachments. Folders support references only. |
 
-These imports do not move or remove the source data. Imported shelf groups retain their stored titles and hierarchy across relaunches. Some import interactions still need live verification; see the [roadmap](docs/ROADMAP.md) for the remaining checks.
+These imports do not move or remove the source data. Imported shelf groups retain their stored titles and hierarchy across relaunches. Some import interactions still need live verification; see the [roadmap](ROADMAP.md) for the remaining checks.
 
 </details>
 
@@ -149,7 +149,8 @@ Bug reports, focused improvements and translations are welcome. For a bug report
 | Resource | What it covers |
 |---|---|
 | [Contributing](CONTRIBUTING.md) | Source layout, build conventions and contribution workflow |
-| [Roadmap](docs/ROADMAP.md) | Product scope, implemented work and pending verification |
+| [AI contributions](AI-CONTRIBUTIONS.md) | Working with an agent, verification and review |
+| [Roadmap](ROADMAP.md) | Product scope, implemented work and pending verification |
 | [Privacy](docs/PRIVACY.md) | Local storage, imports and network access |
 | [Releases](https://github.com/PathGao/kururu/releases) | Downloads and release-specific notes |
 
@@ -157,4 +158,4 @@ Bug reports, focused improvements and translations are welcome. For a bug report
 
 kururu is derived from **[Vorssaint](https://github.com/vorssaint/vorssaint-utils)**. Thanks to its author and contributors for the foundation this project builds on.
 
-The code is licensed under **[GPL-3.0-or-later](LICENSE)**, with upstream copyright notices retained. kururu has its own product name, application identifiers and octopus mark, and is not an official Vorssaint release. The upstream [trademark notice](TRADEMARKS.md) is retained as provenance.
+The code is licensed under **[GPL-3.0-or-later](LICENSE)**, with upstream copyright notices retained. kururu has its own product name, application identifiers and octopus mark, and is not an official Vorssaint release. See the [trademark notice](TRADEMARKS.md) for kururu branding and upstream attribution.

@@ -27,7 +27,7 @@
 
 kururu 把工作中常见的小事集中到一处：查看谁在占用内存、调整某个应用的音量、找回复制过的内容、识别屏幕上的文字，或把文件暂存起来稍后使用。按需启用功能页，在统一的设置界面中配置。
 
-kururu 分叉自 [Vorssaint](https://github.com/vorssaint/vorssaint-utils)，目前处于 **Beta 阶段**，正在快速开发中。[路线图](docs/ROADMAP.md) 记录已实现的工作和尚待完成的交互验证。仓库中继承自上游的截图和演示仅供历史参考，不代表当前 kururu 版本的界面。
+kururu 分叉自 [Vorssaint](https://github.com/vorssaint/vorssaint-utils)，目前处于 **Beta 阶段**，正在快速开发中。[路线图](ROADMAP.md) 记录已实现的工作和尚待完成的交互验证。
 
 ## 安装
 
@@ -97,7 +97,7 @@ kururu 使用独立的应用身份，不会自动接管其他应用的数据、�
 | 剪贴板历史 | JSON 或旧版偏好设置 plist | 预览选中的记录，以副本形式追加。图片需要指定原图片目录。 |
 | 暂存架 | JSON 或旧版偏好设置 plist | 整组选取，为每个来源文件夹指定当前位置，再选择引用原文件或复制附件。文件夹项目仅支持引用。 |
 
-这些导入操作不会移动或删除源数据。导入的暂存架分组在重新启动后仍保留原有标题和层级。部分导入交互仍需实际验证，剩余检查见[路线图](docs/ROADMAP.md)。
+这些导入操作不会移动或删除源数据。导入的暂存架分组在重新启动后仍保留原有标题和层级。部分导入交互仍需实际验证，剩余检查见[路线图](ROADMAP.md)。
 
 </details>
 
@@ -149,7 +149,8 @@ cd kururu
 | 资料 | 内容 |
 |---|---|
 | [贡献指南](CONTRIBUTING.md) | 源码结构、构建约定和贡献流程 |
-| [路线图](docs/ROADMAP.md) | 产品范围、已实现的工作和待验证事项 |
+| [AI 协作指南](AI-CONTRIBUTIONS.md) | 与智能体协作、验证和审阅 |
+| [路线图](ROADMAP.md) | 产品范围、已实现的工作和待验证事项 |
 | [隐私政策](docs/PRIVACY.md) | 本地存储、导入和网络访问 |
 | [发布版本](https://github.com/PathGao/kururu/releases) | 下载与各版本发布说明 |
 
@@ -157,4 +158,4 @@ cd kururu
 
 kururu 衍生自 **[Vorssaint](https://github.com/vorssaint/vorssaint-utils)**。感谢其作者和贡献者，为本项目提供了基础。
 
-代码采用 **[GPL-3.0-or-later](LICENSE)** 许可，保留上游版权声明。kururu 使用自己的产品名称、应用标识符和章鱼标识，并非 Vorssaint 官方版本。上游[商标声明](TRADEMARKS.md) 作为来源记录保留。
+代码采用 **[GPL-3.0-or-later](LICENSE)** 许可，保留上游版权声明。kururu 使用自己的产品名称、应用标识符和章鱼标识，并非 Vorssaint 官方版本。kururu 品牌与上游归属说明见[商标声明](TRADEMARKS.md)。

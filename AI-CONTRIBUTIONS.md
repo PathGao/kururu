@@ -1,4 +1,4 @@
-# Contributing with an agent
+# Contributing to kururu with an agent
 
 This is a working process, not a policy. You do not have to declare which
 tools you used; a pull request is judged on the change.
@@ -23,8 +23,8 @@ part they are already better at than the rest of us.
 
 ## Before writing anything
 
-**Find out whether it is already being done.** There are usually around fifty
-open pull requests, and a request that looks unclaimed often is not.
+**Find out whether it is already being done.** Check current issues and pull
+requests before starting overlapping work.
 
 ```sh
 gh pr list --state open --search "<keywords>"
@@ -39,10 +39,8 @@ direction rather than code.
 
 **Settle the direction, then write.** An agent builds whatever it is asked
 for; it has no way to know whether a thing belongs in this app. Open an issue,
-or find the one that exists — the [enhancement
-summary](https://github.com/vorssaint/vorssaint-utils/issues/838) sorts
-every open request into what shipped, what is worth doing, and what has been
-ruled out. Killing a direction before there is a branch costs an order of
+or find the one that exists. The [kururu roadmap](ROADMAP.md) records current
+scope, remaining work and directions that have been ruled out. Killing a direction before there is a branch costs an order of
 magnitude less than killing it after.
 
 **Search the codebase for what you are about to write.** Window handling,
@@ -61,13 +59,17 @@ confident wrong answer.
 
 ## Whether it belongs here
 
-Vorssaint is one menu bar icon doing the job of a dozen paid Mac apps. Doing
+kururu brings everyday Mac tools together in the menu bar. Doing
 their job is not the same as becoming them. The app reaches for what macOS
 almost does, or for what one small paid app does, and it does not grow a
 subsystem of its own — a network stack, an audio graph with drift
 compensation, a plugin host, a client that has to exist on the other end of
 the wire. Each of those has been asked for here, and each was turned down for
 that reason rather than for lack of interest.
+
+The examples below come from upstream Vorssaint discussions and describe
+historical decisions, not new kururu requirements. The current scope is in
+[ROADMAP.md](ROADMAP.md).
 
 Four questions settle most proposals, and an agent will raise none of them on
 its own. They are about what the project is committing to rather than about
@@ -100,7 +102,7 @@ not in the description afterwards.
 external dependencies, and a runtime dependency counts the same way. A tool
 the user has to install through Homebrew is one. A tool that ships fixes on a
 near daily cadence is a maintenance contract. The cost is not the install: it
-is that every upstream breakage arrives here as a Vorssaint bug, reported by
+is that every upstream breakage arrives here as a kururu bug, reported by
 somebody with no way to tell whose fault it is, against a release cadence that
 cannot track it. A privileged helper, a new signing target, an extension the
 user has to switch on by hand in System Settings — those are release process
@@ -115,10 +117,9 @@ weigh is the permanent surface a feature adds — a service, a permission,
 settings, strings in every locale — against how many people will ever turn
 it on.
 
-The ruled-out section of the enhancement summary linked above is the record of
-these four being applied, with the reasoning attached to each. It is worth
-reading before proposing anything large: re-proposing something costs as much
-as proposing it did, and the answer may already be written there.
+Read the ruled-out directions in the [kururu roadmap](ROADMAP.md#not-do)
+before proposing a large addition. Historical upstream decisions are context,
+not a substitute for the current project scope.
 
 ---
 
@@ -226,11 +227,11 @@ permissions and hardware, that is a small part of the claim.
 
 ```sh
 ./build.sh                     # full build, must finish without warnings
-./build/Vorssaint --selftest
+"./build/stage/kururu.app/Contents/MacOS/kururu" --selftest
 ./build.sh --test
 ```
 
-CI runs exactly those three. Four things are worth knowing beyond them:
+CI builds the app, runs its self-checks and runs the unit tests. Four things are worth knowing beyond them:
 
 - **`./build.sh --test` is not proof that it compiles.** It builds a
   hand-written list of source files, and `Sources/Vorssaint/UI/` is largely
@@ -243,11 +244,11 @@ CI runs exactly those three. Four things are worth knowing beyond them:
   signature. It answers whether the Swift compiles and nothing about
   permissions, the Dock, the Accessibility API or TCC.
 - **macOS ties Accessibility and Screen Recording grants to a code
-  signature.** An ad hoc rebuild changes that hash, the app becomes a
-  different app, and the grants lapse without a word. Run
-  `./Tools/setup-signing.sh` once and local builds keep a stable identity, so
-  permissions survive rebuilds. Without it, "the feature does nothing" is
-  usually the build rather than the change.
+  signature.** Development builds need an existing usable signing identity;
+  the build does not create certificates or change the keychain. Follow
+  [the signing requirements](CONTRIBUTING.md#build-identity-and-signing).
+  Do not run `Tools/setup-signing.sh` as a routine repair. kururu and its
+  development variant have separate identities and permission grants.
 - **If Xcode is installed, Accessibility Inspector is the tool for this
   codebase.** It reads and writes any window's AX attributes live, so
   behaviour that varies between applications can be measured instead of
@@ -291,23 +292,13 @@ on a change that broke something.
 
 ## Handing it over
 
-**Small.** An agent produces a thousand lines as easily as ten, and the two
-have completely different fates in the queue: of the open pull requests over a
-thousand added lines, half have been waiting a week or more, and nothing under
-two hundred is waiting at all. The merged median is about a hundred and ten
-lines. If your agent produced something large, the useful next instruction is
-**find the smallest piece of this that stands on its own**, not describe the
-whole thing better.
+**Keep the change focused.** Split independent topics into separately reviewable
+changes. Describe the behavior, its cause and the verification rather than the
+amount of work involved.
 
-**Do not stack your own branches.** Two follow-ups here sat on a branch that
-had not merged, all three touching the same file and answering the same
-design question. Installing the build once replaced that design with a view
-the App Switcher already had, and all three had to be abandoned together.
-Depending on somebody else's branch is sometimes unavoidable; depending on
-your own means that when the shape changes — and after living with it, the
-shape usually does — you lose the stack rather than a branch. If a later
-branch would change an earlier one's shape, the earlier one was not ready to
-open.
+**Make dependencies explicit.** Independent changes can use independent branches.
+When changes depend on each other, record the prerequisite and merge order,
+and recheck the later changes after their base moves.
 
 **Say what you did not check.** Every pull request is run locally before it is
 merged, on one maintainer's hardware, so the most valuable thing in a
