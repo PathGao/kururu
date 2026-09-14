@@ -1,5 +1,5 @@
 name: "✨ Feature Request"
-description: Suggest a new feature or improvement for Vorssaint
+description: Suggest a new feature or improvement for kururu
 labels:
   - enhancement
 
@@ -7,12 +7,11 @@ body:
   - type: markdown
     attributes:
       value: |
-        **Someone may have asked already.** [Enhancement Summary](https://github.com/vorssaint/vorssaint-utils/issues/838)
-        indexes every open request, sorted into what already shipped, what is
-        worth doing, and what has been ruled out and why.
-
-        A comment and a 👍 on the existing request carries further than a
-        second issue for the same thing, since the votes stay in one place.
+        **Someone may have asked already.** Check the
+        [roadmap](https://github.com/PathGao/kururu/blob/main/ROADMAP.md) and
+        [existing issues](https://github.com/PathGao/kururu/issues) before
+        proposing a new direction. Add relevant details to an existing request
+        when it describes the same problem.
 
   - type: textarea
     id: problem
@@ -28,7 +27,7 @@ body:
     attributes:
       label: Proposed Solution
       description: Describe the solution you'd like to see.
-      placeholder: It would be great if Vorssaint could...
+      placeholder: It would be great if kururu could...
     validations:
       required: true
 
@@ -54,7 +53,7 @@ body:
     id: existing_apps
     attributes:
       label: Does another app already do this?
-      description: "A name or a screenshot is the most useful thing you can add. A request pointing at something concrete gets answered against that thing rather than against a guess at what you meant. [Related Apps](https://github.com/vorssaint/vorssaint-utils/issues/880) already tracks the apps people cite most often and where Vorssaint stands on each — worth a look before and after you write this, and say which behaviour of it you mean rather than only the name."
+      description: "Name a relevant app or platform feature and describe the specific behavior you mean. The roadmap records current scope and historical references."
       placeholder: "Rectangle, Raycast, macOS itself..."
 
   - type: textarea

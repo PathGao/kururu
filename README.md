@@ -13,7 +13,7 @@
 <p align="center">
   <a href="https://github.com/PathGao/kururu/releases/latest">Download</a> ·
   <a href="#features">Features</a> ·
-  <a href="docs/PRIVACY.md">Privacy</a> ·
+  <a href="CONTRIBUTING.md">Development</a> ·
   <a href="#build-and-verify">Build</a> ·
   <a href="https://github.com/PathGao/kururu/issues">Feedback</a> ·
   <a href="README.zh-Hans.md">简体中文</a>
@@ -79,7 +79,7 @@ Preferences, clipboard history, notes and shelf data stay in kururu's own local 
 
 Network access belongs to specific actions: an internet speed test, Homebrew operations, or websites and scripts you configure in the command bar. Feedback is prepared locally for you to review and copy; opening the issue page does not submit it.
 
-Grant macOS permissions for the features you use and review them in **System Settings → Privacy & Security**. See the [privacy policy](docs/PRIVACY.md) for storage details and the scope of network access.
+Grant macOS permissions for the features you use and review them in **System Settings → Privacy & Security**. See the [data and privacy documentation](CONTRIBUTING.md#privacy) for storage details and the scope of network access.
 
 ## Existing settings and data
 
@@ -146,12 +146,12 @@ Removing `--dry-run` performs the uninstall after identity checks. The script ta
 
 Bug reports, focused improvements and translations are welcome. For a bug report, include your kururu version, macOS version, steps to reproduce and what you expected to happen. In-app feedback can prepare a local draft for you to copy into a [GitHub issue](https://github.com/PathGao/kururu/issues).
 
+Support is provided on a best-effort basis, without a guaranteed response time. For feature requests, describe the problem you want solved. Please keep vulnerability details out of public issues and read the [security policy](SECURITY.md) first.
+
 | Resource | What it covers |
 |---|---|
-| [Contributing](CONTRIBUTING.md) | Source layout, build conventions and contribution workflow |
-| [AI contributions](AI-CONTRIBUTIONS.md) | Working with an agent, verification and review |
+| [Development guide](CONTRIBUTING.md) | Building, contributing, AI collaboration, privacy, permissions and troubleshooting |
 | [Roadmap](ROADMAP.md) | Product scope, implemented work and pending verification |
-| [Privacy](docs/PRIVACY.md) | Local storage, imports and network access |
 | [Releases](https://github.com/PathGao/kururu/releases) | Downloads and release-specific notes |
 
 ## Acknowledgments and license

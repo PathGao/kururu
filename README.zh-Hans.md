@@ -13,7 +13,7 @@
 <p align="center">
   <a href="https://github.com/PathGao/kururu/releases/latest">下载</a> ·
   <a href="#功能">功能</a> ·
-  <a href="docs/PRIVACY.md">隐私</a> ·
+  <a href="CONTRIBUTING.md">开发文档</a> ·
   <a href="#构建与验证">构建</a> ·
   <a href="https://github.com/PathGao/kururu/issues">反馈</a> ·
   <a href="README.md">English</a>
@@ -79,7 +79,7 @@ kururu 分叉自 [Vorssaint](https://github.com/vorssaint/vorssaint-utils)，目
 
 网络访问对应具体操作：网络测速、Homebrew 操作，或你在命令栏中配置的网站和脚本。反馈内容先在本地生成，供你检查和复制；打开 issue 页面不会提交反馈。
 
-按所用功能授予 macOS 权限，并在**系统设置 → 隐私与安全性**中查看和调整。存储细节与网络访问范围见[隐私政策](docs/PRIVACY.md)。
+按所用功能授予 macOS 权限，并在**系统设置 → 隐私与安全性**中查看和调整。存储细节与网络访问范围见开发文档中的[数据与隐私说明](CONTRIBUTING.md#privacy)。
 
 ## 现有设置与数据
 
@@ -146,12 +146,12 @@ cd kururu
 
 欢迎提交问题报告、有明确范围的改进和翻译。报告问题时，请提供 kururu 版本、macOS 版本、复现步骤和预期行为。应用内反馈可以生成本地草稿，供你复制到 [GitHub issue](https://github.com/PathGao/kururu/issues)。
 
+项目按维护者精力提供支持，不承诺响应时间。提出功能建议时，请说明希望解决的问题。请勿在公开 issue 中披露漏洞细节，先阅读[安全政策](SECURITY.md)。
+
 | 资料 | 内容 |
 |---|---|
-| [贡献指南](CONTRIBUTING.md) | 源码结构、构建约定和贡献流程 |
-| [AI 协作指南](AI-CONTRIBUTIONS.md) | 与智能体协作、验证和审阅 |
+| [开发文档](CONTRIBUTING.md) | 构建、贡献、AI 协作、隐私、权限和故障排查 |
 | [路线图](ROADMAP.md) | 产品范围、已实现的工作和待验证事项 |
-| [隐私政策](docs/PRIVACY.md) | 本地存储、导入和网络访问 |
 | [发布版本](https://github.com/PathGao/kururu/releases) | 下载与各版本发布说明 |
 
 ## 致谢与许可
