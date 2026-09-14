@@ -1,5 +1,7 @@
 # kururu
 
+Forked from vorssaint-utils and currently under rapid, active development. Still in BETA.  
+
 A macOS utility workspace for controls, monitoring, input, captures and everyday file work. Features can be selected independently. The current direction is one consistent interface: explain what runs in the background, keep configuration visible while paused, and show the result of each action where it happens.
 
 Current release: [kururu 0.1.0](https://github.com/PathGao/kururu/releases/tag/v0.1.0), for Apple Silicon on macOS 14 or later. The downloadable app is locally signed and has not been notarized by Apple.
