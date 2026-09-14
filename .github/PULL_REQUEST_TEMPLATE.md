@@ -15,7 +15,7 @@ not verify. For app changes, include the build, unit tests and self-checks:
 ```
 
 For user-facing text, check the affected languages and English fallback as
-described in [Contributing](../CONTRIBUTING.md).
+described in [Contributing](CONTRIBUTING.md).
 
 ## Refs
 

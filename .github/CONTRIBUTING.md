@@ -2,7 +2,7 @@
 
 Build, debug and contribute to kururu. This guide also records local data
 boundaries, feature permissions and troubleshooting. User-facing installation
-and feature information stays in the [README](README.md).
+and feature information stays in the [README](../README.md).
 
 [Build](#getting-started) · [Source layout](#project-layout) ·
 [Contributions](#pull-requests) · [AI collaboration](#working-with-an-agent) ·
@@ -33,7 +33,7 @@ Hitting a build or permission snag while developing? See the
 
 ### Build identity and signing
 
-The [build instructions](README.md#build-and-verify) describe the current release and
+The [build instructions](../README.md#build-and-verify) describe the current release and
 development identities. A development build is staged locally; installing
 it requires an explicit `--install` action.
 
@@ -48,7 +48,7 @@ build repair. kururu uses its own application identity and does not inherit
 another application's permission grants.
 
 Official signing, notarization and release configuration remain pending in
-the [roadmap](ROADMAP.md). An existing local signing certificate or a
+the [roadmap](../ROADMAP.md). An existing local signing certificate or a
 successful development build is not evidence that distribution is configured.
 
 ## Project layout
@@ -120,14 +120,14 @@ You do not need to write code to help. Use the issue forms on the
 - **Feature request.** Describe the problem you are trying to solve rather than
   only a specific solution.
 
-For general help and feedback, see the [README](README.md#contributing-and-feedback).
-See [the security policy](.github/SECURITY.md) before sharing vulnerability details.
+For general help and feedback, see the [README](../README.md#contributing-and-feedback).
+See [the security policy](SECURITY.md) before sharing vulnerability details.
 
 ## Pull requests
 
-Participation follows the [Code of Conduct](.github/CODE_OF_CONDUCT.md).
+Participation follows the [Code of Conduct](CODE_OF_CONDUCT.md).
 
-1. Follow the current [roadmap](ROADMAP.md). Reference applications and
+1. Follow the current [roadmap](../ROADMAP.md). Reference applications and
    historical upstream decisions do not independently authorize new scope.
 2. Keep one reviewable topic per change. Describe the trigger, resulting
    behavior, relevant validation and remaining limitations.
@@ -182,12 +182,12 @@ send messages without the user's authorization.
 
 ## Releases (maintainers)
 
-Release readiness is tracked in the [roadmap](ROADMAP.md). Confirm
+Release readiness is tracked in the [roadmap](../ROADMAP.md). Confirm
 kururu's own signing, notarization, updater and publishing configuration
 before enabling a release workflow. A local build does not authorize tagging,
 pushing, publishing or changing repository secrets.
 
-When preparing a release, fill in the template in [CHANGELOG.md](CHANGELOG.md)
+When preparing a release, fill in the template in [CHANGELOG.md](../CHANGELOG.md)
 with the version, date and user-facing changes. The build bundles this file,
 and the release workflow uses the matching section for GitHub release notes.
 
@@ -368,4 +368,4 @@ If you have a build from source, the self test prints a quick health summary tha
 "./build/stage/kururu (Developer).app/Contents/MacOS/kururuDeveloper" --selftest
 ```
 
-Open a report from the [new issue](https://github.com/PathGao/kururu/issues/new/choose) page, and see [the README](README.md#contributing-and-feedback) for every way to get help.
+Open a report from the [new issue](https://github.com/PathGao/kururu/issues/new/choose) page, and see [the README](../README.md#contributing-and-feedback) for every way to get help.

@@ -13,7 +13,7 @@
 <p align="center">
   <a href="https://github.com/PathGao/kururu/releases/latest">下载</a> ·
   <a href="#功能">功能</a> ·
-  <a href="CONTRIBUTING.md">开发文档</a> ·
+  <a href=".github/CONTRIBUTING.md">开发文档</a> ·
   <a href="#构建与验证">构建</a> ·
   <a href="https://github.com/PathGao/kururu/issues">反馈</a> ·
   <a href="README.md">English</a>
@@ -79,7 +79,7 @@ kururu 分叉自 [Vorssaint](https://github.com/vorssaint/vorssaint-utils)，目
 
 网络访问对应具体操作：网络测速、Homebrew 操作，或你在命令栏中配置的网站和脚本。反馈内容先在本地生成，供你检查和复制；打开 issue 页面不会提交反馈。
 
-按所用功能授予 macOS 权限，并在**系统设置 → 隐私与安全性**中查看和调整。存储细节与网络访问范围见开发文档中的[数据与隐私说明](CONTRIBUTING.md#privacy)。
+按所用功能授予 macOS 权限，并在**系统设置 → 隐私与安全性**中查看和调整。存储细节与网络访问范围见开发文档中的[数据与隐私说明](.github/CONTRIBUTING.md#privacy)。
 
 ## 现有设置与数据
 
@@ -112,7 +112,7 @@ cd kururu
 ./build.sh --dev
 ```
 
-开发版应用输出到 `build/stage/kururu (Developer).app`。**构建开发版需要已有的可用签名身份。** 构建过程不会创建证书或修改钥匙串。签名要求见[贡献指南](CONTRIBUTING.md#build-identity-and-signing)。
+开发版应用输出到 `build/stage/kururu (Developer).app`。**构建开发版需要已有的可用签名身份。** 构建过程不会创建证书或修改钥匙串。签名要求见[贡献指南](.github/CONTRIBUTING.md#build-identity-and-signing)。
 
 运行应用自检：
 
@@ -150,7 +150,7 @@ cd kururu
 
 | 资料 | 内容 |
 |---|---|
-| [开发文档](CONTRIBUTING.md) | 构建、贡献、AI 协作、隐私、权限和故障排查 |
+| [开发文档](.github/CONTRIBUTING.md) | 构建、贡献、AI 协作、隐私、权限和故障排查 |
 | [路线图](ROADMAP.md) | 产品范围、已实现的工作和待验证事项 |
 | [发布版本](https://github.com/PathGao/kururu/releases) | 下载与各版本发布说明 |
 

@@ -13,7 +13,7 @@
 <p align="center">
   <a href="https://github.com/PathGao/kururu/releases/latest">Download</a> ·
   <a href="#features">Features</a> ·
-  <a href="CONTRIBUTING.md">Development</a> ·
+  <a href=".github/CONTRIBUTING.md">Development</a> ·
   <a href="#build-and-verify">Build</a> ·
   <a href="https://github.com/PathGao/kururu/issues">Feedback</a> ·
   <a href="README.zh-Hans.md">简体中文</a>
@@ -79,7 +79,7 @@ Preferences, clipboard history, notes and shelf data stay in kururu's own local 
 
 Network access belongs to specific actions: an internet speed test, Homebrew operations, or websites and scripts you configure in the command bar. Feedback is prepared locally for you to review and copy; opening the issue page does not submit it.
 
-Grant macOS permissions for the features you use and review them in **System Settings → Privacy & Security**. See the [data and privacy documentation](CONTRIBUTING.md#privacy) for storage details and the scope of network access.
+Grant macOS permissions for the features you use and review them in **System Settings → Privacy & Security**. See the [data and privacy documentation](.github/CONTRIBUTING.md#privacy) for storage details and the scope of network access.
 
 ## Existing settings and data
 
@@ -112,7 +112,7 @@ cd kururu
 ./build.sh --dev
 ```
 
-The development app is staged at `build/stage/kururu (Developer).app`. **Development builds require an existing usable signing identity.** The build does not create certificates or change the keychain. See [Contributing](CONTRIBUTING.md#build-identity-and-signing) for signing requirements.
+The development app is staged at `build/stage/kururu (Developer).app`. **Development builds require an existing usable signing identity.** The build does not create certificates or change the keychain. See [Contributing](.github/CONTRIBUTING.md#build-identity-and-signing) for signing requirements.
 
 Run the app's self-checks:
 
@@ -150,7 +150,7 @@ Support is provided on a best-effort basis, without a guaranteed response time. 
 
 | Resource | What it covers |
 |---|---|
-| [Development guide](CONTRIBUTING.md) | Building, contributing, AI collaboration, privacy, permissions and troubleshooting |
+| [Development guide](.github/CONTRIBUTING.md) | Building, contributing, AI collaboration, privacy, permissions and troubleshooting |
 | [Roadmap](ROADMAP.md) | Product scope, implemented work and pending verification |
 | [Releases](https://github.com/PathGao/kururu/releases) | Downloads and release-specific notes |
 
