@@ -146,7 +146,7 @@ cd kururu
 
 欢迎提交问题报告、有明确范围的改进和翻译。报告问题时，请提供 kururu 版本、macOS 版本、复现步骤和预期行为。应用内反馈可以生成本地草稿，供你复制到 [GitHub issue](https://github.com/PathGao/kururu/issues)。
 
-项目按维护者精力提供支持，不承诺响应时间。提出功能建议时，请说明希望解决的问题。请勿在公开 issue 中披露漏洞细节，先阅读[安全政策](SECURITY.md)。
+项目按维护者精力提供支持，不承诺响应时间。提出功能建议时，请说明希望解决的问题。请勿在公开 issue 中披露漏洞细节，先阅读[安全政策](CONTRIBUTING.md#security-reports)。
 
 | 资料 | 内容 |
 |---|---|
@@ -158,4 +158,13 @@ cd kururu
 
 kururu 衍生自 **[Vorssaint](https://github.com/vorssaint/vorssaint-utils)**。感谢其作者和贡献者，为本项目提供了基础。
 
-代码采用 **[GPL-3.0-or-later](LICENSE)** 许可，保留上游版权声明。kururu 使用自己的产品名称、应用标识符和章鱼标识，并非 Vorssaint 官方版本。kururu 品牌与上游归属说明见[商标声明](TRADEMARKS.md)。
+代码采用 **[GPL-3.0-or-later](LICENSE)** 许可，保留上游版权声明。kururu 使用自己的产品名称、应用标识符和章鱼标识，并非 Vorssaint 官方版本。
+
+<details>
+<summary><strong>品牌与再分发</strong></summary>
+
+GPL 许可涵盖源代码的著作权，不授予使用 kururu 或 Vorssaint 名称、标志、图标、应用标识、商业外观、官方品牌或由相应项目维护者控制的签名身份的许可。Vorssaint 品牌仍归属于上游项目。
+
+各项目的官方版本由相应维护者发布。非官方分叉和再分发版本必须使用不同的名称、应用图标、Bundle 标识符、签名身份、更新源，以及其他可能暗示背书或官方身份的品牌元素。未经相应维护者明确许可，不得将修改后的版本标为 kururu、Vorssaint 或官方版本。
+
+</details>

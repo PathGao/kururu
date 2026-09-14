@@ -6,4 +6,4 @@ contact_links:
     url: https://github.com/PathGao/kururu/blob/main/CONTRIBUTING.md#troubleshooting
   - name: Security Vulnerability
     about: Check the security policy for private reporting availability.
-    url: https://github.com/PathGao/kururu/blob/main/SECURITY.md
+    url: https://github.com/PathGao/kururu/blob/main/CONTRIBUTING.md#security-reports

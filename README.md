@@ -146,7 +146,7 @@ Removing `--dry-run` performs the uninstall after identity checks. The script ta
 
 Bug reports, focused improvements and translations are welcome. For a bug report, include your kururu version, macOS version, steps to reproduce and what you expected to happen. In-app feedback can prepare a local draft for you to copy into a [GitHub issue](https://github.com/PathGao/kururu/issues).
 
-Support is provided on a best-effort basis, without a guaranteed response time. For feature requests, describe the problem you want solved. Please keep vulnerability details out of public issues and read the [security policy](SECURITY.md) first.
+Support is provided on a best-effort basis, without a guaranteed response time. For feature requests, describe the problem you want solved. Please keep vulnerability details out of public issues and read the [security policy](CONTRIBUTING.md#security-reports) first.
 
 | Resource | What it covers |
 |---|---|
@@ -158,4 +158,21 @@ Support is provided on a best-effort basis, without a guaranteed response time. 
 
 kururu is derived from **[Vorssaint](https://github.com/vorssaint/vorssaint-utils)**. Thanks to its author and contributors for the foundation this project builds on.
 
-The code is licensed under **[GPL-3.0-or-later](LICENSE)**, with upstream copyright notices retained. kururu has its own product name, application identifiers and octopus mark, and is not an official Vorssaint release. See the [trademark notice](TRADEMARKS.md) for kururu branding and upstream attribution.
+The code is licensed under **[GPL-3.0-or-later](LICENSE)**, with upstream copyright notices retained. kururu has its own product name, application identifiers and octopus mark, and is not an official Vorssaint release.
+
+<details>
+<summary><strong>Branding and redistribution</strong></summary>
+
+The GPL license covers copyright in the source code. It does not grant
+permission to use the kururu or Vorssaint name, logo, icon, bundle identity,
+trade dress, official branding or signing identity controlled by the respective
+project maintainer. Vorssaint branding remains associated with the upstream
+project.
+
+Official builds are distributed by each project's maintainer. Unofficial forks
+and redistributed builds must use a different name, app icon, bundle identifier,
+signing identity, update feed and other branding that could imply endorsement
+or official status. Do not present a modified build as kururu, Vorssaint or an
+official release without explicit permission from the respective maintainer.
+
+</details>

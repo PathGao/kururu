@@ -27,4 +27,4 @@
 
 造型与动画由本项目独立编写，研究了 [Grok icon study](https://github.com/blessonism/grok-icon-study) 的弹性过渡和眼形插值思路；此目录不包含该参考项目提取的角色资产。历史对比方案、旧视频和桌面讨论文档不在本资源包内。
 
-资源遵循仓库默认贡献许可 GPL-3.0-or-later。品牌相关条款见仓库 `TRADEMARKS.md`。HTML 是动作规格与视觉评审样本，不能据此推断 SwiftUI 性能。
+资源遵循仓库默认贡献许可 GPL-3.0-or-later。品牌相关条款见[项目说明中的品牌与再分发](../../README.zh-Hans.md#致谢与许可)。HTML 是动作规格与视觉评审样本，不能据此推断 SwiftUI 性能。
