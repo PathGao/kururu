@@ -240,8 +240,7 @@ if (( TEST )); then
     # The full app build below remains optimized and is the optimizer gate.
     # Unit assertions do not need optimization; avoiding it cuts most of the
     # test harness compile time without reducing the code the tests exercise.
-    swiftc -Onone -target "$TARGET" -sdk "$SDK" "${SDK_COMPAT_FLAGS[@]}" \
-        "${VM_STATISTICS_COMPAT_FLAGS[@]}" \
+    test_sources=(
         Sources/Vorssaint/Services/Media/MediaSupport.swift \
         Sources/Vorssaint/Services/Media/MediaPDFSupport.swift \
         Sources/Vorssaint/Services/Media/MediaInputSelectionSupport.swift \
@@ -533,7 +532,10 @@ if (( TEST )); then
         Tests/RecentCaptureStoreTests.swift \
         Tests/RecorderPresetImageStoreTests.swift \
         Tests/SpeedTestTests.swift \
-        -o build/metrics-tests
+    )
+    swiftc -Onone -target "$TARGET" -sdk "$SDK" "${SDK_COMPAT_FLAGS[@]}" \
+        "${VM_STATISTICS_COMPAT_FLAGS[@]}" \
+        "${test_sources[@]}" -o build/metrics-tests
     # `set -e` would end the script on a failing run before the sweep below.
     test_status=0
     ./build/metrics-tests || test_status=$?
@@ -545,6 +547,12 @@ if (( TEST )); then
     else
         test_status=1
     fi
+    upstream_sources=()
+    for source in "${test_sources[@]}"; do
+        [[ "$source" == Tests/* ]] || upstream_sources+=("$source")
+    done
+    zsh Tests/run-upstream-tests.sh -target "$TARGET" -sdk "$SDK" "${SDK_COMPAT_FLAGS[@]}" \
+        "${VM_STATISTICS_COMPAT_FLAGS[@]}" "${upstream_sources[@]}" || test_status=1
     ./Tests/PreferenceCleanupTests.sh || test_status=1
     discard_test_preferences || test_status=1
     exit $test_status

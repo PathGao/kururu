@@ -71,7 +71,7 @@ struct ShelfTopCenterEntry: View {
     let onNotes: () -> Void
     var onHoverChange: (Bool) -> Void = { _ in }
     var onTargetChange: (Bool) -> Void = { _ in }
-    var onDropProviders: (([NSItemProvider]) -> Bool)? = nil
+    var acceptsFileDrops = false
     var increasedContrast: Bool? = nil
     @Environment(\.colorScheme) private var scheme
     @Environment(\.colorSchemeContrast) private var contrast
@@ -81,9 +81,8 @@ struct ShelfTopCenterEntry: View {
 
     var body: some View {
         HStack(spacing: 4) {
-            if let onDropProviders {
-                shelfBadge.onDrop(of: [.fileURL, .image, .url, .text, .plainText],
-                                  isTargeted: Binding(get: { targeted }, set: onTargetChange), perform: onDropProviders)
+            if acceptsFileDrops {
+                shelfBadge.overlay { ShelfBadgeDropTarget(onExpand: onExpand, onTargetChange: onTargetChange) }
             } else {
                 shelfBadge
             }
@@ -122,4 +121,36 @@ struct ShelfTopCenterEntry: View {
             .help(expandLabel)
     }
 
+}
+
+private struct ShelfBadgeDropTarget: NSViewRepresentable {
+    let onExpand: () -> Void
+    let onTargetChange: (Bool) -> Void
+
+    func makeNSView(context: Context) -> BadgeView { BadgeView() }
+    func updateNSView(_ view: BadgeView, context: Context) {
+        view.acceptsDrops = true
+        view.onExpand = onExpand
+        view.onTargetChange = onTargetChange
+    }
+
+    final class BadgeView: ShelfPanelMoveView {
+        var onExpand: () -> Void = {}
+        var onTargetChange: (Bool) -> Void = { _ in }
+        override func mouseDown(with event: NSEvent) { onExpand() }
+        override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
+            let operation = super.draggingEntered(sender)
+            onTargetChange(operation != [])
+            return operation
+        }
+        override func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation { draggingEntered(sender) }
+        override func draggingExited(_ sender: NSDraggingInfo?) {
+            super.draggingExited(sender)
+            onTargetChange(false)
+        }
+        override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
+            defer { onTargetChange(false) }
+            return super.performDragOperation(sender)
+        }
+    }
 }

@@ -2,7 +2,6 @@
 // Copyright (C) 2026 Vorssaint
 
 import SwiftUI
-import UniformTypeIdentifiers
 
 /// The shelf at its selected docked position. It is a single thing in one place:
 /// a small pill when idle, the full shelf card when opened or when a drag needs
@@ -20,7 +19,6 @@ struct DockedShelfView: View {
                 ShelfView(dismissSystemImage: "chevron.up",
                           dismissHelp: l10n.s.shelfCollapse,
                           onDismiss: { shelf.collapseDocked() },
-                          onAccept: { _ in shelf.dockDidAccept() },
                           brandWatermark: true)
             } else {
                 ShelfPill()
@@ -40,7 +38,6 @@ private struct ShelfPill: View {
     @State private var targeted = false
     @State private var hovered = false
 
-    private static let dropTypes: [UTType] = [.fileURL, .image, .url, .text, .plainText]
 
     var body: some View {
         if ShelfDockPlacement.normalized(placement) == .topCenter {
@@ -50,11 +47,7 @@ private struct ShelfPill: View {
                 notesTitle: shelf.dockedNotesAvailable ? FeatureStrings.scratchpad(l10n.language).pageTitle : nil,
                 onExpand: { shelf.expandDocked() }, onNotes: { shelf.openDockedNotes() },
                 onHoverChange: { hovered = $0 }, onTargetChange: { targeted = $0 },
-                onDropProviders: { providers in
-                    let accepted = shelf.accept(providers: providers)
-                    if accepted { shelf.dockDidAccept() }
-                    return accepted
-                })
+                acceptsFileDrops: true)
             .padding(8)
         } else {
             menuBarBody
@@ -94,11 +87,7 @@ private struct ShelfPill: View {
         .animation(.easeOut(duration: 0.13), value: targeted)
         .animation(.easeOut(duration: 0.15), value: shelf.dockedJustCaught)
         .padding(8)
-        .onDrop(of: Self.dropTypes, isTargeted: $targeted) { providers in
-            let accepted = shelf.accept(providers: providers)
-            if accepted { shelf.dockDidAccept() }
-            return accepted
-        }
+
     }
 
     /// The Vorssaint mark, quiet, so the pill is unmistakably the app's; it

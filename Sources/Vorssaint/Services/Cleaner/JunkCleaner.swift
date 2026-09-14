@@ -274,6 +274,7 @@ final class JunkCleaner: ObservableObject {
             home + "/Downloads", home + "/Pictures", home + "/Music", home + "/Movies",
         ]
         guard !critical.contains(path),
+              !url.lastPathComponent.lowercased().hasSuffix(".localized"),
               let expectedIdentity = item.fileIdentity,
               UninstallerSupport.fileIdentity(at: url) == expectedIdentity,
               !UninstallerSupport.isSymbolicLink(url),
@@ -487,6 +488,8 @@ final class JunkCleaner: ObservableObject {
     private static func leftoverOwner(entry: String,
                                       url: URL,
                                       usesContainerMetadata: Bool) -> String? {
+        // Finder uses this suffix for display names, not application ownership.
+        guard !entry.lowercased().hasSuffix(".localized") else { return nil }
         if usesContainerMetadata, let owner = containerOwner(at: url) {
             return owner
         }

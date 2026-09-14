@@ -7562,14 +7562,14 @@ UninstallerSelectionTests.run { expect($0, $1) }
                     restoredIsEmpty: false, liveItemCount: 0),
                "shelf additions made during restore schedule the merged state for persistence")
 
-        expect(ShelfBatchSupport.orderedItems(from: [(Int, String)]()).isEmpty,
-               "shelf batch resolve with nothing resolved produces nothing")
-        expect(ShelfBatchSupport.orderedItems(from: [(0, "a"), (1, "b"), (2, "c")]) == ["a", "b", "c"],
-               "shelf batch resolve keeps drop order when providers finish in order")
-        expect(ShelfBatchSupport.orderedItems(from: [(2, "c"), (0, "a"), (1, "b")]) == ["a", "b", "c"],
-               "shelf batch resolve restores drop order when providers finish out of order")
-        expect(ShelfBatchSupport.orderedItems(from: [(3, "z")]) == ["z"],
-               "shelf batch resolve with a single provider produces that one item")
+        expect(ShelfPasteboardSupport.mergedItemIndices(companionPositions: [], receiverIndices: [], promisePositions: []).isEmpty,
+               "empty drop ordering stays empty")
+        expect(ShelfPasteboardSupport.mergedItemIndices(companionPositions: [0, 1, 2], receiverIndices: [], promisePositions: []) == [0, 1, 2],
+               "ordinary drop order stays unchanged")
+        expect(ShelfPasteboardSupport.mergedItemIndices(companionPositions: [1], receiverIndices: [0, 1], promisePositions: [0, 2]) == [1, 0, 2],
+               "promised and ordinary companions retain their interleaved order")
+        expect(ShelfPasteboardSupport.mergedItemIndices(companionPositions: [3], receiverIndices: [], promisePositions: []) == [0],
+               "a single surviving item keeps its position")
 
         expect(ClipboardHistoryBatch.listOwnsCopyShortcut(batchCount: 2)
                    && !ClipboardHistoryBatch.listOwnsCopyShortcut(batchCount: 0),
@@ -10476,9 +10476,9 @@ UninstallerSelectionTests.run { expect($0, $1) }
         expect(groupedIconLayout.appRowContentWidth
                >= CGFloat(appGroups.count) * SwitcherIconRowLayout.appTileWidth,
                "App Switcher icon-row layout uses full app tile width")
-        expect(groupedIconLayout.previewContentWidth
-               >= CGFloat(appGroups[0].windowCount) * SwitcherIconRowLayout.previewCardWidth,
-               "App Switcher icon-row layout reserves room for selected app previews")
+        expect(groupedIconLayout.previewContentWidth <= max(SwitcherIconRowLayout.previewCardWidth,
+               groupedIconLayout.appRowSurfaceWidth - SwitcherIconRowLayout.previewPanelPadding * 2),
+               "App Switcher previews scroll within a stable icon-row width")
         expectClose(Double(groupedIconLayout.appRowSurfaceWidth),
                     Double(groupedIconLayout.appRowContentWidth + SwitcherIconRowLayout.rowHorizontalPadding * 2),
                     "App Switcher icon-row layout keeps horizontal padding inside the app row surface")
@@ -16700,13 +16700,13 @@ UninstallerSelectionTests.run { expect($0, $1) }
             screenshotIncludePointer: true,
             screenshotHideVorssaintWindows: true)
         expect(liveScreenshotPolicy == .init(freeze: false, includePointer: true,
-                                             hideVorssaintWindows: true,
+                                             hideVorssaintWindows: true, keepsContentWindowsOut: true,
                                              usesGeometry: false)
                 && recorderPolicy == .init(freeze: true, includePointer: false,
-                                           hideVorssaintWindows: false,
+                                           hideVorssaintWindows: false, keepsContentWindowsOut: true,
                                            usesGeometry: true)
                 && textPolicy == .init(freeze: true, includePointer: false,
-                                       hideVorssaintWindows: true,
+                                       hideVorssaintWindows: true, keepsContentWindowsOut: true,
                                        usesGeometry: false),
                "switching capture mode rebuilds the frozen frame, pointer and window policy")
         let colorPolicy = ScreenshotSupport.unifiedCapturePolicy(

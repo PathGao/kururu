@@ -196,10 +196,11 @@ final class ScreenCaptureService: ObservableObject {
             includePointer: policy.includePointer,
             showLastRegion: defaults.bool(forKey: DefaultsKey.screenshotShowLastRegion),
             hideVorssaintWindows: policy.hideVorssaintWindows,
-            protectedWindowIDs: {
-                AppFeature.screenshot.isAvailable
-                    ? ScreenshotService.shared.protectedWindowIDsForCapture
-                    : []
+            protectedWindowIDs: { [weak options] in
+                guard AppFeature.screenshot.isAvailable else { return [] }
+                let tool = options?.selectedTool
+                return ScreenshotService.shared.protectedWindowIDsForCapture(
+                    honoursVisibilityPreference: tool != nil && tool != .recording)
             },
             purpose: FeatureStrings.screenshot(L10n.shared.language).screenCaptureTitle,
             mode: policy.usesGeometry ? .geometry : .image,

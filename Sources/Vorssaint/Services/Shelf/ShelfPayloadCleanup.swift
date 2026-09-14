@@ -56,7 +56,21 @@ enum ShelfPayloadCleanup {
             guard root.isFileURL, !root.path.contains("\0"),
                   root.host == nil || root.host == "" || root.host?.lowercased() == "localhost",
                   lstat(root.path, &info) == 0, info.st_mode & S_IFMT == S_IFDIR else { return [] }
-            return (try? FileManager.default.contentsOfDirectory(at: root, includingPropertiesForKeys: nil)) ?? []
+            let entries = (try? FileManager.default.contentsOfDirectory(at: root, includingPropertiesForKeys: nil)) ?? []
+            return entries.flatMap { entry -> [URL] in
+                guard UUID(uuidString: entry.lastPathComponent) != nil,
+                      let (fd, name) = parent(of: entry, roots: [root]) else { return [entry] }
+                defer { close(fd) }
+                var directory = stat()
+                guard fstatat(fd, name, &directory, AT_SYMLINK_NOFOLLOW) == 0,
+                      directory.st_mode & S_IFMT == S_IFDIR else { return [entry] }
+                // copyItem preserves the source mtime; the new private parent
+                // distinguishes in-flight deliveries from pre-startup orphans.
+                let modified = Date(timeIntervalSince1970: Double(directory.st_mtimespec.tv_sec)
+                    + Double(directory.st_mtimespec.tv_nsec) / 1_000_000_000)
+                guard modified < writtenBefore else { return [] }
+                return (try? FileManager.default.contentsOfDirectory(at: entry, includingPropertiesForKeys: nil)) ?? []
+            }
         }
         return capture(urls, roots: roots, writtenBefore: writtenBefore)
     }
@@ -74,7 +88,22 @@ enum ShelfPayloadCleanup {
                   info.st_dev == candidate.device, info.st_ino == candidate.inode,
                   info.st_mtimespec.tv_sec == candidate.modifiedSeconds,
                   info.st_mtimespec.tv_nsec == candidate.modifiedNanoseconds else { continue }
-            if unlinkat(fd, name, 0) != 0 && errno != ENOENT { retry.append(candidate) }
+            if unlinkat(fd, name, 0) != 0 && errno != ENOENT {
+                retry.append(candidate)
+            } else {
+                let container = candidate.url.deletingLastPathComponent()
+                guard UUID(uuidString: container.lastPathComponent) != nil,
+                      roots.contains(where: { $0.standardizedFileURL == container.deletingLastPathComponent().standardizedFileURL }),
+                      let (rootFD, containerName) = parent(of: container, roots: roots) else { continue }
+                defer { close(rootFD) }
+                var opened = stat(), current = stat()
+                guard fstat(fd, &opened) == 0,
+                      fstatat(rootFD, containerName, &current, AT_SYMLINK_NOFOLLOW) == 0,
+                      current.st_mode & S_IFMT == S_IFDIR,
+                      current.st_dev == opened.st_dev, current.st_ino == opened.st_ino else { continue }
+                // Nonrecursive removal keeps any other attachment or new file.
+                _ = unlinkat(rootFD, containerName, AT_REMOVEDIR)
+            }
         }
         return retry
     }

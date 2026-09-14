@@ -68,6 +68,7 @@ enum CleanerPolicy {
 
     static func isExcludedCacheEntry(_ name: String) -> Bool {
         let lowered = name.lowercased()
+        if lowered.hasSuffix(".localized") { return true }
         let ownID = ProductIdentity.releaseBundleID.lowercased()
         if lowered == ownID || lowered.hasPrefix(ownID + ".") { return true }
         return hiddenCachePrefixes.contains { lowered.hasPrefix($0.lowercased()) }
