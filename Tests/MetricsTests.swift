@@ -24134,15 +24134,14 @@ UninstallerSelectionTests.run { expect($0, $1) }
                     && occurrences(measure, panelPageCode) == 0,
                    "\(measure) is about what is measured, so only the monitor page names it")
         }
-        // Graph controls belong to Monitor settings; panels only present the data.
+        // Display controls belong to the panel page; collection stays in monitoring.
         let panelConfigCode = codeLines("Sources/Vorssaint/UI/Settings/MonitorPanelConfig.swift")
         let trendCode = codeLines("Sources/Vorssaint/UI/MenuPanel/MonitorTrendView.swift")
-        expect(occurrences("monitorGraph", panelConfigCode) == 0
-                && occurrences("selection: $historyMinutes", monitorPageCode) == 1
-                && occurrences("MonitorGraphToggle(title:", monitorPageCode) == 8
-                && occurrences("Picker(", trendCode) == 0
-                && occurrences("expanded.toggle()", trendCode) == 0,
-               "history visibility and time controls live only in monitor settings")
+        expect(occurrences("MonitorGraphSwitch", panelConfigCode) == 4
+                && occurrences("selection: $historyMinutes", panelPageCode) == 1
+                && occurrences("monitorGraph", monitorPageCode) == 0
+                && occurrences("Picker(", trendCode) == 0,
+               "history controls live in panel settings without duplicate popup controls")
         // These pages keep their global-only controls; clipboard deliberately shares its entry key.
         for (page, key) in [("MicMuteSettings.swift", "micMuteMenuBarIndicator"),
                             ("MonitorSettings.swift", "panelShowFanControl")] {

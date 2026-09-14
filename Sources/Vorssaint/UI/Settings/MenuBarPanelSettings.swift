@@ -9,6 +9,7 @@ import UniformTypeIdentifiers
 /// The icon above it has its own page, and each tenant keeps whatever else it
 /// does on its own.
 struct MenuBarPanelSettings: View {
+    @AppStorage("monitorHistoryMinutes") private var historyMinutes = 1
     @ObservedObject private var l10n = L10n.shared
     @ObservedObject private var features = FeatureRuntime.shared
 
@@ -25,6 +26,13 @@ struct MenuBarPanelSettings: View {
             }
             SettingsSection(l10n.s.monitorPanelSection) {
                 MonitorPanelConfig(includeStandaloneSections: true)
+                Picker(MonitorHistoryStrings.text(l10n.language).range, selection: $historyMinutes) {
+                    ForEach(1...5, id: \.self) { value in
+                        Text("\(value) \(MonitorHistoryStrings.text(l10n.language).minutes)").tag(value)
+                    }
+                }
+                Text(MonitorHistoryStrings.text(l10n.language).visibilityHint)
+                    .font(SettingsTypography.caption).foregroundStyle(.secondary)
                 Text(l10n.s.monitorPanelConfigHint)
                     .font(SettingsTypography.caption)
                     .foregroundStyle(.secondary)

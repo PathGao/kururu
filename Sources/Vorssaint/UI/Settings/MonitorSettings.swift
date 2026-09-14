@@ -10,7 +10,6 @@ struct MonitorSettings: View {
     @ObservedObject private var l10n = L10n.shared
     @ObservedObject private var features = FeatureRuntime.shared
 
-    @AppStorage("monitorHistoryMinutes") private var historyMinutes = 1
     @AppStorage(DefaultsKey.monitorInterval) private var interval = 2
     @AppStorage(DefaultsKey.temperatureUnit) private var temperatureUnit = TemperatureUnit.celsius.rawValue
     @AppStorage(DefaultsKey.monitorMemoryMetric) private var memoryMetric = "used"
@@ -51,25 +50,6 @@ struct MonitorSettings: View {
                         .pickerStyle(.segmented)
                         .labelsHidden()
                     }
-                }
-            }
-            SettingsSection(MonitorHistoryStrings.text(l10n.language).history) {
-                Text(MonitorHistoryStrings.text(l10n.language).visibilityHint)
-                    .font(SettingsTypography.caption).foregroundStyle(.secondary)
-                Picker(MonitorHistoryStrings.text(l10n.language).range, selection: $historyMinutes) {
-                    ForEach(1...5, id: \.self) { value in
-                        Text("\(value) \(MonitorHistoryStrings.text(l10n.language).minutes)").tag(value)
-                    }
-                }
-                MonitorGraphToggle(title: l10n.s.cpuLabel, key: DefaultsKey.monitorGraphCPU)
-                MonitorGraphToggle(title: l10n.s.gpuLabel, key: DefaultsKey.monitorGraphGPU)
-                MonitorGraphToggle(title: l10n.s.memorySection, key: DefaultsKey.monitorGraphMemory)
-                MonitorGraphToggle(title: l10n.s.networkSection, key: DefaultsKey.monitorGraphNetwork)
-                MonitorGraphToggle(title: AppFeature.monitorDisk.name(l10n.s, language: l10n.language), key: DefaultsKey.monitorGraphDisk)
-                MonitorGraphToggle(title: AppFeature.monitorPower.name(l10n.s, language: l10n.language), key: DefaultsKey.monitorGraphPower)
-                MonitorGraphToggle(title: l10n.s.batteryLabel, key: DefaultsKey.monitorGraphBattery)
-                if AppFeature.fanControl.isAvailable {
-                    MonitorGraphToggle(title: FeatureStrings.fanControl(l10n.language).menuBarTitle, key: "monitorGraphFan")
                 }
             }
             monitorAlertsSection
@@ -120,24 +100,4 @@ struct MonitorSettings: View {
             MonitorAlertsControls(compact: false)
         }
     }
-}
-
-
-// Contributed in PR #179: the memory pressure-dot option lives under the
-// Memory row, matching the Network row's inline option.
-
-
-
-
-
-private struct MonitorGraphToggle: View {
-    let title: String
-    @AppStorage private var visible: Bool
-
-    init(title: String, key: String) {
-        self.title = title
-        _visible = AppStorage(wrappedValue: true, key)
-    }
-
-    var body: some View { Toggle(title, isOn: $visible) }
 }
