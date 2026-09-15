@@ -552,14 +552,22 @@ enum HomebrewParser {
     }
 
     static func parseOutdatedJSON(_ data: Data) throws -> [String: HomebrewPackageUpdate] {
-        guard let root = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-            return [:]
+        guard let root = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+              root["formulae"] != nil || root["casks"] != nil else {
+            throw CocoaError(.propertyListReadCorrupt)
         }
-        let formulae = (root["formulae"] as? [[String: Any]] ?? [])
-            .compactMap { parseOutdatedItem($0, kind: .formula) }
-        let casks = (root["casks"] as? [[String: Any]] ?? [])
-            .compactMap { parseOutdatedItem($0, kind: .cask) }
-        return Dictionary(uniqueKeysWithValues: (formulae + casks).map { ($0.id, $0) })
+        var updates: [String: HomebrewPackageUpdate] = [:]
+        for (key, kind) in [("formulae", HomebrewPackageKind.formula), ("casks", .cask)] {
+            guard let raw = root[key] else { continue }
+            guard let items = raw as? [[String: Any]] else { throw CocoaError(.propertyListReadCorrupt) }
+            for item in items {
+                guard let update = parseOutdatedItem(item, kind: kind), updates[update.id] == nil else {
+                    throw CocoaError(.propertyListReadCorrupt)
+                }
+                updates[update.id] = update
+            }
+        }
+        return updates
     }
 
     static func parseOutdatedCommandOutput(_ output: String) throws -> [String: HomebrewPackageUpdate] {

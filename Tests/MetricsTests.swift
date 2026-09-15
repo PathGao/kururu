@@ -60,6 +60,8 @@ struct MetricsTests {
         MonitorHistoryTests.run { expect($0, $1) }
         MusicLaunchBlockerTests.run { expect($0, $1) }
         EnvironmentCopyTests.run { expect($0, $1) }
+        EnvironmentUpdateTests.run { expect($0, $1) }
+        EnvironmentConfigurationTests.run { expect($0, $1) }
         CommandBarActionTests.run { expect($0, $1) }
         CommandBarDestinationTests.run { expect($0, $1) }
         LocalPortTests.run { expect($0, $1) }

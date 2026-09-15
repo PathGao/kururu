@@ -16,6 +16,7 @@ final class HomebrewManager: ObservableObject {
     @Published private(set) var masApps: [HomebrewPackage] = []
     @Published private(set) var isLoadingInstalled = false
     @Published private(set) var isLoadingOutdated = false
+    @Published private(set) var isCheckingEnvironment = false
     @Published private(set) var operation: HomebrewOperation?
     @Published private(set) var operationStatus: HomebrewOperationStatus?
     @Published private(set) var log = ""
@@ -38,7 +39,7 @@ final class HomebrewManager: ObservableObject {
     private var completedOperationCleanup: DispatchWorkItem?
 
     var isBusy: Bool {
-        isLoadingInstalled || operation != nil
+        isLoadingInstalled || isCheckingEnvironment || operation != nil
     }
 
     /// Formulae the person asked for by name, plus every cask. What is left
@@ -129,6 +130,38 @@ final class HomebrewManager: ObservableObject {
 
     func uninstall(_ package: HomebrewPackage) {
         perform(.uninstall, package: package)
+    }
+
+    /// Shares the brew execution queue with package operations; failed reads never mean "current".
+    func checkEnvironmentUpdates(brewPath: String,
+                                 completion: @escaping (EnvironmentHomebrewSnapshot?) -> Void) {
+        guard HomebrewCommandBuilder.candidatePaths.contains(brewPath), !isBusy,
+              FileManager.default.isExecutableFile(atPath: brewPath) else {
+            completion(nil)
+            return
+        }
+        isCheckingEnvironment = true
+        let finish: (EnvironmentHomebrewSnapshot?) -> Void = { [weak self] snapshot in
+            DispatchQueue.main.async {
+                self?.isCheckingEnvironment = false
+                completion(snapshot)
+            }
+        }
+        run(HomebrewCommandBuilder.installed(brewPath: brewPath)) { [weak self] status, output in
+            guard let self, status == 0,
+                  let packages = try? HomebrewParser.parseInfoCommandOutput(output) else {
+                finish(nil)
+                return
+            }
+            self.run(HomebrewCommandBuilder.outdated(brewPath: brewPath)) { status, output in
+                guard status == 0,
+                      let updates = try? HomebrewParser.parseOutdatedCommandOutput(output) else {
+                    finish(nil)
+                    return
+                }
+                finish(EnvironmentHomebrewSnapshot(packages: packages, updates: updates))
+            }
+        }
     }
 
     /// Looks up whether Homebrew owns this exact app bundle. The cached
@@ -226,7 +259,7 @@ final class HomebrewManager: ObservableObject {
     private func perform(_ action: HomebrewOperation.Action,
                          package: HomebrewPackage?,
                          command commandOverride: HomebrewCommand? = nil) {
-        guard operation == nil else { return }
+        guard operation == nil, !isCheckingEnvironment else { return }
         guard let brewPath = brewPath ?? detectBrewPath() else { return }
         guard let command = commandOverride
                 ?? standardCommand(for: action, package: package, brewPath: brewPath) else { return }

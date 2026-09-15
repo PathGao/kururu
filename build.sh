@@ -344,6 +344,11 @@ if (( TEST )); then
         Sources/Vorssaint/Core/EnvironmentStrings.swift \
         Sources/Vorssaint/Core/EnvironmentCopyFeedback.swift \
         Tests/EnvironmentCopyTests.swift \
+        Sources/Vorssaint/Services/Environment/EnvironmentUpdateSupport.swift \
+        Sources/Vorssaint/Core/EnvironmentUpdateStrings.swift \
+        Tests/EnvironmentUpdateTests.swift \
+        Sources/Vorssaint/Services/Environment/EnvironmentConfiguration.swift \
+        Tests/EnvironmentConfigurationTests.swift \
         Sources/Vorssaint/Services/CommandBar/CommandBarActionSupport.swift \
         Tests/CommandBarActionTests.swift \
         Sources/Vorssaint/Services/CommandBar/CommandBarDestinationSupport.swift \

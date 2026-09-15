@@ -13,6 +13,7 @@ struct EnvironmentTool: Identifiable, Hashable {
     let version: String?
     let shimTarget: String?
     let shadowedPaths: [String]
+    var source: EnvironmentUpdateSource = .unknown
 
     var id: String { command }
     var isShim: Bool { shimTarget != nil }
@@ -69,7 +70,7 @@ final class EnvironmentInspector: ObservableObject {
 
     private init() {}
 
-    func refresh() {
+    func refresh(completion: ((EnvironmentReport) -> Void)? = nil) {
         guard !isLoading else { return }
         isLoading = true
         workQueue.async { [weak self] in
@@ -77,6 +78,7 @@ final class EnvironmentInspector: ObservableObject {
             DispatchQueue.main.async {
                 self?.report = report
                 self?.isLoading = false
+                completion?(report)
             }
         }
     }
@@ -162,11 +164,31 @@ final class EnvironmentInspector: ObservableObject {
             return EnvironmentTool(command: command, path: nil, version: nil,
                                    shimTarget: nil, shadowedPaths: [])
         }
+        let shim = shimTarget(of: first, command: command)
         return EnvironmentTool(command: command,
                                path: first,
                                version: version(of: first),
-                               shimTarget: shimTarget(of: first, command: command),
-                               shadowedPaths: Array(winner.dropFirst()))
+                               shimTarget: shim,
+                               shadowedPaths: Array(winner.dropFirst()),
+                               source: installationSource(of: first, command: command, isWrapper: shim != nil))
+    }
+
+    static func installationSource(of path: String, command: String, isWrapper: Bool) -> EnvironmentUpdateSource {
+        let resolved = URL(fileURLWithPath: path).resolvingSymlinksInPath().path
+        for location in [path, resolved] {
+            let root = URL(fileURLWithPath: location).deletingLastPathComponent().deletingLastPathComponent()
+            if FileManager.default.fileExists(atPath: root.appendingPathComponent("conda-meta").path) {
+                return .managed("Conda")
+            }
+            if FileManager.default.fileExists(atPath: root.appendingPathComponent("pyvenv.cfg").path) {
+                return .managed("venv")
+            }
+        }
+        let handle = FileHandle(forReadingAtPath: path)
+        let head = try? handle?.read(upToCount: 2)
+        try? handle?.close()
+        return EnvironmentUpdateSupport.source(command: command, path: path, resolvedPath: resolved,
+            home: NSHomeDirectory(), isWrapper: isWrapper || head == Data("#!".utf8))
     }
 
     static func version(of path: String) -> String? {
@@ -252,8 +274,10 @@ final class EnvironmentInspector: ObservableObject {
 
     /// Plain text for a bug report: everything the page shows, in the order it
     /// shows it, so a person can paste it instead of answering ten questions.
-    static func diagnosticText(_ report: EnvironmentReport) -> String {
+    static func diagnosticText(_ report: EnvironmentReport,
+                               updates: [String: EnvironmentUpdateRecord] = [:]) -> String {
         var lines: [String] = []
+        let updateText = EnvironmentUpdateStrings(language: .enUS)
         lines.append("macOS \(ProcessInfo.processInfo.operatingSystemVersionString)")
         lines.append("shell: \(loginShell() ?? "unknown")")
         lines.append("")
@@ -267,6 +291,16 @@ final class EnvironmentInspector: ObservableObject {
             if let version = tool.version { line += "  [\(version)]" }
             if let shim = tool.shimTarget { line += "  -> \(shim)" }
             lines.append(line)
+            lines.append("    source: \(updateText.source(tool.source))")
+            if let record = updates[tool.command], record.isVisible {
+                if let result = record.result {
+                    lines.append("    update: \(updateText.status(result.status))")
+                    if case .homebrew = record.source { lines.append("    \(updateText.brewNote)") }
+                    if result.isPinned { lines.append("    \(updateText.pinned)") }
+                    if result.isDependency { lines.append("    \(updateText.dependency)") }
+                }
+                if let date = record.checkedAt { lines.append("    checked: \(date.ISO8601Format())") }
+            }
             for shadowed in tool.shadowedPaths {
                 lines.append("    shadowed: \(shadowed)")
             }
