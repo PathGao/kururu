@@ -29,6 +29,14 @@ enum OnboardingFeatureSelectionTests {
         expect(mouse[DefaultsKey.mouseButtonShortcutsEnabled] == false
                && mouse[DefaultsKey.mouseSpacesGestureEnabled] == false,
                "an unselected sibling's actions stay off without adding a group gate")
+        expect(OnboardingFeatureSelection.actionOnInstall(.bluetoothSleep, isEnabled: { _ in false })
+               == DefaultsKey.bluetoothSleepEnabled, "installing a one-behavior unit turns that behavior on")
+        expect(OnboardingFeatureSelection.actionOnInstall(.bluetoothSleep, isEnabled: { _ in true }) == nil,
+               "installing keeps a behavior that is already configured")
+        expect(OnboardingFeatureSelection.actionOnInstall(.mouse, isEnabled: { _ in false }) == nil,
+               "installing a multi-member unit starts no member")
+        expect(OnboardingFeatureSelection.actionOnInstall(.keepAwake, isEnabled: { _ in false }) == nil,
+               "installing keep awake never starts a session")
         let monitor = OnboardingFeatureSelection.preferenceChanges(for: [.monitorCPU], isEnabled: { _ in false })
         expect(monitor[FeatureUnit.monitor.availabilityKey] == true, "the monitor has one selection entry")
         expect(monitor[DefaultsKey.fanControlEnabled] == false, "monitor selection never starts fan control")

@@ -59,6 +59,14 @@ enum OnboardingFeatureSelection {
         return changes
     }
 
+    /// A one-member unit does nothing until its first action is on, so installing
+    /// it from the hub turns that action on, as selecting it during onboarding does.
+    static func actionOnInstall(_ unit: FeatureUnit, isEnabled: (String) -> Bool) -> String? {
+        guard unit.features.count == 1, let feature = unit.features.first,
+              !feature.enabledKeys.contains(where: isEnabled) else { return nil }
+        return primaryAction(for: feature)
+    }
+
     private static func primaryAction(for feature: AppFeature) -> String? {
         switch feature {
         case .scrollInverter: return DefaultsKey.scrollInverterEnabled
