@@ -95,7 +95,7 @@ struct MonitorAlertsControls: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .toggleStyle(.checkbox)
+        .toggleStyle(compact: compact)
         .controlSize(compact ? .small : .regular)
         .font(compact ? .system(size: 10.5) : .body)
         .onAppear {
