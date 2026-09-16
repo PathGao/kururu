@@ -1,0 +1,77 @@
+[
+  {
+    "name": "bug",
+    "color": "d73a4a",
+    "description": "Something isn't working"
+  },
+  {
+    "name": "enhancement",
+    "color": "a2eeef",
+    "description": "New feature or improvement"
+  },
+  {
+    "name": "documentation",
+    "color": "bfd4f2",
+    "description": "Docs, README or contributor-facing text"
+  },
+  {
+    "name": "question",
+    "color": "fbca04",
+    "description": "A usage question, not a request for missing information"
+  },
+  {
+    "name": "needs info",
+    "color": "f9d0c4",
+    "description": "Waiting on the reporter to supply missing information"
+  },
+  {
+    "name": "awaiting decision",
+    "color": "c129c4",
+    "description": "Needs a maintainer decision before work can start"
+  },
+  {
+    "name": "planned",
+    "color": "0453ab",
+    "description": "Accepted and queued for work"
+  },
+  {
+    "name": "duplicate",
+    "color": "cfd3d7",
+    "description": "Same issue or pull request; link to the original"
+  },
+  {
+    "name": "wontfix",
+    "color": "6e7781",
+    "description": "Decided against, with a reason"
+  },
+  {
+    "name": "dependencies",
+    "color": "b9d130",
+    "description": "Dependency update"
+  },
+  {
+    "name": "github_actions",
+    "color": "000000",
+    "description": "GitHub Actions update"
+  },
+  {
+    "name": "accessibility",
+    "color": "f143ab",
+    "description": "Barrier affecting people with disabilities"
+  },
+  {
+    "name": "good first issue",
+    "color": "7057ff",
+    "description": "Good for newcomers"
+  },
+  {
+    "name": "help wanted",
+    "color": "008672",
+    "description": "Extra attention is needed"
+  },
+  {
+    "name": "invalid",
+    "color": "e4e669",
+    "description": "This doesn't seem right"
+  }
+]

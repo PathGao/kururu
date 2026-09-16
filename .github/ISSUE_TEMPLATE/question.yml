@@ -1,0 +1,11 @@
+name: Usage question
+description: Ask how to use the project
+labels: [question]
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: What are you trying to do?
+      description: Include what you tried and relevant application/OS versions.
+    validations:
+      required: true
