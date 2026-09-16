@@ -47,9 +47,21 @@ not a prerequisite automatically run by the build. Do not run it as a routine
 build repair. kururu uses its own application identity and does not inherit
 another application's permission grants.
 
-Official signing, notarization and release configuration remain pending in
-the [roadmap](../ROADMAP.md). An existing local signing certificate or a
-successful development build is not evidence that distribution is configured.
+The release workflow uses the protected `release-signing` environment. Configure
+`SIGNING_CERT_P12` (base64 PKCS#12), `SIGNING_CERT_PASSWORD`, and the variables
+`APPLE_SIGNING_IDENTITY` (certificate SHA-1) and `APPLE_TEAM_ID`. The build selects
+the project certificate by fingerprint because other projects can share its name.
+
+For notarization, provide `APPLE_ID` and `APPLE_APP_SPECIFIC_PASSWORD`, or the
+existing `NOTARY_API_KEY_P8`, `NOTARY_KEY_ID` and `NOTARY_ISSUER_ID` secrets. Locally,
+`NOTARY_KEYCHAIN_PROFILE` selects credentials saved by `notarytool store-credentials`.
+A release fails if signing or notarization is unavailable. The app accepts updates
+from PathGao/kururu only after validating its Apple team and bundle identity.
+The release publisher requires immutable releases in the repository settings.
+Run **Actions → Release → Run workflow** on `main`, entering the version tag
+matching `Resources/Info.plist` and `CHANGELOG.md`. Approve the signing environment
+when prompted. GitHub builds, signs, notarizes, creates the tag and publishes the
+release without using the maintainer's local keychain.
 
 ## Project layout
 
@@ -193,7 +205,7 @@ and the release workflow uses the matching section for GitHub release notes.
 
 ## Privacy
 
-kururu stores preferences and feature data locally in its own application domain. It has no account or hosted feedback service. This page describes the current fork, including the disabled release capabilities.
+kururu stores preferences and feature data locally in its own application domain. It has no account or hosted feedback service. This page describes the current source build.
 
 ### The short version
 
@@ -220,7 +232,7 @@ When a feature needs a macOS permission such as Accessibility, Screen Recording 
 
 kururu opens only a few kinds of connection, and each one belongs to a visible feature.
 
-1. **kururu self-updates are disabled in this build.** No release check, download or installation runs without this product's own update configuration.
+1. **kururu updates.** Release builds check PathGao/kururu on GitHub when update checking is enabled. Installation validates the disk image and application against kururu's Apple team and bundle identity. Developer builds cannot self-update.
 
 2. **The internet speed test, only when you ask.** The optional speed test in the Network section reaches Cloudflare's public speed endpoints at `speed.cloudflare.com` to measure latency and your download and upload throughput. This happens only when you start a test yourself, and never on its own.
 
@@ -273,8 +285,8 @@ permission appears enabled but a feature cannot use it, see
 Closed-lid keep-awake uses `pmset disablesleep`, which requires administrator
 rights. The optional password-free setup installs a narrowly scoped `sudoers`
 rule for that command. It is separate from macOS privacy permissions.
-Privileged fan control is unavailable pending kururu's own release signing
-configuration.
+The privileged fan helper authenticates the configured Apple team and kururu's
+application identity in both directions.
 
 ## Troubleshooting
 
@@ -284,12 +296,9 @@ The permission and uninstall commands below all point at kururu's bundle identif
 
 ### The app will not open
 
-The current kururu release is locally signed and has not been notarized by
-Apple. macOS may block the first launch. If you trust the downloaded copy,
-open **System Settings → Privacy & Security**, find the blocked-app notice
-and choose **Open Anyway**, then confirm. See
-[Apple's Gatekeeper guide](https://support.apple.com/en-us/102445).
-
+Official releases use Apple Developer ID signing and notarization. Download the
+current DMG from this repository's release page. If macOS rejects it, verify that
+the file came from that page and report the exact system message.
 kururu lives in the menu bar, so once it starts, look for its icon up there rather than in the Dock.
 
 ### A feature does nothing, or a permission will not stick
