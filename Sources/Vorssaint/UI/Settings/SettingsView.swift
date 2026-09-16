@@ -604,6 +604,7 @@ struct MouseSettings: View {
                         }
                         MouseExceptionsList(scope: .focusFollowsMouse)
                     }
+                    .disabled(!focusFollowsMouseEnabled)
                 }
                 .settingsSectionAnchor(.focusFollowsMouse)
             }
@@ -662,6 +663,7 @@ struct MouseSettings: View {
                         }.frame(height: 120).background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 8))
                         MouseExceptionsList(scope: .smoothScroll)
                     }
+                    .disabled(!smoothScrollEnabled)
                 }
                 .settingsSectionAnchor(.smoothScroll)
             }
@@ -707,6 +709,7 @@ struct MouseSettings: View {
                     Group {
                         MouseExceptionsList(scope: .navigation)
                     }
+                    .disabled(!mouseNavigationEnabled)
                 }
                 .settingsSectionAnchor(.mouseNavigation)
             }
@@ -737,6 +740,7 @@ struct MouseSettings: View {
                             Text(mouseClickDebounceText.moreOptions)
                         }
                     }
+                    .disabled(!mouseClickDebounceEnabled)
                 }
                 .settingsSectionAnchor(.mouseClickDebounce)
             }

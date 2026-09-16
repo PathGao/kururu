@@ -26,35 +26,38 @@ struct DockSettings: View {
                 SettingsInfo(text: dockPreviewCaption,
                              systemImage: dockPreviewWarning ? "exclamationmark.triangle" : "cursorarrow.motionlines",
                              warning: dockPreviewWarning)
-                Divider()
-                SettingsControlRow(title: text.openDelay, systemImage: "timer", help: text.openDelayCaption) {
-                    HStack(spacing: 6) {
-                        TextField(text.openDelay, value: dockPreviewOpenDelayBinding,
-                                  formatter: Self.dockPreviewOpenDelayFormatter)
-                            .textFieldStyle(.roundedBorder).frame(width: 64)
-                        Stepper(text.openDelay, value: dockPreviewOpenDelayBinding,
-                                in: DockPreviewSupport.openDelayMillisecondsRange, step: 50)
-                            .labelsHidden()
-                        Text(verbatim: "ms").foregroundStyle(.secondary)
+                Group {
+                    Divider()
+                    SettingsControlRow(title: text.openDelay, systemImage: "timer", help: text.openDelayCaption) {
+                        HStack(spacing: 6) {
+                            TextField(text.openDelay, value: dockPreviewOpenDelayBinding,
+                                      formatter: Self.dockPreviewOpenDelayFormatter)
+                                .textFieldStyle(.roundedBorder).frame(width: 64)
+                            Stepper(text.openDelay, value: dockPreviewOpenDelayBinding,
+                                    in: DockPreviewSupport.openDelayMillisecondsRange, step: 50)
+                                .labelsHidden()
+                            Text(verbatim: "ms").foregroundStyle(.secondary)
+                        }
                     }
-                }
-                SettingsControlRow(title: text.backgroundOpacity, systemImage: "square.on.square", help: text.backgroundOpacityCaption) {
-                    HStack(spacing: 8) {
-                        Slider(value: dockPreviewBackgroundOpacityBinding,
-                               in: DockPreviewSupport.backgroundOpacityRange, step: 0.05)
-                            .frame(width: 150)
-                            .accessibilityLabel(text.backgroundOpacity)
-                        Text("\(dockPreviewBackgroundOpacityPercent)%")
-                            .font(SettingsTypography.body.monospacedDigit())
-                            .foregroundStyle(.secondary).frame(width: 44, alignment: .trailing)
+                    SettingsControlRow(title: text.backgroundOpacity, systemImage: "square.on.square", help: text.backgroundOpacityCaption) {
+                        HStack(spacing: 8) {
+                            Slider(value: dockPreviewBackgroundOpacityBinding,
+                                   in: DockPreviewSupport.backgroundOpacityRange, step: 0.05)
+                                .frame(width: 150)
+                                .accessibilityLabel(text.backgroundOpacity)
+                            Text("\(dockPreviewBackgroundOpacityPercent)%")
+                                .font(SettingsTypography.body.monospacedDigit())
+                                .foregroundStyle(.secondary).frame(width: 44, alignment: .trailing)
+                        }
                     }
+                    WindowPreviewControls(sizeKey: DefaultsKey.dockPreviewSize,
+                                          exclusionsKey: DefaultsKey.dockPreviewExcludedApps)
+                    Divider()
+                    SettingsToggleWithCaption(title: text.quitAppOnClose,
+                                              caption: text.quitAppOnCloseCaption,
+                                              isOn: $dockPreviewQuitAppOnClose)
                 }
-                WindowPreviewControls(sizeKey: DefaultsKey.dockPreviewSize,
-                                      exclusionsKey: DefaultsKey.dockPreviewExcludedApps)
-                Divider()
-                SettingsToggleWithCaption(title: text.quitAppOnClose,
-                                          caption: text.quitAppOnCloseCaption,
-                                          isOn: $dockPreviewQuitAppOnClose)
+                .disabled(!dockPreviewEnabled)
             }
             .settingsSectionAnchor(.dock)
             if AppFeature.dockClick.isAvailable {

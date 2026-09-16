@@ -101,6 +101,7 @@ struct MouseButtonShortcutsSection: View {
                         .foregroundStyle(.orange)
                 }
             }
+            .disabled(!spacesEnabled)
             Divider()
             MouseExceptionsList(scope: .buttonShortcuts)
         }
