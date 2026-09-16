@@ -13,7 +13,6 @@ struct TrackpadSettings: View {
     @AppStorage(DefaultsKey.radialMenuEnabled) private var radialMenuEnabled = false
     @AppStorage(DefaultsKey.radialMenuProfiles) private var radialProfilesData = Data()
     @AppStorage(DefaultsKey.trackpadSpreadProfile) private var spreadProfile = ""
-    private var tuningText: InputTuningStrings { InputTuningStrings(language: l10n.language) }
     private var gestureText: TrackpadGestureStrings { .localized(l10n.language) }
     private var radialProfiles: [RadialMenuProfile] { RadialMenuSupport.decodeProfiles(radialProfilesData) }
     private var middleTapBinding: Binding<Int> {
@@ -107,28 +106,8 @@ struct TrackpadSettings: View {
                 }
                 .settingsSectionAnchor(.middleClick)
             }
-            if AppFeature.radialMenu.isAvailable {
-                SettingsSection(tuningText.spread) {
-                    Picker(tuningText.spread, selection: Binding(
-                        get: { radialProfiles.contains { $0.id.uuidString == spreadProfile } ? spreadProfile : "" },
-                        set: { spreadProfile = $0 })) {
-                        Text(l10n.s.middleClickTapOff).tag("")
-                        ForEach(radialProfiles) { profile in
-                            Text(profile.displayName(FeatureStrings.radialMenu(l10n.language))).tag(profile.id.uuidString)
-                        }
-                    }
-                    .onChange(of: spreadProfile) { _, value in
-                        MiddleClickService.shared.syncWithPreferences()
-                        if !value.isEmpty { permissions.requestAccessibility() }
-                    }
-                    SettingsCaptionText(tuningText.spreadHint)
-                    Button(AppFeature.radialMenu.name(l10n.s, language: l10n.language)) {
-                        SettingsRouter.shared.request(AppFeature.radialMenu.settingsDestination)
-                    }
-                }
-            }
             let bindings = radialProfiles.filter { $0.trackpadTapFingers != 0 }
-            if !bindings.isEmpty {
+            if AppFeature.radialMenu.isAvailable, !bindings.isEmpty {
                 SettingsSection(gestureText.bindings) {
                     ForEach(bindings) { profile in
                         VStack(alignment: .leading, spacing: 4) {
