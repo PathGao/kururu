@@ -443,7 +443,10 @@ final class SystemMonitor: ObservableObject {
         plan.needCPUTemperature = plan.needCPU
         plan.needGPUTemperature = plan.needGPUUsage
         plan.needBatteryTemperature = plan.needPower && PowerSampler.hasInternalBattery
+        // Reading peripherals creates a CBCentralManager, which asks for Bluetooth
+        // access. Only read them while something on screen shows them.
         plan.needPeripheralBattery = plan.needPower
+            && (defaults.bool(forKey: DefaultsKey.menuBarPeripheralBattery) || menuPanelNeeds.peripheralBattery)
         plan.needFanSpeed = AppFeature.fanControl.isAvailable(in: defaults) && Self.fanTelemetryAvailable
         return plan
     }
