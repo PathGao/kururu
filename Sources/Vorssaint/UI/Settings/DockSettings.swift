@@ -27,7 +27,7 @@ struct DockSettings: View {
                              systemImage: dockPreviewWarning ? "exclamationmark.triangle" : "cursorarrow.motionlines",
                              warning: dockPreviewWarning)
                 Divider()
-                SettingsControlRow(title: text.openDelay, systemImage: "timer", caption: text.openDelayCaption) {
+                SettingsControlRow(title: text.openDelay, systemImage: "timer", help: text.openDelayCaption) {
                     HStack(spacing: 6) {
                         TextField(text.openDelay, value: dockPreviewOpenDelayBinding,
                                   formatter: Self.dockPreviewOpenDelayFormatter)
@@ -38,7 +38,7 @@ struct DockSettings: View {
                         Text(verbatim: "ms").foregroundStyle(.secondary)
                     }
                 }
-                SettingsControlRow(title: text.backgroundOpacity, systemImage: "square.on.square", caption: text.backgroundOpacityCaption) {
+                SettingsControlRow(title: text.backgroundOpacity, systemImage: "square.on.square", help: text.backgroundOpacityCaption) {
                     HStack(spacing: 8) {
                         Slider(value: dockPreviewBackgroundOpacityBinding,
                                in: DockPreviewSupport.backgroundOpacityRange, step: 0.05)

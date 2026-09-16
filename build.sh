@@ -275,12 +275,9 @@ if (( TEST )); then
         Sources/Vorssaint/Services/PermissionResetSupport.swift \
         Sources/Vorssaint/Services/RadialMenu/RadialMenuProfileDeletion.swift \
         Tests/SettingsActionTests.swift \
-        Sources/Vorssaint/Core/ThemeImportSupport.swift \
-        Sources/Vorssaint/Core/ThemeLinkImportSupport.swift \
         Sources/Vorssaint/Core/JSONPreviewFormatter.swift \
         Sources/Vorssaint/Core/URLAutomaticCleaning.swift \
         Sources/Vorssaint/Core/URLRuleImportSupport.swift \
-        Sources/Vorssaint/Services/ThemePreferences.swift \
         Tests/ShelfDockPlacementTests.swift \
         Tests/ShelfDockVisibilityTests.swift \
         Tests/ShelfIndexStoreTests.swift \
@@ -295,7 +292,6 @@ if (( TEST )); then
         Tests/ClipboardImportTransactionTests.swift \
         Tests/ScratchpadImportStoreTests.swift \
         Tests/ShelfDockBackupTests.swift \
-        Tests/ThemeImportTests.swift \
         Tests/ClipboardJSONPreviewTests.swift \
         Tests/URLAutomaticCleaningTests.swift \
         Tests/URLRuleImportTests.swift \
@@ -328,6 +324,13 @@ if (( TEST )); then
         Tests/FinderArrangementTests.swift \
         Tests/FinderTargetAcquisitionTests.swift \
         Tests/DisplayBrightnessShortcutTests.swift \
+        Tests/BrightnessModuleMigrationTests.swift \
+        Tests/FeatureLifecycleTests.swift \
+        Tests/ShelfImportStoreTests.swift \
+        Tests/CommandBarExecutorTests.swift \
+        Sources/Vorssaint/Services/Shelf/ShelfImportStore.swift \
+        Sources/Vorssaint/Services/CommandBar/CommandBarExecutor.swift \
+        Sources/Vorssaint/App/FeatureLifecycle.swift \
         Sources/Vorssaint/Core/CommandBarStrings.swift \
         Sources/Vorssaint/Core/FeedbackStrings.swift \
         Sources/Vorssaint/Core/FeedbackDraftSupport.swift \
@@ -344,6 +347,11 @@ if (( TEST )); then
         Sources/Vorssaint/Core/EnvironmentStrings.swift \
         Sources/Vorssaint/Core/EnvironmentCopyFeedback.swift \
         Tests/EnvironmentCopyTests.swift \
+        Sources/Vorssaint/Services/Environment/EnvironmentUpdateSupport.swift \
+        Sources/Vorssaint/Core/EnvironmentUpdateStrings.swift \
+        Tests/EnvironmentUpdateTests.swift \
+        Sources/Vorssaint/Services/Environment/EnvironmentConfiguration.swift \
+        Tests/EnvironmentConfigurationTests.swift \
         Sources/Vorssaint/Services/CommandBar/CommandBarActionSupport.swift \
         Tests/CommandBarActionTests.swift \
         Sources/Vorssaint/Services/CommandBar/CommandBarDestinationSupport.swift \
@@ -504,6 +512,7 @@ if (( TEST )); then
         Sources/Vorssaint/Services/Cleaner/CleanerPackageCaches.swift \
         Tests/CleanerPackageCacheTests.swift \
         Tests/BrightnessNativeBoundaryTests.swift \
+        Tests/BrightnessPipelineTests.swift \
         Sources/Vorssaint/Core/OnboardingFeatureSelection.swift \
         Sources/Vorssaint/Core/OnboardingFeatureStrings.swift \
         Tests/OnboardingFeatureSelectionTests.swift \
@@ -539,6 +548,31 @@ if (( TEST )); then
     # `set -e` would end the script on a failing run before the sweep below.
     test_status=0
     ./build/metrics-tests || test_status=$?
+    if python3 Tests/BrightnessServiceContract.py \
+        Sources/Vorssaint/Services/Display/BrightnessService.swift \
+        build/brightness-contract/main.swift && \
+        swiftc -target "$TARGET" -sdk "$SDK" \
+        Sources/Vorssaint/Services/Display/BrightnessSupport.swift \
+        build/brightness-contract/main.swift -o build/brightness-contract-tests; then
+        ./build/brightness-contract-tests || test_status=1
+    else
+        test_status=1
+    fi
+    if swiftc Sources/Vorssaint/Services/BoundedProcessRunner.swift \
+        Tests/BoundedProcessCancellationTests.swift -o build/process-cancellation-tests; then
+        ./build/process-cancellation-tests || test_status=1
+    else
+        test_status=1
+    fi
+    if swiftc Sources/Vorssaint/Services/Update/UpdateServiceSupport.swift \
+        Sources/Vorssaint/Services/Homebrew/HomebrewSupport.swift \
+        Sources/Vorssaint/Services/Environment/EnvironmentUpdateSupport.swift \
+        Sources/Vorssaint/Services/Homebrew/HomebrewEnvironmentCheckSettlement.swift \
+        Tests/HomebrewEnvironmentCheckSettlementTests.swift -o build/homebrew-settlement-tests; then
+        ./build/homebrew-settlement-tests || test_status=1
+    else
+        test_status=1
+    fi
     if swiftc -target "$TARGET" -sdk "$SDK" \
         Sources/Vorssaint/UI/PlainTextEditor.swift \
         Tests/PlainTextEditorLifecycleTests.swift Tests/PlainTextEditorLifecycleMain.swift \

@@ -8,7 +8,6 @@ import SwiftUI
 /// page on the right. Scales cleanly as features are added, and gives each
 /// feature a page of its own with room for examples and advanced options.
 struct SettingsView: View {
-    @ObservedObject private var themePreferences = ThemePreferences.shared
     @ObservedObject private var l10n = L10n.shared
     @ObservedObject private var router = SettingsRouter.shared
     @ObservedObject private var features = FeatureRuntime.shared
@@ -98,7 +97,7 @@ struct SettingsView: View {
             }
         }
         .navigationSplitViewStyle(.balanced)
-        .kururuTheme()
+        .tint(SettingsVisualStyle.preview?.accent)
         .frame(minWidth: 772, maxWidth: .infinity, minHeight: 528, maxHeight: .infinity)
         .onChange(of: searchResults, initial: true) { previous, current in
             updateSearchSelection(previous: previous, current: current)
@@ -856,7 +855,7 @@ struct SwitcherSettings: View {
                             Spacer(minLength: 8)
                         }
                     }
-                    .toggleStyle(.switch)
+                    .toggleStyle(.switch).controlSize(.small)
                     .onChange(of: switcherEnabled) { _, _ in
                         AppSwitcher.shared.syncWithPreferences()
                     }
@@ -890,22 +889,22 @@ struct SwitcherSettings: View {
                 }
 
                 SettingsSection(title: UXEntryStrings(l10n.language).appearanceAndPreviews, systemImage: "macwindow") {
-                    SettingsToggleWithCaption(title: l10n.s.switcherSimpleMode, caption: l10n.s.switcherSimpleModeCaption, isOn: $switcherSimpleMode)
+                    SettingsToggleWithCaption(title: l10n.s.switcherSimpleMode, caption: l10n.s.switcherSimpleModeCaption, showsCaptionInline: false, isOn: $switcherSimpleMode)
                         .onChange(of: switcherSimpleMode) { _, _ in
                             AppSwitcher.shared.syncWithPreferences()
                         }
 
-                    SettingsToggleWithCaption(title: String(format: l10n.s.switcherIconRowMode, switcherShortcutDisplayString), caption: l10n.s.switcherIconRowModeCaption, isOn: $switcherIconRowMode)
+                    SettingsToggleWithCaption(title: String(format: l10n.s.switcherIconRowMode, switcherShortcutDisplayString), caption: l10n.s.switcherIconRowModeCaption, showsCaptionInline: false, isOn: $switcherIconRowMode)
                         .disabled(switcherSimpleMode)
                         .onChange(of: switcherIconRowMode) { _, _ in
                             AppSwitcher.shared.syncWithPreferences()
                         }
 
                     if switcherSimpleMode || switcherIconRowMode {
-                        SettingsToggleWithCaption(title: l10n.s.switcherShowShortcutHints, caption: l10n.s.switcherShowShortcutHintsCaption, isOn: $switcherShowShortcutHints)
+                        SettingsToggleWithCaption(title: l10n.s.switcherShowShortcutHints, caption: l10n.s.switcherShowShortcutHintsCaption, showsCaptionInline: false, isOn: $switcherShowShortcutHints)
                     }
 
-                    SettingsControlRow(title: l10n.s.switcherScreenPlacementLabel, systemImage: "display", caption: l10n.s.switcherScreenPlacementCaption) {
+                    SettingsControlRow(title: l10n.s.switcherScreenPlacementLabel, systemImage: "display", help: l10n.s.switcherScreenPlacementCaption) {
                         Picker(l10n.s.switcherScreenPlacementLabel, selection: $switcherScreenPlacement) {
                             Text(l10n.s.switcherScreenPlacementPointer).tag(SwitcherScreenPlacement.pointer.rawValue)
                             Text(l10n.s.switcherScreenPlacementMenuBar).tag(SwitcherScreenPlacement.menuBar.rawValue)
@@ -957,7 +956,7 @@ struct SwitcherSettings: View {
 
                 SettingsSection(title: UXEntryStrings(l10n.language).interaction, systemImage: "cursorarrow.click") {
                     SettingsControlRow(title: l10n.s.switcherAppearanceDelay, systemImage: "timer",
-                                       caption: l10n.s.switcherAppearanceDelayCaption) {
+                                       help: l10n.s.switcherAppearanceDelayCaption) {
                         Slider(value: switcherAppearanceDelayBinding,
                                in: Double(SwitcherSupport.appearanceDelayMillisecondsRange.lowerBound)
                                    ... Double(SwitcherSupport.appearanceDelayMillisecondsRange.upperBound),
@@ -970,7 +969,7 @@ struct SwitcherSettings: View {
                             .frame(width: 64, alignment: .trailing)
                     }
                     SettingsToggleWithCaption(title: l10n.s.switcherSearchPin,
-                                              caption: l10n.s.switcherSearchPinCaption,
+                                              caption: l10n.s.switcherSearchPinCaption, showsCaptionInline: false,
                                               isOn: $switcherSearchPinEnabled)
                 }
             }
@@ -1237,15 +1236,19 @@ struct SettingsCaptionText: View {
 struct SettingsToggleWithCaption: View {
     let title: String
     let caption: String
+    var showsCaptionInline = true
     @Binding var isOn: Bool
 
     var body: some View {
-        Toggle(isOn: $isOn) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title).font(SettingsTypography.body.weight(.medium))
-                SettingsCaptionText(caption)
+        HStack(spacing: 6) {
+            Toggle(isOn: $isOn) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title).font(SettingsTypography.body.weight(.medium))
+                    if showsCaptionInline { SettingsCaptionText(caption) }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            if !showsCaptionInline { SettingsHelpButton(title: title, text: caption) }
         }
     }
 }

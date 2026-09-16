@@ -13,8 +13,7 @@ enum DisplayBrightnessShortcutTests {
                 BrightnessShortcutPreferenceKey.increase].allSatisfy(backupKeys.contains),
                "display brightness shortcut choice and assigned directions follow settings backups")
         let enabled: (String) -> Bool = { key in
-            key == DefaultsKey.brightnessControlEnabled
-                || key == BrightnessShortcutPreferenceKey.enabled
+            key == BrightnessShortcutPreferenceKey.enabled
         }
         let assigned = GlobalShortcut(keyCode: 12, modifiers: [.control, .option])
         let onlyDecrease: (String) -> String? = { key in

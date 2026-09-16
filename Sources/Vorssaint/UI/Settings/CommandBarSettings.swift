@@ -55,23 +55,15 @@ struct CommandBarSettings: View {
                         Label(text.resetPositionButton, systemImage: "viewfinder")
                     }
                     .disabled(!service.hasCustomPosition)
+                    SettingsHelpButton(title: text.openButton,
+                                       text: text.positionCaption + "\n\n" + text.settingsCaption)
                 }
-                // One row for the whole explanation. As separate rows the form
-                // drew a divider between every sentence, cutting one paragraph
-                // about one feature into four cards that looked like settings.
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(text.positionCaption)
-                    Text(text.settingsCaption)
                     Label(text.privacyNote, systemImage: "lock.laptopcomputer")
-                    HStack(spacing: 6) {
-                        Text(text.tryTheseLabel)
-                            .foregroundStyle(.tertiary)
+                    DisclosureGroup(text.tryTheseLabel) {
                         ForEach(examples, id: \.self) { example in
                             Text(example)
-                                .font(.system(size: 10.5, design: .rounded))
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(Capsule().fill(Color.primary.opacity(0.06)))
+                                .font(SettingsTypography.caption.monospaced())
                         }
                     }
                     .padding(.top, 2)
@@ -83,7 +75,8 @@ struct CommandBarSettings: View {
                 // screen with a stale value between them.
                 Divider()
                 SettingsToggleWithCaption(title: text.compactModeToggle,
-                                          caption: text.compactModeCaption, isOn: $compactMode)
+                                          caption: text.compactModeCaption,
+                                          showsCaptionInline: false, isOn: $compactMode)
                 // Not the shared "Global shortcut" label the other feature
                 // pages use: this page already has an "open the bar" button at
                 // the top, so the toggle has to say which of the two it arms.

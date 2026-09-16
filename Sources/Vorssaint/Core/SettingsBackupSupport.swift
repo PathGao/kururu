@@ -9,7 +9,7 @@ enum SettingsBackupSupport {
     static let formatVersionKey = "vorssaintBackupVersion"
     static let appVersionKey = "vorssaintBackupAppVersion"
     static let settingsKey = "settings"
-    static let formatVersion = 1
+    static let formatVersion = 2
 
     /// Keys the backup carries: every registered preference, the availability
     /// layer, and the deliberately unregistered selection/layout keys — minus
@@ -144,7 +144,6 @@ enum SettingsBackupSupport {
         }
         settings = portableMediaSettings(settings)
         settings = portableMouseExceptions(settings)
-        settings = portableThemeSettings(settings)
         return [
             formatVersionKey: formatVersion,
             appVersionKey: appVersion,
@@ -160,20 +159,25 @@ enum SettingsBackupSupport {
               version >= 1, version <= formatVersion,
               let settings = payload[settingsKey] as? [String: Any]
         else { return nil }
-        // Dropping a malformed theme would clear the current one during replacement.
-        // Reject it before any settings are changed; absence still means the old default.
-        if let theme = settings[DefaultsKey.importedInterfaceTheme],
-           !valueLooksRight(DefaultsKey.importedInterfaceTheme, theme) { return nil }
         let allowed = exportKeys().union(legacyImportKeys.keys)
-        let filtered = settings.filter { allowed.contains($0.key) && valueLooksRight($0.key, $0.value) }
-        return portableThemeSettings(portableMouseExceptions(portableMediaSettings(filtered)))
+        var filtered = settings.filter { allowed.contains($0.key) && valueLooksRight($0.key, $0.value) }
+        if version == 1 {
+            let available = filtered[FeatureUnit.brightness.availabilityKey] as? Bool
+                ?? filtered[DefaultsKey.featureAvailable(AppFeature.brightness.rawValue)] as? Bool ?? true
+            filtered[FeatureUnit.brightness.availabilityKey] = available
+                && (filtered[DefaultsKey.brightnessControlEnabled] as? Bool ?? false)
+        }
+        filtered.removeValue(forKey: DefaultsKey.featureAvailable(AppFeature.brightness.rawValue))
+        filtered.removeValue(forKey: DefaultsKey.brightnessControlEnabled)
+        return portableMouseExceptions(portableMediaSettings(filtered))
     }
 
     /// Keys older backups still carry. They are written back as they were and
     /// the relaunch runs the same migrations a first launch does, so a file
     /// from before units and per-surface preview settings restores cleanly.
     static let legacyImportKeys: [String: Any] = {
-        var keys: [String: Any] = [DefaultsKey.previewSize: "normal",
+        var keys: [String: Any] = [DefaultsKey.brightnessControlEnabled: false,
+                                   DefaultsKey.previewSize: "normal",
                                    DefaultsKey.windowPreviewExcludedApps: [String]()]
         for feature in AppFeature.allCases {
             keys[DefaultsKey.featureAvailable(feature.rawValue)] = true
@@ -186,6 +190,8 @@ enum SettingsBackupSupport {
     static func replaceExportedSettings(_ settings: [String: Any], in defaults: UserDefaults) {
         for key in exportKeys() { defaults.removeObject(forKey: key) }
         for (key, value) in settings { defaults.set(value, forKey: key) }
+        defaults.removeObject(forKey: DefaultsKey.brightnessControlEnabled)
+        defaults.set(true, forKey: DefaultsKey.brightnessModuleGateMigrated)
     }
 
     static func formatVersion(from payload: [String: Any]) -> Int? {
@@ -253,21 +259,6 @@ enum SettingsBackupSupport {
         return settings
     }
 
-    private static func portableThemeSettings(_ source: [String: Any]) -> [String: Any] {
-        var settings = source
-        let key = DefaultsKey.importedInterfaceTheme
-        guard let value = source[key] else { return settings }
-        if let data = value as? Data, data.isEmpty { return settings }
-        if let data = value as? Data,
-           let theme = try? ThemeImportSupport.parse(data),
-           let normalized = try? ThemeImportSupport.savedData(theme) {
-            settings[key] = normalized
-        } else {
-            settings.removeValue(forKey: key)
-        }
-        return settings
-    }
-
     private static func portableMediaSettings(_ source: [String: Any]) -> [String: Any] {
         var settings = source
         // Preset pictures are private files on this Mac. A backup carries the
@@ -327,10 +318,6 @@ enum SettingsBackupSupport {
         if key == DefaultsKey.shelfDockPlacement {
             guard let raw = value as? String else { return false }
             return ShelfDockPlacement(rawValue: raw) != nil
-        }
-        if key == DefaultsKey.importedInterfaceTheme {
-            guard let data = value as? Data else { return false }
-            return data.isEmpty || (try? ThemeImportSupport.parse(data)) != nil
         }
         if key == DefaultsKey.scratchpadDocument {
             return ScratchpadDocument.decoded(value as? Data, defaultName: "Scratchpad") != nil

@@ -27,16 +27,12 @@ struct ShelfSettings: View {
                 }
             }
             SettingsSection {
-                Toggle(l10n.s.shelfEnable, isOn: $enabled)
+                SettingsToggleWithCaption(title: FeatureBehaviorStrings(language: l10n.language).shelfInteraction,
+                                          caption: FeatureBehaviorStrings(language: l10n.language).shelfInteractionHelp,
+                                          isOn: $enabled)
                     .onChange(of: enabled) { _, _ in
                         ShelfService.shared.syncWithPreferences()
                     }
-                Text(l10n.s.shelfEnableCaption)
-                    .font(SettingsTypography.caption)
-                    .foregroundStyle(.secondary)
-                Label(l10n.s.shelfNoPermission, systemImage: "checkmark.shield")
-                    .font(SettingsTypography.caption)
-                    .foregroundStyle(.secondary)
                 Button {
                     ShelfService.shared.summon()
                 } label: {
@@ -44,12 +40,16 @@ struct ShelfSettings: View {
                 }
                 .settingsAction(.primary)
                 .disabled(!enabled)
+                SettingsHelpButton(title: l10n.s.shelfEnable,
+                                   text: l10n.s.shelfEnableCaption + "\n\n" + l10n.s.shelfNoPermission)
             }
 
             SettingsSection(l10n.s.shelfHowTitle) {
-                bullet("1", l10n.s.shelfStep1)
-                bullet("2", l10n.s.shelfStep2)
-                bullet("3", l10n.s.shelfStep3)
+                DisclosureGroup(l10n.s.shelfHowTitle) {
+                    bullet("1", l10n.s.shelfStep1)
+                    bullet("2", l10n.s.shelfStep2)
+                    bullet("3", l10n.s.shelfStep3)
+                }
             }
 
             Group {

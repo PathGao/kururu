@@ -11,8 +11,6 @@ struct RadialMenuView: View {
     @ObservedObject private var l10n = L10n.shared
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-    @AppStorage(DefaultsKey.liquidGlassEnabled) private var liquidGlassEnabled = false
 
     /// Where the highlight sits right now. Kept unwrapped past a full turn, so
     /// the step from the last slice to the first is one step onward and not a
@@ -124,22 +122,9 @@ struct RadialMenuView: View {
 
     @ViewBuilder
     private var discMaterial: some View {
-#if compiler(>=6.2)
-        if #available(macOS 26.0, *), liquidGlassEnabled, !reduceTransparency {
-            Circle()
-                .fill(Color.clear)
-                .glassEffect(.regular, in: Circle())
-                .overlay(Circle().fill(PanelSurface.baseFill(for: colorScheme).opacity(colorScheme == .light ? 0.35 : 0.45)))
-        } else {
-            Circle()
-                .fill(.regularMaterial)
-                .overlay(Circle().fill(PanelSurface.baseFill(for: colorScheme)))
-        }
-#else
         Circle()
             .fill(.regularMaterial)
             .overlay(Circle().fill(PanelSurface.baseFill(for: colorScheme)))
-#endif
     }
 
     /// A hairline between one slice and the next. Almost invisible on its own,

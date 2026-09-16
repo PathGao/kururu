@@ -16,6 +16,7 @@ final class HomebrewManager: ObservableObject {
     @Published private(set) var masApps: [HomebrewPackage] = []
     @Published private(set) var isLoadingInstalled = false
     @Published private(set) var isLoadingOutdated = false
+    @Published private(set) var isCheckingEnvironment = false
     @Published private(set) var operation: HomebrewOperation?
     @Published private(set) var operationStatus: HomebrewOperationStatus?
     @Published private(set) var log = ""
@@ -36,9 +37,12 @@ final class HomebrewManager: ObservableObject {
     private var installedCaskRecordsFetchedAt: Date?
     private var ownershipLoads: [String: [(HomebrewPackage?) -> Void]] = [:]
     private var completedOperationCleanup: DispatchWorkItem?
+    private var environmentCheckCancellation: BoundedProcessCancellation?
+    private var environmentCheckSettlement: HomebrewEnvironmentCheckSettlement?
+    private var environmentCheckGeneration = 0
 
     var isBusy: Bool {
-        isLoadingInstalled || operation != nil
+        isLoadingInstalled || isCheckingEnvironment || operation != nil
     }
 
     /// Formulae the person asked for by name, plus every cask. What is left
@@ -129,6 +133,67 @@ final class HomebrewManager: ObservableObject {
 
     func uninstall(_ package: HomebrewPackage) {
         perform(.uninstall, package: package)
+    }
+
+    /// Shares the brew execution queue with package operations; failed reads never mean "current".
+    func checkEnvironmentUpdates(brewPath: String,
+                                 completion: @escaping (EnvironmentHomebrewSnapshot?) -> Void) {
+        guard HomebrewCommandBuilder.candidatePaths.contains(brewPath), !isBusy,
+              FileManager.default.isExecutableFile(atPath: brewPath) else {
+            completion(nil)
+            return
+        }
+        environmentCheckGeneration += 1
+        let generation = environmentCheckGeneration
+        let cancellation = BoundedProcessCancellation()
+        environmentCheckCancellation = cancellation
+        isCheckingEnvironment = true
+        let settlement = HomebrewEnvironmentCheckSettlement { [weak self] snapshot in
+            guard let self else {
+                completion(nil)
+                return
+            }
+            let isCurrent = self.environmentCheckGeneration == generation
+                && self.environmentCheckCancellation === cancellation
+                && !cancellation.isCancelled
+            if isCurrent {
+                self.environmentCheckCancellation = nil
+                self.environmentCheckSettlement = nil
+                self.isCheckingEnvironment = false
+            }
+            completion(isCurrent ? snapshot : nil)
+        }
+        environmentCheckSettlement = settlement
+        runEnvironmentRead(HomebrewCommandBuilder.installed(brewPath: brewPath),
+                           cancellation: cancellation) { [weak self] status, output in
+            guard let self, status == 0,
+                  let packages = try? HomebrewParser.parseInfoCommandOutput(output) else {
+                settlement.settle(nil)
+                return
+            }
+            guard !cancellation.isCancelled else { return }
+            self.runEnvironmentRead(HomebrewCommandBuilder.outdated(brewPath: brewPath),
+                                    cancellation: cancellation) { status, output in
+                guard status == 0,
+                      let updates = try? HomebrewParser.parseOutdatedCommandOutput(output) else {
+                    settlement.settle(nil)
+                    return
+                }
+                settlement.settle(EnvironmentHomebrewSnapshot(packages: packages, updates: updates))
+            }
+        }
+    }
+
+    /// Stops only the read-only snapshot requested by Environment. Package
+    /// installs, upgrades and removals are user operations with their own
+    /// explicit cancellation control.
+    func cancelEnvironmentUpdateCheck() {
+        environmentCheckGeneration += 1
+        environmentCheckCancellation?.cancel()
+        environmentCheckSettlement?.settle(nil)
+        environmentCheckCancellation = nil
+        environmentCheckSettlement = nil
+        isCheckingEnvironment = false
     }
 
     /// Looks up whether Homebrew owns this exact app bundle. The cached
@@ -226,7 +291,7 @@ final class HomebrewManager: ObservableObject {
     private func perform(_ action: HomebrewOperation.Action,
                          package: HomebrewPackage?,
                          command commandOverride: HomebrewCommand? = nil) {
-        guard operation == nil else { return }
+        guard operation == nil, !isCheckingEnvironment else { return }
         guard let brewPath = brewPath ?? detectBrewPath() else { return }
         guard let command = commandOverride
                 ?? standardCommand(for: action, package: package, brewPath: brewPath) else { return }
@@ -498,6 +563,7 @@ final class HomebrewManager: ObservableObject {
     /// These are normally fast, but a hung NFS share or locked database can
     /// make them stall indefinitely.
     private static let brewReadTimeout: TimeInterval = 30
+    private static let environmentReadMaxOutputBytes = 16 * 1_024 * 1_024
     /// Install/upgrade/uninstall run on the same serial queue as every read, so a
     /// hung one must end eventually. A big download, a source build and a copy into
     /// Applications are all slow but never silent, so the bound is on silence: a cap
@@ -566,6 +632,23 @@ final class HomebrewManager: ObservableObject {
             let output = String(data: data, encoding: .utf8) ?? ""
             lock.unlock()
             completion(process.isRunning ? -1 : process.terminationStatus, output)
+        }
+    }
+
+    private func runEnvironmentRead(
+        _ command: HomebrewCommand,
+        cancellation: BoundedProcessCancellation,
+        completion: @escaping (_ status: Int32, _ output: String) -> Void
+    ) {
+        workQueue.async {
+            let result = BoundedProcessRunner.run(
+                command.executable,
+                command.arguments,
+                timeout: Self.brewReadTimeout,
+                maxOutputBytes: Self.environmentReadMaxOutputBytes,
+                cancellation: cancellation
+            )
+            completion(result.status, String(decoding: result.output, as: UTF8.self))
         }
     }
 

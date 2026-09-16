@@ -69,13 +69,13 @@ struct RadialMenuSettings: View {
     var body: some View {
         SettingsForm {
             SettingsSection {
-                SettingsControlRow(title: text.enableLabel, systemImage: "circle.hexagongrid",
-                                   caption: text.hubDescription) {
+                SettingsControlRow(title: FeatureBehaviorStrings(language: l10n.language).triggers,
+                                   systemImage: "circle.hexagongrid", help: text.hubDescription) {
                     Button(text.tryButton) {
                         RadialMenuService.shared.presentPreview(for: selectedProfile)
                     }
                     .settingsAction(.primary)
-                    Toggle(text.enableLabel, isOn: $enabled).labelsHidden().toggleStyle(.switch)
+                    Toggle(text.enableLabel, isOn: $enabled).labelsHidden().toggleStyle(.switch).controlSize(.small)
                 }
                 if service.registrationFailed {
                     SettingsInfo(text: l10n.s.shortcutInvalid,
@@ -165,7 +165,7 @@ struct RadialMenuSettings: View {
 
             SettingsSection(title: UXEntryStrings(l10n.language).radialOpeningBehavior, systemImage: "cursorarrow.rays") {
                 SettingsControlRow(title: text.activationModeLabel, systemImage: "hand.tap",
-                                   caption: text.activationModeCaption) {
+                                   help: text.activationModeCaption) {
                     Picker(text.activationModeLabel, selection: $activationModeRaw) {
                         Text(text.activationModePressOrHold)
                             .tag(RadialMenuActivationMode.pressOrHold.rawValue)

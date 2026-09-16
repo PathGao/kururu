@@ -33,7 +33,7 @@ struct SettingsSection<Header: View, Content: View, Footer: View>: View {
         VStack(alignment: .leading, spacing: SettingsVisualStyle.current.contentSpacing) {
             content
                 .font(SettingsTypography.body)
-                .buttonStyle(SettingsActionStyle())
+                .buttonStyle(.bordered)
             footer.font(SettingsTypography.caption).foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)

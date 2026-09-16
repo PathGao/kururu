@@ -161,7 +161,7 @@ struct MonitorPanelConfig: View {
                     .disabled(!master.wrappedValue)
             }
             Toggle(l10n.s.monitorShowInPanel, isOn: master)
-                .toggleStyle(.switch).controlSize(.regular)
+                .toggleStyle(.switch).controlSize(.small)
                 .labelsHidden()
                 .accessibilityLabel("\(id.title(l10n.s)): \(l10n.s.monitorShowInPanel)")
         }
@@ -188,7 +188,7 @@ struct MonitorPanelConfig: View {
                     .disabled(!master.wrappedValue)
             }
             Toggle(l10n.s.monitorShowInPanel, isOn: master)
-                .toggleStyle(.switch).controlSize(.regular)
+                .toggleStyle(.switch).controlSize(.small)
                 .labelsHidden()
                 .accessibilityLabel("\(title): \(l10n.s.monitorShowInPanel)")
         }
@@ -279,7 +279,7 @@ private struct MonitorGraphVisibilityRow: View {
                     .disabled(!visible || !sectionVisible)
             }
             Toggle(l10n.s.monitorShowInPanel, isOn: $visible)
-                .toggleStyle(.switch).controlSize(.regular).labelsHidden()
+                .toggleStyle(.switch).controlSize(.small).labelsHidden()
                 .accessibilityLabel("\(title): \(l10n.s.monitorShowInPanel)")
         }
     }

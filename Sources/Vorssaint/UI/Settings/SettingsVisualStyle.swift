@@ -40,6 +40,7 @@ enum SettingsVisualStyle: String, CaseIterable {
     var cornerRadius: CGFloat { self == .cards ? 16 : self == .columns ? 12 : 8 }
     var titleFont: Font { .system(size: self == .paper ? 29 : self == .compact ? 22 : 24, weight: .semibold) }
     var accent: Color {
+        guard Self.isPreview else { return .accentColor }
         switch self {
         case .paper: return Color(red: 0.16, green: 0.40, blue: 0.43)
         case .cards: return Color(red: 0.31, green: 0.34, blue: 0.75)
@@ -47,13 +48,18 @@ enum SettingsVisualStyle: String, CaseIterable {
         case .compact: return Color(red: 0.45, green: 0.34, blue: 0.56)
         }
     }
-    func canvas(_ scheme: ColorScheme) -> Color {
-        if scheme == .dark { return Color(nsColor: .windowBackgroundColor) }
-        switch self {
-        case .paper: return Color(red: 0.985, green: 0.982, blue: 0.972)
-        case .cards: return Color(red: 0.949, green: 0.954, blue: 0.971)
-        case .columns: return Color(nsColor: .textBackgroundColor)
-        case .compact: return Color(nsColor: .windowBackgroundColor)
+    @ViewBuilder
+    func canvas(_ scheme: ColorScheme) -> some View {
+        if !Self.isPreview || scheme == .dark {
+            Color(nsColor: .windowBackgroundColor)
+                .overlay(Color.primary.opacity(scheme == .light ? 0.04 : 0))
+        } else {
+            switch self {
+            case .paper: Color(red: 0.985, green: 0.982, blue: 0.972)
+            case .cards: Color(red: 0.949, green: 0.954, blue: 0.971)
+            case .columns: Color(nsColor: .textBackgroundColor)
+            case .compact: Color(nsColor: .windowBackgroundColor)
+            }
         }
     }
 }
@@ -72,7 +78,7 @@ struct SettingsForm<Content: View>: View {
         }
         .font(SettingsTypography.body)
         .toggleStyle(.checkbox)
-        .buttonStyle(SettingsActionStyle())
+        .buttonStyle(.bordered)
         .controlSize(SettingsVisualStyle.current == .compact ? .small : .regular)
     }
 }
@@ -84,7 +90,6 @@ extension View {
 
 private struct SettingsSurfaceModifier: ViewModifier {
     let item: Bool
-    @ObservedObject private var theme = ThemePreferences.shared
     @Environment(\.colorScheme) private var scheme
     @Environment(\.colorSchemeContrast) private var contrast
     private var style: SettingsVisualStyle { .current }
@@ -95,94 +100,43 @@ private struct SettingsSurfaceModifier: ViewModifier {
             .background {
                 if !item && style != .paper {
                     RoundedRectangle(cornerRadius: style.cornerRadius, style: .continuous)
-                        .fill(style == .cards ? (Theme.color(.card, in: theme.applied) ?? (scheme == .dark ? Color.white.opacity(0.055) : Color(nsColor: .controlBackgroundColor))) : Color.primary.opacity(scheme == .dark ? 0.045 : 0.025))
+                        .fill(style == .cards ? (scheme == .dark ? Color.white.opacity(0.055) : Color(nsColor: .controlBackgroundColor)) : Color.primary.opacity(scheme == .dark ? 0.045 : 0.025))
                 }
             }
             .overlay {
-                if contrast == .increased && !item {
-                    RoundedRectangle(cornerRadius: style.cornerRadius)
-                        .strokeBorder(Color.primary.opacity(0.35), lineWidth: 1)
+                if !item && style != .paper {
+                    RoundedRectangle(cornerRadius: style.cornerRadius, style: .continuous)
+                        .strokeBorder(Color.primary.opacity(contrast == .increased ? 0.35 : 0.06),
+                                      lineWidth: contrast == .increased ? 1 : 0.5)
                 }
             }
     }
 }
 
-/// Settings-only interaction roles. Native buttons retain their actions, keyboard
-/// shortcuts and accessibility labels while sharing geometry and feedback.
+/// Explicit action roles keep native button rendering and keyboard behavior.
 enum SettingsActionRole { case primary, secondary }
 
-struct SettingsActionStyle: ButtonStyle {
-    var role: SettingsActionRole = .secondary
-
-    func makeBody(configuration: Configuration) -> some View {
-        SettingsActionBody(configuration: configuration, role: role)
-    }
-}
-
-private struct SettingsActionBody: View {
-    let configuration: ButtonStyleConfiguration
-    let role: SettingsActionRole
-    @Environment(\.isEnabled) private var isEnabled
-    @Environment(\.isFocused) private var isFocused
-    @Environment(\.colorScheme) private var scheme
-    @Environment(\.colorSchemeContrast) private var contrast
-    @ObservedObject private var theme = ThemePreferences.shared
-    @State private var hovered = false
-
-    private var accent: Color { SettingsVisualStyle.current.controlAccent(scheme, theme: theme.applied) }
-    private var emphasized: Bool { role == .primary || configuration.role == .destructive }
-    private var ink: Color { configuration.role == .destructive ? .red : role == .primary ? accent : .primary }
-
-    var body: some View {
-        configuration.label
-            .font(SettingsTypography.body.weight(.medium))
-            .symbolRenderingMode(.hierarchical)
-            .padding(.horizontal, 11)
-            .padding(.vertical, 6)
-            .frame(minHeight: 30)
-            .foregroundStyle(ink)
-            .background {
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(emphasized ? ink.opacity(configuration.isPressed ? 0.25 : hovered ? 0.19 : 0.12)
-                          : Color.primary.opacity(configuration.isPressed ? 0.13 : hovered ? 0.09 : scheme == .dark ? 0.06 : 0.035))
-            }
-            .overlay {
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .strokeBorder(isFocused ? accent : (emphasized ? ink.opacity(0.30) : Color.primary.opacity(contrast == .increased ? 0.4 : 0.12)), lineWidth: isFocused ? 2 : 1)
-            }
-            .opacity(isEnabled ? 1 : 0.42)
-            .contentShape(RoundedRectangle(cornerRadius: 8))
-            .onHover { hovered = $0 }
-    }
-}
-
-extension SettingsVisualStyle {
-    func controlAccent(_ scheme: ColorScheme, theme: ImportedTheme?) -> Color {
-        Theme.color(.accent, in: theme) ?? (scheme == .dark
-            ? Color(red: 0.70, green: 0.73, blue: 1.0) : accent)
-    }
-}
-
 extension View {
+    @ViewBuilder
     func settingsAction(_ role: SettingsActionRole = .secondary) -> some View {
-        buttonStyle(SettingsActionStyle(role: role))
+        if role == .primary {
+            buttonStyle(.borderedProminent)
+        } else {
+            buttonStyle(.bordered)
+        }
     }
 }
 
 struct SettingsSymbol: View {
     let systemImage: String
     @Environment(\.isEnabled) private var isEnabled
-    @Environment(\.colorScheme) private var scheme
-    @ObservedObject private var theme = ThemePreferences.shared
-
     var body: some View {
-        let accent = isEnabled ? SettingsVisualStyle.current.controlAccent(scheme, theme: theme.applied) : Color.secondary
+        let accent = isEnabled ? SettingsVisualStyle.current.accent : Color.secondary
         Image(systemName: systemImage)
             .font(.system(size: 15, weight: .medium))
             .symbolRenderingMode(.hierarchical)
             .foregroundStyle(accent)
             .frame(width: 30, height: 30)
-            .background(accent.opacity(0.10), in: RoundedRectangle(cornerRadius: 8))
             .accessibilityHidden(true)
     }
 }
@@ -193,6 +147,7 @@ struct SettingsControlRow<Control: View>: View {
     let title: String
     let systemImage: String
     var caption: String? = nil
+    var help: String? = nil
     @ViewBuilder let control: Control
 
     private var label: some View {
@@ -200,7 +155,8 @@ struct SettingsControlRow<Control: View>: View {
             SettingsSymbol(systemImage: systemImage)
             Text(title).font(SettingsTypography.body.weight(.medium))
                 .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            if let help { SettingsHelpButton(title: title, text: help) }
+            Spacer(minLength: 0)
         }
     }
 
@@ -230,6 +186,37 @@ struct SettingsControlRow<Control: View>: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .contain)
+    }
+}
+
+/// Supplemental explanations are available by keyboard or click, not only hover.
+struct SettingsHelpButton: View {
+    let title: String
+    let text: String
+    @State private var presented = false
+
+    var body: some View {
+        Button { presented.toggle() } label: {
+            Image(systemName: "questionmark.circle")
+                .font(SettingsTypography.body)
+                .foregroundStyle(.secondary)
+                .frame(width: 22, height: 22)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(title)
+        .accessibilityHint(text)
+        .help(text)
+        .popover(isPresented: $presented) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(title).font(SettingsTypography.sectionTitle)
+                Text(text).font(SettingsTypography.body)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .textSelection(.enabled)
+            }
+            .padding(16)
+            .frame(width: 320, alignment: .leading)
+        }
     }
 }
 

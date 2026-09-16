@@ -176,7 +176,7 @@ extension FeatureUnit {
     /// opt-in member inside a shipped unit keeps its switch off instead.
     static var availabilityDefaults: [String: Any] {
         Dictionary(uniqueKeysWithValues: allCases.map {
-            ($0.availabilityKey, true)
+            ($0.availabilityKey, $0 != .brightness)
         })
     }
 
@@ -420,7 +420,7 @@ extension AppFeature {
         case .urlCleaner: return [DefaultsKey.urlCleanerEnabled]
         case .soundOutputSwitcher: return [DefaultsKey.soundOutputSwitcherEnabled]
         case .musicBlock: return [DefaultsKey.musicBlockEnabled]
-        case .brightness: return [DefaultsKey.brightnessControlEnabled]
+        case .brightness: return []
         case .bluetoothSleep: return [DefaultsKey.bluetoothSleepEnabled]
         case .mixer, .micMute, .keepAwake,
  .colorPicker, .screenOCR, .cleaningMode, .mediaTools,

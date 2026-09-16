@@ -15,7 +15,6 @@ struct MonitorTrendView: View {
 }
 
 private struct MonitorMetricTrend: View {
-    @ObservedObject private var palettePreferences = ThemePreferences.shared
     @ObservedObject private var monitor = SystemMonitor.shared
     @ObservedObject private var l10n = L10n.shared
     @AppStorage("monitorHistoryMinutes") private var minutes = 1
@@ -74,7 +73,7 @@ private struct MonitorMetricTrend: View {
                 samples: samples.enumerated().map { .init(id: $0.offset, time: $0.element.time, value: value($0.element.value), segment: $0.element.segment) },
                 now: now, window: window, ymax: ymax,
                 hovered: hovered.map { .init(id: -1, time: $0.time, value: value($0.value), segment: $0.segment) },
-                palette: palettePreferences.applied, nowLabel: text.now, axisFormat: axisFormat)
+                nowLabel: text.now, axisFormat: axisFormat)
             .chartOverlay { proxy in
                 GeometryReader { geometry in
                     Color.clear.contentShape(Rectangle())

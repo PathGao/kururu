@@ -146,7 +146,6 @@ struct HUDBackdrop: View {
 
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-    @AppStorage(DefaultsKey.liquidGlassEnabled) private var liquidGlassEnabled = false
 
     private var materialOpacity: Double {
         reduceTransparency ? 1 : min(max(opacity, 0), 1)
@@ -166,30 +165,6 @@ struct HUDBackdrop: View {
     }
 
     var body: some View {
-#if compiler(>=6.2)
-        if #available(macOS 26.0, *), liquidGlassEnabled, !reduceTransparency {
-            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .fill(Color.clear)
-                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .fill(colorScheme == .dark ? Color.black : Color.white)
-                        .opacity(plateOpacity)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .strokeBorder(colorScheme == .dark ? Color.white.opacity(0.12) : Color.black.opacity(0.08), lineWidth: 0.8)
-                )
-        } else {
-            classicBackdrop
-        }
-#else
-        classicBackdrop
-#endif
-    }
-
-    @ViewBuilder
-    private var classicBackdrop: some View {
         HUDBackdropMaterial(cornerRadius: cornerRadius, opacity: materialOpacity)
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)

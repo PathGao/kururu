@@ -60,7 +60,6 @@ final class MenuPanelFocus: ObservableObject {
 /// Content of the menu bar popover: keep-awake controls, the volume mixer and
 /// the system monitor.
 struct MenuPanelView: View {
-    @ObservedObject private var themePreferences = ThemePreferences.shared
     @ObservedObject private var l10n = L10n.shared
     @ObservedObject private var updates = UpdateService.shared
     @ObservedObject private var panelFocus = MenuPanelFocus.shared
@@ -74,7 +73,6 @@ struct MenuPanelView: View {
     @AppStorage(DefaultsKey.panelShowFanControl) private var showFanControl = true
     @AppStorage(DefaultsKey.panelShowKeepAwake) private var showKeepAwake = true
     @AppStorage(DefaultsKey.panelShowBrightness) private var showBrightness = true
-    @AppStorage(DefaultsKey.brightnessControlEnabled) private var brightnessEnabled = false
     @AppStorage(DefaultsKey.panelShowUtilities) private var showUtilities = true
     @AppStorage(DefaultsKey.panelShowControls) private var showControls = true
     @AppStorage(DefaultsKey.panelSectionOrder) private var sectionOrderRaw = ""
@@ -102,7 +100,7 @@ struct MenuPanelView: View {
                 navigablePanel
             }
         }
-        .kururuTheme()
+        .tint(SettingsVisualStyle.preview?.accent)
         .onAppear {
             applyFocus(panelFocus.request)
             KeepAwakeManager.shared.refreshPasswordlessStatus()
@@ -179,11 +177,10 @@ struct MenuPanelView: View {
             }
             UpdateBanner().reportHeight($updateBannerHeight)
             HStack(alignment: .top, spacing: 16) {
-                ScrollView(.vertical) {
+                PanelNavigationScrollView(height: navigableScrollHeight) {
                     sectionNavigation
                 }
-                .scrollIndicators(.hidden)
-                .frame(width: 52, height: navigableScrollHeight)
+                .frame(width: 52)
 
                 OverlayScrollView(measuredHeight: $navigableContentHeight) {
                     Group {
@@ -346,7 +343,7 @@ struct MenuPanelView: View {
         case .keepAwake: return showKeepAwake
         // The section only earns its navigation tab while the feature is on;
         // it is switched on in Settings, not from an empty panel screen.
-        case .brightness: return showBrightness && brightnessEnabled
+        case .brightness: return showBrightness
         case .mixer: return showMixer
         case .system: return showSystem
         case .network: return showNetwork
@@ -373,10 +370,10 @@ struct MenuPanelView: View {
                 }
                 .buttonStyle(.plain)
                 .focused($focusedSection, equals: id)
-                .foregroundStyle(isActive ? Color(nsColor: .windowBackgroundColor) : Color.secondary)
+                .foregroundStyle(isActive ? Color.primary : Color.secondary)
                 .background {
                     if isActive {
-                        RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.primary)
+                        RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Color.primary.opacity(0.10))
                     }
                 }
                 .accessibilityLabel(id.title(l10n.s))
@@ -385,7 +382,6 @@ struct MenuPanelView: View {
             }
         }
         .padding(4)
-        .panelNavigationSurface()
     }
 
     private func metricNavigationHeader(_ kind: MetricDetailKind) -> some View {
@@ -2325,8 +2321,9 @@ struct KeepAwakeCard: View {
                 HStack {
                     statusLine
                     Spacer()
-                    Toggle("", isOn: activeBinding)
+                    Toggle(AppFeature.keepAwake.name(l10n.s, language: l10n.language), isOn: activeBinding)
                         .toggleStyle(.switch)
+                        .controlSize(.small)
                         .labelsHidden()
                 }
 
@@ -2565,8 +2562,8 @@ struct KeepAwakeCard: View {
                 Text(l10n.s.keepAwakeNormalRules)
             }
         }
-        .font(.system(size: 11))
-        .foregroundStyle(.secondary)
+        .font(PanelTypography.body)
+        .foregroundStyle(.primary)
     }
 
     private var automationStrings: KeepAwakeAutomationStrings {

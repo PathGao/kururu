@@ -60,11 +60,14 @@ struct MetricsTests {
         MonitorHistoryTests.run { expect($0, $1) }
         MusicLaunchBlockerTests.run { expect($0, $1) }
         EnvironmentCopyTests.run { expect($0, $1) }
+        EnvironmentUpdateTests.run { expect($0, $1) }
+        EnvironmentConfigurationTests.run { expect($0, $1) }
         CommandBarActionTests.run { expect($0, $1) }
         CommandBarDestinationTests.run { expect($0, $1) }
         LocalPortTests.run { expect($0, $1) }
         CleanerPackageCacheTests.run { expect($0, $1) }
         BrightnessNativeBoundaryTests.run { expect($0, $1) }
+        BrightnessPipelineTests.run { expect($0, $1) }
         OnboardingFeatureSelectionTests.run { expect($0, $1) }
         FeatureSwitchRetirementTests.run { expect($0, $1) }
         ShelfDockPlacementTests.run { expect($0, $1) }
@@ -81,7 +84,6 @@ struct MetricsTests {
         ClipboardImportTransactionTests.run { expect($0, $1) }
         ScratchpadImportStoreTests.run { expect($0, $1) }
         ShelfDockBackupTests.run { expect($0, $1) }
-        ThemeImportTests.run { expect($0, $1) }
         ClipboardJSONPreviewTests.run { expect($0, $1) }
         URLAutomaticCleaningTests.run { expect($0, $1) }
         URLRuleImportTests.run { expect($0, $1) }
@@ -98,6 +100,10 @@ struct MetricsTests {
         FinderArrangementTests.run { expect($0, $1) }
         FinderTargetAcquisitionTests.run { expect($0, $1) }
         DisplayBrightnessShortcutTests.run { expect($0, $1) }
+        BrightnessModuleMigrationTests.run { expect($0, $1) }
+        FeatureLifecycleTests.run { expect($0, $1) }
+        ShelfImportStoreTests.run { expect($0, $1) }
+        CommandBarExecutorTests.run { expect($0, $1) }
         MediaPDFTests.run { expect($0, $1) }
         MediaPDFCompressionTests.run { expect($0, $1) }
         MediaPDFCompressionSelectionTests.run { expect($0, $1) }
@@ -1223,7 +1229,8 @@ UninstallerSelectionTests.run { expect($0, $1) }
             contentsOfFile: "Sources/Vorssaint/App/FeatureRuntime.swift",
             encoding: .utf8)) ?? ""
         expect(featureRuntimeSource.contains(
-            ".mouseClickDebounce: { MouseClickDebounceService.shared.syncWithPreferences() }"
+            ".init(members: [.mouseClickDebounce], permissions: [.accessibility], synchronize:"
+        ) && featureRuntimeSource.contains("MouseClickDebounceService.shared.syncWithPreferences()"
         ), "the Features hub owns the click debounce runtime lifecycle")
 
         expect(ScrollWheelSupport.isMouseWheel(
@@ -2196,10 +2203,6 @@ UninstallerSelectionTests.run { expect($0, $1) }
                "monitor memory metric is included in settings backups")
         expect(registeredDefaults[DefaultsKey.appearance] as? String == AppAppearance.system.rawValue,
                "the app follows the system appearance until the user picks a side")
-        expect(registeredDefaults[DefaultsKey.liquidGlassEnabled] as? Bool == false,
-               "liquid glass appearance is opt-in")
-        expect(SettingsBackupSupport.exportKeys().contains(DefaultsKey.liquidGlassEnabled),
-               "liquid glass appearance follows settings backups")
         expect(AppAppearance.sanitized(nil) == .system
                 && AppAppearance.sanitized("nonsense") == .system,
                "an unknown stored appearance falls back to the system one")
@@ -4088,7 +4091,7 @@ UninstallerSelectionTests.run { expect($0, $1) }
                "Keep Awake panel section is shown by default")
         expect(registeredDefaults[DefaultsKey.panelShowBrightness] as? Bool == true,
                "brightness panel section is shown by default once the feature is on")
-        expect(registeredDefaults[DefaultsKey.brightnessControlEnabled] as? Bool == false,
+        expect(registeredDefaults[DefaultsKey.brightnessControlEnabled] == nil,
                "brightness control arrives switched off")
         expect(registeredDefaults[DefaultsKey.brightnessKeysEnabled] as? Bool == false,
                "pointer-following brightness keys arrive switched off")
@@ -13451,9 +13454,9 @@ UninstallerSelectionTests.run { expect($0, $1) }
                "availability key derives from the unit's raw value")
         expect(FeatureUnit.availabilityDefaults.count == FeatureUnit.allCases.count
                 && FeatureUnit.allCases.allSatisfy {
-                    (FeatureUnit.availabilityDefaults[$0.availabilityKey] as? Bool) == true
+                    (FeatureUnit.availabilityDefaults[$0.availabilityKey] as? Bool) == ($0 != .brightness)
                 },
-               "every unit ships available, an opt-in member keeping its switch off instead")
+               "display control remains opt-in at module level; other modules preserve existing defaults")
         expect((Defaults.registeredDefaults[DefaultsKey.fanControlEnabled] as? Bool) == false
                 && AppFeature.allCases.filter { $0 != .fanControl && $0.enabledKeys.isEmpty }
                     .compactMap(\.switchKey)
@@ -13969,13 +13972,11 @@ UninstallerSelectionTests.run { expect($0, $1) }
                "keep awake uses accessibility only with the mouse jiggle on")
         expect(!activeSet(.accessibility).contains(.keepAwake),
                "keep awake without jiggle does not use accessibility")
-        expect(activeSet(.accessibility, on: [DefaultsKey.brightnessControlEnabled,
-                                              DefaultsKey.brightnessKeysEnabled]).contains(.brightness),
+        expect(activeSet(.accessibility, on: [DefaultsKey.brightnessKeysEnabled]).contains(.brightness),
                "brightness uses accessibility only for the key option")
-        expect(activeSet(.accessibility, on: [DefaultsKey.brightnessControlEnabled,
-                                              DefaultsKey.brightnessOSDEnabled]).contains(.brightness),
+        expect(activeSet(.accessibility, on: [DefaultsKey.brightnessOSDEnabled]).contains(.brightness),
                "brightness uses accessibility for the adjustment overlay")
-        expect(!activeSet(.accessibility, on: [DefaultsKey.brightnessControlEnabled])
+        expect(!activeSet(.accessibility)
                 .contains(.brightness),
                "brightness sliders alone never use accessibility")
         expect(activeSet(.accessibility).contains(.screenRecorder),
@@ -14345,8 +14346,8 @@ UninstallerSelectionTests.run { expect($0, $1) }
                    "shortcut editor strings keep their format and avoid em-dashes (\(language.rawValue))")
             let appearanceValues = Mirror(reflecting: FeatureStrings.appearance(language)).children
                 .compactMap { $0.value as? String }
-            expect(appearanceValues.count == 5 && appearanceValues.allSatisfy { !$0.isEmpty },
-                   "every appearance string is set for \(language.rawValue)")
+            expect(appearanceValues.count == 4 && appearanceValues.allSatisfy { !$0.isEmpty },
+                   "every appearance string is set for \(language.rawValue), found \(appearanceValues.count)")
             expect(appearanceValues.allSatisfy { !$0.contains("—") },
                    "no em-dash in visible appearance strings (\(language.rawValue))")
             let screenshotValues = Mirror(reflecting: FeatureStrings.screenshot(language)).children
@@ -14771,13 +14772,13 @@ UninstallerSelectionTests.run { expect($0, $1) }
                "rejected writes mean no DDC reaches the display (HDMI conversion)")
         expect(BrightnessSupport.ddcProbeAttempts()
                 == BrightnessSupport.retryAttempts + 1
-                && BrightnessSupport.ddcProbeWriteCycles(classifyingChannel: true) == 1,
-               "channel discovery keeps its reply chances but sends one spaced write each")
+                && BrightnessSupport.ddcProbeWriteCycles(classifyingChannel: true) == 2,
+               "channel discovery repeats GET for displays requiring a second request")
         expect(BrightnessSupport.ddcProbeAttempts()
                 == BrightnessSupport.retryAttempts + 1
                 && BrightnessSupport.ddcProbeWriteCycles(classifyingChannel: false)
-                == BrightnessSupport.writeCycles,
-               "answering channels retain their field-proven read and write retries")
+                == 2,
+               "brightness refresh repeats GET while retaining bounded retries")
         expect(!SettingsBackupSupport.exportKeys().contains(
             DefaultsKey.brightnessDDCWriteOnlyPaths),
                "per-monitor DDC capability never travels in a settings backup")
@@ -16658,7 +16659,8 @@ UninstallerSelectionTests.run { expect($0, $1) }
                 && recentCaptureServiceSource.contains(
                     "hotkey.onPress = { [weak self] in self?.showHistoryWindow() }")
                 && featureRuntimeSource.components(separatedBy:
-                    "RecentCaptureService.shared.syncWithPreferences()").count == 3,
+                    "RecentCaptureService.shared.syncWithPreferences()").count == 2
+                && featureRuntimeSource.contains("members: [.screenshot, .screenRecorder]"),
                "the history shortcut opens its window and follows both capture producers")
         expect(!ScreenshotSupport.captureAvailabilityChanged(
                     activeTools: [.screenshot, .recording],
@@ -22480,8 +22482,8 @@ UninstallerSelectionTests.run { expect($0, $1) }
             .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
             .joined(separator: "\n")
         let monitorParts = (commandBarCode
-            .components(separatedBy: "private func installMonitors(for panel: NSPanel)")
-            .last ?? "").components(separatedBy: "\n    private func ")
+            .components(separatedBy: "private func handleKeyDown(_ event: NSEvent, in panel: NSPanel)")
+            .last ?? "").components(separatedBy: "\n    private ")
         let monitor = monitorParts.first ?? ""
         expect(monitorParts.count > 1
                 && monitor.contains("? event.charactersIgnoringModifiers")
@@ -23499,12 +23501,14 @@ UninstallerSelectionTests.run { expect($0, $1) }
         let mouseTapAppDelegateSource = (try? String(
             contentsOfFile: "Sources/Vorssaint/App/AppDelegate.swift",
             encoding: .utf8)) ?? ""
-        expect(mouseTapAppDelegateSource.contains("MouseButtonShortcutService.shared.suspend()"),
+        expect(featureRuntimeSource.contains("MouseButtonShortcutService.shared.suspend()")
+                && mouseTapAppDelegateSource.contains("FeatureRuntime.shared.terminate()"),
                "normal termination releases mouse-button tap state instead of waiting for a future Up")
         let accessibilitySink = mouseTapAppDelegateSource
             .components(separatedBy: "Permissions.shared.$accessibility")
             .dropFirst().first?.components(separatedBy: "Permissions.shared.$screenRecording").first ?? ""
-        expect(accessibilitySink.contains(".quitWindowProtection"),
+        expect(accessibilitySink.contains("permissionChanged(.accessibility)")
+                && featureRuntimeSource.contains("members: [.quitWindowProtection], permissions: [.accessibility]"),
                "granting Accessibility starts quit protection without a relaunch")
         let smoothSchedulerSource = (try? String(
             contentsOfFile: "Sources/Vorssaint/Services/SmoothScrollService.swift",
@@ -24884,7 +24888,7 @@ UninstallerSelectionTests.run { expect($0, $1) }
                     $0.switchKey == nil && $0.pageSwitchKey == nil && $0.enabledKeys.count > 1
                 },
                "multi-action groups expose concrete actions without an extra availability switch")
-        expect(AppFeature.brightness.pageSwitchKey == DefaultsKey.brightnessControlEnabled
+        expect(AppFeature.brightness.pageSwitchKey == nil
                 && AppFeature.fanControl.pageSwitchKey == DefaultsKey.fanControlEnabled
                 && AppFeature.monitorCPU.pageSwitchKey == nil
                 && AppFeature.dockClick.pageSwitchKey == nil

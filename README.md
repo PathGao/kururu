@@ -65,7 +65,7 @@ Adjust volume per app, switch audio outputs and mute microphones. Access display
 
 ### Apps and maintenance
 
-Find cleanup candidates, inspect app leftovers with the uninstaller, and review installed Homebrew packages. Upgrade packages you explicitly installed, and inspect local development tools in the environment page. Homebrew may also upgrade dependencies as part of a requested package upgrade.
+Find cleanup candidates, inspect app leftovers with the uninstaller, and review installed Homebrew packages. Upgrade packages you explicitly installed, and inspect local development tools in the environment page. It distinguishes bundled tools from recognized user installations. Optional update hints cover standalone Bun and uv and explicitly installed Homebrew tools, excluding pinned versions and dependencies. The environment page uses compact source groups and expandable paths, and lists discovered configuration files with their full locations. Eligible Homebrew tools use the existing package upgrade flow directly; standalone tools link to upgrade instructions. Homebrew may also upgrade dependencies as part of a requested package upgrade.
 
 ### Your choice of entry point
 
@@ -77,7 +77,7 @@ Feature availability depends on your selections, macOS permissions and hardware.
 
 Preferences, clipboard history, notes and shelf data stay in kururu's own local storage. Screen text recognition uses Apple's on-device Vision framework. There is no account, subscription or automatic telemetry.
 
-Network access belongs to specific actions: an internet speed test, Homebrew operations, or websites and scripts you configure in the command bar. Feedback is prepared locally for you to review and copy; opening the issue page does not submit it.
+Network access belongs to specific actions: an internet speed test, Homebrew operations, checking tool releases on GitHub, or websites and scripts you configure in the command bar. Feedback is prepared locally for you to review and copy; opening the issue page does not submit it.
 
 Grant macOS permissions for the features you use and review them in **System Settings → Privacy & Security**. See the [data and privacy documentation](.github/CONTRIBUTING.md#privacy) for storage details and the scope of network access.
 

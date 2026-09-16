@@ -12,6 +12,7 @@ struct BrightnessSection: View {
     @ObservedObject private var permissions = Permissions.shared
     @AppStorage(DefaultsKey.brightnessOSDEnabled) private var brightnessOSDEnabled = false
     var collapsible = true
+    @State private var refreshOwner = UUID()
 
     private var strings: BrightnessFeatureStrings { FeatureStrings.brightness(l10n.language) }
 
@@ -46,7 +47,8 @@ struct BrightnessSection: View {
                 }
             }
             .panelCard()
-            .onAppear { service.refresh() }
+            .onAppear { service.beginVisibleRefresh(refreshOwner) }
+            .onDisappear { service.endVisibleRefresh(refreshOwner) }
         }
     }
 
@@ -62,8 +64,8 @@ struct BrightnessSection: View {
                     .lineLimit(1)
                     .truncationMode(.middle)
                 Spacer(minLength: 4)
-                if !display.isBuiltIn, display.isActive, display.method != nil {
-                    Text(display.hasKnownBrightness ? "\(Int((display.brightness * 100).rounded()))%" : "—")
+                if display.isActive, display.method != nil {
+                    Text(display.observedBrightness.map { "\(Int(($0 * 100).rounded()))%" } ?? "—")
                         .font(.system(size: 10.5, weight: .semibold).monospacedDigit())
                         .foregroundStyle(.secondary)
                 } else if !display.isActive {
@@ -73,12 +75,8 @@ struct BrightnessSection: View {
                 }
                 DisplayPowerButton(display: display, compact: true)
             }
-            if !display.isBuiltIn, display.isActive, display.method != nil {
-                Slider(value: brightnessBinding(display), in: 0...1)
-                    .controlSize(.small)
-                    .disabled(service.isDisplayPending(display.id))
-                    .accessibilityLabel(display.name)
-                        .accessibilityValue(display.hasKnownBrightness ? "\(Int((display.brightness * 100).rounded()))%" : FeatureStrings.brightness(l10n.language).brightnessUnknownNote)
+            if display.isActive, display.method != nil {
+                DisplayBrightnessControl(display: display, showOSD: brightnessOSDEnabled)
             }
             if let explanation = brightnessControlExplanation(display, strings: strings) {
                 Text(explanation)
@@ -157,8 +155,23 @@ func displayControlFailureText(_ failure: BrightnessService.DisplayControlFailur
 /// Describes the displayed value without treating missing readback as a failed write.
 func brightnessControlExplanation(_ display: BrightnessDisplay,
                                   strings: BrightnessFeatureStrings) -> String? {
-    guard !display.isBuiltIn, display.isActive, let method = display.method else { return nil }
+    guard display.isActive else { return nil }
+    if display.failure == .identityUnavailable {
+        return FeatureBehaviorStrings(language: L10n.shared.language).identityUnavailable
+    }
+    guard let method = display.method else { return nil }
     if method == .software { return strings.softwareDimmingNote }
+    let statusText = FeatureBehaviorStrings(language: L10n.shared.language)
+    switch display.status {
+    case .pending: return statusText.pending + requestedLevelText(display)
+    case .sentUnconfirmed: return statusText.unconfirmed + requestedLevelText(display)
+    case .failed, .unknown: return statusText.invalidRead
+    case .confirmed: break
+    }
     if !display.hasKnownBrightness { return strings.brightnessUnknownNote }
     return display.readable ? nil : strings.brightnessReadbackNote
+}
+
+private func requestedLevelText(_ display: BrightnessDisplay) -> String {
+    display.requestedBrightness.map { " (\(Int(($0 * 100).rounded()))%)" } ?? ""
 }

@@ -54,8 +54,9 @@ struct MixerSettings: View {
 
             if AppFeature.soundOutputSwitcher.isAvailable {
                 SettingsSection {
-                    FeatureSwitchRow(feature: .soundOutputSwitcher)
-                    SettingsCaptionText(switcherText.caption)
+                    FeatureSwitchRow(feature: .soundOutputSwitcher,
+                                     title: FeatureBehaviorStrings(language: l10n.language).shortcut,
+                                     help: switcherText.caption)
                     SoundOutputSwitcherDevicePicker()
                     ShortcutPreferenceRow(role: .soundOutputSwitcher,
                                           isEnabled: soundOutputSwitcherEnabled) {

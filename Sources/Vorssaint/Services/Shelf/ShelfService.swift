@@ -8,7 +8,6 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 enum ShelfPersistenceIssue { case unreadable, saveFailed, tooLarge }
-enum ShelfImportServiceError: Error { case unavailable, changed, managedReference(String) }
 
 /// A floating "shelf" that holds files, images, text and links you drop on it,
 /// to drag back out into any app later. It's summoned at the cursor by a global
@@ -323,6 +322,7 @@ final class ShelfService: ObservableObject {
     private let tempDir: URL
     private let containerDirectory: URL?
     private let indexStore: ShelfIndexStore?
+    private let importStore: ShelfImportStore?
     private let fixtureMode: Bool
 
     /// Payload files for pasted images and GIFs, next to the clipboard images:
@@ -343,8 +343,6 @@ final class ShelfService: ObservableObject {
     @Published private(set) var isImporting = false
     private var importRequest: UUID?
     private var publishingImport = false
-    // Owned by persistQueue until the main-thread commit or termination drain.
-    private var preparedImports: [URL: ShelfImportPrepared] = [:]
     /// Gates persistence until the restore has landed, so an early mutation
     /// cannot overwrite the saved shelf with a partial list.
     private var restoreCompleted = false
@@ -367,6 +365,7 @@ final class ShelfService: ObservableObject {
         tempDir = temporary
         fixtureMode = fixture
         indexStore = directory.map { ShelfIndexStore(directory: $0, legacyDefaults: defaults) }
+        importStore = directory.map(ShelfImportStore.init(directory:))
         if !fixture {
             automaticExclusions = Defaults.sanitizedBundleIdentifierList(
                 defaults.stringArray(forKey: DefaultsKey.shelfAutomaticExclusions) ?? [])
@@ -2292,7 +2291,7 @@ final class ShelfService: ObservableObject {
                      completion: @escaping (Result<Int, Error>) -> Void) -> UUID? {
         finishRestore()
         guard !isImporting, !isTerminating, restoreCompleted, storeWritable,
-              fixtureMode || AppFeature.shelf.isAvailable, let destination = containerDirectory else {
+              fixtureMode || AppFeature.shelf.isAvailable, let importStore else {
             completion(.failure(ShelfImportServiceError.unavailable)); return nil
         }
         guard !selected.isEmpty else { completion(.failure(ShelfImportError.emptySelection)); return nil }
@@ -2313,71 +2312,36 @@ final class ShelfService: ObservableObject {
             }
             let current = self.items.map(Self.persistedItem(from:))
             let revision = self.contentRevision
-            let managedRoots = self.payloadRoots.map { $0.standardizedFileURL.resolvingSymlinksInPath().path + "/" }
+            let managedRoots = self.payloadRoots
             self.persistQueue.async {
-                let access = sourceURL.startAccessingSecurityScopedResource()
-                let scoped = mappings.map { $0.selectedDirectory.startAccessingSecurityScopedResource() }
-                let result = Result { () throws -> ShelfImportPrepared in
-                    try ShelfImportAssets.validateSource(source: sourceURL,
-                        currentIndex: destination.appendingPathComponent("ShelfItems.json"))
-                    // Capacity is checked before reading attachments; no partial import.
-                    let merged = try ShelfImportSupport.merging(selected: selected, current: current)
-                    let copies = Array(merged.dropFirst(current.count))
-                    let assets = try ShelfImportAssets.prepare(items: copies, mappings: mappings,
-                                                               destinationDirectory: destination)
-                    let copiedPaths = Set(assets.files.keys.map { destination.appendingPathComponent("ShelfFiles").appendingPathComponent($0).path })
-                    func validateReferences(_ items: [ShelfPersistedItem]) throws {
-                        for item in items {
-                            if let path = item.path, !copiedPaths.contains(path) {
-                                let canonical = URL(fileURLWithPath: path).standardizedFileURL.resolvingSymlinksInPath().path
-                                guard !managedRoots.contains(where: { canonical.hasPrefix($0) || canonical + "/" == $0 }) else {
-                                    throw ShelfImportServiceError.managedReference(path)
-                                }
-                            }
-                            try validateReferences(item.children ?? [])
-                        }
-                    }
-                    try validateReferences(assets.items)
-                    let prepared = try ShelfImportTransaction.prepare(items: current + assets.items,
-                                                                        files: assets.files, in: destination)
-                    self.preparedImports[prepared.stagingURL] = prepared
-                    return prepared
-                }
-                if access { sourceURL.stopAccessingSecurityScopedResource() }
-                for (mapping, acquired) in zip(mappings, scoped) where acquired {
-                    mapping.selectedDirectory.stopAccessingSecurityScopedResource()
+                let result = Result {
+                    try importStore.prepare(selected: selected, current: current, mappings: mappings,
+                                            sourceURL: sourceURL, managedRoots: managedRoots)
                 }
                 DispatchQueue.main.async {
-                    if case let .success(prepared) = result {
-                        self.persistQueue.async { self.preparedImports.removeValue(forKey: prepared.stagingURL) }
-                    }
                     guard self.importRequest == request, !self.isTerminating else {
-                        if case let .success(prepared) = result { ShelfImportTransaction.discard(prepared) }
+                        if case let .success(prepared) = result { self.persistQueue.sync { importStore.discard(prepared) } }
                         return
                     }
                     switch result {
                     case let .failure(error): finish(.failure(error))
                     case let .success(prepared):
                         guard self.storeWritable, self.fixtureMode || AppFeature.shelf.isAvailable else {
-                            ShelfImportTransaction.discard(prepared)
+                            self.persistQueue.sync { importStore.discard(prepared) }
                             finish(.failure(ShelfImportServiceError.unavailable)); return
                         }
                         guard self.contentRevision == revision else {
-                            ShelfImportTransaction.discard(prepared)
+                            self.persistQueue.sync { importStore.discard(prepared) }
                             if attempt < 2 { prepare(attempt: attempt + 1) }
                             else { finish(.failure(ShelfImportServiceError.changed)) }
                             return
                         }
                         do {
-                            let access = sourceURL.startAccessingSecurityScopedResource()
-                            defer { if access { sourceURL.stopAccessingSecurityScopedResource() } }
-                            try ShelfImportAssets.validateSource(source: sourceURL,
-                                currentIndex: destination.appendingPathComponent("ShelfItems.json"))
                             // Validate every live conversion before the filesystem commit.
                             let additions = Array(prepared.items.dropFirst(current.count)).compactMap { self.restoredItem(from: $0) }
                             guard additions.count == prepared.items.count - current.count else { throw ShelfImportError.invalidDocument }
                             try self.persistQueue.sync {
-                                try ShelfImportTransaction.commit(prepared, to: destination)
+                                try importStore.commit(prepared)
                                 self.indexStore?.didCommitImportedStore()
                             }
                             self.publishingImport = true
@@ -2391,7 +2355,7 @@ final class ShelfService: ObservableObject {
                             if !self.fixtureMode { self.startContentThumbnails(for: additions) }
                             finish(.success(additions.reduce(0) { $0 + $1.leafCount }))
                         } catch {
-                            ShelfImportTransaction.discard(prepared)
+                            self.persistQueue.sync { importStore.discard(prepared) }
                             finish(.failure(error))
                         }
                     }
@@ -2411,10 +2375,7 @@ final class ShelfService: ObservableObject {
     private func stopImports() {
         importRequest = nil
         isImporting = false
-        persistQueue.sync {
-            for prepared in preparedImports.values { ShelfImportTransaction.discard(prepared) }
-            preparedImports.removeAll()
-        }
+        persistQueue.sync { importStore?.discardAll() }
     }
 
     private func restoreItems() {

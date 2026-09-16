@@ -2,7 +2,7 @@
 import SwiftUI
 import Charts
 
-/// Shared production and preview chart. All data and colors are explicit inputs.
+/// Monitor history with explicit samples and system semantic colors.
 struct MonitorTrendPlot: View {
     struct Sample: Identifiable {
         let id: Int
@@ -15,7 +15,6 @@ struct MonitorTrendPlot: View {
     let window: Int
     let ymax: Double
     var hovered: Sample? = nil
-    var palette: ImportedTheme? = nil
     var nowLabel = "Now"
     var axisFormat: (Double) -> String = { String(format: "%.0f", locale: Locale.current, $0) }
     private var segmentCounts: [Int: Int] { Dictionary(grouping: samples, by: \.segment).mapValues(\.count) }
@@ -26,18 +25,18 @@ struct MonitorTrendPlot: View {
                              series: .value("Interval", sample.segment))
                         .interpolationMethod(.linear)
                         .lineStyle(StrokeStyle(lineWidth: 1.6, lineCap: .round))
-                        .foregroundStyle((Theme.color(.primaryText, in: palette) ?? Color.primary).opacity(0.78))
+                        .foregroundStyle(Color.primary.opacity(0.78))
                 }
                 ForEach(samples.filter { segmentCounts[$0.segment] == 1 }) { sample in
                     PointMark(x: .value("Time", sample.time - now), y: .value("Value", sample.value))
-                        .foregroundStyle((Theme.color(.primaryText, in: palette) ?? Color.primary).opacity(0.78)).symbolSize(14)
+                        .foregroundStyle(Color.primary.opacity(0.78)).symbolSize(14)
                 }
                 if let hovered {
                     RuleMark(x: .value("Time", hovered.time - now))
-                        .foregroundStyle((Theme.color(.secondaryText, in: palette) ?? Color.secondary).opacity(0.5))
+                        .foregroundStyle(Color.secondary.opacity(0.5))
                         .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 3]))
                     PointMark(x: .value("Time", hovered.time - now), y: .value("Value", hovered.value))
-                        .foregroundStyle((Theme.color(.primaryText, in: palette) ?? Color.primary).opacity(0.78)).symbolSize(20)
+                        .foregroundStyle(Color.primary.opacity(0.78)).symbolSize(20)
                 }
             }
             .chartXScale(domain: -Double(window * 60)...0)
@@ -47,16 +46,16 @@ struct MonitorTrendPlot: View {
                     if let seconds = axis.as(Double.self) {
                         AxisValueLabel(anchor: seconds == 0 ? .topTrailing : (seconds == -Double(window * 60) ? .topLeading : .top),
                                        collisionResolution: .disabled) {
-                            Text(seconds == 0 ? nowLabel : relativeTime(seconds)).foregroundStyle(Theme.color(.secondaryText, in: palette) ?? Color.secondary)
+                            Text(seconds == 0 ? nowLabel : relativeTime(seconds)).foregroundStyle(Color.secondary)
                         }
                     }
                 }
             }
             .chartYAxis {
                 AxisMarks(position: .trailing, values: [0, ymax]) { axis in
-                    AxisGridLine().foregroundStyle((Theme.color(.secondaryText, in: palette) ?? Color.secondary).opacity(0.12))
+                    AxisGridLine().foregroundStyle(Color.secondary.opacity(0.12))
                     AxisValueLabel {
-                        if let v = axis.as(Double.self) { Text(axisFormat(v)).foregroundStyle(Theme.color(.secondaryText, in: palette) ?? Color.secondary) }
+                        if let v = axis.as(Double.self) { Text(axisFormat(v)).foregroundStyle(Color.secondary) }
                     }
                 }
             }

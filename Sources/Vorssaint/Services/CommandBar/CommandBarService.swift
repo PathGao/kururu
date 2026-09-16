@@ -4,7 +4,6 @@
 import AppKit
 import Carbon.HIToolbox
 import Combine
-import SwiftUI
 
 /// The command bar: one floating field, summoned by a global shortcut, that
 /// finds and runs everything the app can do. The panel never activates, so
@@ -72,7 +71,15 @@ final class CommandBarService: ObservableObject {
     }
     @Published private(set) var argumentSubmission = CommandBarArgumentSubmission()
     @Published private(set) var destinationFailure: CommandBarDestinationFailure?
-    private var destinationRequests = CommandBarDestinationRequests()
+    private lazy var executor = CommandBarExecutor(
+        context: { [weak self] in
+            guard let self else { return nil }
+            return .init(presentationID: self.presentationID, query: self.query, isVisible: self.isVisible)
+        },
+        exists: { FileManager.default.fileExists(atPath: $0) },
+        open: { NSWorkspace.shared.open($0) },
+        launch: { CommandBarService.launchApplication(at: $0, completion: $1) },
+        completed: { [weak self] result, title in self?.showDestinationResult(result, title: title) })
     @Published private(set) var presentationID = UUID()
     @Published private(set) var shortcutRegistrationFailed = false
     /// Rows whose own combination the system refused, because another app got
@@ -103,12 +110,19 @@ final class CommandBarService: ObservableObject {
 
     private let hotkey = QuickToolHotkey(id: 20)
     private var rowHotkeys: [QuickToolHotkey] = []
-    private var panel: NSPanel?
-    private var keyMonitor: Any?
-    private var outsideClickMonitor: Any?
-    private var localClickMonitor: Any?
-    private var flagsMonitor: Any?
-    private var activationObserver: NSObjectProtocol?
+    private lazy var presentation: CommandBarPresentation = {
+        let presentation = CommandBarPresentation()
+        presentation.onKeyDown = { [weak self] event, panel in
+            guard let self else { return event }
+            return self.handleKeyDown(event, in: panel)
+        }
+        presentation.onDismiss = { [weak self] in self?.hide() }
+        presentation.onCommandHeldChanged = { [weak self] held in
+            guard let self, held != self.commandIsHeld else { return }
+            self.commandIsHeld = held
+        }
+        return presentation
+    }()
     private var micStateSubscription: AnyCancellable?
     private var micCatalogRefreshQueued = false
 
@@ -173,7 +187,6 @@ final class CommandBarService: ObservableObject {
     /// Where the pointer sat when the bar opened. A row under a pointer that
     /// has not moved must not steal the selection from the keyboard.
     private var lastPointerLocation = NSPoint.zero
-    private var panelScreen: NSRect?
     /// The selected row's id, so a rebuilt list keeps the selection on the
     /// same command instead of on the same position.
     private var selectedID: String?
@@ -214,12 +227,12 @@ final class CommandBarService: ObservableObject {
             // asks to see it for the first time.
             DispatchQueue.main.async { [weak self] in
                 guard AppFeature.commandBar.isAvailable, let self else { return }
-                _ = self.ensurePanel()
+                self.presentation.prepare()
             }
         }
         if !available {
             hide()
-            panel = nil
+            presentation.release()
             // Uninstalled means uninstalled: the catalog, the app scan and the
             // window list all go, not just the window.
             catalog = []
@@ -255,7 +268,7 @@ final class CommandBarService: ObservableObject {
     }
 
     var isVisible: Bool {
-        panel?.isVisible == true
+        presentation.isVisible
     }
 
     func toggle() {
@@ -268,7 +281,7 @@ final class CommandBarService: ObservableObject {
 
     private func show(promptingFor stableKey: String?) {
         guard AppFeature.commandBar.isAvailable else { return }
-        let panel = ensurePanel()
+        presentation.prepare()
         if AppFeature.textSnippets.isAvailable {
             TextSnippetService.shared.setCommandBarVisible(true)
         }
@@ -284,7 +297,8 @@ final class CommandBarService: ObservableObject {
                 self.refreshResults()
             }
         }
-        present(panel)
+        observeLiveCatalog()
+        presentation.show()
         // Ordering the prepared panel is the keystroke path. Home is filled on
         // the next main-loop turn, when a close or newer opening can supersede it.
         DispatchQueue.main.async { [weak self] in
@@ -313,8 +327,7 @@ final class CommandBarService: ObservableObject {
         savedQuery = ""
         queryBeforeCompletion = nil
         completedQuery = nil
-        queryWhenRun = ""
-        selectionWhenRun = ""
+        executor.resetInput()
         lastPointerLocation = NSEvent.mouseLocation
         selectedID = nil
         lastRankedQuery = nil
@@ -355,14 +368,6 @@ final class CommandBarService: ObservableObject {
         loadKillProcessEntries(for: id)
     }
 
-    private func present(_ panel: NSPanel) {
-        position(panel)
-        installMonitors(for: panel)
-        panel.alphaValue = 1
-        panel.orderFrontRegardless()
-        panel.makeKey()
-    }
-
     func hide() {
         invalidateDestinationAttempt()
         if AppFeature.textSnippets.isAvailable {
@@ -382,8 +387,10 @@ final class CommandBarService: ObservableObject {
             rows = []
             sectionTitles = [:]
         }
-        removeMonitors()
-        panel?.orderOut(nil)
+        micStateSubscription?.cancel()
+        micStateSubscription = nil
+        micCatalogRefreshQueued = false
+        presentation.hide()
         mode = .search
         // A selection belongs to the moment the bar was opened. Keeping it
         // would offer to act on text the person may have replaced since.
@@ -402,26 +409,7 @@ final class CommandBarService: ObservableObject {
         clearIndex()
     }
 
-    /// Re-fits the panel to its content as the result list grows and
-    /// shrinks, keeping the top edge and horizontal center still so the
-    /// field itself never jumps under the caret.
-    func refreshPanelLayout() {
-        guard let panel, panel.isVisible else { return }
-        DispatchQueue.main.async { [weak self] in
-            guard let self, let panel = self.panel, panel.isVisible else { return }
-            panel.contentViewController?.view.layoutSubtreeIfNeeded()
-            let size = panel.contentViewController?.view.fittingSize ?? panel.frame.size
-            let screen = self.panelScreen ?? NSScreen.pointerVisibleFrame
-            var frame = panel.frame
-            frame.origin.x = frame.midX - size.width / 2
-            frame.origin.y = frame.maxY - size.height
-            frame.size = size
-            // Growing downward must stop at the screen edge; the list scrolls
-            // instead of hiding its own footer below the bezel.
-            frame.origin.y = max(frame.origin.y, screen.minY + 16)
-            panel.setFrame(frame, display: true)
-        }
-    }
+    func refreshPanelLayout() { presentation.refreshLayout() }
 
     // MARK: - Results
 
@@ -558,8 +546,8 @@ final class CommandBarService: ObservableObject {
     /// Closing the bar wipes both before the row's own closure gets to work,
     /// so they are handed over here instead of being read back from a panel
     /// that is already gone.
-    private(set) var queryWhenRun = ""
-    private(set) var selectionWhenRun = ""
+    var queryWhenRun: String { executor.queryWhenRun }
+    var selectionWhenRun: String { executor.selectionWhenRun }
 
     /// The text the person had selected when the bar opened, for the rows and
     /// the saved destinations that act on it.
@@ -772,7 +760,7 @@ final class CommandBarService: ObservableObject {
             UserDefaults.standard.string(forKey: DefaultsKey.commandBarQueryHabits))
         shortcutCache = rowShortcuts
         compactMode = UserDefaults.standard.bool(forKey: DefaultsKey.commandBarCompactMode)
-        hasCustomPosition = positionOffset != .zero
+        hasCustomPosition = presentation.hasCustomPosition
         reloadFileSearchCaches()
     }
 
@@ -1814,7 +1802,7 @@ final class CommandBarService: ObservableObject {
         if case .actions = mode { leaveActions() }
         let attempt = beginDestinationAttempt()
         guard FileManager.default.fileExists(atPath: path) else {
-            completeDestinationAttempt(attempt, result: .unavailable, title: entry.title)
+            executor.complete(attempt, result: .unavailable, title: entry.title)
             return
         }
         hide()
@@ -1823,34 +1811,26 @@ final class CommandBarService: ObservableObject {
 
     func beginDestinationAttempt() -> CommandBarDestinationAttempt {
         invalidateDestinationAttempt()
-        return destinationRequests.begin(presentationID: presentationID, query: query, isVisible: isVisible)
+        return executor.begin()!
     }
 
     func acceptsDestinationAttempt(_ attempt: CommandBarDestinationAttempt) -> Bool {
-        destinationRequests.accepts(attempt, presentationID: presentationID, query: query, isVisible: isVisible)
+        executor.accepts(attempt)
     }
 
     private func invalidateDestinationAttempt() {
-        destinationRequests.invalidate()
+        executor.invalidate()
         guard destinationFailure != nil else { return }
         destinationFailure = nil
         refreshPanelLayout()
     }
 
     func openDestination(_ url: URL?, title: String, attempt: CommandBarDestinationAttempt? = nil) {
-        let attempt = attempt ?? beginDestinationAttempt()
-        guard acceptsDestinationAttempt(attempt) else { return }
-        let result = CommandBarDestinationOpening.open(url: url,
-            exists: { FileManager.default.fileExists(atPath: $0) },
-            open: { NSWorkspace.shared.open($0) })
-        completeDestinationAttempt(attempt, result: result, title: title)
+        executor.openDestination(url, title: title, attempt: attempt ?? beginDestinationAttempt())
     }
 
     func openApplicationDestination(at url: URL, title: String) {
-        let attempt = beginDestinationAttempt()
-        Self.launchApplication(at: url) { [weak self] succeeded in
-            self?.completeDestinationAttempt(attempt, result: succeeded ? .opened : .failed, title: title)
-        }
+        executor.openApplication(at: url, title: title, attempt: beginDestinationAttempt())
     }
 
     /// AppKit delivers this completion on a concurrent queue. Both search
@@ -1862,10 +1842,7 @@ final class CommandBarService: ObservableObject {
         }
     }
 
-    private func completeDestinationAttempt(_ attempt: CommandBarDestinationAttempt,
-                                            result: CommandBarDestinationOpening.Result, title: String) {
-        guard acceptsDestinationAttempt(attempt) else { return }
-        destinationRequests.invalidate()
+    private func showDestinationResult(_ result: CommandBarDestinationOpening.Result, title: String) {
         let text = FeatureStrings.commandBar(L10n.shared.language)
         let message: String
         switch result {
@@ -2308,15 +2285,9 @@ final class CommandBarService: ObservableObject {
                                           forKey: DefaultsKey.commandBarQueryHabits)
             }
         }
-        // Handed over before hiding, which wipes the field and the selection.
-        queryWhenRun = query
-        selectionWhenRun = selectedText
-        guard !entry.keepsBarOpen, !entry.waitsForOpenResult else {
-            entry.run(value)
-            return
-        }
-        hide()
-        entry.run(value)
+        executor.execute(query: query, selection: selectedText, value: value,
+                         keepsBarOpen: entry.keepsBarOpen, waitsForOpenResult: entry.waitsForOpenResult,
+                         dismiss: { self.hide() }, run: entry.run)
     }
 
     // MARK: - Clipboard paste
@@ -2744,99 +2715,19 @@ final class CommandBarService: ObservableObject {
 
     // MARK: - Panel
 
-    /// Borderless panels refuse key status by default, and the bar's field
-    /// needs it for typing while the target app stays active.
-    private final class KeyableBarPanel: NSPanel {
-        override var canBecomeKey: Bool { true }
-    }
-
-    private func ensurePanel() -> NSPanel {
-        if let panel { return panel }
-        let panel = KeyableBarPanel(contentRect: NSRect(x: 0, y: 0, width: 560, height: 380),
-                                    styleMask: [.borderless, .nonactivatingPanel],
-                                    backing: .buffered,
-                                    defer: false)
-        panel.title = AppInfo.name
-        panel.isReleasedWhenClosed = false
-        panel.isMovableByWindowBackground = false
-        panel.hidesOnDeactivate = false
-        panel.level = .floating
-        panel.backgroundColor = .clear
-        panel.isOpaque = false
-        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .ignoresCycle]
-        let host = NSHostingController(rootView: CommandBarView())
-        host.sizingOptions = .preferredContentSize
-        panel.contentViewController = host
-        self.panel = panel
-        return panel
-    }
-
-    /// Centered, a bit above the middle of the screen the pointer is on:
-    /// where the eye already is, and where the system's own search field
-    /// puts itself. Anchored by the top edge so the list can grow and shrink
-    /// below a field that never moves. Wherever the person dragged the bar
-    /// away from that spot is added on, so the choice survives the close.
-    private func position(_ panel: NSPanel, animated: Bool = false) {
-        panel.contentViewController?.view.layoutSubtreeIfNeeded()
-        let size = panel.contentViewController?.view.fittingSize ?? NSSize(width: 560, height: 380)
-        // Decided once, here: moving the pointer to another display while
-        // typing must not clamp the panel against a screen it is not on.
-        let screen = NSScreen.pointerVisibleFrame
-        panelScreen = screen
-        let offset = positionOffset
-        let origin = CommandBarPreferences.clampedPanelOrigin(
-            size: size, in: screen, offset: offset)
-        panel.setFrame(NSRect(origin: origin, size: size),
-                       display: true,
-                       animate: animated)
-    }
-
-    /// How far the person dragged the bar from the spot it would otherwise
-    /// open on.
-    private var positionOffset: CGSize {
-        CommandBarPreferences.decodePositionOffset(
-            UserDefaults.standard.string(forKey: DefaultsKey.commandBarPositionOffset) ?? "")
-    }
-
-    // MARK: - Moving the bar
-
-    /// Clamps and saves only after the person's drag has ended. Programmatic
-    /// positioning and content-driven resizing never rewrite this preference.
     func finishPanelDrag() {
-        guard let panel else { return }
-        let screen = panel.screen?.visibleFrame ?? panelScreen ?? NSScreen.pointerVisibleFrame
-        panelScreen = screen
-        let draggedOffset = CGSize(
-            width: panel.frame.midX - screen.midX,
-            height: panel.frame.maxY - (screen.minY + screen.height * 0.72))
-        let origin = CommandBarPreferences.clampedPanelOrigin(
-            size: panel.frame.size, in: screen, offset: draggedOffset)
-        if panel.frame.origin != origin { panel.setFrameOrigin(origin) }
-        let offset = CGSize(width: panel.frame.midX - screen.midX,
-                            height: panel.frame.maxY - (screen.minY + screen.height * 0.72))
-        let encoded = CommandBarPreferences.encodePositionOffset(offset)
-        if encoded.isEmpty {
-            UserDefaults.standard.removeObject(forKey: DefaultsKey.commandBarPositionOffset)
-        } else {
-            UserDefaults.standard.set(encoded, forKey: DefaultsKey.commandBarPositionOffset)
-        }
-        hasCustomPosition = !encoded.isEmpty
+        presentation.finishDrag()
+        hasCustomPosition = presentation.hasCustomPosition
     }
 
-    /// The way back: a double-click on the mark, or the button in Settings,
-    /// returns the bar to the spot it opens on by default, with the same
-    /// short slide it took on the way there.
     func resetPanelPosition() {
-        UserDefaults.standard.removeObject(forKey: DefaultsKey.commandBarPositionOffset)
-        hasCustomPosition = false
-        guard let panel, panel.isVisible else { return }
-        position(panel, animated: true)
+        presentation.resetPosition()
+        hasCustomPosition = presentation.hasCustomPosition
     }
 
-    // MARK: - Monitors
-
-    private func installMonitors(for panel: NSPanel) {
-        removeMonitors()
+    private func observeLiveCatalog() {
+        micStateSubscription?.cancel()
+        micCatalogRefreshQueued = false
         let micPresentationID = presentationID
         micStateSubscription = MicMuteService.shared.objectWillChange.sink { [weak self] _ in
             guard let self, !self.micCatalogRefreshQueued else { return }
@@ -2852,216 +2743,135 @@ final class CommandBarService: ObservableObject {
                 self.refreshResults()
             }
         }
-        keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self, weak panel] event in
-            guard let self, let panel, event.window === panel else { return event }
+    }
 
-            // While a language is composing a character (Japanese, Korean,
-            // Chinese, and dead keys for accents) Return confirms the
-            // candidate and the arrows walk it. Taking those keys here would
-            // make the field unusable in five of the languages the app
-            // speaks, so composition always wins.
-            if self.fieldIsComposing(in: panel) { return event }
+    private func handleKeyDown(_ event: NSEvent, in panel: NSPanel) -> NSEvent? {
+        // Listening for a combination: every key belongs to the person,
+        // except the two that mean "never mind" and "take it off". The
+        // recording tap is the primary path; this is the fallback when
+        // that tap cannot exist.
+        if case .capturingShortcut = self.mode {
+            self.handleCaptureKey(
+                keyCode: Int64(event.keyCode),
+                modifiers: GlobalShortcutModifiers(eventFlags: event.modifierFlags))
+            return nil
+        }
 
-            // Listening for a combination: every key belongs to the person,
-            // except the two that mean "never mind" and "take it off". The
-            // recording tap is the primary path; this is the fallback when
-            // that tap cannot exist.
-            if case .capturingShortcut = self.mode {
-                self.handleCaptureKey(
-                    keyCode: Int64(event.keyCode),
-                    modifiers: GlobalShortcutModifiers(eventFlags: event.modifierFlags))
+        let navigationModifiers = event.modifierFlags
+            .intersection([.command, .option, .shift, .control])
+        if event.modifierFlags.contains(.command) {
+            // `characters` is the Command-aware key macOS resolves: it
+            // follows remapped Latin layouts and supplies the positional
+            // Latin equivalent when the active layout is non-Latin. Option
+            // rewrites it into the alternate glyph, and the app's own menu
+            // owns ⌥⌘H, so while Option is held the unmodified reading is
+            // the one that still names the key to swallow.
+            let key = (event.modifierFlags.contains(.option)
+                ? event.charactersIgnoringModifiers
+                : event.characters)?.lowercased()
+            switch key {
+            case "q", "w", "m", "h":
+                // The app's menu owns these combinations and the panel is
+                // key, so they would quit, close or hide Vorssaint while
+                // the person believes they are acting on the app the bar
+                // is floating over.
+                return nil
+            case ",":
+                self.hide()
+                SettingsRouter.shared.page = .commandBar
+                appDelegate()?.openSettingsWindow()
+                return nil
+            case "k":
+                self.openActions()
+                return nil
+            case "p":
+                if let entry = self.selectedEntry, !entry.isAnswer,
+                   CommandBarPreferences.acceptsPin(rowID: entry.id) {
+                    self.togglePin(entry)
+                }
+                return nil
+            case "a" where navigationModifiers == [.command]:
+                return NSApp.sendAction(#selector(NSText.selectAll(_:)), to: nil, from: panel) ? nil : event
+            case "c" where navigationModifiers == [.command]:
+                return NSApp.sendAction(#selector(NSText.copy(_:)), to: nil, from: panel) ? nil : event
+            case "x" where navigationModifiers == [.command]:
+                return NSApp.sendAction(#selector(NSText.cut(_:)), to: nil, from: panel) ? nil : event
+            case "v" where navigationModifiers == [.command]:
+                return NSApp.sendAction(#selector(NSText.paste(_:)), to: nil, from: panel) ? nil : event
+            default:
+                break
+            }
+        }
+        // ⌘Return shows the selected row where it lives. Guarded by the
+        // row's own rule, so a row with nowhere to go hands the keys back
+        // and Return goes on meaning what it always did.
+        if event.modifierFlags.contains(.command),
+           Int(event.keyCode) == kVK_Return || Int(event.keyCode) == kVK_ANSI_KeypadEnter {
+            if case .search = self.mode, let entry = self.selectedEntry,
+               entry.canRevealInFinder {
+                self.revealInFinder(entry)
                 return nil
             }
-
-            let navigationModifiers = event.modifierFlags
-                .intersection([.command, .option, .shift, .control])
-            if event.modifierFlags.contains(.command) {
-                // `characters` is the Command-aware key macOS resolves: it
-                // follows remapped Latin layouts and supplies the positional
-                // Latin equivalent when the active layout is non-Latin. Option
-                // rewrites it into the alternate glyph, and the app's own menu
-                // owns ⌥⌘H, so while Option is held the unmodified reading is
-                // the one that still names the key to swallow.
-                let key = (event.modifierFlags.contains(.option)
-                    ? event.charactersIgnoringModifiers
-                    : event.characters)?.lowercased()
+        }
+        switch Int(event.keyCode) {
+        case kVK_Escape:
+            self.stepBack()
+            return nil
+        case kVK_Return, kVK_ANSI_KeypadEnter:
+            self.runSelected()
+            return nil
+        case kVK_UpArrow:
+            if case .actions = self.mode { self.moveActionSelection(-1) } else { self.moveSelection(-1) }
+            return nil
+        case kVK_DownArrow:
+            if case .actions = self.mode {
+                self.moveActionSelection(1)
+            } else if !self.peekHome() {
+                self.moveSelection(1)
+            }
+            return nil
+        case kVK_LeftArrow:
+            // Handed back untouched when the field has text in it.
+            return self.moveCategory(-1) ? nil : event
+        case kVK_RightArrow:
+            return self.moveCategory(1) ? nil : event
+        case kVK_Tab:
+            self.completeSelection()
+            return nil
+        default:
+            // ⌘1…⌘9 run by position; plain digits belong to the field.
+            if event.modifierFlags.contains(.command),
+               let index = Self.digitIndex(for: event.keyCode) {
+                self.run(at: index)
+                return nil
+            }
+            if navigationModifiers == [.control],
+               let key = event.charactersIgnoringModifiers?.lowercased() {
+                // Match the typed letter so alternate keyboard layouts
+                // follow the keys the person sees.
                 switch key {
-                case "q", "w", "m", "h":
-                    // The app's menu owns these combinations and the panel is
-                    // key, so they would quit, close or hide Vorssaint while
-                    // the person believes they are acting on the app the bar
-                    // is floating over.
-                    return nil
-                case ",":
-                    self.hide()
-                    SettingsRouter.shared.page = .commandBar
-                    appDelegate()?.openSettingsWindow()
-                    return nil
-                case "k":
-                    self.openActions()
-                    return nil
-                case "p":
-                    if let entry = self.selectedEntry, !entry.isAnswer,
-                       CommandBarPreferences.acceptsPin(rowID: entry.id) {
-                        self.togglePin(entry)
+                case "n":
+                    // Same ↓ in the footer's own hint.
+                    if case .actions = self.mode {
+                        self.moveActionSelection(1)
+                    } else if !self.peekHome() {
+                        self.moveSelection(1)
                     }
                     return nil
-                case "a" where navigationModifiers == [.command]:
-                    return NSApp.sendAction(#selector(NSText.selectAll(_:)), to: nil, from: panel) ? nil : event
-                case "c" where navigationModifiers == [.command]:
-                    return NSApp.sendAction(#selector(NSText.copy(_:)), to: nil, from: panel) ? nil : event
-                case "x" where navigationModifiers == [.command]:
-                    return NSApp.sendAction(#selector(NSText.cut(_:)), to: nil, from: panel) ? nil : event
-                case "v" where navigationModifiers == [.command]:
-                    return NSApp.sendAction(#selector(NSText.paste(_:)), to: nil, from: panel) ? nil : event
+                case "p":
+                    if case .actions = self.mode { self.moveActionSelection(-1) } else { self.moveSelection(-1) }
+                    return nil
                 default:
                     break
                 }
             }
-            // ⌘Return shows the selected row where it lives. Guarded by the
-            // row's own rule, so a row with nowhere to go hands the keys back
-            // and Return goes on meaning what it always did.
-            if event.modifierFlags.contains(.command),
-               Int(event.keyCode) == kVK_Return || Int(event.keyCode) == kVK_ANSI_KeypadEnter {
-                if case .search = self.mode, let entry = self.selectedEntry,
-                   entry.canRevealInFinder {
-                    self.revealInFinder(entry)
-                    return nil
-                }
-            }
-            switch Int(event.keyCode) {
-            case kVK_Escape:
-                self.stepBack()
-                return nil
-            case kVK_Return, kVK_ANSI_KeypadEnter:
-                self.runSelected()
-                return nil
-            case kVK_UpArrow:
-                if case .actions = self.mode { self.moveActionSelection(-1) } else { self.moveSelection(-1) }
-                return nil
-            case kVK_DownArrow:
-                if case .actions = self.mode {
-                    self.moveActionSelection(1)
-                } else if !self.peekHome() {
-                    self.moveSelection(1)
-                }
-                return nil
-            case kVK_LeftArrow:
-                // Handed back untouched when the field has text in it.
-                return self.moveCategory(-1) ? nil : event
-            case kVK_RightArrow:
-                return self.moveCategory(1) ? nil : event
-            case kVK_Tab:
-                self.completeSelection()
-                return nil
-            default:
-                // ⌘1…⌘9 run by position; plain digits belong to the field.
-                if event.modifierFlags.contains(.command),
-                   let index = Self.digitIndex(for: event.keyCode) {
-                    self.run(at: index)
-                    return nil
-                }
-                if navigationModifiers == [.control],
-                   let key = event.charactersIgnoringModifiers?.lowercased() {
-                    // Match the typed letter so alternate keyboard layouts
-                    // follow the keys the person sees.
-                    switch key {
-                    case "n":
-                        // Same ↓ in the footer's own hint.
-                        if case .actions = self.mode {
-                            self.moveActionSelection(1)
-                        } else if !self.peekHome() {
-                            self.moveSelection(1)
-                        }
-                        return nil
-                    case "p":
-                        if case .actions = self.mode { self.moveActionSelection(-1) } else { self.moveSelection(-1) }
-                        return nil
-                    default:
-                        break
-                    }
-                }
-                // Typing while a confirmation is up takes the confirmation
-                // down. Otherwise a destructive Return stays armed behind
-                // what looks like an ordinary search.
-                if case .confirm = self.mode { self.stepBack() }
-                if case .naming = self.mode { self.aliasWarning = nil }
-                return event
-            }
-        }
-        flagsMonitor = NSEvent.addLocalMonitorForEvents(matching: .flagsChanged) { [weak self] event in
-            guard let self else { return event }
-            let held = event.modifierFlags.contains(.command)
-            if held != self.commandIsHeld { self.commandIsHeld = held }
+            // Typing while a confirmation is up takes the confirmation
+            // down. Otherwise a destructive Return stays armed behind
+            // what looks like an ordinary search.
+            if case .confirm = self.mode { self.stepBack() }
+            if case .naming = self.mode { self.aliasWarning = nil }
             return event
         }
-        let mouseEvents: NSEvent.EventTypeMask = [.leftMouseDown, .rightMouseDown, .otherMouseDown]
-        localClickMonitor = NSEvent.addLocalMonitorForEvents(matching: mouseEvents) { [weak self, weak panel] event in
-            guard let self, let panel, panel.isVisible else { return event }
-            if event.window !== panel, !Self.mouseIsInside(panel) {
-                self.hide()
-            }
-            return event
-        }
-        outsideClickMonitor = NSEvent.addGlobalMonitorForEvents(matching: mouseEvents) { [weak self, weak panel] event in
-            guard let self, let panel, panel.isVisible else { return }
-            if event.windowNumber != panel.windowNumber, !Self.mouseIsInside(panel),
-               // Every key on the Accessibility Keyboard is a click outside this
-               // panel. Dismissing on those makes the panel impossible to type into.
-               !AssistiveKeyboard.ownsCocoaPoint(NSEvent.mouseLocation) {
-                self.hide()
-            }
-        }
-        activationObserver = NSWorkspace.shared.notificationCenter.addObserver(
-            forName: NSWorkspace.didActivateApplicationNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            guard let self,
-                  let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication,
-                  app.bundleIdentifier != Bundle.main.bundleIdentifier,
-                  app.bundleIdentifier != AssistiveKeyboard.bundleID
-            else { return }
-            self.hide()
-        }
-    }
-
-    private func removeMonitors() {
-        micStateSubscription?.cancel()
-        micStateSubscription = nil
-        micCatalogRefreshQueued = false
-        if let keyMonitor {
-            NSEvent.removeMonitor(keyMonitor)
-            self.keyMonitor = nil
-        }
-        if let localClickMonitor {
-            NSEvent.removeMonitor(localClickMonitor)
-            self.localClickMonitor = nil
-        }
-        if let outsideClickMonitor {
-            NSEvent.removeMonitor(outsideClickMonitor)
-            self.outsideClickMonitor = nil
-        }
-        if let flagsMonitor {
-            NSEvent.removeMonitor(flagsMonitor)
-            self.flagsMonitor = nil
-        }
-        commandIsHeld = false
-        if let activationObserver {
-            NSWorkspace.shared.notificationCenter.removeObserver(activationObserver)
-            self.activationObserver = nil
-        }
-    }
-
-    /// True while an input method is still composing in the field. The panel
-    /// edits through a field editor, so the marked range lives there.
-    private func fieldIsComposing(in panel: NSPanel) -> Bool {
-        guard let responder = panel.firstResponder as? NSTextView else { return false }
-        return responder.hasMarkedText()
-    }
-
-    private static func mouseIsInside(_ panel: NSPanel) -> Bool {
-        panel.frame.insetBy(dx: -2, dy: -2).contains(NSEvent.mouseLocation)
     }
 
     private static func digitIndex(for keyCode: UInt16) -> Int? {
