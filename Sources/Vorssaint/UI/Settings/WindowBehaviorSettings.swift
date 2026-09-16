@@ -10,6 +10,7 @@ struct WindowBehaviorSettings: View {
     @ObservedObject private var permissions = Permissions.shared
     @ObservedObject private var service = QuitProtectionService.shared
 
+    @AppStorage(DefaultsKey.windowMaximizeEnabled) private var windowMaximizeEnabled = false
     @AppStorage(DefaultsKey.quitProtectionQuitEnabled) private var quitEnabled = false
     @AppStorage(DefaultsKey.quitProtectionQuitMode) private var quitMode = QuitProtectionMode.hold.rawValue
     @AppStorage(DefaultsKey.quitProtectionQuitHoldDurationMs) private var quitHoldDuration = QuitProtectionSupport.defaultHoldDurationMilliseconds
@@ -39,6 +40,9 @@ struct WindowBehaviorSettings: View {
                 Text(l10n.s.windowMaximizeCaption)
                     .font(SettingsTypography.caption)
                     .foregroundStyle(.secondary)
+                if windowMaximizeEnabled && !permissions.accessibility {
+                    PermissionRow(kind: .accessibility)
+                }
             }
             if AppFeature.autoQuit.isAvailable {
                 AutoQuitSections()
