@@ -19,7 +19,16 @@ struct EnvironmentSettings: View {
     @State private var configurations: [EnvironmentConfiguration] = []
     @State private var projectDirectory: String?
 
-    private func label(_ zh: String, _ en: String) -> String { l10n.language == .zhHans ? zh : en }
+    private func label(_ zh: String, _ en: String, _ de: String, _ fr: String, _ es: String, _ ja: String) -> String {
+        switch l10n.language {
+        case .zhHans: return zh
+        case .de: return de
+        case .fr: return fr
+        case .es: return es
+        case .ja: return ja
+        default: return en
+        }
+    }
     private var busy: Bool { inspector.isLoading || updates.isChecking || homebrew.isBusy }
 
     private var detailText: EnvironmentDetailStrings { EnvironmentDetailStrings(language: l10n.language) }
@@ -49,7 +58,7 @@ struct EnvironmentSettings: View {
                         cachesSection
                         SettingsExplanation(updateText.note)
                     } label: {
-                        Text(label("环境诊断", "Environment diagnostics"))
+                        Text(label("环境诊断", "Environment diagnostics", "Umgebungsdiagnose", "Diagnostic de l’environnement", "Diagnóstico del entorno", "環境の診断"))
                             .font(SettingsTypography.body.weight(.medium))
                     }
                 } else {
@@ -87,8 +96,8 @@ struct EnvironmentSettings: View {
     private var header: some View {
         HStack(spacing: 8) {
             Picker("", selection: $tab) {
-                Text(label("工具", "Tools")).tag(0)
-                Text(label("配置文件", "Configuration files")).tag(1)
+                Text(label("工具", "Tools", "Werkzeuge", "Outils", "Herramientas", "ツール")).tag(0)
+                Text(label("配置文件", "Configuration files", "Konfigurationsdateien", "Fichiers de configuration", "Archivos de configuración", "設定ファイル")).tag(1)
             }
             .pickerStyle(.segmented)
             .frame(width: 190)
@@ -151,8 +160,8 @@ struct EnvironmentSettings: View {
                         }
                     } header: {
                         HStack(spacing: 8) {
-                            Text(index == 0 ? label("用户安装", "User installed") : index == 1
-                                ? label("系统与开发工具附带", "Bundled tools") : label("其他命令", "Other commands"))
+                            Text(index == 0 ? label("用户安装", "User installed", "Vom Benutzer installiert", "Installés par l’utilisateur", "Instalados por el usuario", "ユーザーがインストール") : index == 1
+                                ? label("系统与开发工具附带", "Bundled tools", "Mitgelieferte Werkzeuge", "Outils fournis", "Herramientas incluidas", "付属ツール") : label("其他命令", "Other commands", "Weitere Befehle", "Autres commandes", "Otros comandos", "その他のコマンド"))
                             Text("\(tools.count)")
                                 .font(.system(size: 11, weight: .semibold, design: .rounded))
                                 .foregroundStyle(.secondary)
@@ -179,7 +188,7 @@ struct EnvironmentSettings: View {
                         .font(.system(size: 10, weight: .semibold)).frame(width: 12)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(label("显示详情：", "Show details: ") + tool.command)
+                .accessibilityLabel(label("显示详情：", "Show details: ", "Details anzeigen: ", "Afficher les détails : ", "Mostrar detalles: ", "詳細を表示：") + tool.command)
                 Text(tool.command).font(SettingsTypography.body.weight(.semibold))
                 Spacer(minLength: 8)
                 HStack(spacing: 5) {
@@ -210,7 +219,7 @@ struct EnvironmentSettings: View {
                     }
                     if let path = tool.path {
                         pathRow(label: detailText.resolvedPath, path: path)
-                        Button(label("在 Finder 中显示", "Show in Finder")) {
+                        Button(label("在 Finder 中显示", "Show in Finder", "Im Finder zeigen", "Afficher dans le Finder", "Mostrar en el Finder", "Finderで表示")) {
                             NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)])
                         }.buttonStyle(.link)
                     }
@@ -233,14 +242,14 @@ struct EnvironmentSettings: View {
     private func displayVersion(_ tool: EnvironmentTool) -> String {
         if available(tool) != nil, case let .homebrew(_, _, version) = tool.source { return version }
         guard let raw = tool.version else {
-            return tool.path == nil ? text.notFound : label("版本未读出", "Version unavailable")
+            return tool.path == nil ? text.notFound : label("版本未读出", "Version unavailable", "Version nicht verfügbar", "Version indisponible", "Versión no disponible", "バージョンを取得できません")
         }
         let tokens = raw.split(whereSeparator: { $0.isWhitespace })
         return tokens.first(where: { $0.first?.isNumber == true || ($0.hasPrefix("v") && $0.dropFirst().first?.isNumber == true) }).map(String.init) ?? raw
     }
 
     private func compactSource(_ source: EnvironmentUpdateSource) -> String {
-        if case let .homebrew(_, formula, _) = source { return label("后装 · Homebrew · ", "User-installed · Homebrew · ") + formula }
+        if case let .homebrew(_, formula, _) = source { return label("后装 · Homebrew · ", "User-installed · Homebrew · ", "Nachinstalliert · Homebrew · ", "Installé ensuite · Homebrew · ", "Instalado después · Homebrew · ", "追加インストール · Homebrew · ") + formula }
         return updateText.source(source)
     }
 
@@ -269,10 +278,10 @@ struct EnvironmentSettings: View {
     private var configurationSections: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
-                Text(label("已发现的配置文件；是否生效取决于工具的加载方式。", "Discovered files; tools determine which configuration is loaded."))
+                Text(label("已发现的配置文件；是否生效取决于工具的加载方式。", "Discovered files; tools determine which configuration is loaded.", "Gefundene Dateien; welche Konfiguration geladen wird, bestimmt das jeweilige Werkzeug.", "Fichiers trouvés ; chaque outil décide quelle configuration il charge.", "Archivos encontrados; cada herramienta decide qué configuración carga.", "見つかったファイルです。どの設定を読み込むかはツールによります。"))
                     .font(SettingsTypography.caption).foregroundStyle(.secondary)
                 Spacer()
-                Button(label("选择项目…", "Choose project…")) {
+                Button(label("选择项目…", "Choose project…", "Projekt auswählen…", "Choisir un projet…", "Elegir proyecto…", "プロジェクトを選択…")) {
                     let panel = NSOpenPanel()
                     panel.canChooseFiles = false
                     panel.canChooseDirectories = true
@@ -286,13 +295,13 @@ struct EnvironmentSettings: View {
             ForEach(["user", "project", "system"], id: \.self) { scope in
                 let files = configurations.filter { $0.scope == scope }
                 if !files.isEmpty || (scope == "project" && projectDirectory != nil) {
-                    SettingsSection(title: scope == "user" ? label("用户配置", "User configuration") : scope == "project"
-                        ? label("项目配置", "Project configuration") : label("系统配置", "System configuration"), systemImage: "doc.text") {
+                    SettingsSection(title: scope == "user" ? label("用户配置", "User configuration", "Benutzerkonfiguration", "Configuration utilisateur", "Configuración de usuario", "ユーザー設定") : scope == "project"
+                        ? label("项目配置", "Project configuration", "Projektkonfiguration", "Configuration du projet", "Configuración del proyecto", "プロジェクト設定") : label("系统配置", "System configuration", "Systemkonfiguration", "Configuration système", "Configuración del sistema", "システム設定"), systemImage: "doc.text") {
                         if scope == "project", let projectDirectory {
                             Text(projectDirectory).font(SettingsTypography.caption).foregroundStyle(.secondary).textSelection(.enabled)
                         }
                         if files.isEmpty {
-                            Text(label("此目录未发现支持识别的配置文件。", "No recognized configuration files in this directory."))
+                            Text(label("此目录未发现支持识别的配置文件。", "No recognized configuration files in this directory.", "In diesem Ordner wurden keine erkannten Konfigurationsdateien gefunden.", "Aucun fichier de configuration reconnu dans ce dossier.", "No hay archivos de configuración reconocidos en esta carpeta.", "このフォルダに認識できる設定ファイルはありません。"))
                                 .font(SettingsTypography.caption).foregroundStyle(.secondary)
                         }
                         ForEach(files) { file in
@@ -304,7 +313,7 @@ struct EnvironmentSettings: View {
                                         .fixedSize(horizontal: false, vertical: true)
                                 }
                                 Spacer(minLength: 8)
-                                Button(label("定位", "Reveal")) {
+                                Button(label("定位", "Reveal", "Zeigen", "Afficher", "Mostrar", "表示")) {
                                     NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: file.path)])
                                 }.settingsAction(.secondary).fixedSize()
                                 EnvironmentCopyButton(title: text.copyPath, succeeded: copyFeedback.result(for: file.path),
