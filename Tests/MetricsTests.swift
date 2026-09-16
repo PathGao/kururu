@@ -3585,10 +3585,10 @@ UninstallerSelectionTests.run { expect($0, $1) }
         // decision above is made consciously, never by omission.
         let releasePlist = NSDictionary(contentsOfFile: "Resources/Info.plist")
         let plistVersion = (releasePlist?["CFBundleShortVersionString"] as? String) ?? ""
-        expect(plistVersion == "0.1.1",
+        expect(plistVersion == "0.1.2",
                "bumping the app version requires re-deciding the support prompt pin above")
         let plistBuild = (releasePlist?["CFBundleVersion"] as? String) ?? ""
-        expect(plistBuild == "2",
+        expect(plistBuild == "3",
                "every app version needs its own incremented bundle build")
         expect(!SupportUpdateIntroInfo.shouldShow(appVersion: plistVersion, lastSeenVersion: nil)
                && !UpdateHighlightsInfo.shouldShow(appVersion: plistVersion, lastSeenVersion: nil),

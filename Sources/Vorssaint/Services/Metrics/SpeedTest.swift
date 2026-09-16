@@ -36,7 +36,7 @@ final class SpeedTest: NSObject, ObservableObject {
     // so request under that and loop chunks back-to-back until the time box — that
     // keeps a fast link's pipe full for a full measurement window.
     private let downloadBytes = 90_000_000
-    private let uploadBytes = 100_000_000
+    private let uploadBytes: Int
 
     private let queue = OperationQueue()
     private var session: URLSession!
@@ -48,8 +48,10 @@ final class SpeedTest: NSObject, ObservableObject {
     private var generation = 0
     private var stopWork: DispatchWorkItem?
 
-    init(configuration: URLSessionConfiguration = .ephemeral, sampleSeconds: TimeInterval = 5) {
+    init(configuration: URLSessionConfiguration = .ephemeral, sampleSeconds: TimeInterval = 5,
+         uploadBytes: Int = 100_000_000) {
         self.sampleSeconds = sampleSeconds
+        self.uploadBytes = uploadBytes
         super.init()
         queue.maxConcurrentOperationCount = 1
         configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
