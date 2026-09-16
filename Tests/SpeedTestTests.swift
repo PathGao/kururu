@@ -17,7 +17,8 @@ enum SpeedTestTests {
             let configuration = URLSessionConfiguration.ephemeral
             configuration.protocolClasses = [SpeedTestProtocol.self]
             configuration.httpAdditionalHeaders = ["X-Test-Scenario": testCase.name]
-            let test = SpeedTest(configuration: configuration, sampleSeconds: 0.1)
+            // These cases test HTTP status handling, not a 100 MB upload benchmark.
+            let test = SpeedTest(configuration: configuration, sampleSeconds: 0.1, uploadBytes: 1_024)
             test.start()
             let deadline = Date().addingTimeInterval(3)
             var completed = false
@@ -62,6 +63,10 @@ enum SpeedTestTests {
             expect(test.phase == phase, "speed test \(testCase.name) stays terminal after its time box")
             expect(SpeedTestProtocol.requests(for: testCase.name) == testCase.requests,
                    "speed test \(testCase.name) stops requesting data at the failed phase")
+            if testCase.requests.contains("upload") {
+                expect(SpeedTestProtocol.uploadSize(for: testCase.name) == 1_024,
+                       "speed test \(testCase.name) uses the small fixture upload body")
+            }
             test.cancel()
         }
     }
@@ -70,6 +75,13 @@ enum SpeedTestTests {
 private final class SpeedTestProtocol: URLProtocol {
     private static let lock = NSLock()
     private static var recordedRequests: [String: [String]] = [:]
+    private static var uploadSizes: [String: Int] = [:]
+
+    static func uploadSize(for scenario: String) -> Int? {
+        lock.lock()
+        defer { lock.unlock() }
+        return uploadSizes[scenario]
+    }
 
     static func requests(for scenario: String) -> [String] {
         lock.lock()
@@ -84,7 +96,20 @@ private final class SpeedTestProtocol: URLProtocol {
         let scenario = request.value(forHTTPHeaderField: "X-Test-Scenario") ?? ""
         let url = request.url!
         let phase = url.path == "/__up" ? "upload" : url.query == "bytes=0" ? "latency" : "download"
+        var uploadSize = request.httpBody?.count ?? 0
+        if phase == "upload", let stream = request.httpBodyStream {
+            stream.open()
+            defer { stream.close() }
+            // One byte beyond the fixture size detects an accidental real upload.
+            var buffer = [UInt8](repeating: 0, count: 1_025)
+            while uploadSize < buffer.count {
+                let count = stream.read(&buffer, maxLength: buffer.count - uploadSize)
+                guard count > 0 else { break }
+                uploadSize += count
+            }
+        }
         Self.lock.lock()
+        if phase == "upload" { Self.uploadSizes[scenario] = uploadSize }
         Self.recordedRequests[scenario, default: []].append(phase)
         let downloadCount = Self.recordedRequests[scenario, default: []].filter { $0 == "download" }.count
         Self.lock.unlock()
