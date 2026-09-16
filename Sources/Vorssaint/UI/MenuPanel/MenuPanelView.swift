@@ -481,7 +481,7 @@ private struct MenuPanelHeader: View {
     }
 }
 
-private enum UtilityPanelItem: String, PanelOrderItem, Identifiable {
+enum UtilityPanelItem: String, PanelOrderItem, Identifiable {
     // Case order IS the default panel order (PanelLayout.itemOrder falls back
     // to allCases). Screenshot leads in 3.1.13; existing orders that predate it
     // are migrated once without disturbing the rest of the user's layout.
@@ -508,6 +508,25 @@ private enum UtilityPanelItem: String, PanelOrderItem, Identifiable {
         case .screenRecorder: return .screenRecorder
         case .scratchpad: return .scratchpad
         case .commandBar: return .commandBar
+        }
+    }
+
+    /// The same key the panel's edit mode writes; Settings lists every tile by it.
+    var visibilityKey: String {
+        switch self {
+        case .screenshot: return DefaultsKey.panelUtilityScreenshot
+        case .micMute: return DefaultsKey.panelUtilityMicMute
+        case .cleaner: return DefaultsKey.panelUtilityCleaner
+        case .media: return DefaultsKey.panelUtilityMedia
+        case .clipboard: return DefaultsKey.panelUtilityClipboard
+        case .uninstaller: return DefaultsKey.panelUtilityUninstaller
+        case .cleanURL: return DefaultsKey.panelUtilityURLCleaner
+        case .cleaning: return DefaultsKey.panelUtilityCleaning
+        case .screenOCR: return DefaultsKey.panelUtilityScreenOCR
+        case .colorPicker: return DefaultsKey.panelUtilityColorPicker
+        case .scratchpad: return DefaultsKey.panelUtilityScratchpad
+        case .commandBar: return DefaultsKey.panelUtilityCommandBar
+        case .screenRecorder: return DefaultsKey.panelUtilityScreenRecorder
         }
     }
 }
@@ -933,7 +952,7 @@ struct UtilitiesSection: View {
     }
 }
 
-private enum ControlPanelItem: String, PanelOrderItem, Identifiable {
+enum ControlPanelItem: String, PanelOrderItem, Identifiable {
     case mouseScroll, focusFollowsMouse, mouseAcceleration, mouseNavigation, switcher, cutPaste, autoQuit, shelf, windowMaximize, dockPreview, keyDebounce,
          dockClick, dockClickHide, dockClickCycle, middleClick, textSnippets, radialMenu, mouseButtonShortcuts, superKey,
          mouseClickDebounce
@@ -962,6 +981,32 @@ private enum ControlPanelItem: String, PanelOrderItem, Identifiable {
         case .mouseButtonShortcuts: return .mouseButtonShortcuts
         case .superKey: return .superKey
         case .mouseClickDebounce: return .mouseClickDebounce
+        }
+    }
+
+    /// The same key the panel's edit mode writes; Settings lists every row by it.
+    var visibilityKey: String {
+        switch self {
+        case .mouseScroll: return DefaultsKey.panelControlMouseScroll
+        case .focusFollowsMouse: return DefaultsKey.panelControlFocusFollowsMouse
+        case .mouseAcceleration: return DefaultsKey.panelControlMouseAcceleration
+        case .mouseNavigation: return DefaultsKey.panelControlMouseNavigation
+        case .switcher: return DefaultsKey.panelControlSwitcher
+        case .cutPaste: return DefaultsKey.panelControlCutPaste
+        case .autoQuit: return DefaultsKey.panelControlAutoQuit
+        case .shelf: return DefaultsKey.panelControlShelf
+        case .windowMaximize: return DefaultsKey.panelControlWindowMaximize
+        case .dockPreview: return DefaultsKey.panelControlDockPreview
+        case .keyDebounce: return DefaultsKey.panelControlKeyDebounce
+        case .dockClick: return DefaultsKey.panelControlDockClick
+        case .dockClickHide: return DefaultsKey.panelControlDockClickHide
+        case .dockClickCycle: return DefaultsKey.panelControlDockClickCycle
+        case .middleClick: return DefaultsKey.panelControlMiddleClick
+        case .textSnippets: return DefaultsKey.panelControlTextSnippets
+        case .radialMenu: return DefaultsKey.panelControlRadialMenu
+        case .mouseButtonShortcuts: return DefaultsKey.panelControlMouseButtonShortcuts
+        case .superKey: return DefaultsKey.panelControlSuperKey
+        case .mouseClickDebounce: return DefaultsKey.panelControlMouseClickDebounce
         }
     }
 }

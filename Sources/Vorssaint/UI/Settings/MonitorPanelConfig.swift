@@ -47,8 +47,6 @@ struct MonitorPanelConfig: View {
     @AppStorage(DefaultsKey.panelShowControls) private var showControls = true
     @AppStorage(DefaultsKey.monitorShowMixer) private var showMixer = true
     @AppStorage(DefaultsKey.panelShowUtilities) private var showUtilities = true
-    @AppStorage(DefaultsKey.panelUtilityClipboard) private var showClipboard = true
-    @AppStorage(DefaultsKey.panelUtilityURLCleaner) private var showURLCleaner = true
 
     var body: some View {
         if includeStandaloneSections {
@@ -59,7 +57,11 @@ struct MonitorPanelConfig: View {
                 visibilityRow(.brightness, master: $showBrightness)
             }
             if PanelSectionID.controls.isAvailable {
-                visibilityRow(.controls, master: $showControls)
+                block(.controls, title: l10n.s.quickControlsSection, master: $showControls) {
+                    ForEach(ControlPanelItem.allCases.filter { $0.feature.isAvailable }) { item in
+                        PanelItemVisibilityRow(title: rowTitle(item), key: item.visibilityKey)
+                    }
+                }
             }
             if AppFeature.fanControl.isAvailable {
                 let unavailable = AppFeature.fanControl.hardwareUnsupportedReason
@@ -130,18 +132,22 @@ struct MonitorPanelConfig: View {
             visibilityRow(.mixer, master: $showMixer)
         }
         if includeUtilities, PanelSectionID.utilities.isAvailable {
-            if AppFeature.clipboardHistory.isAvailable || AppFeature.urlCleaner.isAvailable {
-                block(.utilities, title: l10n.s.utilitiesSection, master: $showUtilities) {
-                    if AppFeature.clipboardHistory.isAvailable {
-                        MonitorGraphVisibilityRow(title: AppFeature.clipboardHistory.name(l10n.s, language: l10n.language), visible: $showClipboard)
-                    }
-                    if AppFeature.urlCleaner.isAvailable {
-                        MonitorGraphVisibilityRow(title: AppFeature.urlCleaner.name(l10n.s, language: l10n.language), visible: $showURLCleaner)
-                    }
+            block(.utilities, title: l10n.s.utilitiesSection, master: $showUtilities) {
+                ForEach(UtilityPanelItem.allCases.filter { $0.feature.isAvailable }) { item in
+                    PanelItemVisibilityRow(title: item.feature.name(l10n.s, language: l10n.language), key: item.visibilityKey)
                 }
-            } else {
-                visibilityRow(.utilities, master: $showUtilities)
             }
+        }
+    }
+
+    /// Dock click is one feature shown as three rows, so those rows use the panel's row names.
+    private func rowTitle(_ item: ControlPanelItem) -> String {
+        let dockClick = FeatureStrings.dockClick(l10n.language)
+        switch item {
+        case .dockClick: return dockClick.minimize
+        case .dockClickHide: return dockClick.hide
+        case .dockClickCycle: return dockClick.cycleWindows
+        default: return item.feature.name(l10n.s, language: l10n.language)
         }
     }
 
@@ -255,6 +261,21 @@ private struct MonitorGraphSwitch: View {
         .fixedSize()
         .help(MonitorHistoryStrings.text(l10n.language).history)
         .accessibilityLabel("\(title): \(MonitorHistoryStrings.text(l10n.language).history)")
+    }
+}
+
+/// A panel tile or control row, bound by key so every item needs no stored property here.
+private struct PanelItemVisibilityRow: View {
+    let title: String
+    @AppStorage private var visible: Bool
+
+    init(title: String, key: String) {
+        self.title = title
+        _visible = AppStorage(wrappedValue: true, key)
+    }
+
+    var body: some View {
+        MonitorGraphVisibilityRow(title: title, visible: $visible)
     }
 }
 
