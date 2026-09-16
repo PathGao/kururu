@@ -20,29 +20,23 @@ struct BrightnessSettings: View {
             if AppFeature.brightness.isAvailable {
                 let strings = FeatureStrings.brightness(l10n.language)
                 SettingsSection(title: UXEntryStrings(l10n.language).displayDevices, systemImage: "display") {
-                    HStack {
-                        Text(strings.enable)
-                            .font(SettingsTypography.body)
-                        SettingsHelpButton(title: UXEntryStrings(l10n.language).displayDevices,
-                                           text: strings.enableCaption + "\n\n" + strings.externalCaption)
-                    }
-                        if brightness.displays.isEmpty {
-                            SettingsCaptionText(strings.noDisplays)
-                        } else {
-                            ForEach(brightness.displays) { display in
-                                VStack(alignment: .leading, spacing: 4) {
-                                    brightnessRow(display)
-                                    if brightness.brightnessWriteFailures[display.id] != nil {
-                                        SettingsCaptionText(strings.brightnessWriteFailed)
-                                            .foregroundStyle(.red)
-                                    }
+                    if brightness.displays.isEmpty {
+                        SettingsCaptionText(strings.noDisplays)
+                    } else {
+                        ForEach(brightness.displays) { display in
+                            VStack(alignment: .leading, spacing: 4) {
+                                brightnessRow(display)
+                                if brightness.brightnessWriteFailures[display.id] != nil {
+                                    SettingsCaptionText(strings.brightnessWriteFailed)
+                                        .foregroundStyle(.red)
                                 }
                             }
                         }
-                        if let failure = brightness.displayControlFailure {
-                            SettingsCaptionText(displayControlFailureText(failure, strings: strings))
-                                .foregroundStyle(.red)
-                        }
+                    }
+                    if let failure = brightness.displayControlFailure {
+                        SettingsCaptionText(displayControlFailureText(failure, strings: strings))
+                            .foregroundStyle(.red)
+                    }
                 }
                 .settingsSectionAnchor(.brightness)
 
@@ -90,14 +84,14 @@ struct BrightnessSettings: View {
                 }
             ShortcutPreferenceRow(
                 role: .displayBrightnessDecrease,
-                isEnabled: true,
+                isEnabled: displayBrightnessShortcutsEnabled,
                 label: text.decrease,
                 symbolName: "sun.min",
                 includeInactiveConflicts: true,
                 onChange: { BrightnessService.shared.syncWithPreferences() })
             ShortcutPreferenceRow(
                 role: .displayBrightnessIncrease,
-                isEnabled: true,
+                isEnabled: displayBrightnessShortcutsEnabled,
                 label: text.increase,
                 symbolName: "sun.max",
                 includeInactiveConflicts: true,

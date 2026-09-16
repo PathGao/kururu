@@ -27,7 +27,7 @@ struct CutPasteSettings: View {
     }
 
     private var needsAccessibility: Bool {
-        (AppFeature.finderCutPaste.isAvailable && enabled)
+        (AppFeature.finderCutPaste.isAvailable && (enabled || pasteImageAsFile))
             || (AppFeature.finderRename.isAvailable && renameEnabled)
     }
 
@@ -69,9 +69,6 @@ struct CutPasteSettings: View {
                         .onChange(of: pasteImageAsFile) { _, _ in
                             FinderCutPaste.shared.syncWithPreferences()
                         }
-                    if pasteImageAsFile, !permissions.accessibility {
-                        PermissionRow(kind: .accessibility)
-                    }
                 }
                 .settingsSectionAnchor(.finderCutPaste)
             }

@@ -15,14 +15,12 @@ struct ScreenshotCaptureSettings: View {
     @AppStorage(DefaultsKey.screenshotClipboardShortcutEnabled)
     private var clipboardShortcutEnabled = false
     @AppStorage(DefaultsKey.screenshotFreeze) private var freeze = true
-    @AppStorage(DefaultsKey.screenshotHideVorssaintWindows) private var hideVorssaintWindows = true
     @AppStorage(DefaultsKey.screenshotSaveFolder) private var saveFolder = ""
     @AppStorage(DefaultsKey.screenshotSaveSubfolder) private var saveSubfolder = ""
     @AppStorage(DefaultsKey.screenshotFileNamePattern) private var fileNamePattern = ""
     @AppStorage(DefaultsKey.screenshotFileNumberStart) private var numberStart = 1
     @AppStorage(DefaultsKey.screenshotFileNumberNext) private var nextNumber = 1
     @AppStorage(DefaultsKey.screenshotIncludePointer) private var includePointer = false
-    @AppStorage(DefaultsKey.screenshotShowLastRegion) private var showLastRegion = true
     @AppStorage(DefaultsKey.screenshotLoupeStartsOn) private var loupeStartsOn = false
     @AppStorage(DefaultsKey.screenshotLoupeRememberZoom) private var rememberLoupeZoom = false
     @AppStorage(DefaultsKey.screenshotLoupeDefaultZoom) private var loupeDefaultZoom = 1.0
@@ -112,7 +110,6 @@ struct ScreenshotCaptureSettings: View {
             SettingsSection(title: UXEntryStrings(l10n.language).captureOptions, systemImage: "viewfinder") {
                 SettingsToggleWithCaption(title: strings.freezeToggle,
                                           caption: strings.freezeCaption, isOn: $freeze)
-                Toggle(strings.hideVorssaintWindowsToggle, isOn: $hideVorssaintWindows)
                 SettingsControlRow(title: strings.delayLabel, systemImage: "timer") {
                     Picker(strings.delayLabel, selection: $delay) {
                         ForEach(ScreenshotSupport.allowedDelays, id: \.self) { seconds in
@@ -128,7 +125,6 @@ struct ScreenshotCaptureSettings: View {
                 }
                 Divider()
                 Toggle(strings.pointerToggle, isOn: $includePointer)
-                Toggle(strings.lastRegionToggle, isOn: $showLastRegion)
                 previewPositionRow
                 DisclosureGroup {
                     Toggle(strings.loupeStartsOnToggle, isOn: $loupeStartsOn)
