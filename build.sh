@@ -329,6 +329,7 @@ if (( TEST )); then
         Tests/FinderTargetAcquisitionTests.swift \
         Tests/DisplayBrightnessShortcutTests.swift \
         Tests/BrightnessModuleMigrationTests.swift \
+        Tests/MixerSwitchMigrationTests.swift \
         Tests/FeatureLifecycleTests.swift \
         Tests/ShelfImportStoreTests.swift \
         Tests/CommandBarExecutorTests.swift \

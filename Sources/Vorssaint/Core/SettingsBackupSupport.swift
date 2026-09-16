@@ -177,6 +177,7 @@ enum SettingsBackupSupport {
     /// from before units and per-surface preview settings restores cleanly.
     static let legacyImportKeys: [String: Any] = {
         var keys: [String: Any] = [DefaultsKey.brightnessControlEnabled: false,
+                                   DefaultsKey.mixerEnabled: true,
                                    DefaultsKey.previewSize: "normal",
                                    DefaultsKey.windowPreviewExcludedApps: [String]()]
         for feature in AppFeature.allCases {
