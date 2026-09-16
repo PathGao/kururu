@@ -67,12 +67,16 @@ TARGET="arm64-apple-macosx14.0"
 ENTITLEMENTS="Resources/Vorssaint.entitlements"
 LEGACY_IDENTITY="Vorssaint Utils Signing"
 
+# Select by fingerprint: the three project certificates share the same Apple name.
+PROJECT_SIGNING_IDENTITY="${APPLE_SIGNING_IDENTITY:-E045AE3830A8EF200546AB97B6E020C1B40384CA}"
 developer_id_identity() {
     security find-identity -v -p codesigning 2>/dev/null \
-        | grep 'Developer ID Application' \
-        | head -1 \
-        | sed -E 's/.*"(.*)".*/\1/' || true
+        | awk -v identity="$PROJECT_SIGNING_IDENTITY" '$2 == identity && /Developer ID Application/ { print $2; exit }'
 }
+if [[ "${REQUIRE_SIGNING:-0}" == "1" && -z "$(developer_id_identity)" ]]; then
+    echo "The configured kururu Developer ID certificate is unavailable." >&2
+    exit 1
+fi
 
 # A find-identity listing also names certificates codesign then rejects (an
 # expired one fails the build with errSecInternalComponent), and -v excludes

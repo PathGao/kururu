@@ -21,6 +21,12 @@ newest release first. The app and release workflow read these version headings.
     - Removed capabilities or compatibility.
 -->
 
+## [0.1.2] - 2026-09-16
+
+### Changed
+- Sign releases with kururu's Apple Developer ID and notarize them through GitHub Actions.
+- Enable in-app updates from PathGao/kururu with Apple team and application identity verification.
+
 ## [0.1.1] - 2026-09-15
 
 ### Added

@@ -11,6 +11,8 @@
 #   NOTARY_KEY_ID       the key's ID
 #   NOTARY_ISSUER_ID    the issuer UUID
 #
+# Alternatively use NOTARY_KEYCHAIN_PROFILE locally, or APPLE_ID,
+# APPLE_APP_SPECIFIC_PASSWORD and APPLE_TEAM_ID.
 # When the credentials are absent it skips quietly (exit 0), so a plain build
 # without notarization still succeeds.
 set -euo pipefail
@@ -23,12 +25,17 @@ if [[ -z "$TARGET" ]]; then
     exit 1
 fi
 
-if [[ -z "${NOTARY_API_KEY_P8:-}" || -z "${NOTARY_KEY_ID:-}" || -z "${NOTARY_ISSUER_ID:-}" ]]; then
+AUTH=()
+if [[ -n "${NOTARY_KEYCHAIN_PROFILE:-}" ]]; then
+    AUTH=(--keychain-profile "$NOTARY_KEYCHAIN_PROFILE")
+elif [[ -n "${APPLE_ID:-}" && -n "${APPLE_APP_SPECIFIC_PASSWORD:-}" && -n "${APPLE_TEAM_ID:-}" ]]; then
+    AUTH=(--apple-id "$APPLE_ID" --password "$APPLE_APP_SPECIFIC_PASSWORD" --team-id "$APPLE_TEAM_ID")
+elif [[ -z "${NOTARY_API_KEY_P8:-}" || -z "${NOTARY_KEY_ID:-}" || -z "${NOTARY_ISSUER_ID:-}" ]]; then
     if [[ "${REQUIRE_NOTARIZATION:-0}" == "1" ]]; then
         echo "Release notarization credentials are incomplete." >&2
         exit 1
     fi
-    echo "No notarization credentials in the environment — skipping ($TARGET)."
+    echo "No notarization credentials — skipping ($TARGET)."
     exit 0
 fi
 if [[ ! -e "$TARGET" ]]; then
@@ -39,8 +46,11 @@ fi
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
-P8="$WORK/AuthKey.p8"
-printf '%s' "$NOTARY_API_KEY_P8" | base64 --decode > "$P8"
+if (( ${#AUTH[@]} == 0 )); then
+    P8="$WORK/AuthKey.p8"
+    printf '%s' "$NOTARY_API_KEY_P8" | base64 --decode > "$P8"
+    AUTH=(--key "$P8" --key-id "$NOTARY_KEY_ID" --issuer "$NOTARY_ISSUER_ID")
+fi
 
 # notarytool needs a zip/dmg/pkg. A .app is zipped first; a .dmg is submitted
 # as-is. Stapling always targets the original artifact.
@@ -58,8 +68,7 @@ esac
 
 echo "▸ Submitting $(basename "$TARGET") to the notary service (can take a few minutes)…"
 xcrun notarytool submit "$SUBMIT" \
-    --key "$P8" --key-id "$NOTARY_KEY_ID" --issuer "$NOTARY_ISSUER_ID" \
-    --wait
+    "${AUTH[@]}" --wait
 
 # Staple the ticket so it is recognized even offline. Fails (and fails the build)
 # if notarization did not actually succeed, so a bad result never ships.

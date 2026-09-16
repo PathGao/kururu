@@ -6,20 +6,20 @@ import Security
 enum BuildCapabilityPolicyTests {
     static func run(_ expect: (Bool, String) -> Void) {
         let installer = UpdateInstallerSupport.installerScript()
-        expect(installer.contains("DMG_VERIFY_REQ='never'"), "generated installer refuses disk images without product signing identity")
-        expect(installer.contains("VERIFY_REQ='never'"), "generated installer refuses application bundles without product signing identity")
+        expect(installer.contains("DMG_VERIFY_REQ='anchor apple generic and certificate leaf[subject.OU] = \"GN56VLVTJ6\"'"), "generated installer requires our Apple team for disk images")
+        expect(installer.contains("identifier \"com.pathgao.kururu\""), "generated installer requires the kururu bundle identity")
         expect(!installer.contains("3D485NHW29") && !installer.contains("com.vorssaint.utils"), "generated installer never trusts upstream identity")
         expect(ProductIdentity.bundleID(development: false) == "com.pathgao.kururu", "release identity belongs to kururu")
         expect(ProductIdentity.bundleID(development: true) == "com.pathgao.kururu.dev", "development has independent identity")
-        expect(!ProductIdentity.allowsSelfUpdates && ProductIdentity.signingTeamID == nil, "current identity does not claim configured updater or signing team")
+        expect(ProductIdentity.allowsSelfUpdates && ProductIdentity.signingTeamID == "GN56VLVTJ6", "release update validation uses our configured Apple team")
         #if VORSSAINT_DEVELOPMENT
         expect(FanControlIdentifiers.appBundleID == ProductIdentity.developmentBundleID, "development helper matches development app")
         #else
         expect(FanControlIdentifiers.appBundleID == ProductIdentity.releaseBundleID, "release helper matches release app")
         #endif
         expect(FanControlIdentifiers.helperID == FanControlIdentifiers.appBundleID + ".fan-control", "helper service uses product-owned namespace")
-        expect(!FanControlIdentifiers.isConfigured, "actual fan helper stays disabled without product team")
-        expect(FanControlIdentifiers.appCodeRequirement == "never" && FanControlIdentifiers.helperCodeRequirement == "never", "both actual helper authentication directions fail closed")
+        expect(FanControlIdentifiers.isConfigured, "helper uses configured product team")
+        expect(FanControlIdentifiers.appCodeRequirement.contains("GN56VLVTJ6") && FanControlIdentifiers.helperCodeRequirement.contains("GN56VLVTJ6"), "both helper authentication directions require our Apple team")
         expect(!BuildCapabilityPolicy.allowsPrivilegedHelper(teamID: nil), "missing team disables helper")
         expect(!BuildCapabilityPolicy.allowsPrivilegedHelper(teamID: ""), "empty team disables helper")
         expect(!BuildCapabilityPolicy.allowsPrivilegedHelper(teamID: "bad\" or true"), "invalid team cannot inject requirement")

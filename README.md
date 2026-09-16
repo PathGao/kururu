@@ -33,13 +33,12 @@ Forked from [Vorssaint](https://github.com/vorssaint/vorssaint-utils), kururu is
 
 **[Download kururu for Apple Silicon](https://github.com/PathGao/kururu/releases/latest)**
 
-Requires **macOS 14 or later** on an **Apple Silicon Mac**. The current release is [0.1.1](https://github.com/PathGao/kururu/releases/tag/v0.1.1).
+Requires **macOS 14 or later** on an **Apple Silicon Mac**. The current release is [0.1.2](https://github.com/PathGao/kururu/releases/tag/v0.1.2).
 
 1. Download the DMG from the release page.
 2. Open it and drag kururu to Applications.
 3. Launch kururu, choose your features, and grant the permissions they need.
 
-> **Early release:** the downloadable app is locally signed and has not been notarized by Apple, so macOS may block first launch. Automatic updates are currently unavailable; download new versions from the release page.
 
 ## Features
 
