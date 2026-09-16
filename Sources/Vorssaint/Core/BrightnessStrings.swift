@@ -8,9 +8,9 @@ import Foundation
 /// per language, all in this file.
 struct BrightnessFeatureStrings {
     var pageTitle: String = "Displays"
-    var hubDescription: String = "External brightness and display power controls"
+    var hubDescription: String = "Display brightness and power controls"
     var enable: String = "Control displays"
-    var enableCaption: String = "Adjust external monitor brightness and turn displays on or off, here and in the menu bar panel. Use the system controls for built-in screen brightness."
+    var enableCaption: String = "Adjust built-in and external display brightness together, here and in the menu bar panel. You can also turn displays on or off."
     var externalCaption: String = "Adjusts the external display’s brightness directly when supported. Otherwise, it tries software dimming, which darkens the picture without changing the backlight."
     var noDisplays: String = "No display found."
     var displayOff: String = "Off"
@@ -59,9 +59,9 @@ extension BrightnessFeatureStrings {
 
     static let ptBR = BrightnessFeatureStrings(
         pageTitle: "Telas",
-        hubDescription: "Brilho externo e controles de energia das telas",
+        hubDescription: "Brilho e controles de energia das telas",
         enable: "Controlar telas",
-        enableCaption: "Ajuste o brilho de monitores externos e ligue ou desligue telas aqui e no painel da barra de menus. Use os controles do sistema para o brilho da tela integrada.",
+        enableCaption: "Ajuste o brilho das telas integrada e externas no mesmo lugar, aqui e no painel da barra de menus. Você também pode ligar ou desligar telas.",
         externalCaption: "Monitores externos são ajustados pelo mesmo protocolo dos botões do próprio monitor. Quando a conexão não transmite esse protocolo, como em adaptadores HDMI, o controle escurece a imagem, então o ajuste funciona de qualquer forma.",
         noDisplays: "Nenhuma tela encontrada.",
         displayOff: "Desligada",
@@ -83,9 +83,9 @@ extension BrightnessFeatureStrings {
 
     static let tr = BrightnessFeatureStrings(
         pageTitle: "Ekranlar",
-        hubDescription: "Harici ekran parlaklığı ve ekran güç denetimleri",
+        hubDescription: "Ekran parlaklığı ve güç denetimleri",
         enable: "Ekranları denetle",
-        enableCaption: "Buradan ve menü çubuğu panelinden harici monitör parlaklığını ayarlayın ve ekranları açıp kapatın. Yerleşik ekran parlaklığı için sistem denetimlerini kullanın.",
+        enableCaption: "Yerleşik ve harici ekran parlaklığını buradan ve menü çubuğu panelinden aynı yerde ayarlayın. Ekranları açıp kapatabilirsiniz.",
         externalCaption: "Harici monitörler, kendi düğmelerinin kullandığı protokolle ayarlanır. Bağlantı bu protokolü taşıyamadığında, örneğin HDMI adaptörlerinde, kaydırıcı bunun yerine görüntüyü karartır; parlaklık denetimi her durumda çalışır.",
         noDisplays: "Ekran bulunamadı.",
         displayOff: "Kapalı",
@@ -107,9 +107,9 @@ extension BrightnessFeatureStrings {
 
     static let ru = BrightnessFeatureStrings(
         pageTitle: "Экраны",
-        hubDescription: "Яркость внешних мониторов и питание экранов",
+        hubDescription: "Яркость и питание экранов",
         enable: "Управлять экранами",
-        enableCaption: "Здесь и в панели строки меню можно менять яркость внешних мониторов и включать или выключать экраны. Яркость встроенного экрана регулируется средствами системы.",
+        enableCaption: "Регулируйте яркость встроенного и внешних экранов в одном месте: здесь и в панели строки меню. Здесь также можно включать и выключать экраны.",
         externalCaption: "Внешние мониторы настраиваются тем же протоколом, что и их собственные кнопки. Если соединение не передаёт этот протокол, например через адаптеры HDMI, ползунок затемняет изображение, так что регулировка работает в любом случае.",
         noDisplays: "Экраны не найдены.",
         displayOff: "Выключен",
@@ -131,9 +131,9 @@ extension BrightnessFeatureStrings {
 
     static let es = BrightnessFeatureStrings(
         pageTitle: "Pantallas",
-        hubDescription: "Brillo externo y encendido de pantallas",
+        hubDescription: "Brillo y encendido de pantallas",
         enable: "Controlar las pantallas",
-        enableCaption: "Ajusta el brillo de monitores externos y enciende o apaga pantallas aquí y en el panel de la barra de menús. Usa los controles del sistema para el brillo de la pantalla integrada.",
+        enableCaption: "Ajusta el brillo de las pantallas integrada y externas en un mismo lugar, aquí y en el panel de la barra de menús. También puedes encender y apagar pantallas.",
         externalCaption: "Ajusta directamente el brillo del monitor externo cuando es compatible. De lo contrario, intenta oscurecer la imagen por software, sin cambiar la retroiluminación.",
         noDisplays: "No se encontró ninguna pantalla.",
         displayOff: "Apagada",
@@ -159,9 +159,9 @@ extension BrightnessFeatureStrings {
 
     static let de = BrightnessFeatureStrings(
         pageTitle: "Displays",
-        hubDescription: "Externe Helligkeit und Display-Stromsteuerung",
+        hubDescription: "Displayhelligkeit und Stromsteuerung",
         enable: "Displays steuern",
-        enableCaption: "Hier und im Menüleistenpanel lässt sich die Helligkeit externer Monitore einstellen und lassen sich Displays ein- oder ausschalten. Die Helligkeit des eingebauten Displays wird über das System geregelt.",
+        enableCaption: "Die Helligkeit eingebauter und externer Displays lässt sich hier und im Menüleistenpanel gemeinsam einstellen. Displays können hier auch ein- oder ausgeschaltet werden.",
         externalCaption: "Regelt die Helligkeit externer Displays direkt, wenn dies unterstützt wird. Andernfalls wird versucht, das Bild per Software abzudunkeln; die Hintergrundbeleuchtung bleibt unverändert.",
         noDisplays: "Kein Display gefunden.",
         displayOff: "Aus",
@@ -187,9 +187,9 @@ extension BrightnessFeatureStrings {
 
     static let fr = BrightnessFeatureStrings(
         pageTitle: "Écrans",
-        hubDescription: "Luminosité externe et alimentation des écrans",
+        hubDescription: "Luminosité et alimentation des écrans",
         enable: "Contrôler les écrans",
-        enableCaption: "Réglez la luminosité des moniteurs externes et allumez ou éteignez les écrans ici et dans le panneau de la barre des menus. Utilisez les commandes système pour la luminosité de l’écran intégré.",
+        enableCaption: "Réglez la luminosité de l’écran intégré et des écrans externes au même endroit, ici et dans le panneau de la barre des menus. Vous pouvez aussi allumer ou éteindre les écrans.",
         externalCaption: "Règle directement la luminosité de l’écran externe lorsque cela est possible. Sinon, tente d’assombrir l’image par logiciel, sans modifier le rétroéclairage.",
         noDisplays: "Aucun écran détecté.",
         displayOff: "Éteint",
@@ -215,9 +215,9 @@ extension BrightnessFeatureStrings {
 
     static let it = BrightnessFeatureStrings(
         pageTitle: "Schermi",
-        hubDescription: "Luminosità esterna e accensione degli schermi",
+        hubDescription: "Luminosità e accensione degli schermi",
         enable: "Controlla gli schermi",
-        enableCaption: "Regola la luminosità dei monitor esterni e accendi o spegni gli schermi qui e nel pannello della barra dei menu. Usa i controlli di sistema per la luminosità dello schermo integrato.",
+        enableCaption: "Regola la luminosità degli schermi integrati ed esterni nello stesso posto, qui e nel pannello della barra dei menu. Puoi anche accendere e spegnere gli schermi.",
         externalCaption: "I monitor esterni vengono regolati con lo stesso protocollo dei loro pulsanti. Quando il collegamento non lo trasmette, come con gli adattatori HDMI, il cursore scurisce l’immagine, quindi la regolazione funziona comunque.",
         noDisplays: "Nessuno schermo trovato.",
         displayOff: "Spento",
@@ -239,9 +239,9 @@ extension BrightnessFeatureStrings {
 
     static let ja = BrightnessFeatureStrings(
         pageTitle: "ディスプレイ",
-        hubDescription: "外部モニタの明るさとディスプレイの電源",
+        hubDescription: "ディスプレイの明るさと電源",
         enable: "ディスプレイを操作",
-        enableCaption: "こことメニューバーパネルで外部モニタの明るさを調整し、ディスプレイの電源を切り替えます。内蔵ディスプレイの明るさはシステムの操作で調整してください。",
+        enableCaption: "こことメニューバーパネルで、内蔵・外部ディスプレイの明るさをまとめて調整できます。ディスプレイの電源も切り替えられます。",
         externalCaption: "対応している場合は外部ディスプレイの明るさを直接調整します。対応していない場合はソフトウェアで画面を暗くすることを試みます。バックライトは変更しません。",
         noDisplays: "ディスプレイが見つかりません。",
         displayOff: "オフ",
@@ -267,9 +267,9 @@ extension BrightnessFeatureStrings {
 
     static let ko = BrightnessFeatureStrings(
         pageTitle: "디스플레이",
-        hubDescription: "외부 모니터 밝기 및 디스플레이 전원 제어",
+        hubDescription: "디스플레이 밝기 및 전원 제어",
         enable: "디스플레이 제어",
-        enableCaption: "여기와 메뉴 막대 패널에서 외부 모니터 밝기를 조절하고 디스플레이 전원을 켜거나 끕니다. 내장 화면 밝기는 시스템 제어를 사용하세요.",
+        enableCaption: "여기와 메뉴 막대 패널에서 내장 및 외부 디스플레이 밝기를 한곳에서 조절합니다. 디스플레이 전원을 켜거나 끌 수도 있습니다.",
         externalCaption: "외부 모니터는 자체 버튼과 동일한 프로토콜로 조절됩니다. HDMI 어댑터처럼 연결이 이 프로토콜을 지원하지 않으면 슬라이더가 대신 화면을 어둡게 하므로 어느 경우든 밝기를 조절할 수 있습니다.",
         noDisplays: "디스플레이를 찾을 수 없습니다.",
         displayOff: "꺼짐",
@@ -291,9 +291,9 @@ extension BrightnessFeatureStrings {
 
     static let zhHans = BrightnessFeatureStrings(
         pageTitle: "显示器",
-        hubDescription: "外接屏亮度与显示器开关",
+        hubDescription: "显示器亮度与开关",
         enable: "控制显示器",
-        enableCaption: "在这里和菜单栏面板中调节外接屏亮度、控制显示器开关。内置屏亮度使用系统控制。",
+        enableCaption: "在这里和菜单栏面板中统一调节内置屏与外接屏的亮度，也可控制显示器开关。",
         externalCaption: "优先直接调节外接显示器的亮度。不支持时，尝试通过软件调暗画面，显示器背光不变。",
         noDisplays: "未找到显示器。",
         displayOff: "已关闭",
@@ -319,9 +319,9 @@ extension BrightnessFeatureStrings {
 
     static let zhTW = BrightnessFeatureStrings(
         pageTitle: "顯示器",
-        hubDescription: "外接螢幕亮度與顯示器開關",
+        hubDescription: "顯示器亮度與開關",
         enable: "控制顯示器",
-        enableCaption: "在這裡和選單列面板中調整外接螢幕亮度、控制顯示器開關。內建螢幕亮度使用系統控制。",
+        enableCaption: "在這裡和選單列面板中統一調整內建與外接螢幕的亮度，也可控制顯示器開關。",
         externalCaption: "優先直接調整外接顯示器的亮度。不支援時，嘗試透過軟體調暗畫面，顯示器背光不變。",
         noDisplays: "找不到顯示器。",
         displayOff: "已關閉",
@@ -343,9 +343,9 @@ extension BrightnessFeatureStrings {
 
     static let zhHK = BrightnessFeatureStrings(
         pageTitle: "顯示器",
-        hubDescription: "外接螢幕亮度與顯示器開關",
+        hubDescription: "顯示器亮度與開關",
         enable: "控制顯示器",
-        enableCaption: "在這裏和選單列面板中調整外接螢幕亮度、控制顯示器開關。內置螢幕亮度使用系統控制。",
+        enableCaption: "在這裏和選單列面板中統一調整內置與外接螢幕的亮度，也可控制顯示器開關。",
         externalCaption: "優先直接調整外接顯示器的亮度。不支援時，嘗試透過軟體調暗畫面，顯示器背光不變。",
         noDisplays: "找不到顯示器。",
         displayOff: "已關閉",

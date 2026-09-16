@@ -36,14 +36,16 @@ struct FeatureHubSettings: View {
     private var content: some View {
         SettingsForm {
             SettingsSection {
-                Picker("", selection: $tab) {
-                    Text(hub.tabFeatures).tag(Tab.features)
-                    Text(hub.tabPermissions).tag(Tab.permissions)
+                HStack(spacing: 8) {
+                    Picker("", selection: $tab) {
+                        Text(hub.tabFeatures).tag(Tab.features)
+                        Text(hub.tabPermissions).tag(Tab.permissions)
+                    }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                    SettingsHelpButton(title: tab == .features ? hub.tabFeatures : hub.tabPermissions,
+                                       text: tab == .features ? workspace.intro + "\n\n" + workspace.footer : hub.permissionsIntro)
                 }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                Text(tab == .features ? workspace.intro : hub.permissionsIntro)
-                    .fixedSize(horizontal: false, vertical: true)
                 if tab == .features {
                     HStack(spacing: 8) {
                         Text(String(format: workspace.activeFormat,
@@ -65,14 +67,14 @@ struct FeatureHubSettings: View {
                         Button {
                             FeatureRuntime.shared.setAllAvailable(true)
                         } label: {
-                            Label(workspace.addAll, systemImage: "plus.circle")
+                            Text(workspace.addAll)
                         }
                         .settingsAction(.primary)
                         .disabled(features.availableCount == features.installableCount)
                         Button {
                             FeatureRuntime.shared.setAllAvailable(false)
                         } label: {
-                            Label(workspace.removeAll, systemImage: "pause.circle")
+                            Text(workspace.removeAll)
                         }
                         .settingsAction(.secondary)
                         .disabled(features.availableCount == 0)
@@ -160,10 +162,6 @@ struct FeatureHubSettings: View {
                 Text(group.title(hub))
             }
         }
-        SettingsSection {
-            Text(workspace.footer)
-                .fixedSize(horizontal: false, vertical: true)
-        }
     }
 }
 
@@ -220,13 +218,13 @@ private struct FeatureHubRow: View {
                     .accessibilityLabel(accessibilitySummary)
                     .saturation(unsupportedReason == nil ? 1 : 0)
             }
+            SettingsHelpButton(title: title, text: (energyLabels + [hub.energyHelp]).joined(separator: "\n\n"))
             HStack(spacing: 0) {
                 Button { flip(to: !installed) } label: {
                     ZStack {
-                        Label(workspace.remove, systemImage: "pause.circle").hidden()
-                        Label(workspace.add, systemImage: "plus.circle").hidden()
-                        Label(installed ? workspace.remove : workspace.add,
-                              systemImage: installed ? "pause.circle" : "plus.circle")
+                        Text(workspace.remove).hidden()
+                        Text(workspace.add).hidden()
+                        Text(installed ? workspace.remove : workspace.add)
                     }
                 }
                 .settingsAction(installed ? .secondary : .primary)
@@ -258,9 +256,16 @@ private struct FeatureHubRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
                     Text(title)
-                        .font(SettingsTypography.body.weight(.semibold))
+                        .font(SettingsTypography.body.weight(.medium))
                         .foregroundStyle(.primary)
                         .layoutPriority(1)
+                    ForEach(unit.permissions, id: \.self) { permission in
+                        Image(systemName: permission.symbolName)
+                            .font(SettingsTypography.smallIcon)
+                            .foregroundStyle(.secondary)
+                            .help(permission.name(hub))
+                            .accessibilityHidden(true)
+                    }
                     if unit.isBeta {
                         Text(l10n.s.betaBadge)
                             .font(SettingsTypography.caption)
@@ -275,25 +280,6 @@ private struct FeatureHubRow: View {
                     .font(SettingsTypography.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
-                HStack(spacing: 6) {
-                    ForEach(unit.permissions, id: \.self) { permission in
-                        Image(systemName: permission.symbolName)
-                            .font(SettingsTypography.smallIcon)
-                            .foregroundStyle(.tertiary)
-                            .help(permission.name(hub))
-                            .accessibilityHidden(true)
-                    }
-                    ForEach(energyLabels, id: \.self) { label in
-                        Text(label)
-                            .font(SettingsTypography.caption)
-                            .foregroundStyle(.secondary)
-                            .padding(.horizontal, 5)
-                            .padding(.vertical, 1)
-                            .background(Capsule().fill(Color.secondary.opacity(0.12)))
-                            .help(hub.energyHelp)
-                            .accessibilityHidden(true)
-                    }
-                }
             }
             Spacer(minLength: 8)
             if showsChevron {
@@ -660,6 +646,7 @@ struct FeatureSwitchRow: View {
     @ObservedObject private var features = FeatureRuntime.shared
     let feature: AppFeature
     var title: String? = nil
+    var help: String? = nil
 
     /// The mouse page asked for Accessibility the moment one of these
     /// went on; the other members show a permission row instead.
@@ -687,11 +674,17 @@ struct FeatureSwitchRow: View {
                     HStack(spacing: 12) {
                         SettingsSymbol(systemImage: feature.symbolName)
                         Text(name).font(SettingsTypography.body.weight(.semibold))
+                        ForEach(feature.permissions, id: \.self) { permission in
+                            Image(systemName: permission.symbolName)
+                                .foregroundStyle(.secondary)
+                                .help(permission.name(FeatureStrings.hub(l10n.language)))
+                        }
+                        if let help { SettingsHelpButton(title: name, text: help) }
                         Spacer(minLength: 8)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .toggleStyle(.switch)
+                .toggleStyle(.switch).controlSize(.small)
                 .disabled(blocked != nil)
             } else {
                 HStack(spacing: 12) {

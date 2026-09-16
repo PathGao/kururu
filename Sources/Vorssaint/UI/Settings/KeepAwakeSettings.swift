@@ -30,7 +30,7 @@ struct KeepAwakeSettings: View {
                                               caption: l10n.s.keepAwakeAutoStartCaption,
                                               isOn: $keepAwakeAutoStart)
                     SettingsToggleWithCaption(title: l10n.s.keepAwakeRightClickToggle,
-                                              caption: l10n.s.keepAwakeRightClickToggleCaption,
+                                              caption: l10n.s.keepAwakeRightClickToggleCaption, showsCaptionInline: false,
                                               isOn: $keepAwakeRightClickToggle)
                     Toggle(l10n.s.hotkeyToggle, isOn: $hotkeyEnabled)
                         .onChange(of: hotkeyEnabled) { _, enabled in
@@ -106,10 +106,18 @@ struct KeepAwakeSettings: View {
                         }
                     }
                 }
-                SettingsSection(title: UXEntryStrings(l10n.language).menuBarDisplay, systemImage: "menubar.rectangle") {
-                    KeepAwakeIconPicker(iconValue: $keepAwakeActiveIcon,
-                                        tintValue: $keepAwakeIconTint)
-                    Toggle(l10n.s.showCountdown, isOn: $showCountdown)
+                SettingsSection {
+                    DisclosureGroup {
+                        VStack(alignment: .leading, spacing: SettingsVisualStyle.current.contentSpacing) {
+                            KeepAwakeIconPicker(iconValue: $keepAwakeActiveIcon,
+                                                tintValue: $keepAwakeIconTint)
+                            Toggle(l10n.s.showCountdown, isOn: $showCountdown)
+                        }
+                        .padding(.top, 10)
+                    } label: {
+                        SettingsSectionHeading(title: UXEntryStrings(l10n.language).menuBarDisplay,
+                                               systemImage: "menubar.rectangle")
+                    }
                 }
                 SettingsSection(title: l10n.s.clamshellSection, systemImage: "laptopcomputer") {
                     Toggle(l10n.s.clamshellTitle, isOn: $awake.clamshellPreferred)

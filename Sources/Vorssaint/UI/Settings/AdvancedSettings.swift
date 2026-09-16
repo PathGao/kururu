@@ -63,12 +63,6 @@ struct AdvancedSettings: View {
                     }
                 }
                 .pickerStyle(.segmented)
-#if compiler(>=6.2)
-                if #available(macOS 26.0, *) {
-                    Toggle(appearanceStrings.liquidGlass, isOn: $appearance.liquidGlassEnabled)
-                }
-#endif
-                ThemeSettings()
             }
             SettingsSection(hierarchy.maintenance) {
                 VStack(alignment: .leading, spacing: 12) {

@@ -23,6 +23,9 @@ final class FeatureRuntime: ObservableObject {
     /// keys off, including the install-then-uninstall-again case.
     private var loadedThisSession = Set(AppFeature.allCases.filter(\.isAvailable))
 
+    private lazy var lifecycle = FeatureLifecycle(Self.registrations)
+    private var availableFeatures: Set<AppFeature> { Set(AppFeature.allCases.filter(\.isAvailable)) }
+
     private init() {}
 
     /// True while something that loaded this session is now uninstalled, so
@@ -95,6 +98,7 @@ final class FeatureRuntime: ObservableObject {
     func setAvailable(_ unit: FeatureUnit, _ available: Bool) {
         guard mayFlip(unit, to: available) else { return }
         install(unit, available)
+        lifecycle.sync(changed: Set(unit.features), available: availableFeatures)
         finishAvailabilityChange()
     }
 
@@ -102,7 +106,6 @@ final class FeatureRuntime: ObservableObject {
         UserDefaults.standard.set(available, forKey: unit.availabilityKey)
         for feature in unit.features {
             if feature.isAvailable { loadedThisSession.insert(feature) }
-            Self.bindings[feature]?()
         }
     }
 
@@ -115,7 +118,7 @@ final class FeatureRuntime: ObservableObject {
         guard let key = feature.pageSwitchKey, !on || feature.isHardwareSupported else { return }
         UserDefaults.standard.set(on, forKey: key)
         if on { loadedThisSession.insert(feature) }
-        Self.bindings[feature]?()
+        lifecycle.sync(changed: [feature], available: availableFeatures)
         finishAvailabilityChange()
     }
 
@@ -130,9 +133,7 @@ final class FeatureRuntime: ObservableObject {
         for (key, value) in changes { defaults.set(value, forKey: key) }
         let available = Set(AppFeature.allCases.filter(\.isAvailable))
         loadedThisSession.formUnion(available)
-        for feature in previouslyAvailable.union(available) {
-            Self.bindings[feature]?()
-        }
+        lifecycle.sync(changed: previouslyAvailable.union(available), available: available)
         finishAvailabilityChange()
     }
 
@@ -151,47 +152,52 @@ final class FeatureRuntime: ObservableObject {
         for key in keys {
             UserDefaults.standard.set(true, forKey: key)
         }
+        var changed = Set<AppFeature>()
         for unit in FeatureUnit.allCases where mayFlip(unit, to: selected.contains(unit)) {
             install(unit, selected.contains(unit))
+            changed.formUnion(unit.features)
         }
-        // Units that stayed installed still need a sync: their enable keys
-        // may have just flipped on. Syncs are idempotent, so a repeat for the
-        // ones handled above costs nothing. A selected unit the gate refused
-        // is not installed, so it is skipped like any other unavailable one
-        // and its services never come to life.
-        for unit in selected where unit.isAvailable {
-            for feature in unit.features {
-                Self.bindings[feature]?()
-            }
-        }
+        // Retained units may have newly enabled actions from the preset.
+        for unit in selected where unit.isAvailable { changed.formUnion(unit.features) }
+        lifecycle.sync(changed: changed, available: availableFeatures)
         finishAvailabilityChange()
     }
 
     /// Bulk install or uninstall for the hub's "all" buttons: one revision
     /// bump, every changed unit's bindings run.
     func setAllAvailable(_ available: Bool) {
-        var changed = false
+        var changed = Set<AppFeature>()
         for unit in FeatureUnit.allCases where mayFlip(unit, to: available) {
             install(unit, available)
-            changed = true
+            changed.formUnion(unit.features)
         }
-        if changed { finishAvailabilityChange() }
+        guard !changed.isEmpty else { return }
+        lifecycle.sync(changed: changed, available: availableFeatures)
+        finishAvailabilityChange()
     }
 
-    /// Launch path: replaces the old unconditional sync block. Only available
-    /// features get their binding run, so nothing else even instantiates.
     func syncAtLaunch() {
-        for feature in AppFeature.allCases where feature.isAvailable {
-            Self.bindings[feature]?()
-        }
+        let available = availableFeatures
+        lifecycle.sync(changed: available, available: available)
     }
 
-    /// Re-syncs a set of features (used by the permission sinks); skips
-    /// unavailable ones so their singletons never come to life.
     func sync(_ features: [AppFeature]) {
-        for feature in features where feature.isAvailable {
-            Self.bindings[feature]?()
+        lifecycle.sync(changed: Set(features), available: availableFeatures)
+    }
+
+    func permissionChanged(_ permission: FeaturePermission) {
+        lifecycle.permissionChanged(permission, available: availableFeatures)
+    }
+
+    func terminate() {
+        lifecycle.terminate()
+        // Recovery markers can survive while their module is unavailable.
+        if MouseAccelerationRecovery.hasPendingEntries() {
+            MouseAccelerationService.shared.stop()
         }
+        FanControlService.restoreBeforeTerminationIfNeeded()
+        // Docked shelves can be opened by scratchpad even when shelf is unavailable.
+        ShelfService.shared.flushBeforeTermination()
     }
 
     /// One bump for Settings, and the Command Bar drops rows of features that
@@ -201,88 +207,184 @@ final class FeatureRuntime: ObservableObject {
         CommandBarService.shared.noteHubChange()
     }
 
-    /// What each feature must re-evaluate when its availability (or a
-    /// permission it depends on) changes. Most on-demand tools have no binding;
-    /// Media only binds so uninstalling it can cancel work already in flight.
-    private static let bindings: [AppFeature: () -> Void] = [
-        .switcher: {
+    // Services shared by multiple members appear once. Closures defer singleton
+    // creation until an available owner needs synchronization or final cleanup.
+    private static let registrations: [FeatureLifecycle<AppFeature>.Registration] = [
+        .init(members: [.brightness], permissions: [.accessibility], synchronize: {
+            BrightnessService.shared.syncWithPreferences()
+        }, terminate: {
+            BrightnessService.shared.restoreDisplaysBeforeTermination()
+        }),
+        .init(members: [.switcher], permissions: [.accessibility], synchronize: {
             WindowUseTracker.shared.syncWithFeatures()
             AppSwitcher.shared.syncWithPreferences()
-        },
-        .dockPreview: { DockPreviewService.shared.syncWithPreferences() },
-        .dockClick: { DockClickService.shared.syncWithPreferences() },
-        .windowMaximizer: { WindowMaximizer.shared.syncWithPreferences() },
-        .autoQuit: { AutoQuitService.shared.syncWithPreferences() },
-        .scrollInverter: { ScrollInverter.shared.syncWithPreferences() },
-        .focusFollowsMouse: { FocusFollowsMouseService.shared.syncWithPreferences() },
-        .smoothScroll: { SmoothScrollService.shared.syncWithPreferences() },
-        .mouseAcceleration: { MouseAccelerationService.shared.syncWithPreferences() },
-        .mouseNavigation: { MouseNavigationService.shared.syncWithPreferences() },
-        .mouseButtonShortcuts: { MouseButtonShortcutService.shared.syncWithPreferences() },
-        .middleClick: { MiddleClickService.shared.syncWithPreferences() },
-        .mouseClickDebounce: { MouseClickDebounceService.shared.syncWithPreferences() },
-        .keyboardDebounce: { KeyboardDebounceService.shared.syncWithPreferences() },
-        .quitWindowProtection: { QuitProtectionService.shared.syncWithPreferences() },
-        .superKey: { SuperKeyService.shared.syncWithPreferences() },
-        .textSnippets: {
+        }, terminate: {
+            AppSwitcher.shared.suspend()
+        }),
+        .init(members: [.dockPreview], permissions: [.accessibility, .screenRecording], synchronize: {
+            DockPreviewService.shared.syncWithPreferences()
+        }, terminate: {
+            DockPreviewService.shared.stop()
+        }),
+        .init(members: [.dockClick], permissions: [.accessibility], synchronize: {
+            DockClickService.shared.syncWithPreferences()
+        }),
+        .init(members: [.windowMaximizer], permissions: [.accessibility], synchronize: {
+            WindowMaximizer.shared.syncWithPreferences()
+        }, terminate: {
+            WindowMaximizer.shared.stop()
+        }),
+        .init(members: [.autoQuit], permissions: [.accessibility], synchronize: {
+            AutoQuitService.shared.syncWithPreferences()
+        }),
+        .init(members: [.scrollInverter], permissions: [.accessibility], synchronize: {
+            ScrollInverter.shared.syncWithPreferences()
+        }, terminate: {
+            ScrollInverter.shared.suspend()
+        }),
+        .init(members: [.focusFollowsMouse], permissions: [.accessibility], synchronize: {
+            FocusFollowsMouseService.shared.syncWithPreferences()
+        }, terminate: {
+            FocusFollowsMouseService.shared.stop()
+        }),
+        .init(members: [.smoothScroll], permissions: [.accessibility], synchronize: {
+            SmoothScrollService.shared.syncWithPreferences()
+        }, terminate: {
+            SmoothScrollService.shared.suspend()
+        }),
+        .init(members: [.mouseAcceleration], synchronize: {
+            MouseAccelerationService.shared.syncWithPreferences()
+        }, terminate: {
+            MouseAccelerationService.shared.stop()
+        }),
+        .init(members: [.mouseNavigation], permissions: [.accessibility], synchronize: {
+            MouseNavigationService.shared.syncWithPreferences()
+        }, terminate: {
+            MouseNavigationService.shared.suspend()
+        }),
+        .init(members: [.mouseButtonShortcuts], permissions: [.accessibility], synchronize: {
+            MouseButtonShortcutService.shared.syncWithPreferences()
+        }, terminate: {
+            MouseButtonShortcutService.shared.suspend()
+        }),
+        .init(members: [.middleClick], permissions: [.accessibility], synchronize: {
+            MiddleClickService.shared.syncWithPreferences()
+        }, terminate: {
+            MiddleClickService.shared.suspend()
+        }),
+        .init(members: [.mouseClickDebounce], permissions: [.accessibility], synchronize: {
+            MouseClickDebounceService.shared.syncWithPreferences()
+        }, terminate: {
+            MouseClickDebounceService.shared.suspend()
+        }),
+        .init(members: [.keyboardDebounce], permissions: [.accessibility], synchronize: {
+            KeyboardDebounceService.shared.syncWithPreferences()
+        }, terminate: {
+            KeyboardDebounceService.shared.suspend()
+        }),
+        .init(members: [.quitWindowProtection], permissions: [.accessibility], synchronize: {
+            QuitProtectionService.shared.syncWithPreferences()
+        }),
+        .init(members: [.superKey], permissions: [.accessibility], synchronize: {
+            SuperKeyService.shared.syncWithPreferences()
+        }, terminate: {
+            SuperKeyService.shared.suspend()
+        }),
+        .init(members: [.textSnippets], permissions: [.accessibility], synchronize: {
             TextSnippetService.shared.syncWithPreferences()
             SnippetLibraryService.shared.syncWithPreferences()
-        },
-        .clipboardHistory: {
+        }, terminate: {
+            TextSnippetService.shared.suspend()
+        }),
+        .init(members: [.clipboardHistory], synchronize: {
             ClipboardHistoryService.shared.syncWithPreferences()
             // Auto clear rides the clipboard feature's availability but not its
             // capture toggle: uninstalling the feature stops it, turning history
             // off does not.
             ClipboardAutoClearService.shared.syncWithPreferences()
-        },
-        .mediaTools: {
+        }, terminate: {
+            ClipboardHistoryService.shared.flushBeforeTermination()
+        }),
+        .init(members: [.mediaTools], synchronize: {
             guard !AppFeature.mediaTools.isAvailable else { return }
             MediaService.shared.cancel()
             ScreenRecorderService.shared.closeEditors(ownedBy: .mediaTools)
-        },
-        .pastePlain: { PastePlainService.shared.syncWithPreferences() },
-        .finderCutPaste: { FinderCutPaste.shared.syncWithPreferences() },
-        .finderRename: { FinderRenameService.shared.syncWithPreferences() },
-        .shelf: { ShelfService.shared.syncWithPreferences() },
-        .urlCleaner: { URLCleanerService.shared.syncWithPreferences() },
-        .mixer: {
+        }, terminate: {
+            MediaService.shared.cancel()
+        }),
+        .init(members: [.pastePlain], synchronize: {
+            PastePlainService.shared.syncWithPreferences()
+        }),
+        .init(members: [.finderCutPaste], permissions: [.accessibility], synchronize: {
+            FinderCutPaste.shared.syncWithPreferences()
+        }),
+        .init(members: [.finderRename], permissions: [.accessibility], synchronize: {
+            FinderRenameService.shared.syncWithPreferences()
+        }),
+        .init(members: [.shelf], synchronize: {
+            ShelfService.shared.syncWithPreferences()
+        }),
+        .init(members: [.urlCleaner], synchronize: {
+            URLCleanerService.shared.syncWithPreferences()
+        }, terminate: {
+            URLCleanerService.shared.stop()
+        }),
+        .init(members: [.mixer], permissions: [.accessibility], synchronize: {
             PreciseVolumeRollerService.shared.syncWithPreferences()
             AppVolumeMixer.shared.syncWithPreferences()
             AudioInputDeviceManager.shared.syncWithPreferences()
-        },
-        .soundOutputSwitcher: { SoundOutputSwitcher.shared.syncWithPreferences() },
-        .micMute: { MicMuteService.shared.syncWithPreferences() },
-        .musicBlock: { MusicLaunchBlocker.shared.syncWithPreferences() },
-        .keepAwake: {
+        }, terminate: {
+            PreciseVolumeRollerService.shared.stop()
+            AppVolumeMixer.shared.stopAll()
+            AudioInputDeviceManager.shared.stop()
+        }),
+        .init(members: [.soundOutputSwitcher], synchronize: {
+            SoundOutputSwitcher.shared.syncWithPreferences()
+        }, terminate: {
+            SoundOutputSwitcher.shared.stop()
+        }),
+        .init(members: [.micMute], synchronize: {
+            MicMuteService.shared.syncWithPreferences()
+        }),
+        .init(members: [.musicBlock], synchronize: {
+            MusicLaunchBlocker.shared.syncWithPreferences()
+        }),
+        .init(members: [.keepAwake], synchronize: {
             KeepAwakeManager.shared.syncWithFeatures()
             HotkeyManager.shared.syncWithPreferences()
-        },
-        .brightness: { BrightnessService.shared.syncWithPreferences() },
-        .bluetoothSleep: { BluetoothSleepService.shared.syncWithPreferences() },
-        .colorPicker: {
+        }, terminate: {
+            KeepAwakeManager.shared.deactivate(reason: .quit)
+        }),
+        .init(members: [.bluetoothSleep], synchronize: {
+            BluetoothSleepService.shared.syncWithPreferences()
+        }),
+        .init(members: [.colorPicker, .screenOCR, .screenshot, .screenRecorder], permissions: [.screenRecording], synchronize: {
             ScreenCaptureService.shared.syncWithPreferences()
-        },
-        .screenOCR: {
-            ScreenCaptureService.shared.syncWithPreferences()
+        }, terminate: {
+            ScreenCaptureService.shared.suspend()
+        }),
+        .init(members: [.screenOCR], synchronize: {
             ScreenTextService.shared.syncWithPreferences()
-        },
-        .screenshot: {
-            ScreenCaptureService.shared.syncWithPreferences()
+        }),
+        .init(members: [.screenshot], synchronize: {
             ScreenshotService.shared.syncWithPreferences()
-            RecentCaptureService.shared.syncWithPreferences()
-        },
-        .screenRecorder: {
-            ScreenCaptureService.shared.syncWithPreferences()
+        }),
+        .init(members: [.screenRecorder], permissions: [.screenRecording], synchronize: {
             ScreenRecorderService.shared.syncWithPreferences()
-            RecentCaptureService.shared.syncWithPreferences()
-        },
-        .radialMenu: { RadialMenuService.shared.syncWithPreferences() },
-        .scratchpad: {
+        }),
+        .init(members: [.radialMenu], permissions: [.accessibility], synchronize: {
+            RadialMenuService.shared.syncWithPreferences()
+        }),
+        .init(members: [.scratchpad], synchronize: {
             ScratchpadService.shared.syncWithPreferences()
             ShelfService.shared.syncDockedShelf()
-        },
-        .commandBar: { CommandBarService.shared.syncWithPreferences() },
-        .cleaner: {
+        }, terminate: {
+            ScratchpadService.shared.suspend()
+        }),
+        .init(members: [.commandBar], synchronize: {
+            CommandBarService.shared.syncWithPreferences()
+        }),
+        .init(members: [.cleaner], synchronize: {
             CleanerScheduler.shared.syncWithPreferences()
             WhatsAppDownloadScheduler.shared.syncWithPreferences()
             WhatsAppDownloadOrganizer.shared.syncWithPreferences()
@@ -290,28 +392,32 @@ final class FeatureRuntime: ObservableObject {
                 WhatsAppDownloadManager.shared.reset()
                 WhatsAppDownloadOrganizer.shared.stop()
             }
-        },
-        .monitorCPU: { FeatureRuntime.syncMonitor() },
-        .monitorGPU: { FeatureRuntime.syncMonitor() },
-        .monitorMemory: { FeatureRuntime.syncMonitor() },
-        .monitorNetwork: { FeatureRuntime.syncMonitor() },
-        .monitorDisk: { FeatureRuntime.syncMonitor() },
-        .monitorPower: { FeatureRuntime.syncMonitor() },
-        .fanControl: {
-            SystemMonitor.shared.planDidChange()
+        }),
+        .init(members: [.fanControl], synchronize: {
             let defaults = UserDefaults.standard
             let needsRecovery = defaults.bool(forKey: DefaultsKey.fanControlRecoveryNeeded)
             let hasRegisteredHelper = !(defaults.string(forKey: DefaultsKey.fanControlHelperVersion) ?? "").isEmpty
             if needsRecovery || (!AppFeature.fanControl.isAvailable && hasRegisteredHelper) {
                 FanControlService.shared.syncWithPreferences()
             }
-        },
+        }),
+        .init(members: [.screenshot, .screenRecorder], permissions: [.screenRecording], synchronize: {
+            RecentCaptureService.shared.syncWithPreferences()
+        }),
+        .init(members: [.monitorCPU, .monitorGPU, .monitorMemory, .monitorNetwork, .monitorDisk, .monitorPower, .fanControl], synchronize: {
+            SystemMonitor.shared.planDidChange()
+        }),
+        .init(members: [.monitorCPU, .monitorGPU, .monitorMemory, .monitorNetwork, .monitorDisk, .monitorPower], synchronize: {
+            MonitorAlertService.shared.syncWithPreferences()
+        }),
+        .init(members: [.environment], synchronize: {
+            guard !AppFeature.environment.isAvailable else { return }
+            MainActor.assumeIsolated { EnvironmentUpdateChecker.shared.cancel() }
+        }, terminate: {
+            MainActor.assumeIsolated { EnvironmentUpdateChecker.shared.cancel() }
+        }),
     ]
 
-    private static func syncMonitor() {
-        SystemMonitor.shared.planDidChange()
-        MonitorAlertService.shared.syncWithPreferences()
-    }
 }
 
 /// Hardware a feature needs and this Mac may not have. One switch answers

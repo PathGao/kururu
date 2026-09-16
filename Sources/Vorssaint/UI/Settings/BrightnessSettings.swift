@@ -8,20 +8,24 @@ struct BrightnessSettings: View {
     @ObservedObject private var features = FeatureRuntime.shared
     @ObservedObject private var permissions = Permissions.shared
     @ObservedObject private var brightness = BrightnessService.shared
-    @AppStorage(DefaultsKey.brightnessControlEnabled) private var brightnessEnabled = false
     @AppStorage(DefaultsKey.brightnessKeysEnabled) private var brightnessKeysEnabled = false
     @AppStorage(DefaultsKey.brightnessOSDEnabled) private var brightnessOSDEnabled = false
     @AppStorage(BrightnessShortcutPreferenceKey.enabled)
     private var displayBrightnessShortcutsEnabled = false
+
+    @State private var refreshOwner = UUID()
 
     var body: some View {
         SettingsForm {
             if AppFeature.brightness.isAvailable {
                 let strings = FeatureStrings.brightness(l10n.language)
                 SettingsSection(title: UXEntryStrings(l10n.language).displayDevices, systemImage: "display") {
-                    FeatureSwitchRow(feature: .brightness)
-                    SettingsCaptionText(strings.enableCaption)
-                    if brightnessEnabled {
+                    HStack {
+                        Text(strings.enable)
+                            .font(SettingsTypography.body)
+                        SettingsHelpButton(title: UXEntryStrings(l10n.language).displayDevices,
+                                           text: strings.enableCaption + "\n\n" + strings.externalCaption)
+                    }
                         if brightness.displays.isEmpty {
                             SettingsCaptionText(strings.noDisplays)
                         } else {
@@ -39,29 +43,29 @@ struct BrightnessSettings: View {
                             SettingsCaptionText(displayControlFailureText(failure, strings: strings))
                                 .foregroundStyle(.red)
                         }
-                    }
-                    SettingsCaptionText(strings.externalCaption)
                 }
                 .settingsSectionAnchor(.brightness)
 
                 SettingsSection(title: UXEntryStrings(l10n.language).keyboardControl, systemImage: "keyboard") {
                     SettingsToggleWithCaption(title: strings.keysToggle,
                                               caption: strings.keysCaption,
+                                              showsCaptionInline: false,
                                               isOn: $brightnessKeysEnabled)
                         .onChange(of: brightnessKeysEnabled) { _, isOn in
-                            if isOn && brightnessEnabled { Permissions.shared.requestAccessibility() }
+                            if isOn { Permissions.shared.requestAccessibility() }
                             BrightnessService.shared.syncWithPreferences()
                         }
                     if brightness.brightnessOSDSupported {
                         SettingsToggleWithCaption(title: strings.osdToggle,
                                                   caption: strings.osdCaption,
+                                                  showsCaptionInline: false,
                                                   isOn: $brightnessOSDEnabled)
                             .onChange(of: brightnessOSDEnabled) { _, isOn in
-                                if isOn && brightnessEnabled { Permissions.shared.requestAccessibility() }
+                                if isOn { Permissions.shared.requestAccessibility() }
                                 BrightnessService.shared.syncWithPreferences()
                             }
                     }
-                    if brightnessEnabled, (brightnessKeysEnabled || brightnessOSDEnabled),
+                    if (brightnessKeysEnabled || brightnessOSDEnabled),
                        !permissions.accessibility {
                         PermissionRow(kind: .accessibility)
                     }
@@ -71,16 +75,16 @@ struct BrightnessSettings: View {
             }
         }
         .formStyle(.grouped)
-        .onAppear {
-            BrightnessService.shared.refresh()
-        }
+        .onAppear { brightness.beginVisibleRefresh(refreshOwner) }
+        .onDisappear { brightness.endVisibleRefresh(refreshOwner) }
     }
 
     private var displayBrightnessShortcutControls: some View {
         let text = BrightnessShortcutStrings.localized(l10n.language)
         return Group {
-            SettingsCaptionText(text.caption)
-            Toggle(text.toggle, isOn: $displayBrightnessShortcutsEnabled)
+            SettingsToggleWithCaption(title: text.toggle, caption: text.caption,
+                                      showsCaptionInline: false,
+                                      isOn: $displayBrightnessShortcutsEnabled)
                 .onChange(of: displayBrightnessShortcutsEnabled) { _, _ in
                     BrightnessService.shared.syncWithPreferences()
                 }
@@ -115,16 +119,9 @@ struct BrightnessSettings: View {
                 Text(display.name)
                     .lineLimit(1)
                     .truncationMode(.middle)
-                if !display.isBuiltIn, display.isActive, display.method != nil {
-                    Slider(value: Binding(get: { display.brightness },
-                                          set: { BrightnessService.shared.setBrightness(
-                                              $0, for: display.id,
-                                              showOSD: brightnessOSDEnabled) }),
-                           in: 0...1)
-                        .disabled(brightness.isDisplayPending(display.id))
-                        .accessibilityLabel(display.name)
-                        .accessibilityValue(display.hasKnownBrightness ? "\(Int((display.brightness * 100).rounded()))%" : FeatureStrings.brightness(l10n.language).brightnessUnknownNote)
-                    Text(display.hasKnownBrightness ? "\(Int((display.brightness * 100).rounded()))%" : "—")
+                if display.isActive, display.method != nil {
+                    DisplayBrightnessControl(display: display, showOSD: brightnessOSDEnabled)
+                    Text(display.observedBrightness.map { "\(Int(($0 * 100).rounded()))%" } ?? "—")
                         .font(.system(.body, design: .monospaced))
                         .foregroundStyle(.secondary)
                         .frame(width: 52, alignment: .trailing)

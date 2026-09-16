@@ -122,7 +122,6 @@ struct TrackpadSettings: View {
                         if !value.isEmpty { permissions.requestAccessibility() }
                     }
                     SettingsCaptionText(tuningText.spreadHint)
-                    FeatureSwitchRow(feature: .radialMenu)
                     Button(AppFeature.radialMenu.name(l10n.s, language: l10n.language)) {
                         SettingsRouter.shared.request(AppFeature.radialMenu.settingsDestination)
                     }

@@ -9,8 +9,6 @@ import Foundation
 enum DefaultsKey {
     static let language = "appLanguage"                   // AppLanguage.rawValue
     static let appearance = "appAppearance"               // AppAppearance.rawValue
-    static let importedInterfaceTheme = "importedInterfaceTheme" // Data: normalized colors; empty uses built-in colors
-    static let liquidGlassEnabled = "liquidGlassEnabled"  // Liquid Glass visual styling on macOS 26+
     static let clamshellPreferred = "clamshellPreferred"  // apply closed-lid mode to every session
     static let onboardingStep = "onboardingStep"          // resume point if onboarding is interrupted
     static let featuresOnboardingVersion = "featuresOnboardingVersion" // last feature-tour marker handled
@@ -156,7 +154,8 @@ enum DefaultsKey {
     static let shelfRemoveAfterDrop = "shelfRemoveAfterDrop"
     static let shelfClearOnClose = "shelfClearOnClose"
     static let shelfAutomaticExclusions = "shelfAutomaticExclusions" // [bundle id] blocks automatic opening only
-    static let brightnessControlEnabled = "brightnessControlEnabled" // sliders for every display
+    static let brightnessControlEnabled = "brightnessControlEnabled" // legacy, consumed by migration only
+    static let brightnessModuleGateMigrated = "brightnessModuleGateMigrated"
     static let brightnessKeysEnabled = "brightnessKeysEnabled" // brightness keys act on the display under the pointer
     static let brightnessOSDEnabled = "brightnessOSDEnabled" // brightness adjustment overlay
     static let keyboardBrightnessShortcutsEnabled = "keyboardBrightnessShortcutsEnabled"
@@ -804,8 +803,6 @@ enum Defaults {
 
     static let registeredDefaults: [String: Any] = [
         DefaultsKey.appearance: AppAppearance.fallback.rawValue,
-        DefaultsKey.importedInterfaceTheme: Data(),
-        DefaultsKey.liquidGlassEnabled: false,
         DefaultsKey.clamshellPreferred: false,
         DefaultsKey.defaultDuration: 0,
         DefaultsKey.batteryLimit: 10,
@@ -929,7 +926,6 @@ enum Defaults {
         DefaultsKey.shelfRemoveAfterDrop: true,
         DefaultsKey.shelfClearOnClose: false,
         DefaultsKey.shelfAutomaticExclusions: [String](),
-        DefaultsKey.brightnessControlEnabled: false,
         DefaultsKey.brightnessKeysEnabled: false,
         DefaultsKey.brightnessOSDEnabled: false,
         BrightnessShortcutPreferenceKey.enabled: false,
@@ -1283,6 +1279,7 @@ enum Defaults {
         migrateFanControlVisibility(in: defaults)
         migrateMetricPlacementSwitches(in: defaults)
         migrateFeatureUnits(in: defaults)
+        migrateBrightnessModuleGate(in: defaults)
         migrateWindowBehaviorUnit(in: defaults)
         migrateKeyboardUnit(in: defaults)
         migrateURLCleanerUnit(in: defaults)
@@ -1304,6 +1301,15 @@ enum Defaults {
         migrateSilentHeadphonesDisconnectVolume(in: defaults)
         migrateSwitcherWindowlessFinder(in: defaults)
         migrateSplitWindowPreviewPreferences(in: defaults)
+    }
+
+    static func migrateBrightnessModuleGate(in defaults: UserDefaults) {
+        let legacy = defaults.object(forKey: DefaultsKey.brightnessControlEnabled) as? Bool
+        guard legacy != nil || !defaults.bool(forKey: DefaultsKey.brightnessModuleGateMigrated) else { return }
+        let available = defaults.object(forKey: FeatureUnit.brightness.availabilityKey) as? Bool ?? true
+        defaults.set(available && (legacy ?? false), forKey: FeatureUnit.brightness.availabilityKey)
+        defaults.removeObject(forKey: DefaultsKey.brightnessControlEnabled)
+        defaults.set(true, forKey: DefaultsKey.brightnessModuleGateMigrated)
     }
 
     static func migrateBatteryTemperatureVisibility(in defaults: UserDefaults) {

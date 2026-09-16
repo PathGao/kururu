@@ -820,7 +820,7 @@ enum GlobalShortcutRole: CaseIterable, Identifiable {
         case .keyboardBrightnessDecrease, .keyboardBrightnessIncrease:
             return [DefaultsKey.keyboardBrightnessShortcutsEnabled]
         case .displayBrightnessDecrease, .displayBrightnessIncrease:
-            return [DefaultsKey.brightnessControlEnabled, BrightnessShortcutPreferenceKey.enabled]
+            return [BrightnessShortcutPreferenceKey.enabled]
         }
     }
 

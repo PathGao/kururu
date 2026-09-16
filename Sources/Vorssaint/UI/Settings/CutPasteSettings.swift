@@ -79,8 +79,7 @@ struct CutPasteSettings: View {
             if AppFeature.finderRename.isAvailable {
                 SettingsSection {
                     VStack(alignment: .leading, spacing: 4) {
-                        FeatureSwitchRow(feature: .finderRename)
-                        SettingsCaptionText(renameText.caption)
+                        FeatureSwitchRow(feature: .finderRename, help: renameText.caption)
                     }
                     SettingsControlRow(title: renameText.shortcutLabel, systemImage: "keyboard") {
                         ShortcutRecorderButton(

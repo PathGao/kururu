@@ -25,7 +25,7 @@ struct MonitorSettings: View {
             SettingsSection(title: UXEntryStrings(l10n.language).samplingAndUnits, systemImage: "gauge.with.dots.needle.33percent") {
                 SettingsControlRow(title: l10n.s.monitorIntervalLabel,
                                    systemImage: "timer",
-                                   caption: MonitorHistoryStrings.text(l10n.language).intervalHint) {
+                                   help: MonitorHistoryStrings.text(l10n.language).intervalHint) {
                     Picker(l10n.s.monitorIntervalLabel, selection: $interval) {
                         ForEach(1...5, id: \.self) { seconds in
                             Text(intervalTitle(seconds)).tag(seconds)

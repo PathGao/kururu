@@ -175,7 +175,7 @@ private struct SnippetRow: View {
             Toggle("", isOn: Binding(get: { snippet.enabled }, set: toggle))
                 .labelsHidden()
                 .toggleStyle(.switch)
-                .controlSize(.regular)
+                .controlSize(.small)
         }
         .padding(.vertical, 1)
     }

@@ -141,7 +141,6 @@ struct ActivityMonitorButton: View {
 struct MetricDetailView: View {
     @ObservedObject private var l10n = L10n.shared
     @ObservedObject private var monitor = SystemMonitor.shared
-    @ObservedObject private var themePreferences = ThemePreferences.shared
     @ObservedObject private var speed = SpeedTest.shared
     @Environment(\.colorScheme) private var colorScheme
     @AppStorage(DefaultsKey.temperatureUnit) private var temperatureUnit = TemperatureUnit.celsius.rawValue
@@ -223,7 +222,7 @@ struct MetricDetailView: View {
             case .memory, .disk, .battery:
                 MetricScale(fraction: summaryFraction)
             case .cpu:
-                CPUCoreMatrix(usage: monitor.snapshot.cpuCoreUsage, palette: themePreferences.applied)
+                CPUCoreMatrix(usage: monitor.snapshot.cpuCoreUsage)
             case .gpu, .network, .power, .fan:
                 EmptyView()
             }

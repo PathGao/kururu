@@ -37,6 +37,9 @@ final class HomebrewManager: ObservableObject {
     private var installedCaskRecordsFetchedAt: Date?
     private var ownershipLoads: [String: [(HomebrewPackage?) -> Void]] = [:]
     private var completedOperationCleanup: DispatchWorkItem?
+    private var environmentCheckCancellation: BoundedProcessCancellation?
+    private var environmentCheckSettlement: HomebrewEnvironmentCheckSettlement?
+    private var environmentCheckGeneration = 0
 
     var isBusy: Bool {
         isLoadingInstalled || isCheckingEnvironment || operation != nil
@@ -140,28 +143,57 @@ final class HomebrewManager: ObservableObject {
             completion(nil)
             return
         }
+        environmentCheckGeneration += 1
+        let generation = environmentCheckGeneration
+        let cancellation = BoundedProcessCancellation()
+        environmentCheckCancellation = cancellation
         isCheckingEnvironment = true
-        let finish: (EnvironmentHomebrewSnapshot?) -> Void = { [weak self] snapshot in
-            DispatchQueue.main.async {
-                self?.isCheckingEnvironment = false
-                completion(snapshot)
-            }
-        }
-        run(HomebrewCommandBuilder.installed(brewPath: brewPath)) { [weak self] status, output in
-            guard let self, status == 0,
-                  let packages = try? HomebrewParser.parseInfoCommandOutput(output) else {
-                finish(nil)
+        let settlement = HomebrewEnvironmentCheckSettlement { [weak self] snapshot in
+            guard let self else {
+                completion(nil)
                 return
             }
-            self.run(HomebrewCommandBuilder.outdated(brewPath: brewPath)) { status, output in
+            let isCurrent = self.environmentCheckGeneration == generation
+                && self.environmentCheckCancellation === cancellation
+                && !cancellation.isCancelled
+            if isCurrent {
+                self.environmentCheckCancellation = nil
+                self.environmentCheckSettlement = nil
+                self.isCheckingEnvironment = false
+            }
+            completion(isCurrent ? snapshot : nil)
+        }
+        environmentCheckSettlement = settlement
+        runEnvironmentRead(HomebrewCommandBuilder.installed(brewPath: brewPath),
+                           cancellation: cancellation) { [weak self] status, output in
+            guard let self, status == 0,
+                  let packages = try? HomebrewParser.parseInfoCommandOutput(output) else {
+                settlement.settle(nil)
+                return
+            }
+            guard !cancellation.isCancelled else { return }
+            self.runEnvironmentRead(HomebrewCommandBuilder.outdated(brewPath: brewPath),
+                                    cancellation: cancellation) { status, output in
                 guard status == 0,
                       let updates = try? HomebrewParser.parseOutdatedCommandOutput(output) else {
-                    finish(nil)
+                    settlement.settle(nil)
                     return
                 }
-                finish(EnvironmentHomebrewSnapshot(packages: packages, updates: updates))
+                settlement.settle(EnvironmentHomebrewSnapshot(packages: packages, updates: updates))
             }
         }
+    }
+
+    /// Stops only the read-only snapshot requested by Environment. Package
+    /// installs, upgrades and removals are user operations with their own
+    /// explicit cancellation control.
+    func cancelEnvironmentUpdateCheck() {
+        environmentCheckGeneration += 1
+        environmentCheckCancellation?.cancel()
+        environmentCheckSettlement?.settle(nil)
+        environmentCheckCancellation = nil
+        environmentCheckSettlement = nil
+        isCheckingEnvironment = false
     }
 
     /// Looks up whether Homebrew owns this exact app bundle. The cached
@@ -531,6 +563,7 @@ final class HomebrewManager: ObservableObject {
     /// These are normally fast, but a hung NFS share or locked database can
     /// make them stall indefinitely.
     private static let brewReadTimeout: TimeInterval = 30
+    private static let environmentReadMaxOutputBytes = 16 * 1_024 * 1_024
     /// Install/upgrade/uninstall run on the same serial queue as every read, so a
     /// hung one must end eventually. A big download, a source build and a copy into
     /// Applications are all slow but never silent, so the bound is on silence: a cap
@@ -599,6 +632,23 @@ final class HomebrewManager: ObservableObject {
             let output = String(data: data, encoding: .utf8) ?? ""
             lock.unlock()
             completion(process.isRunning ? -1 : process.terminationStatus, output)
+        }
+    }
+
+    private func runEnvironmentRead(
+        _ command: HomebrewCommand,
+        cancellation: BoundedProcessCancellation,
+        completion: @escaping (_ status: Int32, _ output: String) -> Void
+    ) {
+        workQueue.async {
+            let result = BoundedProcessRunner.run(
+                command.executable,
+                command.arguments,
+                timeout: Self.brewReadTimeout,
+                maxOutputBytes: Self.environmentReadMaxOutputBytes,
+                cancellation: cancellation
+            )
+            completion(result.status, String(decoding: result.output, as: UTF8.self))
         }
     }
 

@@ -21,6 +21,16 @@ enum BrightnessSupport {
         force || pending != topology
     }
 
+    static func displayIdentity(uuid: String?, vendor: UInt32, model: UInt32, serial: UInt32) -> String? {
+        if let uuid, !uuid.isEmpty { return "uuid:" + uuid }
+        guard serial != 0 else { return nil }
+        return "serial:\(vendor):\(model):\(serial)"
+    }
+
+    static func acceptsObservation(startedVersion: UInt64?, currentVersion: UInt64?) -> Bool {
+        startedVersion == currentVersion
+    }
+
     static func brightnessAfterRebuild(probed: Double, pending: Double?) -> Double {
         pending ?? probed
     }
@@ -42,16 +52,13 @@ enum BrightnessSupport {
     static let retryAttempts = 4
     static let replyLength = 11
 
-    /// Discovery keeps the normal number of reply chances but sends only one
-    /// request before each read. The read and retry pauses put every request
-    /// more than 50ms apart instead of sending pairs 10ms apart.
+    /// Some displays answer NULL until GET is sent twice, as in MonitorControl
+    /// and m1ddc. Mi Monitor read-only probes reproduce this with a 10ms gap.
     static func ddcProbeAttempts() -> Int {
         retryAttempts + 1
     }
 
-    static func ddcProbeWriteCycles(classifyingChannel: Bool) -> Int {
-        classifyingChannel ? 1 : writeCycles
-    }
+    static func ddcProbeWriteCycles(classifyingChannel: Bool) -> Int { writeCycles }
 
     static let defaultKeyboardLightLevel: Float = 0.5
     static let keyboardLightStep: Float = 1.0 / 16.0
@@ -108,16 +115,41 @@ enum BrightnessSupport {
         packet(payload: [code])
     }
 
-    /// Parses a Get VCP Feature reply: checksum first (seeded with the host
-    /// address the display answers to), then the big-endian maximum and
-    /// current values. Anything malformed reads as no reply.
-    static func parseReply(_ reply: [UInt8]) -> (current: UInt16, maximum: UInt16)? {
-        guard reply.count >= replyLength else { return nil }
-        let checksum = reply[0..<(reply.count - 1)].reduce(UInt8(0x50)) { $0 ^ $1 }
-        guard checksum == reply[reply.count - 1] else { return nil }
+    enum DDCFailure: String, Error, Equatable {
+        case length, checksum, source, header, opcode, unsupported, feature, valueType, range, nullReply
+        case unavailable, transport, readFailed, writeFailed, mismatch, identityUnavailable
+    }
+
+    struct Reading: Equatable {
+        let current: UInt16
+        let maximum: UInt16
+    }
+
+    static func validateReply(_ reply: [UInt8]) -> Result<Reading, DDCFailure> {
+        // NULL is a complete three-byte response; a fixed-length IO buffer may
+        // retain unrelated bytes after its checksum. Those bytes are not VCP data.
+        if reply.count >= 3, reply[0] == 0x6e, reply[1] == 0x80, reply[2] == 0xbe {
+            return .failure(.nullReply)
+        }
+        guard reply.count == replyLength else { return .failure(.length) }
+        guard reply.dropLast().reduce(UInt8(0x50), ^) == reply.last else {
+            return .failure(.checksum)
+        }
+        guard reply[0] == 0x6e else { return .failure(.source) }
+        guard reply[1] == 0x88 else { return .failure(.header) }
+        guard reply[2] == 0x02 else { return .failure(.opcode) }
+        guard reply[3] == 0 else { return .failure(.unsupported) }
+        guard reply[4] == luminanceCode else { return .failure(.feature) }
+        guard reply[5] == 0 else { return .failure(.valueType) }
         let maximum = UInt16(reply[6]) << 8 | UInt16(reply[7])
         let current = UInt16(reply[8]) << 8 | UInt16(reply[9])
-        return (current, maximum)
+        guard maximum > 0, current <= maximum else { return .failure(.range) }
+        return .success(Reading(current: current, maximum: maximum))
+    }
+
+    static func parseReply(_ reply: [UInt8]) -> (current: UInt16, maximum: UInt16)? {
+        guard case let .success(value) = validateReply(reply) else { return nil }
+        return (value.current, value.maximum)
     }
 
     /// A display that reports no range still accepts writes; treat it as the
@@ -460,5 +492,43 @@ enum BrightnessSupport {
             takenServices.insert(entry.serviceOrdinal)
         }
         return assignment
+    }
+}
+
+/// A requested value never becomes a hardware observation without a read.
+struct BrightnessState: Equatable {
+    enum Status: Equatable { case unknown, confirmed, pending, sentUnconfirmed, failed }
+    private(set) var observed: Double?
+    private(set) var requested: Double?
+    private(set) var observedAt: Date?
+    private(set) var status = Status.unknown
+    private(set) var failure: BrightnessSupport.DDCFailure?
+
+    mutating func observe(_ value: Double, at date: Date = Date()) {
+        observed = value
+        observedAt = date
+        requested = nil
+        failure = nil
+        status = .confirmed
+    }
+
+    mutating func request(_ value: Double) {
+        requested = value
+        status = .pending
+        failure = nil
+    }
+
+    mutating func complete(succeeded: Bool, observed value: Double?,
+                           failure reason: BrightnessSupport.DDCFailure?) {
+        if let value { observed = value; observedAt = Date() }
+        failure = reason
+        if !succeeded || reason == .mismatch { status = .failed }
+        else if value == nil { status = .sentUnconfirmed }
+        else { status = .confirmed; requested = nil }
+    }
+
+    mutating func unreadable(_ reason: BrightnessSupport.DDCFailure) {
+        failure = reason
+        status = .unknown
     }
 }

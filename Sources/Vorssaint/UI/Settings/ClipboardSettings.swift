@@ -52,9 +52,8 @@ struct ClipboardSettings: View {
                 .settingsSectionAnchor(.clipboardHistory)
 
                 SettingsSection(title: flowText.automaticCapture, systemImage: "tray.and.arrow.down") {
-                    FeatureSwitchRow(feature: .clipboardHistory, title: flowText.recordCopiedContent)
-                    SettingsExplanation(flowText.automaticCaptureCaption)
-                    SettingsInfo(text: text.localNote, systemImage: "lock.shield")
+                    FeatureSwitchRow(feature: .clipboardHistory, title: flowText.recordCopiedContent,
+                                     help: flowText.automaticCaptureCaption + "\n\n" + text.localNote)
                     if enabled, history.isRunning {
                         Label(flowText.captureActive, systemImage: "checkmark.circle.fill")
                             .font(SettingsTypography.caption)
@@ -66,6 +65,7 @@ struct ClipboardSettings: View {
                     }
                     SettingsToggleWithCaption(title: text.includeImagesFiles,
                                               caption: text.includeImagesFilesCaption,
+                                              showsCaptionInline: false,
                                               isOn: $includeImagesFiles)
                     SettingsToggleWithCaption(title: text.skipSensitive,
                                               caption: text.skipSensitiveCaption,
@@ -88,8 +88,7 @@ struct ClipboardSettings: View {
 
             if AppFeature.pastePlain.isAvailable {
                 SettingsSection {
-                    FeatureSwitchRow(feature: .pastePlain)
-                    SettingsExplanation(l10n.s.pastePlainCaption)
+                    FeatureSwitchRow(feature: .pastePlain, help: l10n.s.pastePlainCaption)
                     ShortcutPreferenceRow(role: .pastePlain, isEnabled: pastePlainEnabled) {
                         PastePlainService.shared.syncWithPreferences()
                     }

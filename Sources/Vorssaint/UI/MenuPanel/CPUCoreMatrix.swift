@@ -9,7 +9,6 @@ struct CPUCoreMatrix: View {
     @Environment(\.colorSchemeContrast) private var contrast
     @State private var width: CGFloat = 280
     let usage: [Double?]
-    var palette: ImportedTheme? = nil
     var increasedContrast: Bool? = nil
     private var usesIncreasedContrast: Bool { increasedContrast ?? (contrast == .increased) }
     var coreGroups: [CPUCoreGroup]? = nil
@@ -28,8 +27,8 @@ struct CPUCoreMatrix: View {
                 chipRows
                 .padding(8)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background((Theme.color(.primaryText, in: palette) ?? Color.primary).opacity(0.025), in: RoundedRectangle(cornerRadius: 5))
-                .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(Theme.color(.border, in: palette) ?? Color.primary.opacity(0.12), lineWidth: 1))
+                .background(Color.primary.opacity(0.025), in: RoundedRectangle(cornerRadius: 5))
+                .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(Color.primary.opacity(0.12), lineWidth: 1))
                 .onAppear { width = proxy.size.width }
                 .onChange(of: proxy.size.width) { _, value in width = value }
             }
@@ -66,7 +65,7 @@ struct CPUCoreMatrix: View {
             }
             Text("\(CPUCoreStrings.groupName(segment.group.name, language: l10n.language)) ×\(segment.group.indices.count)")
                 .font(PanelTypography.meta)
-                .foregroundStyle(Theme.color(.secondaryText, in: palette) ?? Color.secondary)
+                .foregroundStyle(Color.secondary)
                 .lineLimit(2)
                 .minimumScaleFactor(0.8)
                 .frame(height: 22, alignment: .topLeading)
@@ -78,20 +77,20 @@ struct CPUCoreMatrix: View {
         let value = usage.indices.contains(index) ? usage[index].flatMap { $0.isFinite ? min(1, max(0, $0)) : nil } : nil
         return GeometryReader { proxy in
             ZStack(alignment: .bottom) {
-                Rectangle().fill((Theme.color(.primaryText, in: palette) ?? Color.primary).opacity(0.035))
+                Rectangle().fill(Color.primary.opacity(0.035))
                 if let value {
                     Rectangle()
-                        .fill((Theme.color(.primaryText, in: palette) ?? Color.primary).opacity(0.78))
+                        .fill(Color.primary.opacity(0.78))
                         .frame(height: proxy.size.height * value)
                 } else {
-                    Text("–").font(PanelTypography.meta).foregroundStyle(Theme.color(.secondaryText, in: palette) ?? Color.secondary)
+                    Text("–").font(PanelTypography.meta).foregroundStyle(Color.secondary)
                         .frame(maxHeight: .infinity)
                 }
             }
             .clipShape(RoundedRectangle(cornerRadius: 2))
             .overlay {
                 RoundedRectangle(cornerRadius: 2)
-                    .strokeBorder(usesIncreasedContrast ? Color.primary.opacity(0.65) : (Theme.color(.border, in: palette) ?? Color.primary.opacity(0.25)),
+                    .strokeBorder(usesIncreasedContrast ? Color.primary.opacity(0.65) : Color.primary.opacity(0.25),
                                   style: StrokeStyle(lineWidth: usesIncreasedContrast ? 1.5 : 0.75,
                                                      dash: value == nil ? [2, 2] : []))
             }

@@ -484,21 +484,15 @@ enum CommandBarCatalog {
         }
 
         if AppFeature.brightness.isAvailable {
-            let enabled = UserDefaults.standard.bool(forKey: DefaultsKey.brightnessControlEnabled)
             entries.append(CommandBarEntry(
                 id: "action.brightness",
                 title: bar.brightnessTitle,
-                subtitle: enabled
-                    ? String(format: bar.argumentRangeFormat, 0, 100)
-                    : area(.brightness),
+                subtitle: String(format: bar.argumentRangeFormat, 0, 100),
                 // The Displays page name doubles as a synonym, so the words
                 // of both surfaces land here.
                 keywords: FeatureStrings.brightness(language).pageTitle,
                 icon: .symbol("sun.max"),
-                trouble: enabled ? nil
-                    : .needsSetup(featureTitle: AppFeature.brightness.name(s, language: language),
-                                  page: .brightness),
-                numericRange: enabled ? 0...100 : nil,
+                numericRange: 0...100,
                 run: { value in
                     guard let value else { return }
                     applyBrightness(percent: value)

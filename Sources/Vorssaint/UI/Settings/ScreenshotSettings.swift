@@ -237,7 +237,7 @@ struct ScreenshotCaptureSettings: View {
 
     private var subfolderRow: some View {
         SettingsControlRow(title: strings.subfolderLabel, systemImage: "folder.badge.gearshape",
-                           caption: strings.subfolderCaption) {
+                           help: strings.subfolderCaption) {
             VStack(alignment: .leading, spacing: 4) {
                 TextField(strings.subfolderLabel, text: $saveSubfolder)
                     .labelsHidden()
@@ -258,7 +258,7 @@ struct ScreenshotCaptureSettings: View {
     private var fileNameRow: some View {
         VStack(alignment: .leading, spacing: 12) {
             SettingsControlRow(title: strings.fileNamePatternLabel, systemImage: "doc.text",
-                               caption: strings.fileNamePatternCaption) {
+                               help: strings.fileNamePatternCaption) {
                 VStack(alignment: .leading, spacing: 4) {
                     TextField(strings.fileNamePatternLabel, text: $fileNamePattern)
                         .labelsHidden()

@@ -67,31 +67,53 @@ final class EnvironmentInspector: ObservableObject {
     @Published private(set) var isLoading = false
 
     private let workQueue = DispatchQueue(label: "com.vorssaint.environment", qos: .userInitiated)
+    private var cancellation: BoundedProcessCancellation?
+    private var generation = 0
 
     private init() {}
 
     func refresh(completion: ((EnvironmentReport) -> Void)? = nil) {
         guard !isLoading else { return }
         isLoading = true
+        generation += 1
+        let generation = generation
+        let cancellation = BoundedProcessCancellation()
+        self.cancellation = cancellation
         workQueue.async { [weak self] in
-            let report = Self.inspect()
+            let report = Self.inspect(cancellation: cancellation)
             DispatchQueue.main.async {
-                self?.report = report
-                self?.isLoading = false
+                guard let self, self.generation == generation, !cancellation.isCancelled else { return }
+                self.cancellation = nil
+                self.report = report
+                self.isLoading = false
                 completion?(report)
             }
         }
     }
 
+    func cancel() {
+        generation += 1
+        cancellation?.cancel()
+        cancellation = nil
+        isLoading = false
+    }
+
     // MARK: - Reading
 
-    static func inspect() -> EnvironmentReport {
+    static func inspect(cancellation: BoundedProcessCancellation? = nil) -> EnvironmentReport {
         var report = EnvironmentReport()
-        let shellPath = loginShellPath()
+        guard cancellation?.isCancelled != true else { return report }
+        let shellPath = loginShellPath(cancellation: cancellation)
         report.readLoginShell = shellPath != nil
         report.terminalPath = shellPath ?? systemPath()
-        report.guiPath = guiPath()
-        report.tools = inspectedCommands.map { tool(named: $0, in: report.terminalPath) }
+        guard cancellation?.isCancelled != true else { return report }
+        report.guiPath = guiPath(cancellation: cancellation)
+        for command in inspectedCommands {
+            guard cancellation?.isCancelled != true else { return report }
+            report.tools.append(tool(named: command, in: report.terminalPath,
+                                     cancellation: cancellation))
+        }
+        guard cancellation?.isCancelled != true else { return report }
         report.caches = caches()
         return report
     }
@@ -99,7 +121,7 @@ final class EnvironmentInspector: ObservableObject {
     /// Asks the user's own login shell what PATH it ends up with. Only the
     /// shell can answer: PATH is assembled by its startup files, and this app
     /// must never read or edit those.
-    static func loginShellPath() -> [String]? {
+    static func loginShellPath(cancellation: BoundedProcessCancellation? = nil) -> [String]? {
         guard let shell = loginShell(),
               FileManager.default.isExecutableFile(atPath: shell) else { return nil }
         // Login *and* interactive, because that is what a terminal window runs
@@ -108,8 +130,9 @@ final class EnvironmentInspector: ObservableObject {
                           ["-l", "-c", "printf %s \"$PATH\""]] {
             let result = BoundedProcessRunner.run(shell, arguments,
                                                   timeout: shellTimeout,
-                                                  maxOutputBytes: maxOutputBytes)
-            guard result.status == 0, !result.timedOut,
+                                                  maxOutputBytes: maxOutputBytes,
+                                                  cancellation: cancellation)
+            guard result.status == 0, !result.timedOut, !result.cancelled,
                   let text = String(data: result.output, encoding: .utf8) else { continue }
             let entries = splitPath(text)
             if !entries.isEmpty { return entries }
@@ -143,11 +166,12 @@ final class EnvironmentInspector: ObservableObject {
     /// What a Finder- or Dock-launched app gets. `launchctl getenv PATH` is
     /// normally unset, and then launchd's own default is the honest answer —
     /// not this process's PATH, which depends on how the app was started.
-    static func guiPath() -> [String] {
+    static func guiPath(cancellation: BoundedProcessCancellation? = nil) -> [String] {
         let result = BoundedProcessRunner.run("/bin/launchctl", ["getenv", "PATH"],
                                               timeout: commandTimeout,
-                                              maxOutputBytes: maxOutputBytes)
-        if result.status == 0, !result.timedOut,
+                                              maxOutputBytes: maxOutputBytes,
+                                              cancellation: cancellation)
+        if result.status == 0, !result.timedOut, !result.cancelled,
            let text = String(data: result.output, encoding: .utf8) {
             let entries = splitPath(text)
             if !entries.isEmpty { return entries }
@@ -155,7 +179,8 @@ final class EnvironmentInspector: ObservableObject {
         return launchdDefaultPath
     }
 
-    static func tool(named command: String, in path: [String]) -> EnvironmentTool {
+    static func tool(named command: String, in path: [String],
+                     cancellation: BoundedProcessCancellation? = nil) -> EnvironmentTool {
         let matches = path
             .map { ($0 as NSString).appendingPathComponent(command) }
             .filter { FileManager.default.isExecutableFile(atPath: $0) }
@@ -167,7 +192,7 @@ final class EnvironmentInspector: ObservableObject {
         let shim = shimTarget(of: first, command: command)
         return EnvironmentTool(command: command,
                                path: first,
-                               version: version(of: first),
+                               version: version(of: first, cancellation: cancellation),
                                shimTarget: shim,
                                shadowedPaths: Array(winner.dropFirst()),
                                source: installationSource(of: first, command: command, isWrapper: shim != nil))
@@ -191,13 +216,15 @@ final class EnvironmentInspector: ObservableObject {
             home: NSHomeDirectory(), isWrapper: isWrapper || head == Data("#!".utf8))
     }
 
-    static func version(of path: String) -> String? {
+    static func version(of path: String,
+                        cancellation: BoundedProcessCancellation? = nil) -> String? {
         let result = BoundedProcessRunner.run(path, ["--version"],
                                               timeout: commandTimeout,
-                                              maxOutputBytes: maxOutputBytes)
+                                              maxOutputBytes: maxOutputBytes,
+                                              cancellation: cancellation)
         // A wrapper that refuses `--version` still prints something and exits
         // non-zero; printing its complaint as a version would be a lie.
-        guard result.status == 0, !result.timedOut,
+        guard result.status == 0, !result.timedOut, !result.cancelled,
               let text = String(data: result.output, encoding: .utf8) else { return nil }
         let line = text.split(whereSeparator: \.isNewline).first.map(String.init) ?? ""
         let trimmed = line.trimmingCharacters(in: .whitespaces)

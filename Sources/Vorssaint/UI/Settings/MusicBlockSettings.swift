@@ -21,7 +21,9 @@ struct MusicBlockSettings: View {
         SettingsForm {
             if AppFeature.musicBlock.isAvailable {
                 SettingsSection(musicBlockText.section) {
-                    Toggle(musicBlockText.title, isOn: $musicBlockEnabled)
+                    SettingsToggleWithCaption(title: musicBlockText.title,
+                                              caption: musicBlockText.caption,
+                                              isOn: $musicBlockEnabled)
                         .onChange(of: musicBlockEnabled) { _, _ in
                             MusicLaunchBlocker.shared.syncWithPreferences()
                         }
@@ -57,7 +59,6 @@ struct MusicBlockSettings: View {
                             .font(SettingsTypography.caption)
                             .foregroundStyle(.orange)
                     }
-                    SettingsCaptionText(musicBlockText.caption)
                 }
                 .settingsSectionAnchor(.musicBlocking)
             }

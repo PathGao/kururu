@@ -12,6 +12,7 @@ final class EnvironmentUpdateChecker: ObservableObject {
     private var generation = 0
     private var operationObservation: AnyCancellable?
     private var observedOperation = false
+    private var acceptsAutomaticRefresh = true
 
     private init() {
         let manager = HomebrewManager.shared
@@ -28,6 +29,7 @@ final class EnvironmentUpdateChecker: ObservableObject {
                 // including the catalog refresh that follows a completed operation.
                 DispatchQueue.main.async { [weak self] in
                     guard let self, self.observedOperation,
+                          self.acceptsAutomaticRefresh,
                           !HomebrewManager.shared.isBusy,
                           !EnvironmentInspector.shared.isLoading, !self.isChecking else { return }
                     self.observedOperation = false
@@ -38,6 +40,7 @@ final class EnvironmentUpdateChecker: ObservableObject {
 
     func refreshAndCheck() {
         guard !isChecking, !EnvironmentInspector.shared.isLoading else { return }
+        acceptsAutomaticRefresh = true
         reset()
         isChecking = true
         let generation = generation
@@ -56,8 +59,17 @@ final class EnvironmentUpdateChecker: ObservableObject {
         isChecking = false
     }
 
+    func cancel() {
+        acceptsAutomaticRefresh = false
+        observedOperation = false
+        reset()
+        EnvironmentInspector.shared.cancel()
+        HomebrewManager.shared.cancelEnvironmentUpdateCheck()
+    }
+
     func check(_ tools: [EnvironmentTool]) {
         guard !isChecking else { return }
+        acceptsAutomaticRefresh = true
         reset()
         isChecking = true
         let generation = generation
