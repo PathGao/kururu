@@ -102,9 +102,9 @@ struct MonitorPanelConfig: View {
             }
         }
         if AppFeature.monitorDisk.isAvailable {
-            block(.disk, title: AppFeature.monitorDisk.name(l10n.s, language: l10n.language), master: $showDisk, graphKey: DefaultsKey.monitorGraphDisk) {
+            block(.disk, title: AppFeature.monitorDisk.name(l10n.s, language: l10n.language), master: $showDisk) {
                 MonitorGraphVisibilityRow(title: l10n.s.monitorItemDiskUsage, visible: $diskUsage)
-                MonitorGraphVisibilityRow(title: l10n.s.monitorItemDiskActivity, visible: $diskActivity)
+                MonitorGraphVisibilityRow(title: l10n.s.monitorItemDiskActivity, visible: $diskActivity, graphKey: DefaultsKey.monitorGraphDisk, sectionVisible: showDisk)
                 MonitorGraphVisibilityRow(title: l10n.s.monitorItemDiskSMART, visible: $diskSMART)
                 MonitorGraphVisibilityRow(title: l10n.s.monitorItemDiskProtection, visible: $diskProtection)
                 MonitorGraphVisibilityRow(title: l10n.s.monitorItemDiskTools, visible: $diskTools)
@@ -172,7 +172,6 @@ struct MonitorPanelConfig: View {
     private func block<Content: View>(_ id: PanelSectionID,
                                       title: String,
                                       master: Binding<Bool>,
-                                      graphKey: String? = nil,
                                       @ViewBuilder _ items: @escaping () -> Content) -> some View {
         HStack(spacing: 12) {
             DisclosureHeaderRow(isExpanded: expansionBinding(for: id)) {
@@ -182,10 +181,6 @@ struct MonitorPanelConfig: View {
                     .frame(width: 20)
                 Text(title).font(.system(size: 13, weight: .medium))
                 Spacer()
-            }
-            if let graphKey {
-                MonitorGraphSwitch(title: title, key: graphKey)
-                    .disabled(!master.wrappedValue)
             }
             Toggle(l10n.s.monitorShowInPanel, isOn: master)
                 .toggleStyle(.switch).controlSize(.small)

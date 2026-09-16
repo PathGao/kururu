@@ -24168,7 +24168,7 @@ UninstallerSelectionTests.run { expect($0, $1) }
         // Display controls belong to the panel page; collection stays in monitoring.
         let panelConfigCode = codeLines("Sources/Vorssaint/UI/Settings/MonitorPanelConfig.swift")
         let trendCode = codeLines("Sources/Vorssaint/UI/MenuPanel/MonitorTrendView.swift")
-        expect(occurrences("MonitorGraphSwitch", panelConfigCode) == 4
+        expect(occurrences("MonitorGraphSwitch", panelConfigCode) == 3
                 && occurrences("selection: $historyMinutes", panelPageCode) == 1
                 && occurrences("monitorGraph", monitorPageCode) == 0
                 && occurrences("Picker(", trendCode) == 0,
