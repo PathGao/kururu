@@ -17,9 +17,23 @@ struct SettingsSection<Header: View, Content: View, Footer: View>: View {
         self.footer = footer()
     }
 
+    @Environment(\.inSettingsForm) private var inSettingsForm
+
     @ViewBuilder
     var body: some View {
-        groupedSection
+        if inSettingsForm {
+            Section {
+                content
+            } header: {
+                if Header.self != EmptyView.self { sectionHeader }
+            } footer: {
+                if Footer.self != EmptyView.self {
+                    footer.font(SettingsTypography.caption).foregroundStyle(.secondary)
+                }
+            }
+        } else {
+            groupedSection
+        }
     }
 
     private var sectionHeader: some View {
@@ -109,10 +123,7 @@ struct SettingsSectionHeading: View {
     let systemImage: String
 
     var body: some View {
-        HStack(spacing: 10) {
-            SettingsSymbol(systemImage: systemImage)
-            Text(title).font(SettingsTypography.sectionTitle)
-        }
+        Text(title).font(SettingsTypography.sectionTitle)
     }
 }
 

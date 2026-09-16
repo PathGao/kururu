@@ -197,7 +197,6 @@ struct MenuPanelView: View {
         }
         .padding(16)
         .frame(width: panelWidth, height: navigablePanelHeight)
-        .panelGlassSurface(cornerRadius: 24)
     }
 
     private var emptyPanel: some View {
@@ -246,7 +245,6 @@ struct MenuPanelView: View {
         }
         .padding(16)
         .frame(width: panelWidth, height: metricPanelHeight)
-        .panelGlassSurface(cornerRadius: 24)
     }
 
     /// The major sections in the user's saved order. Reading `sectionOrderRaw`

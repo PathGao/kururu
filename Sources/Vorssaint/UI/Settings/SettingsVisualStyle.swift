@@ -3,11 +3,11 @@ import SwiftUI
 
 /// Settings labels and controls share a scale; compact menu panels keep their own typography.
 enum SettingsTypography {
-    static let body = Font.system(size: 13)
-    static let caption = Font.system(size: 12)
-    static let sectionTitle = Font.system(size: 13, weight: .semibold)
-    static let icon = Font.system(size: 13)
-    static let smallIcon = Font.system(size: 12)
+    static let body = Font.body
+    static let caption = Font.callout
+    static let sectionTitle = Font.headline
+    static let icon = Font.body
+    static let smallIcon = Font.callout
 }
 
 /// Review bundles select a layout without changing the user's installed app or palette.
@@ -68,18 +68,21 @@ struct SettingsForm<Content: View>: View {
     @ViewBuilder let content: Content
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: SettingsVisualStyle.current.sectionSpacing) {
-                content
-            }
-            .frame(maxWidth: 760, alignment: .leading)
-            .padding(SettingsVisualStyle.current.pageInset)
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .font(SettingsTypography.body)
-        .toggleStyle(.checkbox)
-        .buttonStyle(.bordered)
-        .controlSize(SettingsVisualStyle.current == .compact ? .small : .regular)
+        Form { content }
+            .formStyle(.grouped)
+            .environment(\.inSettingsForm, true)
+            .font(SettingsTypography.body)
+            .toggleStyle(.switch)
+    }
+}
+
+private struct InSettingsFormKey: EnvironmentKey { static let defaultValue = false }
+
+extension EnvironmentValues {
+    /// Sections become native grouped rows inside a Form and keep their card elsewhere.
+    var inSettingsForm: Bool {
+        get { self[InSettingsFormKey.self] }
+        set { self[InSettingsFormKey.self] = newValue }
     }
 }
 
@@ -151,9 +154,8 @@ struct SettingsControlRow<Control: View>: View {
     @ViewBuilder let control: Control
 
     private var label: some View {
-        HStack(spacing: 10) {
-            SettingsSymbol(systemImage: systemImage)
-            Text(title).font(SettingsTypography.body.weight(.medium))
+        HStack(spacing: 6) {
+            Text(title)
                 .fixedSize(horizontal: false, vertical: true)
             if let help { SettingsHelpButton(title: title, text: help) }
             Spacer(minLength: 0)
@@ -168,20 +170,19 @@ struct SettingsControlRow<Control: View>: View {
         VStack(alignment: .leading, spacing: 5) {
             ViewThatFits(in: .horizontal) {
                 HStack(alignment: .center, spacing: 0) {
-                    label.frame(width: 180, alignment: .leading)
+                    label
                     Spacer(minLength: 18)
                     controls.fixedSize(horizontal: true, vertical: false)
                 }
                 VStack(alignment: .leading, spacing: 10) {
                     label
-                    controls.frame(maxWidth: .infinity, alignment: .leading).padding(.leading, 40)
+                    controls.frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
             if let caption {
                 Text(caption).font(SettingsTypography.caption).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.leading, 40)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
