@@ -79,9 +79,15 @@ struct SettingsView: View {
             // when asked for an unconstrained ideal size, breaking the chain.
             GeometryReader { geometry in
                 VStack(alignment: .leading, spacing: 0) {
-                    Text(router.page.title(l10n.s, language: l10n.language))
-                        .font(SettingsVisualStyle.current.titleFont)
-                        .accessibilityAddTraits(.isHeader)
+                    HStack(alignment: .firstTextBaseline) {
+                        Text(router.page.title(l10n.s, language: l10n.language))
+                            .font(SettingsVisualStyle.current.titleFont)
+                            .accessibilityAddTraits(.isHeader)
+                        Spacer(minLength: 12)
+                        if let unit = FeatureVisibilitySupport.configurationUnit(for: router.page) {
+                            pageSwitch(unit)
+                        }
+                    }
                         .padding(.horizontal, SettingsVisualStyle.current.pageInset)
                         .padding(.top, SettingsVisualStyle.current == .compact ? 18 : 28)
                         .padding(.bottom, 12)
@@ -371,6 +377,19 @@ struct SettingsView: View {
         activeSearchIndex = nil
         let routed = SettingsSearchSupport.route(for: suggestion)
         router.request(routed.destination, targetFeature: routed.targetFeature)
+    }
+
+    /// The feature library's switch for this page's unit, repeated where the
+    /// user is: off keeps every setting and shows the page as disabled.
+    private func pageSwitch(_ unit: FeatureUnit) -> some View {
+        let title = router.page.title(l10n.s, language: l10n.language)
+        return Toggle(title, isOn: Binding(
+            get: { unit.isAvailable },
+            set: { FeatureRuntime.shared.setAvailable(unit, $0) }))
+            .toggleStyle(.switch)
+            .labelsHidden()
+            .disabled(!unit.isAvailable && unit.installBlockedReason != nil)
+            .accessibilityLabel(title)
     }
 
     @ViewBuilder
