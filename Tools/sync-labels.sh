@@ -12,10 +12,12 @@ import subprocess
 parser = argparse.ArgumentParser(description="Preview or apply .github/labels.json")
 parser.add_argument("repository", help="Explicit OWNER/REPO target")
 parser.add_argument("--apply", action="store_true")
+parser.add_argument("--labels", type=Path, default=Path(".github/labels.json"),
+                    help="Manifest path; use an absolute path outside the script root")
 args = parser.parse_args()
 if not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", args.repository):
     parser.error("repository must be OWNER/REPO")
-labels = json.loads(Path(".github/labels.json").read_text())
+labels = json.loads(args.labels.read_text())
 if not isinstance(labels, list):
     parser.error("labels.json must contain an array")
 seen = set()
