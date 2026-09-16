@@ -138,6 +138,9 @@ See [the security policy](SECURITY.md) before sharing vulnerability details.
 ## Pull requests
 
 Participation follows the [Code of Conduct](CODE_OF_CONDUCT.md).
+Use the [PR template](PULL_REQUEST_TEMPLATE.md): a short summary, verification
+and issue links. Repository settings and label conventions are documented in
+[Governance](GOVERNANCE.md).
 
 1. Follow the current [roadmap](../ROADMAP.md). Reference applications and
    historical upstream decisions do not independently authorize new scope.
@@ -150,7 +153,8 @@ Participation follows the [Code of Conduct](CODE_OF_CONDUCT.md).
 5. Fix the cause and inspect other callers of the same behavior. Preserve
    input, configuration and user data when an operation fails or is cancelled.
 6. Use `type(scope): lowercase imperative phrase` for a proposed commit or
-   PR title. Reference related issues explicitly, such as `Refs #123`.
+   PR title. Use `Closes #123` or `Fixes #123` when the PR completes an issue.
+   For partial work, use `Related to #123` and state what remains.
 7. Leave release notes and version changes to the maintainer unless they are
    part of the requested work.
 8. Local work does not authorize committing, pushing, opening a PR or sending

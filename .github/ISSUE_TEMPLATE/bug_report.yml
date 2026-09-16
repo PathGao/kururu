@@ -1,4 +1,4 @@
-name: "🐛 Bug Report"
+name: Bug report
 description: Report a bug or unexpected behavior in kururu
 labels:
   - bug
@@ -80,15 +80,11 @@ body:
     validations:
       required: true
 
-  - type: dropdown
+  - type: input
     id: macos_version
     attributes:
-      label: macOS Version
-      options:
-        - macOS 27 (Golden Gate)
-        - macOS 26 (Tahoe)
-        - macOS 15 (Sequoia)
-        - macOS 14 (Sonoma)
+      label: macOS version
+      description: Copy the version from Apple menu > About This Mac.
     validations:
       required: true
 
