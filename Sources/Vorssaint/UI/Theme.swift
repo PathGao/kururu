@@ -17,13 +17,13 @@ enum Theme {
 }
 
 enum PanelTypography {
-    static let pageTitle = Font.system(size: 24, weight: .semibold)
-    static let panelTitle = Font.system(size: 20, weight: .semibold)
-    static let title = Font.system(size: 13, weight: .medium)
-    static let body = Font.system(size: 13)
-    static let label = Font.system(size: 12)
-    static let meta = Font.system(size: 11)
-    static let metric = Font.system(size: 16, weight: .medium)
+    static let pageTitle = Font.title.weight(.semibold)
+    static let panelTitle = Font.title2.weight(.semibold)
+    static let title = Font.body.weight(.medium)
+    static let body = Font.body
+    static let label = Font.callout
+    static let meta = Font.subheadline
+    static let metric = Font.title3.weight(.medium)
 }
 
 struct MetricSymbol: View {
@@ -133,26 +133,6 @@ extension View {
     func panelCard() -> some View {
         modifier(PanelCardModifier())
     }
-
-    func panelGlassSurface(cornerRadius: CGFloat = 18) -> some View {
-        modifier(PanelGlassModifier(cornerRadius: cornerRadius))
-    }
-
-}
-
-private struct PanelGlassModifier: ViewModifier {
-    let cornerRadius: CGFloat
-
-    func body(content: Content) -> some View {
-        content.background {
-            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .fill(Color(nsColor: .windowBackgroundColor))
-                .overlay {
-                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .fill(Color.primary.opacity(0.03))
-                }
-        }
-    }
 }
 
 private struct PanelCardModifier: ViewModifier {
@@ -168,7 +148,7 @@ private struct PanelCardModifier: ViewModifier {
             .padding(12)
             .background {
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(Color(nsColor: .controlBackgroundColor))
+                    .fill(.fill.quaternary)
             }
             .overlay {
                 if contrast == .increased {
