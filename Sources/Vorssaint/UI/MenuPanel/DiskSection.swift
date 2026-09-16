@@ -26,7 +26,7 @@ struct DiskSection: View {
         PanelSection(.disk, title: AppFeature.monitorDisk.name(l10n.s, language: l10n.language), collapsible: collapsible,
                      supportsEditing: true,
                      resetAction: resetPanelDefaults) { editing in
-            if !editing { MonitorTrendView(metrics: [.diskRead, .diskWrite]) }
+            if !editing && diskActivity { MonitorTrendView(metrics: [.diskRead, .diskWrite]) }
             VStack(alignment: .leading, spacing: 12) {
                 if disks.isEmpty {
                     Text(l10n.s.diskNoDisks)

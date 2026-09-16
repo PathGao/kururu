@@ -27,6 +27,10 @@ newest release first. The app and release workflow read these version headings.
 - Sign releases with kururu's Apple Developer ID and notarize them through GitHub Actions.
 - Enable in-app updates from PathGao/kururu with Apple team and application identity verification.
 
+### Fixed
+- Place the disk trend toggle beside live activity and hide the trend when live activity is hidden.
+- Keep display and keyboard backlight shortcut groups independently expandable.
+
 ## [0.1.1] - 2026-09-15
 
 ### Added

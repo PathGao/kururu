@@ -13,7 +13,7 @@ struct ShortcutsSettings: View {
     @ObservedObject private var superKey = SuperKeyService.shared
     @AppStorage(DefaultsKey.keyboardBrightnessShortcutsEnabled) private var keyboardBrightnessShortcutsEnabled = false
     @AppStorage(BrightnessShortcutPreferenceKey.enabled) private var displayBrightnessShortcutsEnabled = false
-    @State private var expandedFeatures: Set<AppFeature> = [.screenshot]
+    @State private var expandedFeatures: [FeatureGroup: Set<AppFeature>] = [.capture: [.screenshot]]
     @State private var showsAppShortcuts = false
     @State private var historyRevision = 0
     @State private var failedRoles: Set<GlobalShortcutRole> = []
@@ -117,8 +117,8 @@ struct ShortcutsSettings: View {
             symbolName: AppFeature.screenshot.symbolName,
             isActive: featureHasActiveShortcut(.screenshot, roles: roles),
             count: roles.count,
-            isExpanded: expansionBinding(for: .screenshot))
-        if expandedFeatures.contains(.screenshot) {
+            isExpanded: expansionBinding(for: .screenshot, in: .capture))
+        if expandedFeatures[.capture, default: []].contains(.screenshot) {
             ForEach(roles) { role in
                 roleRow(role, showsFeatureContext: false)
                     .disclosureIndent()
@@ -136,8 +136,8 @@ struct ShortcutsSettings: View {
                 symbolName: featureSymbol(feature, roles: roles),
                 isActive: featureHasActiveShortcut(feature, roles: roles),
                 count: count,
-                isExpanded: expansionBinding(for: feature))
-            if expandedFeatures.contains(feature) {
+                isExpanded: expansionBinding(for: feature, in: group))
+            if expandedFeatures[group, default: []].contains(feature) {
                 if feature == .brightness {
                     if roles.allSatisfy(\.isKeyboardBrightness) {
                         KeyboardBrightnessShortcutToggle(isEnabled: $keyboardBrightnessShortcutsEnabled)
@@ -223,14 +223,14 @@ struct ShortcutsSettings: View {
         )
     }
 
-    private func expansionBinding(for feature: AppFeature) -> Binding<Bool> {
+    private func expansionBinding(for feature: AppFeature, in group: FeatureGroup) -> Binding<Bool> {
         Binding {
-            expandedFeatures.contains(feature)
+            expandedFeatures[group, default: []].contains(feature)
         } set: { expanded in
             if expanded {
-                expandedFeatures.insert(feature)
+                expandedFeatures[group, default: []].insert(feature)
             } else {
-                expandedFeatures.remove(feature)
+                expandedFeatures[group, default: []].remove(feature)
             }
         }
     }
