@@ -135,7 +135,6 @@ extension AppFeature {
         // Fan control keeps one, because it writes to the SMC through a
         // privileged helper rather than just reading a number.
         case .fanControl: return DefaultsKey.fanControlEnabled
-        case .mixer: return DefaultsKey.mixerEnabled
         default: return nil
         }
     }

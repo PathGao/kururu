@@ -982,12 +982,7 @@ struct SoundOutputSwitcherDevicePicker: View {
             }
             Text(text.devices)
                 .foregroundStyle(.secondary)
-            if !AppFeature.mixer.isAvailable {
-                Label(UXEntryStrings(l10n.language).outputDevicesNeedMixer, systemImage: "info.circle")
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                FeatureSwitchRow(feature: .mixer)
-            } else if devices.isEmpty {
+            if devices.isEmpty {
                 Label(mixerText.systemOutputNoDevices, systemImage: "speaker.slash")
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)

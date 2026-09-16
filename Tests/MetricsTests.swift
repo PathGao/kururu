@@ -101,6 +101,7 @@ struct MetricsTests {
         FinderTargetAcquisitionTests.run { expect($0, $1) }
         DisplayBrightnessShortcutTests.run { expect($0, $1) }
         BrightnessModuleMigrationTests.run { expect($0, $1) }
+        MixerSwitchMigrationTests.run { expect($0, $1) }
         FeatureLifecycleTests.run { expect($0, $1) }
         ShelfImportStoreTests.run { expect($0, $1) }
         CommandBarExecutorTests.run { expect($0, $1) }
@@ -24111,10 +24112,10 @@ UninstallerSelectionTests.run { expect($0, $1) }
                 && SettingsSectionAnchor.micMute.page == .micMute
                 && SettingsSectionAnchor.soundOutputSwitcher.page == .mixer,
                "the moved sections' anchors point at their new pages")
-        for feature in ["mixer", "soundOutputSwitcher"] {
+        for (feature, count) in [("mixer", 0), ("soundOutputSwitcher", 1)] {
             let rows = occurrences("FeatureSwitchRow(feature: .\(feature)",
                                    codeLines("Sources/Vorssaint/UI/Settings/MixerSettings.swift"))
-            expect(rows == 1, "the mixer page presents one control for \(feature), found \(rows)")
+            expect(rows == count, "the mixer page presents \(count) switch rows for \(feature), found \(rows)")
         }
         for (file, count) in [("MicMuteSettings.swift", 1), ("MusicBlockSettings.swift", 1)] {
             let gates = occurrences(".isAvailable", codeLines("Sources/Vorssaint/UI/Settings/\(file)"))
@@ -24669,7 +24670,7 @@ UninstallerSelectionTests.run { expect($0, $1) }
                "nine units hold more than one feature")
 
         expect(AppFeature.allCases.filter { $0.switchKey != nil }
-                == [.mixer, .fanControl],
+                == [.fanControl],
                "only independently stopped resource-owning members carry an availability switch")
         expect(AppFeature.allCases.filter(\.isSwitchedByPlacement)
                 == [.monitorCPU, .monitorGPU, .monitorMemory, .monitorNetwork, .monitorDisk, .monitorPower],
@@ -24687,9 +24688,8 @@ UninstallerSelectionTests.run { expect($0, $1) }
         expect(occurrences("plan.needCPU = AppFeature.monitorCPU.isAvailable(in: defaults)",
                            samplingPlanCode) == 1,
                "enabled CPU monitoring collects history independently of placement")
-        expect(AppFeature.allCases.compactMap(\.switchKey).count == 2
-                && Set(AppFeature.allCases.compactMap(\.switchKey)).count == 2,
-               "two resource-owning members carry distinct availability keys")
+        expect(AppFeature.allCases.compactMap(\.switchKey) == [DefaultsKey.fanControlEnabled],
+               "only fan control carries an availability key of its own")
         expect(AppFeature.allCases.allSatisfy { feature in
                    feature.switchKey.map { Defaults.registeredDefaults[$0] != nil } ?? true
                },
@@ -24893,7 +24893,7 @@ UninstallerSelectionTests.run { expect($0, $1) }
                 && AppFeature.monitorCPU.pageSwitchKey == nil
                 && AppFeature.dockClick.pageSwitchKey == nil
                 && AppFeature.textSnippets.pageSwitchKey == nil
-                && AppFeature.mixer.pageSwitchKey == DefaultsKey.mixerEnabled,
+                && AppFeature.mixer.pageSwitchKey == nil,
                "a row flips the member's switch, else its one enable key")
         expect(FeaturePreset.windows.enableKeys.contains(DefaultsKey.dockClickMinimize)
                 && !FeaturePreset.windows.enableKeys.contains(DefaultsKey.dockClickEnabled),
@@ -24971,8 +24971,8 @@ UninstallerSelectionTests.run { expect($0, $1) }
                 && FeatureUnit.mixer.group == .soundDevices && FeatureUnit.micMute.group == .soundDevices
                 && FeatureUnit.musicBlock.group == .soundDevices,
                "each sound unit owns the page of its name and stays in the sound group")
-        expect(AppFeature.micMute.switchKey == nil && AppFeature.mixer.switchKey == DefaultsKey.mixerEnabled,
-               "a unit of one needs no member switch; the mixer keeps its own beside the switcher")
+        expect(AppFeature.micMute.switchKey == nil && AppFeature.mixer.switchKey == nil,
+               "the mixer needs no member switch: the output switcher cannot run without it")
         expect(AppFeature.mixer.settingsDestination == FeatureSettingsDestination(.mixer),
                "the mixer's options live on its page now, not the panel layout")
         expect(!FileManager.default.fileExists(atPath: "Sources/Vorssaint/UI/Settings/SoundSettings.swift"),

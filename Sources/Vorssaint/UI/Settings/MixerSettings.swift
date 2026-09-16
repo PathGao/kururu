@@ -27,7 +27,6 @@ struct MixerSettings: View {
         SettingsForm {
             Group {
                 SettingsSection {
-                    FeatureSwitchRow(feature: .mixer)
                     if AppVolumeMixer.isSupported {
                         MixerAppScopePicker(hideInactiveApps: $hideInactiveApps, strings: mixerText)
                         SettingsExplanation(hierarchy.mixerScope)

@@ -1065,7 +1065,6 @@ enum Defaults {
         // Each switch ships as the feature's former availability did: on,
         // except the fan control opt-in.
         DefaultsKey.fanControlEnabled: false,
-        DefaultsKey.mixerEnabled: true,
         DefaultsKey.fanControlMode: FanControlMode.system.rawValue,
         DefaultsKey.fanControlCoolingLevel: FanControlPolicy.defaultCoolingLevel,
         DefaultsKey.fanControlCurves: FanControlConfiguration.defaultCurvesStorage,
@@ -1280,6 +1279,7 @@ enum Defaults {
         migrateMetricPlacementSwitches(in: defaults)
         migrateFeatureUnits(in: defaults)
         migrateBrightnessModuleGate(in: defaults)
+        migrateMixerSwitch(in: defaults)
         migrateWindowBehaviorUnit(in: defaults)
         migrateKeyboardUnit(in: defaults)
         migrateURLCleanerUnit(in: defaults)
@@ -1310,6 +1310,16 @@ enum Defaults {
         defaults.set(available && (legacy ?? false), forKey: FeatureUnit.brightness.availabilityKey)
         defaults.removeObject(forKey: DefaultsKey.brightnessControlEnabled)
         defaults.set(true, forKey: DefaultsKey.brightnessModuleGateMigrated)
+    }
+
+    /// The mixer's own switch duplicated its unit: the output switcher cannot work
+    /// without the mixer, so switching the mixer off already left the unit idle.
+    /// A saved off becomes an uninstalled unit. The key is kept for old backups.
+    static func migrateMixerSwitch(in defaults: UserDefaults) {
+        if defaults.object(forKey: DefaultsKey.mixerEnabled) as? Bool == false {
+            defaults.set(false, forKey: FeatureUnit.mixer.availabilityKey)
+        }
+        defaults.removeObject(forKey: DefaultsKey.mixerEnabled)
     }
 
     static func migrateBatteryTemperatureVisibility(in defaults: UserDefaults) {
