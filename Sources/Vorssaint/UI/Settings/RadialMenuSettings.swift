@@ -338,7 +338,6 @@ struct RadialMenuSettings: View {
             }
         )
 
-        Divider()
         VStack(alignment: .leading, spacing: 6) {
             SettingsControlRow(title: gestureText.trigger, systemImage: "hand.tap",
                                caption: gestureText.hint + "\n" + gestureText.reservation) {
@@ -383,7 +382,6 @@ struct RadialMenuSettings: View {
             }
         }
 
-        Divider()
         // One profile at a time owns the spread gesture; choosing it here moves it.
         SettingsToggleWithCaption(title: tuningText.spread, caption: tuningText.spreadHint,
                                   isOn: Binding(
@@ -396,7 +394,6 @@ struct RadialMenuSettings: View {
                                         }
                                     }))
 
-        Divider()
         VStack(alignment: .leading, spacing: 6) {
             SettingsControlRow(title: text.profileMouseTriggerLabel, systemImage: "computermouse",
                                caption: text.mouseTriggerRequirement) {

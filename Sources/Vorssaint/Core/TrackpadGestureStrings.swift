@@ -2,7 +2,7 @@
 import Foundation
 
 struct TrackpadGestureStrings {
-    var trigger = "Trackpad tap"
+    var trigger = "Open with a trackpad tap"
     var hint = "A light tap opens this menu and leaves it open. Tap again to close. Holding fingers does not select an action."
     var conflict = "This tap is assigned elsewhere. It will not run until only one target uses it. Choose Off or an unused tap."
     var reservation = "Pausing a feature keeps its tap assignment. Clear the assignment before using that tap elsewhere."
@@ -13,7 +13,7 @@ struct TrackpadGestureStrings {
 
     static func localized(_ language: AppLanguage) -> Self {
         if language == .zhHans {
-            return Self(trigger: "触控板轻点",
+            return Self(trigger: "用触控板轻点打开",
                 hint: "轻点后打开菜单并保持显示，再次轻点关闭。按住手指不会选择动作。",
                 conflict: "此轻点已分配给其他目标。冲突解除前不会触发，请选择关闭或未占用的轻点。",
                 reservation: "暂停功能会保留轻点绑定。如需分配给其他功能，请先清除原绑定。",
@@ -22,7 +22,7 @@ struct TrackpadGestureStrings {
                 unavailable: "无法读取触控板触摸输入，请连接支持的触控板后使用此轻点。")
         }
         if language == .zhTW || language == .zhHK {
-            return Self(trigger: "觸控板輕點",
+            return Self(trigger: "用觸控板輕點打開",
                 hint: "輕點後開啟選單並保持顯示，再次輕點關閉。按住手指不會選擇動作。",
                 conflict: "此輕點已分配給其他目標。衝突解除前不會觸發，請選擇關閉或未佔用的輕點。",
                 reservation: "暫停功能會保留輕點綁定。如需分配給其他功能，請先清除原綁定。",
