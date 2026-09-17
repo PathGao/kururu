@@ -51,25 +51,14 @@ struct MonitorEntrySettings: View {
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            SettingsExplanation(text.visibilityNote)
+            Button(text.chooseMenuBarMetrics) { SettingsRouter.shared.request(FeatureSettingsDestination(.menuBarIcon)) }
+            Button(text.choosePanelContents) { SettingsRouter.shared.request(FeatureSettingsDestination(.menuBarPanel, sectionAnchor: .panelConfiguration)) }
         }
         .onAppear(perform: refreshDisplayState)
         .onReceive(NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)) { _ in
             refreshDisplayState()
         }
         .onChange(of: features.revision) { _, _ in refreshDisplayState() }
-        SettingsSection(l10n.s.monitorMenuBarSection) {
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 200), alignment: .leading)],
-                      alignment: .leading, spacing: 12) {
-                ForEach(MenuBarMetricOrderEditor.availableOrder(MenuBarMetric.order(in: .standard))) { metric in
-                    MenuBarMetricPickerRow(metric: metric)
-                }
-            }
-            Button(text.iconLayout) { SettingsRouter.shared.request(FeatureSettingsDestination(.menuBarIcon)) }
-        }
-        SettingsSection(l10n.s.monitorPanelSection) {
-            Button(text.panelLayout) { SettingsRouter.shared.request(FeatureSettingsDestination(.menuBarPanel, sectionAnchor: .panelConfiguration)) }
-        }
     }
 
     private func refreshDisplayState() {
