@@ -178,7 +178,6 @@ extension Strings {
         colorPickerCaption: "Возьмите цвет любого пикселя на экране и скопируйте его в удобном формате.",
         colorPickerFormatLabel: "Формат копирования",
         colorPickerBareHexToggle: "Копировать без префикса #",
-        colorPickerPickNow: "Взять цвет",
         pastePlainName: "Вставить как обычный текст",
         pastePlainCaption: "Вставляет скопированное без цветов, шрифтов и форматирования. Оригинал остаётся в буфере обмена.",
 

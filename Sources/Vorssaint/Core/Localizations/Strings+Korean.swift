@@ -178,7 +178,6 @@ extension Strings {
         colorPickerCaption: "화면의 모든 픽셀 색상을 가져와 원하는 형식으로 복사합니다.",
         colorPickerFormatLabel: "복사 형식",
         colorPickerBareHexToggle: "앞의 # 없이 복사",
-        colorPickerPickNow: "색상 가져오기",
 
         pastePlainName: "일반 텍스트로 붙여넣기",
         pastePlainCaption: "색상, 글꼴, 서식 없이 복사한 내용을 붙여넣습니다. 원본은 클립보드에 유지됩니다.",

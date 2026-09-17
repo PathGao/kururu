@@ -307,7 +307,6 @@ struct Strings {
     var colorPickerCaption: String = "Grab the color of any pixel on screen and copy it in your favorite format."
     var colorPickerFormatLabel: String = "Copied format"
     var colorPickerBareHexToggle: String = "Copy without the # prefix"
-    var colorPickerPickNow: String = "Pick color"
     var pastePlainName: String = "Paste as plain text"
     var pastePlainCaption: String = "Pastes what you copied without colors, fonts or formatting. The original stays on the clipboard."
 
@@ -1121,7 +1120,6 @@ extension Strings {
         colorPickerCaption: "Capture a cor de qualquer pixel da tela e copie no formato que preferir.",
         colorPickerFormatLabel: "Formato copiado",
         colorPickerBareHexToggle: "Copiar sem o prefixo #",
-        colorPickerPickNow: "Capturar cor",
         pastePlainName: "Colar como texto puro",
         pastePlainCaption: "Cola o que foi copiado sem cores, fontes ou formatação. O conteúdo original continua no clipboard.",
 

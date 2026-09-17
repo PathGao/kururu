@@ -178,7 +178,6 @@ extension Strings {
         colorPickerCaption: "画面上の任意のピクセルの色を取得し、好みの形式でコピーします。",
         colorPickerFormatLabel: "コピー形式",
         colorPickerBareHexToggle: "先頭の # を付けずにコピー",
-        colorPickerPickNow: "色を取得",
         pastePlainName: "プレーンテキストとしてペースト",
         pastePlainCaption: "コピーした内容を色・フォント・書式なしでペーストします。元の内容はクリップボードに残ります。",
         switcherSection: "アプリスイッチャー",

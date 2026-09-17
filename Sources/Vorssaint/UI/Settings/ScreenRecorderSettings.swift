@@ -9,7 +9,6 @@ import SwiftUI
 struct ScreenRecordingCaptureSettings: View {
     @ObservedObject private var l10n = L10n.shared
     @ObservedObject private var permissions = Permissions.shared
-    @ObservedObject private var service = ScreenRecorderService.shared
     @AppStorage(DefaultsKey.recorderCountdown) private var countdown = 3
     @AppStorage(DefaultsKey.recorderQuality) private var qualityRaw =
         RecorderSupport.Quality.balanced.rawValue
@@ -28,37 +27,13 @@ struct ScreenRecordingCaptureSettings: View {
         FeatureStrings.recorder(l10n.language)
     }
 
-    private var screenshotStrings: ScreenshotFeatureStrings {
-        FeatureStrings.screenshot(l10n.language)
-    }
-
     var body: some View {
         Group {
-            SettingsSection {
-                Button {
-                    ScreenRecorderService.shared.toggle()
-                } label: {
-                    Label(service.isRecording ? strings.stopButton : strings.startButton,
-                          systemImage: service.isRecording ? "stop.circle" : "record.circle")
-                }
-                Text(service.isRecording
-                     ? RecorderSupport.elapsedLabel(seconds: service.elapsedSeconds)
-                     : strings.panelCaption)
-                    .font(SettingsTypography.caption)
-                    .foregroundStyle(.secondary)
-                    .monospacedDigit()
-                if !permissions.screenRecording {
-                    PermissionRow(kind: .screenRecording)
-                }
+            SettingsSection(title: AppFeature.screenRecorder.name(l10n.s, language: l10n.language),
+                            systemImage: "record.circle") {
                 if !permissions.accessibility {
                     PermissionRow(kind: .accessibility)
                 }
-            } header: {
-                Text(AppFeature.screenRecorder.name(l10n.s, language: l10n.language))
-            }
-            .settingsSectionAnchor(.screenRecorder)
-
-            SettingsSection {
                 Picker(strings.countdownLabel, selection: $countdown) {
                     ForEach(ScreenshotSupport.allowedDelays, id: \.self) { seconds in
                         if seconds == 0 {
@@ -101,9 +76,6 @@ struct ScreenRecordingCaptureSettings: View {
                         .font(SettingsTypography.caption)
                         .foregroundStyle(.secondary)
                 }
-            }
-
-            SettingsSection {
                 folderRow
                 DisclosureHeaderRow(isExpanded: $showsMoreOptions) {
                     Text(strings.moreOptions)
@@ -143,6 +115,7 @@ struct ScreenRecordingCaptureSettings: View {
                     .disclosureIndent()
                 }
             }
+            .settingsSectionAnchor(.screenRecorder)
         }
     }
 

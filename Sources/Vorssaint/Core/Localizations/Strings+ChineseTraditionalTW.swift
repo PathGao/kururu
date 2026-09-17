@@ -178,7 +178,6 @@ extension Strings {
         colorPickerCaption: "取得螢幕上任意像素的顏色，並以你喜歡的格式拷貝。",
         colorPickerFormatLabel: "拷貝格式",
         colorPickerBareHexToggle: "拷貝時不帶 # 前綴",
-        colorPickerPickNow: "擷取顏色",
         pastePlainName: "貼上為純文字",
         pastePlainCaption: "貼上拷貝的內容時去除顏色、字體和格式。原始內容仍保留在剪貼簿中。",
 

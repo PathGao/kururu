@@ -3,31 +3,15 @@
 
 import SwiftUI
 
-/// Screenshot-specific sections inside the shared screen-capture page.
+/// Screenshot results inside the shared screen-capture page.
 struct ScreenshotCaptureSettings: View {
     @ObservedObject private var l10n = L10n.shared
-    @ObservedObject private var permissions = Permissions.shared
-    @ObservedObject private var service = ScreenshotService.shared
-    @AppStorage(DefaultsKey.screenshotFullScreenShortcutEnabled)
-    private var fullScreenShortcutEnabled = false
-    @AppStorage(DefaultsKey.screenshotLastCaptureShortcutEnabled)
-    private var lastCaptureShortcutEnabled = false
-    @AppStorage(DefaultsKey.screenshotClipboardShortcutEnabled)
-    private var clipboardShortcutEnabled = false
-    @AppStorage(DefaultsKey.screenshotFreeze) private var freeze = true
     @AppStorage(DefaultsKey.screenshotSaveFolder) private var saveFolder = ""
     @AppStorage(DefaultsKey.screenshotSaveSubfolder) private var saveSubfolder = ""
     @AppStorage(DefaultsKey.screenshotFileNamePattern) private var fileNamePattern = ""
     @AppStorage(DefaultsKey.screenshotFileNumberStart) private var numberStart = 1
     @AppStorage(DefaultsKey.screenshotFileNumberNext) private var nextNumber = 1
-    @AppStorage(DefaultsKey.screenshotIncludePointer) private var includePointer = false
-    @AppStorage(DefaultsKey.screenshotLoupeStartsOn) private var loupeStartsOn = false
-    @AppStorage(DefaultsKey.screenshotLoupeRememberZoom) private var rememberLoupeZoom = false
-    @AppStorage(DefaultsKey.screenshotLoupeDefaultZoom) private var loupeDefaultZoom = 1.0
-    @AppStorage(DefaultsKey.screenshotLoupeSteppedZoomByDefault)
-    private var steppedLoupeZoomByDefault = false
     @AppStorage(DefaultsKey.screenshotDownscale) private var downscale = false
-    @AppStorage(DefaultsKey.screenshotDelay) private var delay = 0
     @AppStorage(DefaultsKey.screenshotDefaultAction) private var defaultActionRaw = ""
     @AppStorage(DefaultsKey.screenshotToolOrder) private var toolOrderRaw =
         ScreenshotSupport.Tool.defaultOrderStorage
@@ -43,115 +27,7 @@ struct ScreenshotCaptureSettings: View {
         Group {
             SettingsSection(title: AppFeature.screenshot.name(l10n.s, language: l10n.language),
                             systemImage: "camera.viewfinder") {
-                HStack(spacing: 10) {
-                    Button {
-                        ScreenshotService.shared.capture()
-                    } label: {
-                        Label(strings.captureButton, systemImage: "camera.viewfinder")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .settingsAction(.primary)
-                    Button {
-                        ScreenshotService.shared.captureScrolling()
-                    } label: {
-                        Label(strings.scrollingCaptureButton, systemImage: "rectangle.stack")
-                            .frame(maxWidth: .infinity)
-                    }
-                }
-                .controlSize(.large)
-                SettingsInfo(text: strings.panelCaption, systemImage: "camera.viewfinder")
-                Toggle(strings.fullScreenShortcutTitle, isOn: $fullScreenShortcutEnabled)
-                    .onChange(of: fullScreenShortcutEnabled) { _, _ in
-                        ScreenshotService.shared.syncWithPreferences()
-                    }
-                ShortcutPreferenceRow(role: .screenshotFullScreen,
-                                      isEnabled: fullScreenShortcutEnabled) {
-                    ScreenshotService.shared.syncWithPreferences()
-                }
-                if fullScreenShortcutEnabled, service.fullScreenShortcutRegistrationFailed {
-                    Text(l10n.s.shortcutUnavailable)
-                        .font(SettingsTypography.caption)
-                        .foregroundStyle(.orange)
-                }
-                Toggle(strings.editLastCapture, isOn: $lastCaptureShortcutEnabled)
-                    .onChange(of: lastCaptureShortcutEnabled) { _, _ in
-                        ScreenshotService.shared.syncWithPreferences()
-                    }
-                ShortcutPreferenceRow(role: .screenshotLastCapture,
-                                      isEnabled: lastCaptureShortcutEnabled) {
-                    ScreenshotService.shared.syncWithPreferences()
-                }
-                if lastCaptureShortcutEnabled,
-                   service.lastCaptureShortcutRegistrationFailed {
-                    Text(l10n.s.shortcutUnavailable)
-                        .font(SettingsTypography.caption)
-                        .foregroundStyle(.orange)
-                }
-                Toggle(strings.editClipboardImage, isOn: $clipboardShortcutEnabled)
-                    .onChange(of: clipboardShortcutEnabled) { _, _ in
-                        ScreenshotService.shared.syncWithPreferences()
-                    }
-                ShortcutPreferenceRow(role: .screenshotClipboard,
-                                      isEnabled: clipboardShortcutEnabled) {
-                    ScreenshotService.shared.syncWithPreferences()
-                }
-                if clipboardShortcutEnabled, service.clipboardShortcutRegistrationFailed {
-                    Text(l10n.s.shortcutUnavailable)
-                        .font(SettingsTypography.caption)
-                        .foregroundStyle(.orange)
-                }
-                if !permissions.screenRecording {
-                    PermissionRow(kind: .screenRecording)
-                }
-            }
-            .settingsSectionAnchor(.screenshot)
-
-            SettingsSection(title: UXEntryStrings(l10n.language).captureOptions, systemImage: "viewfinder") {
-                SettingsToggleWithCaption(title: strings.freezeToggle,
-                                          caption: strings.freezeCaption, isOn: $freeze)
-                SettingsControlRow(title: strings.delayLabel, systemImage: "timer") {
-                    Picker(strings.delayLabel, selection: $delay) {
-                        ForEach(ScreenshotSupport.allowedDelays, id: \.self) { seconds in
-                            if seconds == 0 {
-                                Text(strings.delayOff).tag(0)
-                            } else {
-                                Text(String(format: strings.delaySecondsFormat, seconds)).tag(seconds)
-                            }
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    .labelsHidden()
-                }
-                Toggle(strings.pointerToggle, isOn: $includePointer)
                 previewPositionRow
-                DisclosureGroup {
-                    Toggle(strings.loupeStartsOnToggle, isOn: $loupeStartsOn)
-                    Toggle(strings.loupeRememberZoomToggle, isOn: $rememberLoupeZoom)
-                    if !rememberLoupeZoom {
-                        Picker(strings.loupeDefaultZoomLabel, selection: $loupeDefaultZoom) {
-                            ForEach(ScreenshotSupport.captureLoupeDefaultZooms, id: \.self) { zoom in
-                                Text(zoom.formatted(
-                                    .number.precision(.fractionLength(0...1))) + "×")
-                                    .tag(zoom)
-                            }
-                        }
-                    }
-                    Picker(strings.loupeWheelZoomLabel,
-                           selection: $steppedLoupeZoomByDefault) {
-                        Text(strings.loupeZoomFast).tag(false)
-                        Text(strings.loupeZoomStepped).tag(true)
-                    }
-                    .pickerStyle(.segmented)
-                    Text(strings.loupeZoomOptionCaption)
-                        .font(SettingsTypography.caption)
-                        .foregroundStyle(.secondary)
-                } label: {
-                    Label(FeatureStrings.recorder(l10n.language).moreOptions,
-                          systemImage: "slider.horizontal.3")
-                }
-            }
-
-            SettingsSection(title: UXEntryStrings(l10n.language).outputSettings, systemImage: "square.and.arrow.down") {
                 defaultActionRow
                 SettingsToggleWithCaption(title: strings.autoCopyToggle,
                                           caption: strings.autoCopyCaption, isOn: $copyToClipboard)
@@ -160,7 +36,13 @@ struct ScreenshotCaptureSettings: View {
                 fileNameRow
                 SettingsToggleWithCaption(title: strings.downscaleToggle,
                                           caption: strings.downscaleCaption, isOn: $downscale)
+                Button {
+                    ScreenshotService.shared.captureScrolling()
+                } label: {
+                    Label(strings.scrollingCaptureButton, systemImage: "rectangle.stack")
+                }
             }
+            .settingsSectionAnchor(.screenshot)
 
             SettingsSection(title: strings.toolShortcutsTitle, systemImage: "slider.horizontal.3") {
                 ScreenshotToolOrderControls(orderRaw: $toolOrderRaw,
@@ -326,6 +208,138 @@ struct ScreenshotCaptureSettings: View {
         panel.allowsMultipleSelection = false
         if panel.runModal() == .OK, let url = panel.url {
             saveFolder = url.path
+        }
+    }
+}
+
+/// Screenshot shortcuts that act without opening the capture overlay.
+struct ScreenshotExtraShortcutRows: View {
+    @ObservedObject private var l10n = L10n.shared
+    @ObservedObject private var service = ScreenshotService.shared
+    @AppStorage(DefaultsKey.screenshotFullScreenShortcutEnabled)
+    private var fullScreenShortcutEnabled = false
+    @AppStorage(DefaultsKey.screenshotLastCaptureShortcutEnabled)
+    private var lastCaptureShortcutEnabled = false
+    @AppStorage(DefaultsKey.screenshotClipboardShortcutEnabled)
+    private var clipboardShortcutEnabled = false
+
+    private var strings: ScreenshotFeatureStrings {
+        FeatureStrings.screenshot(l10n.language)
+    }
+
+    var body: some View {
+        Toggle(strings.fullScreenShortcutTitle, isOn: $fullScreenShortcutEnabled)
+            .onChange(of: fullScreenShortcutEnabled) { _, _ in
+                ScreenshotService.shared.syncWithPreferences()
+            }
+        ShortcutPreferenceRow(role: .screenshotFullScreen,
+                              isEnabled: fullScreenShortcutEnabled) {
+            ScreenshotService.shared.syncWithPreferences()
+        }
+        if fullScreenShortcutEnabled, service.fullScreenShortcutRegistrationFailed {
+            Text(l10n.s.shortcutUnavailable)
+                .font(SettingsTypography.caption)
+                .foregroundStyle(.orange)
+        }
+        Toggle(strings.editLastCapture, isOn: $lastCaptureShortcutEnabled)
+            .onChange(of: lastCaptureShortcutEnabled) { _, _ in
+                ScreenshotService.shared.syncWithPreferences()
+            }
+        ShortcutPreferenceRow(role: .screenshotLastCapture,
+                              isEnabled: lastCaptureShortcutEnabled) {
+            ScreenshotService.shared.syncWithPreferences()
+        }
+        if lastCaptureShortcutEnabled, service.lastCaptureShortcutRegistrationFailed {
+            Text(l10n.s.shortcutUnavailable)
+                .font(SettingsTypography.caption)
+                .foregroundStyle(.orange)
+        }
+        Toggle(strings.editClipboardImage, isOn: $clipboardShortcutEnabled)
+            .onChange(of: clipboardShortcutEnabled) { _, _ in
+                ScreenshotService.shared.syncWithPreferences()
+            }
+        ShortcutPreferenceRow(role: .screenshotClipboard,
+                              isEnabled: clipboardShortcutEnabled) {
+            ScreenshotService.shared.syncWithPreferences()
+        }
+        if clipboardShortcutEnabled, service.clipboardShortcutRegistrationFailed {
+            Text(l10n.s.shortcutUnavailable)
+                .font(SettingsTypography.caption)
+                .foregroundStyle(.orange)
+        }
+    }
+}
+
+/// What the shared selection overlay does, whichever tool it opened on.
+struct CaptureSelectionRows: View {
+    let tools: [ScreenCaptureTool]
+    @ObservedObject private var l10n = L10n.shared
+    @AppStorage(DefaultsKey.screenshotHideVorssaintWindows) private var hideVorssaintWindows = true
+    @AppStorage(DefaultsKey.screenshotShowLastRegion) private var showLastRegion = true
+    @AppStorage(DefaultsKey.screenshotFreeze) private var freeze = true
+    @AppStorage(DefaultsKey.screenshotDelay) private var delay = 0
+    @AppStorage(DefaultsKey.screenshotIncludePointer) private var includePointer = false
+    @AppStorage(DefaultsKey.screenshotLoupeStartsOn) private var loupeStartsOn = false
+    @AppStorage(DefaultsKey.screenshotLoupeRememberZoom) private var rememberLoupeZoom = false
+    @AppStorage(DefaultsKey.screenshotLoupeDefaultZoom) private var loupeDefaultZoom = 1.0
+    @AppStorage(DefaultsKey.screenshotLoupeSteppedZoomByDefault)
+    private var steppedLoupeZoomByDefault = false
+
+    private var strings: ScreenshotFeatureStrings {
+        FeatureStrings.screenshot(l10n.language)
+    }
+
+    var body: some View {
+        Toggle(strings.lastRegionToggle, isOn: $showLastRegion)
+        // Recording always keeps kururu's windows out of the picture.
+        if tools.contains(where: { $0 != .recording }) {
+            Toggle(strings.hideVorssaintWindowsToggle, isOn: $hideVorssaintWindows)
+        }
+        if tools.contains(.screenshot) {
+            SettingsToggleWithCaption(title: strings.freezeToggle,
+                                      caption: strings.freezeCaption, isOn: $freeze)
+            SettingsControlRow(title: strings.delayLabel, systemImage: "timer") {
+                Picker(strings.delayLabel, selection: $delay) {
+                    ForEach(ScreenshotSupport.allowedDelays, id: \.self) { seconds in
+                        if seconds == 0 {
+                            Text(strings.delayOff).tag(0)
+                        } else {
+                            Text(String(format: strings.delaySecondsFormat, seconds)).tag(seconds)
+                        }
+                    }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+            }
+            Toggle(strings.pointerToggle, isOn: $includePointer)
+            if tools.count > 1 {
+                SettingsCaptionText(UXEntryStrings(l10n.language).screenshotOnlyOptions)
+            }
+        }
+        DisclosureGroup {
+            Toggle(strings.loupeStartsOnToggle, isOn: $loupeStartsOn)
+            Toggle(strings.loupeRememberZoomToggle, isOn: $rememberLoupeZoom)
+            if !rememberLoupeZoom {
+                Picker(strings.loupeDefaultZoomLabel, selection: $loupeDefaultZoom) {
+                    ForEach(ScreenshotSupport.captureLoupeDefaultZooms, id: \.self) { zoom in
+                        Text(zoom.formatted(
+                            .number.precision(.fractionLength(0...1))) + "×")
+                            .tag(zoom)
+                    }
+                }
+            }
+            Picker(strings.loupeWheelZoomLabel,
+                   selection: $steppedLoupeZoomByDefault) {
+                Text(strings.loupeZoomFast).tag(false)
+                Text(strings.loupeZoomStepped).tag(true)
+            }
+            .pickerStyle(.segmented)
+            Text(strings.loupeZoomOptionCaption)
+                .font(SettingsTypography.caption)
+                .foregroundStyle(.secondary)
+        } label: {
+            Label(FeatureStrings.recorder(l10n.language).moreOptions,
+                  systemImage: "slider.horizontal.3")
         }
     }
 }

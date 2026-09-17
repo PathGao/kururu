@@ -178,7 +178,6 @@ extension Strings {
         colorPickerCaption: "Ekrandaki herhangi bir pikselin rengini alın ve istediğiniz biçimde kopyalayın.",
         colorPickerFormatLabel: "Kopyalama biçimi",
         colorPickerBareHexToggle: "# öneki olmadan kopyala",
-        colorPickerPickNow: "Renk seç",
         pastePlainName: "Düz metin olarak yapıştır",
         pastePlainCaption: "Kopyalananı renk, yazı tipi ve biçimlendirme olmadan yapıştırır. Orijinal panoda kalır.",
         switcherSection: "Uygulama değiştirici",

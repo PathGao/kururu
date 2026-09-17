@@ -178,7 +178,6 @@ extension Strings {
         colorPickerCaption: "Capturez la couleur de n’importe quel pixel de l’écran et copiez-la dans le format de votre choix.",
         colorPickerFormatLabel: "Format copié",
         colorPickerBareHexToggle: "Copier sans le préfixe #",
-        colorPickerPickNow: "Prélever la couleur",
         pastePlainName: "Coller en texte brut",
         pastePlainCaption: "Colle ce qui a été copié sans couleurs, polices ni mise en forme. L’original reste dans le presse-papiers.",
         switcherSection: "Sélecteur d’apps",

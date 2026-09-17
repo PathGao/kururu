@@ -16648,11 +16648,12 @@ UninstallerSelectionTests.run { expect($0, $1) }
         let captureSettingsSource = (try? String(
             contentsOfFile: "Sources/Vorssaint/UI/Settings/ScreenCaptureSettings.swift",
             encoding: .utf8)) ?? ""
-        expect(captureSettingsSource.contains("selectedTool")
-                && captureSettingsSource.contains(".pickerStyle(.segmented)")
-                && captureSettingsSource.contains("ToolShortcutRows(tool: currentTool")
-                && captureSettingsSource.contains("RecentCapturesShortcutRows()"),
-               "the capture page keeps tool and shared-history shortcuts in the top section")
+        expect(!captureSettingsSource.contains("selectedTool")
+                && captureSettingsSource.contains("ForEach(availableTools, id: \\.self)")
+                && captureSettingsSource.contains("ToolShortcutRows(tool: tool")
+                && captureSettingsSource.contains("RecentCapturesShortcutRows()")
+                && captureSettingsSource.contains("CaptureSelectionRows(tools: availableTools)"),
+               "the capture page lists every installed tool's shortcut and the shared overlay options once, without a tool switch")
         let recentCaptureServiceSource = (try? String(
             contentsOfFile: "Sources/Vorssaint/Services/QuickTools/RecentCaptureService.swift",
             encoding: .utf8)) ?? ""
