@@ -12,9 +12,6 @@ struct ScreenCaptureSettings: View {
     @ObservedObject private var router = SettingsRouter.shared
     @ObservedObject private var features = FeatureRuntime.shared
     @State private var selectedTool = ScreenCaptureTool.screenshot
-    // Every tool shares the selection overlay, so these two live above the tool switch.
-    @AppStorage(DefaultsKey.screenshotHideVorssaintWindows) private var hideVorssaintWindows = true
-    @AppStorage(DefaultsKey.screenshotShowLastRegion) private var showLastRegion = true
 
     private var strings: ScreenshotFeatureStrings {
         FeatureStrings.screenshot(l10n.language)
@@ -49,10 +46,6 @@ struct ScreenCaptureSettings: View {
                     if AppFeature.screenshot.isAvailable || AppFeature.screenRecorder.isAvailable {
                         RecentCapturesShortcutRows()
                     }
-                    if currentTool != .recording {
-                        Toggle(strings.hideVorssaintWindowsToggle, isOn: $hideVorssaintWindows)
-                    }
-                    Toggle(strings.lastRegionToggle, isOn: $showLastRegion)
                 }
             }
 
