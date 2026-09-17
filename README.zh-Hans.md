@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="Resources/Brand/logo.png" alt="kururu 章鱼图标" width="128" height="128">
+  <img src="Resources/Brand/logo.png" alt="kururu 角灵图标" width="128" height="128">
 </p>
 
 <h1 align="center">kururu</h1>
