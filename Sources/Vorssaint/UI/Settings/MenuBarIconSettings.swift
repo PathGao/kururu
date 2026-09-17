@@ -55,37 +55,41 @@ struct MenuBarIconSettings: View {
                         .font(SettingsTypography.caption).foregroundStyle(.secondary)
                     MenuBarUsageBarSettings(strings: appearanceStrings)
                 } else {
-                    Toggle(l10n.s.monitorCombineTemperatures, isOn: $combineTemperatures)
-                    Text(l10n.s.monitorCombineTemperaturesCaption)
-                        .font(SettingsTypography.caption).foregroundStyle(.secondary)
+                    SettingsToggleWithCaption(title: l10n.s.monitorCombineTemperatures,
+                                              caption: l10n.s.monitorCombineTemperaturesCaption,
+                                              showsCaptionInline: false,
+                                              isOn: $combineTemperatures)
                 }
                 Picker(l10n.s.menuBarSpacingLabel, selection: $metricSpacing) {
                     Text(l10n.s.menuBarSpacingStandard).tag("standard")
                     Text(l10n.s.menuBarSpacingCompact).tag("compact")
                 }
                 .pickerStyle(.segmented)
-                Toggle(l10n.s.monitorSeparateMenuBarMetrics, isOn: $separateMetrics)
                 if appearance.allowsCombinedTemperatures {
-                    Text(l10n.s.monitorSeparateMenuBarMetricsCaption)
-                        .font(SettingsTypography.caption).foregroundStyle(.secondary)
+                    SettingsToggleWithCaption(title: l10n.s.monitorSeparateMenuBarMetrics,
+                                              caption: l10n.s.monitorSeparateMenuBarMetricsCaption,
+                                              showsCaptionInline: false,
+                                              isOn: $separateMetrics)
+                } else {
+                    Toggle(l10n.s.monitorSeparateMenuBarMetrics, isOn: $separateMetrics)
                 }
             }
             SettingsSection {
-                Toggle(l10n.s.menuBarHideIconToggle, isOn: $hideIconWithMetrics)
-                Text(l10n.s.menuBarHideIconCaption)
-                    .font(SettingsTypography.caption).foregroundStyle(.secondary)
-                Button(l10n.s.showMenuBarIcon) {
-                    appDelegate()?.reshowStatusItem()
+                SettingsToggleWithCaption(title: l10n.s.menuBarHideIconToggle,
+                                          caption: l10n.s.menuBarHideIconCaption,
+                                          showsCaptionInline: false,
+                                          isOn: $hideIconWithMetrics)
+                if AppFeature.micMute.isAvailable {
+                    SettingsToggleWithCaption(title: FeatureStrings.micMute(l10n.language).menuBarToggle,
+                                              caption: FeatureStrings.micMute(l10n.language).menuBarCaption,
+                                              showsCaptionInline: false,
+                                              isOn: $micMenuBarIndicator)
                 }
-                Text(l10n.s.showMenuBarIconCaption)
-                    .font(SettingsTypography.caption).foregroundStyle(.secondary)
-            }
-            if AppFeature.micMute.isAvailable {
-                SettingsSection(AppFeature.micMute.name(l10n.s, language: l10n.language)) {
-                    Toggle(FeatureStrings.micMute(l10n.language).menuBarToggle,
-                           isOn: $micMenuBarIndicator)
-                    Text(FeatureStrings.micMute(l10n.language).menuBarCaption)
-                        .font(SettingsTypography.caption).foregroundStyle(.secondary)
+                HStack(spacing: 6) {
+                    Button(l10n.s.showMenuBarIcon) {
+                        appDelegate()?.reshowStatusItem()
+                    }
+                    SettingsHelpButton(title: l10n.s.showMenuBarIcon, text: l10n.s.showMenuBarIconCaption)
                 }
             }
         }
@@ -338,39 +342,54 @@ private struct MenuBarMetricToken: View {
     }
 }
 
-/// Lays tokens left to right and wraps to a new line when the row is full.
+/// Lays tokens left to right, wraps when a row is full, and centers each token
+/// vertically in its row so controls of different heights line up.
 private struct MenuBarMetricTokenLayout: Layout {
     var spacing: CGFloat
 
+    private func rows(_ subviews: Subviews, maxWidth: CGFloat) -> [(indices: [Int], height: CGFloat)] {
+        var rows: [(indices: [Int], height: CGFloat)] = []
+        var x: CGFloat = 0
+        for index in subviews.indices {
+            let size = subviews[index].sizeThatFits(.unspecified)
+            if rows.isEmpty || (x > 0 && x + size.width > maxWidth) {
+                rows.append(([], 0))
+                x = 0
+            }
+            rows[rows.count - 1].indices.append(index)
+            rows[rows.count - 1].height = max(rows[rows.count - 1].height, size.height)
+            x += size.width + spacing
+        }
+        return rows
+    }
+
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
         let maxWidth = proposal.width ?? .infinity
-        var x: CGFloat = 0, y: CGFloat = 0, rowHeight: CGFloat = 0, widest: CGFloat = 0
-        for subview in subviews {
-            let size = subview.sizeThatFits(.unspecified)
-            if x > 0, x + size.width > maxWidth {
-                y += rowHeight + spacing
-                x = 0
-                rowHeight = 0
+        let rows = rows(subviews, maxWidth: maxWidth)
+        var height = spacing * CGFloat(max(0, rows.count - 1))
+        for row in rows { height += row.height }
+        var widest: CGFloat = 0
+        for row in rows {
+            var width = spacing * CGFloat(max(0, row.indices.count - 1))
+            for index in row.indices {
+                width += subviews[index].sizeThatFits(.unspecified).width
             }
-            x += size.width + spacing
-            rowHeight = max(rowHeight, size.height)
-            widest = max(widest, x - spacing)
+            widest = max(widest, width)
         }
-        return CGSize(width: maxWidth.isFinite ? maxWidth : widest, height: y + rowHeight)
+        return CGSize(width: maxWidth.isFinite ? maxWidth : widest, height: height)
     }
 
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        var x = bounds.minX, y = bounds.minY, rowHeight: CGFloat = 0
-        for subview in subviews {
-            let size = subview.sizeThatFits(.unspecified)
-            if x > bounds.minX, x + size.width > bounds.maxX {
-                y += rowHeight + spacing
-                x = bounds.minX
-                rowHeight = 0
+        var y = bounds.minY
+        for row in rows(subviews, maxWidth: bounds.width) {
+            var x = bounds.minX
+            for index in row.indices {
+                let size = subviews[index].sizeThatFits(.unspecified)
+                subviews[index].place(at: CGPoint(x: x, y: y + (row.height - size.height) / 2),
+                                      proposal: ProposedViewSize(size))
+                x += size.width + spacing
             }
-            subview.place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(size))
-            x += size.width + spacing
-            rowHeight = max(rowHeight, size.height)
+            y += row.height + spacing
         }
     }
 }
