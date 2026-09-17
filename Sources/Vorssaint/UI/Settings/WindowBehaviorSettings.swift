@@ -58,7 +58,6 @@ struct WindowBehaviorSettings: View {
                     if (quitEnabled || closeEnabled) && !permissions.accessibility {
                         PermissionRow(kind: .accessibility)
                     }
-                    Divider()
                     shortcutSection(shortcut: .quit,
                                     enabled: $quitEnabled,
                                     mode: $quitMode,
@@ -67,7 +66,6 @@ struct WindowBehaviorSettings: View {
                                     extraModifier: $quitExtraModifier,
                                     scope: $quitScope,
                                     showFeedback: $quitShowFeedback)
-                    Divider()
                     shortcutSection(shortcut: .close,
                                     enabled: $closeEnabled,
                                     mode: $closeMode,
@@ -114,68 +112,71 @@ struct WindowBehaviorSettings: View {
                                       isOn: enabled)
                 .onChange(of: enabled.wrappedValue) { _, _ in service.syncWithPreferences() }
 
-            Picker(strings.mode, selection: mode) {
-                Text(strings.hold).tag(QuitProtectionMode.hold.rawValue)
-                Text(strings.doublePress).tag(QuitProtectionMode.doublePress.rawValue)
-                Text(strings.extraModifier).tag(QuitProtectionMode.extraModifier.rawValue)
-            }
-            .onChange(of: mode.wrappedValue) { _, _ in service.syncWithPreferences() }
-
-            if currentMode == .hold {
-                Slider(value: holdDuration,
-                       in: QuitProtectionSupport.holdDurationRange,
-                       step: 50) {
-                    Text(strings.holdDuration)
-                } minimumValueLabel: {
-                    Text("250 ms").font(.caption2)
-                } maximumValueLabel: {
-                    Text("2 s").font(.caption2)
+            Group {
+                Picker(strings.mode, selection: mode) {
+                    Text(strings.hold).tag(QuitProtectionMode.hold.rawValue)
+                    Text(strings.doublePress).tag(QuitProtectionMode.doublePress.rawValue)
+                    Text(strings.extraModifier).tag(QuitProtectionMode.extraModifier.rawValue)
                 }
-                .onChange(of: holdDuration.wrappedValue) { _, _ in service.syncWithPreferences() }
-                Text("\(Int(holdDuration.wrappedValue.rounded())) ms")
-                    .font(SettingsTypography.caption)
-                    .foregroundStyle(.secondary)
-            }
+                .onChange(of: mode.wrappedValue) { _, _ in service.syncWithPreferences() }
 
-            if currentMode == .doublePress {
-                Slider(value: doubleInterval,
-                       in: QuitProtectionSupport.doublePressIntervalRange,
-                       step: 50) {
-                    Text(strings.doublePressInterval)
-                } minimumValueLabel: {
-                    Text("200 ms").font(.caption2)
-                } maximumValueLabel: {
-                    Text("1.5 s").font(.caption2)
+                if currentMode == .hold {
+                    Slider(value: holdDuration,
+                           in: QuitProtectionSupport.holdDurationRange,
+                           step: 50) {
+                        Text(strings.holdDuration)
+                    } minimumValueLabel: {
+                        Text("250 ms").font(.caption2)
+                    } maximumValueLabel: {
+                        Text("2 s").font(.caption2)
+                    }
+                    .onChange(of: holdDuration.wrappedValue) { _, _ in service.syncWithPreferences() }
+                    Text("\(Int(holdDuration.wrappedValue.rounded())) ms")
+                        .font(SettingsTypography.caption)
+                        .foregroundStyle(.secondary)
                 }
-                .onChange(of: doubleInterval.wrappedValue) { _, _ in service.syncWithPreferences() }
-                Text("\(Int(doubleInterval.wrappedValue.rounded())) ms")
-                    .font(SettingsTypography.caption)
-                    .foregroundStyle(.secondary)
-            }
 
-            if currentMode == .extraModifier {
-                Picker(strings.modifier, selection: extraModifier) {
-                    Text("\(strings.shiftKey) (⇧)").tag(QuitProtectionExtraModifier.shift.rawValue)
-                    Text("\(strings.optionKey) (⌥)").tag(QuitProtectionExtraModifier.option.rawValue)
-                    Text("\(strings.controlKey) (⌃)").tag(QuitProtectionExtraModifier.control.rawValue)
+                if currentMode == .doublePress {
+                    Slider(value: doubleInterval,
+                           in: QuitProtectionSupport.doublePressIntervalRange,
+                           step: 50) {
+                        Text(strings.doublePressInterval)
+                    } minimumValueLabel: {
+                        Text("200 ms").font(.caption2)
+                    } maximumValueLabel: {
+                        Text("1.5 s").font(.caption2)
+                    }
+                    .onChange(of: doubleInterval.wrappedValue) { _, _ in service.syncWithPreferences() }
+                    Text("\(Int(doubleInterval.wrappedValue.rounded())) ms")
+                        .font(SettingsTypography.caption)
+                        .foregroundStyle(.secondary)
                 }
-                .onChange(of: extraModifier.wrappedValue) { _, _ in service.syncWithPreferences() }
-                Text("\(modifierSymbol(currentModifier))\(shortcut.symbol)")
-                    .font(SettingsTypography.caption)
-                    .foregroundStyle(.secondary)
+
+                if currentMode == .extraModifier {
+                    Picker(strings.modifier, selection: extraModifier) {
+                        Text("\(strings.shiftKey) (⇧)").tag(QuitProtectionExtraModifier.shift.rawValue)
+                        Text("\(strings.optionKey) (⌥)").tag(QuitProtectionExtraModifier.option.rawValue)
+                        Text("\(strings.controlKey) (⌃)").tag(QuitProtectionExtraModifier.control.rawValue)
+                    }
+                    .onChange(of: extraModifier.wrappedValue) { _, _ in service.syncWithPreferences() }
+                    Text("\(modifierSymbol(currentModifier))\(shortcut.symbol)")
+                        .font(SettingsTypography.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Picker(strings.appScope, selection: scope) {
+                    Text(strings.allApps).tag(QuitProtectionScope.all.rawValue)
+                    Text(strings.selectedOnly).tag(QuitProtectionScope.selectedOnly.rawValue)
+                    Text(strings.allExceptSelected).tag(QuitProtectionScope.allExceptSelected.rawValue)
+                }
+                .onChange(of: scope.wrappedValue) { _, _ in service.syncWithPreferences() }
+
+                exceptionsSection(for: shortcut, scope: currentScope, enabled: enabled.wrappedValue)
+
+                Toggle(strings.feedback, isOn: showFeedback)
+                    .onChange(of: showFeedback.wrappedValue) { _, _ in service.syncWithPreferences() }
             }
-
-            Picker(strings.appScope, selection: scope) {
-                Text(strings.allApps).tag(QuitProtectionScope.all.rawValue)
-                Text(strings.selectedOnly).tag(QuitProtectionScope.selectedOnly.rawValue)
-                Text(strings.allExceptSelected).tag(QuitProtectionScope.allExceptSelected.rawValue)
-            }
-            .onChange(of: scope.wrappedValue) { _, _ in service.syncWithPreferences() }
-
-            exceptionsSection(for: shortcut, scope: currentScope, enabled: enabled.wrappedValue)
-
-            Toggle(strings.feedback, isOn: showFeedback)
-                .onChange(of: showFeedback.wrappedValue) { _, _ in service.syncWithPreferences() }
+            .disabled(!enabled.wrappedValue)
         }
     }
 

@@ -63,22 +63,25 @@ struct ClipboardSettings: View {
                             .font(SettingsTypography.caption)
                             .foregroundStyle(.secondary)
                     }
-                    SettingsToggleWithCaption(title: text.includeImagesFiles,
-                                              caption: text.includeImagesFilesCaption,
-                                              showsCaptionInline: false,
-                                              isOn: $includeImagesFiles)
-                    SettingsToggleWithCaption(title: text.skipSensitive,
-                                              caption: text.skipSensitiveCaption,
-                                              isOn: $skipSensitive)
-                    SettingsControlRow(title: text.limit, systemImage: "tray.full") {
-                        Picker(text.limit, selection: $limit) {
-                            ForEach(Defaults.allowedClipboardHistoryLimits, id: \.self) { value in
-                                Text(value == 0 ? text.limitUnlimited : "\(value)").tag(value)
+                    Group {
+                        SettingsToggleWithCaption(title: text.includeImagesFiles,
+                                                  caption: text.includeImagesFilesCaption,
+                                                  showsCaptionInline: false,
+                                                  isOn: $includeImagesFiles)
+                        SettingsToggleWithCaption(title: text.skipSensitive,
+                                                  caption: text.skipSensitiveCaption,
+                                                  isOn: $skipSensitive)
+                        SettingsControlRow(title: text.limit, systemImage: "tray.full") {
+                            Picker(text.limit, selection: $limit) {
+                                ForEach(Defaults.allowedClipboardHistoryLimits, id: \.self) { value in
+                                    Text(value == 0 ? text.limitUnlimited : "\(value)").tag(value)
+                                }
                             }
+                            .labelsHidden()
                         }
-                        .labelsHidden()
+                        ClipboardIgnoredAppsList()
                     }
-                    ClipboardIgnoredAppsList()
+                    .disabled(!enabled)
                 }
 
                 clipboardAutoClearSection
