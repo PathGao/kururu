@@ -52,21 +52,8 @@ struct SettingsView: View {
         )
 
         NavigationSplitView {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(spacing: 12) {
-                    BrandMark(width: 40, tint: .primary)
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(ProductIdentity.name).font(PanelTypography.metric)
-                        Text(AppInfo.version)
-                            .font(SettingsTypography.caption).foregroundStyle(.secondary)
-                    }
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 24)
-                .padding(.bottom, 12)
-                sidebar(searchResults: searchResults)
-            }
-            .navigationSplitViewColumnWidth(min: 205, ideal: SettingsVisualStyle.current == .compact ? 210 : 230, max: 280)
+            sidebar(searchResults: searchResults)
+                .navigationSplitViewColumnWidth(min: 205, ideal: SettingsVisualStyle.current == .compact ? 210 : 230, max: 280)
         } detail: {
             // NavigationSplitView's detail slot sometimes queries its content
             // for an unconstrained ideal size (settling the divider, or on a
