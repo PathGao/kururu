@@ -58,7 +58,6 @@ struct WindowBehaviorSettings: View {
                     if (quitEnabled || closeEnabled) && !permissions.accessibility {
                         PermissionRow(kind: .accessibility)
                     }
-                    Divider()
                     shortcutSection(shortcut: .quit,
                                     enabled: $quitEnabled,
                                     mode: $quitMode,
@@ -67,7 +66,6 @@ struct WindowBehaviorSettings: View {
                                     extraModifier: $quitExtraModifier,
                                     scope: $quitScope,
                                     showFeedback: $quitShowFeedback)
-                    Divider()
                     shortcutSection(shortcut: .close,
                                     enabled: $closeEnabled,
                                     mode: $closeMode,

@@ -75,7 +75,6 @@ struct MouseButtonShortcutsSection: View {
                     .disabled(!enabled)
                     .help(enabled ? text.captureHint : captureRequiresEnabled)
             }
-            Divider()
             SettingsToggleWithCaption(title: text.spacesEnableLabel,
                                       caption: text.spacesEnableCaption,
                                       isOn: $spacesEnabled)
@@ -102,7 +101,6 @@ struct MouseButtonShortcutsSection: View {
                 }
             }
             .disabled(!spacesEnabled)
-            Divider()
             MouseExceptionsList(scope: .buttonShortcuts)
         }
         .settingsSectionAnchor(.mouseButtonShortcuts)

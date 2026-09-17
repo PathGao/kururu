@@ -27,7 +27,6 @@ struct DockSettings: View {
                              systemImage: dockPreviewWarning ? "exclamationmark.triangle" : "cursorarrow.motionlines",
                              warning: dockPreviewWarning)
                 Group {
-                    Divider()
                     SettingsControlRow(title: text.openDelay, systemImage: "timer", help: text.openDelayCaption) {
                         HStack(spacing: 6) {
                             TextField(text.openDelay, value: dockPreviewOpenDelayBinding,
@@ -52,7 +51,6 @@ struct DockSettings: View {
                     }
                     WindowPreviewControls(sizeKey: DefaultsKey.dockPreviewSize,
                                           exclusionsKey: DefaultsKey.dockPreviewExcludedApps)
-                    Divider()
                     SettingsToggleWithCaption(title: text.quitAppOnClose,
                                               caption: text.quitAppOnCloseCaption,
                                               isOn: $dockPreviewQuitAppOnClose)
