@@ -52,7 +52,7 @@ struct FanControlCurveEditor: View {
 
                 if let temperature = temperature(for: curve.wrappedValue.sensor) {
                     Text(formattedTemperature(temperature))
-                        .font(.system(size: 10, weight: .semibold).monospacedDigit())
+                        .font(.system(.caption, weight: .semibold).monospacedDigit())
                         .foregroundStyle(.secondary)
                 }
 
@@ -107,7 +107,7 @@ struct FanControlCurveEditor: View {
         let point = curves[curveIndex].points[pointIndex]
         return HStack(spacing: 5) {
             Text(formattedTemperature(Double(point.temperature)))
-                .font(.system(size: 10).monospacedDigit())
+                .font(.system(.caption).monospacedDigit())
                 .frame(width: 42, alignment: .trailing)
             Stepper(strings.temperature,
                     value: temperatureBinding(curveIndex: curveIndex,
@@ -121,7 +121,7 @@ struct FanControlCurveEditor: View {
             Spacer(minLength: 4)
 
             Text("\(point.coolingLevel)%")
-                .font(.system(size: 10).monospacedDigit())
+                .font(.system(.caption).monospacedDigit())
                 .frame(width: 34, alignment: .trailing)
             Stepper(strings.fanSpeed,
                     value: levelBinding(curveIndex: curveIndex,

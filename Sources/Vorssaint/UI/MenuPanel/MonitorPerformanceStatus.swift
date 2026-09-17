@@ -12,13 +12,13 @@ struct MonitorPerformanceStatus: View {
         let text = MonitorPerformanceStrings.text(l10n.language)
         HStack(spacing: 8) {
             Image(systemName: "thermometer.medium")
-                .font(.system(size: 12, weight: .medium))
+                .font(.system(.callout, weight: .medium))
                 .foregroundStyle(color)
                 .frame(width: 24, height: 24)
                 .background(color.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
             HStack(spacing: 6) {
                 Text(text.title).font(PanelTypography.meta).foregroundStyle(.secondary)
-                Text(label(text)).font(.system(size: 12, weight: .semibold))
+                Text(label(text)).font(.system(.callout, weight: .semibold))
             }
             Spacer(minLength: 0)
             if lowPower {

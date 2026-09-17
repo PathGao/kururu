@@ -54,7 +54,7 @@ struct RecorderEditorView: View {
         HStack(spacing: 8) {
             BrandMark(width: 24, tint: Color(white: 0.92))
             Text(strings.editorTitle)
-                .font(.system(size: 13, weight: .semibold))
+                .font(.system(.body, weight: .semibold))
             Button {
                 RecentCaptureService.shared.showHistoryWindow()
             } label: {
@@ -152,7 +152,7 @@ struct RecorderEditorView: View {
             Button(strings.savePreset, action: controller.saveCurrentPreset)
         } label: {
             Label(strings.presetsButton, systemImage: "slider.horizontal.3")
-                .font(.system(size: 12, weight: .medium))
+                .font(.system(.callout, weight: .medium))
                 .padding(.horizontal, 9)
                 .frame(height: 30)
                 .background(Color.white.opacity(0.055),
@@ -184,7 +184,7 @@ struct RecorderEditorView: View {
                         }
                     VStack {
                         Text(strings.zoomPickSpotHint)
-                            .font(.system(size: 11, weight: .medium))
+                            .font(.system(.subheadline, weight: .medium))
                             .padding(.horizontal, 10)
                             .padding(.vertical, 5)
                             .background(.regularMaterial,
@@ -256,7 +256,7 @@ struct RecorderEditorView: View {
             }
             VStack {
                 Text(strings.blurPickAreaHint)
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.system(.subheadline, weight: .medium))
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)
                     .background(.regularMaterial, in: Capsule())
@@ -333,7 +333,7 @@ struct RecorderEditorView: View {
     ) -> some View {
         HStack(spacing: 10) {
             Text(title)
-                .font(.system(size: 10, weight: .semibold))
+                .font(.system(.caption, weight: .semibold))
                 .foregroundStyle(.secondary)
                 .frame(width: 64, alignment: .trailing)
                 .lineLimit(1)
@@ -345,7 +345,7 @@ struct RecorderEditorView: View {
         HStack(spacing: 12) {
             Button(action: model.togglePlay) {
                 Image(systemName: model.isPlaying ? "pause.fill" : "play.fill")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(.body, weight: .semibold))
                     .frame(width: 26, height: 20)
             }
             .buttonStyle(.bordered)
@@ -353,7 +353,7 @@ struct RecorderEditorView: View {
             .screenshotSafeHelp("Space")
 
             Text(timeLabel)
-                .font(.system(size: 12, weight: .medium))
+                .font(.system(.callout, weight: .medium))
                 .monospacedDigit()
                 .foregroundStyle(Color(white: 0.78))
 
@@ -361,7 +361,7 @@ struct RecorderEditorView: View {
                 model.addText(at: model.sourceTime)
             } label: {
                 Label(strings.addTextButton, systemImage: "textformat")
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.system(.callout, weight: .medium))
             }
             .buttonStyle(.borderless)
             .foregroundStyle(Color(white: 0.8))
@@ -370,7 +370,7 @@ struct RecorderEditorView: View {
                 model.addImage(at: model.sourceTime)
             } label: {
                 Label(strings.addImageButton, systemImage: "photo")
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.system(.callout, weight: .medium))
             }
             .buttonStyle(.borderless)
             .foregroundStyle(Color(white: 0.8))
@@ -379,7 +379,7 @@ struct RecorderEditorView: View {
                 model.addBlur(at: model.sourceTime)
             } label: {
                 Label(strings.addBlurButton, systemImage: "aqi.medium")
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.system(.callout, weight: .medium))
             }
             .buttonStyle(.borderless)
             .foregroundStyle(Color(white: 0.8))
@@ -392,7 +392,7 @@ struct RecorderEditorView: View {
                           + RecorderSupport.elapsedLabel(
                             seconds: Int((selection.upperBound - selection.lowerBound).rounded())),
                           systemImage: "scissors")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.system(.callout, weight: .medium))
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.regular)
@@ -411,7 +411,7 @@ struct RecorderEditorView: View {
                 .pickerStyle(.inline)
             } label: {
                 Label(qualityTitle + "  " + outputSizeLabel, systemImage: "slider.horizontal.3")
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.system(.callout, weight: .medium))
             }
             .menuStyle(.borderlessButton)
             .fixedSize()
@@ -471,11 +471,11 @@ struct RecorderEditorView: View {
                 .progressViewStyle(.linear)
                 .frame(width: 110)
             Text(exportProgressLabel)
-                .font(.system(size: 11, weight: .medium))
+                .font(.system(.subheadline, weight: .medium))
                 .foregroundStyle(Color(white: 0.8))
             Button(strings.cancelButton) { model.cancelExport() }
                 .buttonStyle(.borderless)
-                .font(.system(size: 11))
+                .font(.system(.subheadline))
                 .foregroundStyle(Color.accentColor)
         }
         .padding(.horizontal, 12)
@@ -499,7 +499,7 @@ struct RecorderEditorView: View {
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundStyle(.green)
                 Text(url.lastPathComponent)
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.system(.subheadline, weight: .medium))
                     .lineLimit(1)
                     .truncationMode(.middle)
                     .frame(maxWidth: 190)
@@ -544,14 +544,14 @@ private struct RecorderAudioLane: View {
                 .accessibilityLabel(strings.audioVolumeLabel)
 
             Text("\(Int((gain * 100).rounded()))%")
-                .font(.system(size: 10, weight: .medium))
+                .font(.system(.caption, weight: .medium))
                 .monospacedDigit()
                 .foregroundStyle(.secondary)
                 .frame(width: 34, alignment: .trailing)
 
             Button { model.toggleAudio(source) } label: {
                 Image(systemName: isKept ? "xmark" : "arrow.uturn.backward")
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(.system(.caption, weight: .semibold))
                     .frame(width: 18, height: 18)
             }
             .buttonStyle(.borderless)
@@ -596,7 +596,7 @@ private struct RecorderToolbarButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: 12, weight: .medium))
+            .font(.system(.callout, weight: .medium))
             .foregroundStyle(destructive ? Color.red : Color.primary)
             .padding(.horizontal, compact ? 0 : 10)
             .frame(width: compact ? 30 : nil, height: 30)

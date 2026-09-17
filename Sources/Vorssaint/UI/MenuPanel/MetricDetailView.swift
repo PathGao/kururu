@@ -265,7 +265,7 @@ struct MetricDetailView: View {
                 if speed.isRunning {
                     ProgressView().controlSize(.small)
                     Text(l10n.s.speedTestTesting)
-                        .font(.system(size: 11))
+                        .font(.system(.subheadline))
                         .foregroundStyle(.secondary)
                 } else {
                     Button {
@@ -273,7 +273,7 @@ struct MetricDetailView: View {
                     } label: {
                         Label(speed.downloadMbps == nil ? l10n.s.speedTestRun : l10n.s.speedTestAgain,
                               systemImage: "gauge.with.dots.needle.67percent")
-                            .font(.system(size: 11))
+                            .font(.system(.subheadline))
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
@@ -281,7 +281,7 @@ struct MetricDetailView: View {
                 Spacer()
                 if let down = speed.downloadMbps, let up = speed.uploadMbps {
                     Text("↓\(mbps(down)) ↑\(mbps(up)) Mbps")
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(.system(.subheadline, weight: .semibold))
                         .monospacedDigit()
                 }
             }

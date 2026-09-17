@@ -484,7 +484,7 @@ struct MixerSection: View {
 
     private func emptyLabel(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 11))
+            .font(.system(.subheadline))
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, alignment: .center)
             .padding(.vertical, 4)

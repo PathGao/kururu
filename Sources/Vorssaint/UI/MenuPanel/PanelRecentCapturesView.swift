@@ -55,13 +55,13 @@ struct RecentCapturesView: View {
     private var header: some View {
         HStack(spacing: 8) {
             Label(text.title, systemImage: "clock.arrow.circlepath")
-                .font(.system(size: 12, weight: .semibold))
+                .font(.system(.callout, weight: .semibold))
             Spacer()
             Button {
                 confirmingClear = true
             } label: {
                 Image(systemName: "trash")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.system(.subheadline, weight: .semibold))
                     .frame(width: 22, height: 22)
             }
             .buttonStyle(.plain)
@@ -130,7 +130,7 @@ struct RecentCapturesView: View {
                         history.remove(entry)
                     } label: {
                         Image(systemName: "trash")
-                            .font(.system(size: 10, weight: .semibold))
+                            .font(.system(.caption, weight: .semibold))
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.mini)

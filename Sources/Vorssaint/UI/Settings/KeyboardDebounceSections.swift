@@ -77,7 +77,7 @@ struct KeyboardDebounceSections: View {
                     ForEach(keyWindows) { row in
                         HStack(spacing: 8) {
                             Text(KeyboardDebounceKeyCatalog.label(for: row.keyCode))
-                                .font(.system(size: 12, weight: .semibold))
+                                .font(.system(.callout, weight: .semibold))
                                 .frame(width: 70, alignment: .leading)
                             Stepper(value: binding(for: row.keyCode),
                                     in: Defaults.allowedKeyboardDebounceWindowRange,

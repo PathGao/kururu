@@ -123,7 +123,7 @@ struct ScreenshotToolOrderControls: View {
         } label: {
             HStack(spacing: 3) {
                 Text(assignedNumber.map(String.init) ?? l10n.s.shortcutNone)
-                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .font(.system(.subheadline, design: .rounded, weight: .semibold))
                     .lineLimit(1)
                 Image(systemName: "chevron.up.chevron.down")
                     .font(.system(size: 7, weight: .semibold))

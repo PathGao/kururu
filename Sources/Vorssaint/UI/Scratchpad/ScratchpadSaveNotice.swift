@@ -20,7 +20,7 @@ struct ScratchpadSaveNotice: View {
                 Button(text.retrySave, action: retry)
             }
         }
-        .font(.system(size: 11))
+        .font(.system(.subheadline))
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(10)
         .background(Color.red.opacity(0.08))
@@ -64,7 +64,7 @@ struct ScratchpadMutationDialog: View {
                     .disabled(!canConfirm)
             }
         }
-        .font(.system(size: 12))
+        .font(.system(.callout))
         .padding(16)
         .frame(width: 280)
     }

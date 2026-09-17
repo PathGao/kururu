@@ -397,7 +397,7 @@ private struct ScreenshotQuickPreviewView: View {
                               action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Label(title, systemImage: symbol)
-                .font(.system(size: 11, weight: .medium))
+                .font(.system(.subheadline, weight: .medium))
                 .lineLimit(1)
                 .minimumScaleFactor(0.78)
         }

@@ -207,7 +207,7 @@ struct RadialMenuView: View {
     private var hubFace: some View {
         if let index = service.highlightedIndex, items.indices.contains(index) {
             Text(items[index].displayName(text, nowPlayingState: service.nowPlayingState))
-                .font(.system(size: 11, weight: .semibold))
+                .font(.system(.subheadline, weight: .semibold))
                 .multilineTextAlignment(.center)
                 .lineLimit(3)
                 .minimumScaleFactor(0.8)
@@ -215,7 +215,7 @@ struct RadialMenuView: View {
         } else if let parent = service.trail.last {
             VStack(spacing: 3) {
                 Image(systemName: "chevron.backward")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(.callout, weight: .semibold))
                     .foregroundStyle(.secondary)
                 Text(parent.isEmpty ? text.kindSubmenu : parent)
                     .font(.system(size: 9, weight: .medium))

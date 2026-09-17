@@ -71,7 +71,7 @@ struct PanelUninstallerView: View {
     private var header: some View {
         HStack(spacing: 8) {
             Label(AppFeature.uninstaller.name(l10n.s, language: l10n.language), systemImage: "trash")
-                .font(.system(size: 12, weight: .semibold))
+                .font(.system(.callout, weight: .semibold))
             Spacer()
             Button(action: onClose) {
                 Image(systemName: "xmark.circle.fill")
@@ -99,7 +99,7 @@ struct PanelUninstallerView: View {
             .controlSize(.small)
 
             Text(l10n.s.uninstallerEmptyNote)
-                .font(.system(size: 10))
+                .font(.system(.caption))
                 .foregroundStyle(.tertiary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
@@ -136,9 +136,9 @@ struct PanelUninstallerView: View {
                         .font(.system(size: 28, weight: .light))
                         .foregroundStyle(dropTargeted ? Color.accentColor : .secondary)
                     Text(l10n.s.uninstallerDropTitle)
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.system(.callout, weight: .semibold))
                     Text(l10n.s.uninstallerDropSubtitle)
-                        .font(.system(size: 10))
+                        .font(.system(.caption))
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                 }
@@ -152,7 +152,7 @@ struct PanelUninstallerView: View {
             ProgressView()
                 .controlSize(.small)
             Text(message)
-                .font(.system(size: 11))
+                .font(.system(.subheadline))
                 .foregroundStyle(.secondary)
             if let target = uninstaller.target {
                 HStack(spacing: 7) {
@@ -202,7 +202,7 @@ struct PanelUninstallerView: View {
             Spacer(minLength: 0)
             VStack(alignment: .trailing, spacing: 1) {
                 Text(Self.byteString(uninstaller.totalSize))
-                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .font(.system(.callout, design: .rounded, weight: .semibold))
                     .monospacedDigit()
                 Text(l10n.s.uninstallerFoundTitle)
                     .font(.system(size: 9))
@@ -251,7 +251,7 @@ struct PanelUninstallerView: View {
                 .frame(width: 17, height: 17)
             VStack(alignment: .leading, spacing: 1) {
                 Text(item.name)
-                    .font(.system(size: 11))
+                    .font(.system(.subheadline))
                     .lineLimit(1)
                     .truncationMode(.middle)
                 HStack(spacing: 4) {
@@ -278,7 +278,7 @@ struct PanelUninstallerView: View {
             .help(l10n.s.cleanerRevealInFinder)
             .accessibilityLabel(l10n.s.cleanerRevealInFinder)
             Text(Self.byteString(item.size))
-                .font(.system(size: 10))
+                .font(.system(.caption))
                 .monospacedDigit()
                 .foregroundStyle(.secondary)
         }
@@ -290,10 +290,10 @@ struct PanelUninstallerView: View {
             HStack {
                 Text(String(format: l10n.s.uninstallerSelectedFormat,
                             uninstaller.items.filter(\.include).count, uninstaller.items.count))
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.system(.subheadline, weight: .medium))
                 Spacer()
                 Text(Self.byteString(uninstaller.selectedSize))
-                    .font(.system(size: 10))
+                    .font(.system(.caption))
                     .monospacedDigit()
                     .foregroundStyle(.secondary)
             }
@@ -312,7 +312,7 @@ struct PanelUninstallerView: View {
                     }
                 } label: {
                     Label(removeButtonTitle, systemImage: "trash")
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(.system(.subheadline, weight: .semibold))
                         .lineLimit(1)
                 }
                 .buttonStyle(.borderedProminent)
@@ -390,7 +390,7 @@ struct PanelUninstallerView: View {
             Text(l10n.s.uninstallerDoneTitle)
                 .font(.system(size: 14, weight: .bold))
             Text(String(format: l10n.s.uninstallerFreedFormat, Self.byteString(freed)))
-                .font(.system(size: 11))
+                .font(.system(.subheadline))
                 .foregroundStyle(.secondary)
             if !failed.isEmpty {
                 UninstallFailureNote(items: failed, compact: true)

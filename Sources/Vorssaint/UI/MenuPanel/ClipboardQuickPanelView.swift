@@ -208,7 +208,7 @@ struct ClipboardQuickPanelView: View {
                 .font(.system(size: 27, weight: .light))
                 .foregroundStyle(.tertiary)
             Text(emptyMessage(for: state))
-                .font(.system(size: 12, weight: .medium))
+                .font(.system(.callout, weight: .medium))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
             switch state {
@@ -425,7 +425,7 @@ private struct QuickEntryRow: View, Equatable {
                     entryActions(entry)
                 } label: {
                     Image(systemName: "ellipsis")
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(.system(.subheadline, weight: .semibold))
                         .frame(width: 24, height: 24)
                         .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 6))
                 }
@@ -508,7 +508,7 @@ private struct QuickEntryRow: View, Equatable {
                   let path = entry.filePaths.first,
                   ClipboardImageStore.isImageFile(atPath: path) {
             Image(systemName: entry.isPinned ? "pin.fill" : "photo")
-                .font(.system(size: 11, weight: .semibold))
+                .font(.system(.subheadline, weight: .semibold))
                 .foregroundStyle(entry.isPinned ? Color.accentColor : Color.secondary)
                 .frame(width: 25, height: 25)
         } else if let icon = fileIcon(for: entry) {
@@ -518,7 +518,7 @@ private struct QuickEntryRow: View, Equatable {
                 .frame(width: 25, height: 25)
         } else {
             Image(systemName: entry.isPinned ? "pin.fill" : kindSymbol(entry.kind))
-                .font(.system(size: 11, weight: .semibold))
+                .font(.system(.subheadline, weight: .semibold))
                 .foregroundStyle(entry.isPinned ? Color.accentColor : Color.secondary)
                 .frame(width: 25, height: 25)
         }

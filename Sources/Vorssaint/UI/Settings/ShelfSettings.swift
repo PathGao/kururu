@@ -182,7 +182,7 @@ struct ShelfSettings: View {
     private func bullet(_ number: String, _ text: String) -> some View {
         HStack(alignment: .top, spacing: 10) {
             Text(number)
-                .font(.system(size: 11, weight: .bold, design: .rounded))
+                .font(.system(.subheadline, design: .rounded, weight: .bold))
                 .foregroundStyle(.white)
                 .frame(width: 18, height: 18)
                 .background(Circle().fill(Color.accentColor))

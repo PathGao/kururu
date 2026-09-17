@@ -45,7 +45,7 @@ struct HomebrewOperationStatusView: View {
                 Circle()
                     .fill(iconColor.opacity(0.14))
                 Image(systemName: iconName)
-                    .font(compact ? .system(size: 10, weight: .semibold) : SettingsTypography.icon.weight(.semibold))
+                    .font(compact ? .system(.caption, weight: .semibold) : SettingsTypography.icon.weight(.semibold))
                     .foregroundStyle(iconColor)
             }
             .frame(width: compact ? 22 : 28, height: compact ? 22 : 28)
@@ -133,7 +133,7 @@ struct HomebrewOperationStatusView: View {
         } label: {
             Label(showDetails ? l10n.s.homebrewOperationHideDetails : l10n.s.homebrewOperationShowDetails,
                   systemImage: showDetails ? "chevron.up" : "chevron.down")
-                .font(compact ? .system(size: 10, weight: .medium) : SettingsTypography.body)
+                .font(compact ? .system(.caption, weight: .medium) : SettingsTypography.body)
         }
         .buttonStyle(.plain)
         .foregroundStyle(.secondary)

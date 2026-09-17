@@ -10,7 +10,7 @@ struct KeyCap: View {
 
     var body: some View {
         Text(label)
-            .font(.system(size: 12, weight: .semibold, design: .rounded))
+            .font(.system(.callout, design: .rounded, weight: .semibold))
             .frame(minWidth: 20, minHeight: 22)
             .padding(.horizontal, 5)
             .background(
@@ -52,7 +52,7 @@ struct FullDiskAccessNote: View {
                 Image(systemName: "info.circle")
                     .foregroundStyle(.secondary)
                 Text(reason ?? l10n.s.uninstallerFDANote)
-                    .font(compact ? .system(size: 10) : .caption)
+                    .font(compact ? .system(.caption) : .caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -94,7 +94,7 @@ struct UninstallFailureNote: View {
     var body: some View {
         VStack(alignment: .leading, spacing: compact ? 5 : 7) {
             Text(l10n.s.uninstallerSomeFailed)
-                .font(compact ? .system(size: 10) : .caption)
+                .font(compact ? .system(.caption) : .caption)
                 .foregroundStyle(.orange)
                 .fixedSize(horizontal: false, vertical: true)
             ForEach(items.prefix(Self.namesShown)) { item in

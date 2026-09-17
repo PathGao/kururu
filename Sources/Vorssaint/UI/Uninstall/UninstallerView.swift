@@ -70,7 +70,7 @@ struct UninstallerView: View {
                         Text(l10n.s.uninstallerDropTitle)
                             .font(.system(size: 16, weight: .semibold))
                         Text(l10n.s.uninstallerDropSubtitle)
-                            .font(.system(size: 12))
+                            .font(.system(.callout))
                             .foregroundStyle(.secondary)
                     }
                 )
@@ -160,7 +160,7 @@ struct UninstallerView: View {
             Spacer()
             VStack(alignment: .trailing, spacing: 2) {
                 Text(Self.byteString(uninstaller.totalSize))
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .font(.system(.title3, design: .rounded, weight: .semibold))
                 Text(l10n.s.uninstallerFoundTitle).font(.caption2).foregroundStyle(.secondary)
             }
             Button { uninstaller.reset() } label: {
@@ -213,7 +213,7 @@ struct UninstallerView: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text(String(format: l10n.s.uninstallerSelectedFormat,
                             uninstaller.items.filter(\.include).count, uninstaller.items.count))
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.system(.callout, weight: .medium))
                 Text(Self.byteString(uninstaller.selectedSize))
                     .font(.caption).foregroundStyle(.secondary)
             }
@@ -287,7 +287,7 @@ struct UninstallerView: View {
                 .foregroundStyle(failed.isEmpty ? .green : .orange)
             Text(l10n.s.uninstallerDoneTitle).font(.system(size: 20, weight: .bold))
             Text(String(format: l10n.s.uninstallerFreedFormat, Self.byteString(freed)))
-                .font(.system(size: 13)).foregroundStyle(.secondary)
+                .font(.system(.body)).foregroundStyle(.secondary)
             if !failed.isEmpty {
                 UninstallFailureNote(items: failed).frame(width: 360)
             }

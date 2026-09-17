@@ -87,7 +87,7 @@ struct ClipboardEntryPreviewSidebar: View {
 
     private func textEditor(_ entry: ClipboardHistoryEntry) -> some View {
         TextEditor(text: $draft)
-            .font(.system(size: 12))
+            .font(.system(.callout))
             .lineSpacing(2)
             .scrollContentBackground(.hidden)
             .padding(8)
@@ -112,7 +112,7 @@ struct ClipboardEntryPreviewSidebar: View {
             // Standard text selection lets someone copy only the fragment
             // they need; the window monitor leaves ⌘C with this view.
             Text(entry.text)
-                .font(.system(size: 12))
+                .font(.system(.callout))
                 .textSelection(.enabled)
                 .lineSpacing(2)
                 .frame(maxWidth: .infinity, alignment: .topLeading)
@@ -184,11 +184,11 @@ struct ClipboardEntryPreviewSidebar: View {
                         .frame(width: 32, height: 32)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(fileName)
-                            .font(.system(size: 12, weight: .medium))
+                            .font(.system(.callout, weight: .medium))
                             .lineLimit(2)
                         if let size = ClipboardImageStore.fileSizeString(atPath: path) {
                             Text(size)
-                                .font(.system(size: 10))
+                                .font(.system(.caption))
                                 .foregroundStyle(.secondary)
                         }
                     }
@@ -235,7 +235,7 @@ struct ClipboardEntryPreviewSidebar: View {
                                 .frame(width: 18, height: 18)
                         }
                         Text((path as NSString).lastPathComponent)
-                            .font(.system(size: 11))
+                            .font(.system(.subheadline))
                             .lineLimit(1)
                             .truncationMode(.middle)
                         Spacer()
@@ -265,7 +265,7 @@ struct ClipboardEntryPreviewSidebar: View {
 
     private var emptyState: some View {
         Image(systemName: "doc.on.clipboard")
-            .font(.system(size: 22, weight: .light))
+            .font(.system(.title, weight: .light))
             .foregroundStyle(.tertiary)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

@@ -89,7 +89,7 @@ struct FanControlCardContent: View {
 
             if let message = stateMessage {
                 Text(message)
-                    .font(.system(size: 10))
+                    .font(.system(.caption))
                     .foregroundStyle(messageIsError ? Color.red : Color.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -159,7 +159,7 @@ struct FanControlCardContent: View {
     private var statusHeader: some View {
         HStack(spacing: 8) {
             Image(systemName: snapshot.isCooling ? "fanblades.fill" : "fanblades")
-                .font(.system(size: 17, weight: .semibold))
+                .font(.system(.title2, weight: .semibold))
                 .foregroundStyle(snapshot.isCooling ? AnyShapeStyle(Color.cyan)
                                                      : AnyShapeStyle(Color.secondary))
                 .symbolEffect(.variableColor.iterative, options: .repeating,
@@ -169,7 +169,7 @@ struct FanControlCardContent: View {
             VStack(alignment: .leading, spacing: 1) {
                 HStack(spacing: 5) {
                     Text(AppFeature.fanControl.name(L10n.shared.s, language: L10n.shared.language))
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.system(.callout, weight: .semibold))
                     Text(betaLabel)
                         .font(.system(size: 7.5, weight: .bold))
                         .foregroundStyle(Color.white)
@@ -178,7 +178,7 @@ struct FanControlCardContent: View {
                         .background(Capsule().fill(Color.accentColor))
                 }
                 Text(statusText)
-                    .font(.system(size: 10).monospacedDigit())
+                    .font(.system(.caption).monospacedDigit())
                     .foregroundStyle(snapshot.isCooling ? Color.cyan : Color.secondary)
             }
             Spacer()

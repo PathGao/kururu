@@ -158,7 +158,7 @@ struct SettingsView: View {
                             Text(item.title).font(.system(size: 12, weight: router.page == item.page ? .semibold : .regular))
                         } icon: {
                             Image(systemName: item.icon)
-                                .font(.system(size: 13))
+                                .font(.system(.body))
                                 .frame(width: 26, height: 28)
                         }
                         .padding(.vertical, 3)
@@ -1054,7 +1054,7 @@ struct AboutSettings: View {
                 }
             }
             Text(l10n.s.aboutDescription)
-                .font(.system(size: 12))
+                .font(.system(.callout))
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
             HStack(spacing: 12) {
@@ -1118,7 +1118,7 @@ struct ReleaseNotesSettings: View {
     private var fallbackNote: some View {
         HStack(alignment: .top, spacing: 9) {
             Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 13, weight: .semibold))
+                .font(.system(.body, weight: .semibold))
                 .foregroundStyle(.secondary)
                 .frame(width: 18, alignment: .center)
             Text(l10n.s.obWhatsNewFallback)
@@ -1132,7 +1132,7 @@ struct ReleaseNotesSettings: View {
         VStack(alignment: .leading, spacing: 9) {
             if !section.title.isEmpty {
                 Text(section.title.uppercased())
-                    .font(.system(size: 11, weight: .bold))
+                    .font(.system(.subheadline, weight: .bold))
                     .foregroundStyle(.secondary)
                     .tracking(1.2)
             }
@@ -1153,7 +1153,7 @@ struct ReleaseNotesSettings: View {
         case let .bullet(text):
             HStack(alignment: .top, spacing: 9) {
                 Image(systemName: iconName(for: sectionTitle))
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(.callout, weight: .semibold))
                     .foregroundStyle(.secondary)
                     .frame(width: 18, alignment: .center)
                 Text(text)

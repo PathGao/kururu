@@ -768,7 +768,7 @@ private struct RadialItemRow: View {
                 .frame(width: 30, height: 30)
                 .overlay(
                     Image(systemName: item.effectiveSymbolName)
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.system(.body, weight: .semibold))
                         .foregroundStyle(.white)
                 )
         }

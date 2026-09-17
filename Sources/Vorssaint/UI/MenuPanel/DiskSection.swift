@@ -222,7 +222,7 @@ struct DiskSection: View {
                             .font(PanelTypography.metric)
                             .monospacedDigit()
                         Text(l10n.s.diskAvailable)
-                            .font(.system(size: 11)).foregroundStyle(.secondary)
+                            .font(.system(.subheadline)).foregroundStyle(.secondary)
                     }
                     .padding(.vertical, 7)
                     MetricScale(fraction: disk.usedFraction)
@@ -291,7 +291,7 @@ struct DiskSection: View {
     private func rateColumn(icon: String, label: String, value: Double?, color: Color) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Label(label, systemImage: icon)
-                .font(.system(size: 11, weight: .medium))
+                .font(.system(.subheadline, weight: .medium))
                 .foregroundStyle(color)
             Text(value.map { MetricFormat.bytesPerSec($0) } ?? l10n.s.networkMeasuring)
                 .font(PanelTypography.metric)
@@ -430,7 +430,7 @@ struct DiskSection: View {
                 blockHeader(l10n.s.monitorItemDiskTools, editing: editing, visible: $diskTools)
                 HStack(spacing: 8) {
                     Text(disk.name)
-                        .font(.system(size: 11, weight: .medium))
+                        .font(.system(.subheadline, weight: .medium))
                         .lineLimit(1)
                         .truncationMode(.middle)
                     Spacer()

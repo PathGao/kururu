@@ -533,7 +533,7 @@ struct PressureIndicator: View {
                 .fill(color)
                 .frame(width: 7, height: 7)
             Text(label)
-                .font(.system(size: 11, weight: .medium))
+                .font(.system(.subheadline, weight: .medium))
                 .foregroundStyle(color)
         }
         .padding(.horizontal, 8)

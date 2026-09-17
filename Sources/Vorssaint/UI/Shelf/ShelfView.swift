@@ -89,15 +89,15 @@ struct ShelfView: View {
             // start item drags.
             HStack(spacing: 7) {
                 Image(systemName: "tray.full")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(.callout, weight: .semibold))
                     .foregroundStyle(.secondary)
                 Text(title)
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(.callout, weight: .semibold))
                     .lineLimit(1)
                     .truncationMode(.middle)
                 if !shelf.items.isEmpty {
                     Text("\(shelf.itemCount)")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(.system(.subheadline, weight: .bold))
                         .padding(.horizontal, 6).padding(.vertical, 1)
                         .background(Capsule().fill(Color.secondary.opacity(0.18)))
                 }
@@ -119,7 +119,7 @@ struct ShelfView: View {
     private var pinButton: some View {
         Button { shelf.togglePin() } label: {
             Image(systemName: shelf.isPinned ? "pin.fill" : "pin")
-                .font(.system(size: 12, weight: .semibold))
+                .font(.system(.callout, weight: .semibold))
                 .frame(width: 30, height: 30)
                 .background(
                     Circle().fill(shelf.isPinned
@@ -144,7 +144,7 @@ struct ShelfView: View {
     private var closeButton: some View {
         Button { (onDismiss ?? { shelf.close() })() } label: {
             Image(systemName: dismissSystemImage)
-                .font(.system(size: 13, weight: .semibold))
+                .font(.system(.body, weight: .semibold))
                 .frame(width: 30, height: 30)
                 .background(
                     Circle()
@@ -166,7 +166,7 @@ struct ShelfView: View {
         HStack(spacing: 8) {
             clearButton
             Text(l10n.s.shelfHint)
-                .font(.system(size: 10))
+                .font(.system(.caption))
                 .foregroundStyle(.tertiary)
                 .lineLimit(1)
                 .help(l10n.s.shelfHint)
@@ -211,7 +211,7 @@ struct ShelfView: View {
     /// The shared face of the footer's two buttons.
     private func footerButtonFace(systemImage: String, tint: Color, hovered: Bool) -> some View {
         Image(systemName: systemImage)
-            .font(.system(size: 12, weight: .semibold))
+            .font(.system(.callout, weight: .semibold))
             .frame(width: 42, height: 28)
             .background(
                 RoundedRectangle(cornerRadius: 6, style: .continuous)
@@ -256,7 +256,7 @@ struct ShelfView: View {
                         .font(.system(size: 21))
                         .foregroundStyle(.secondary)
                     Text(l10n.s.shelfEmpty)
-                        .font(.system(size: 12))
+                        .font(.system(.callout))
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                         .lineLimit(2)

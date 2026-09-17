@@ -358,7 +358,7 @@ struct ScreenshotBackdropPopover<Model: BackdropEditing>: View {
         VStack(spacing: 8) {
             HStack(spacing: 8) {
                 Text(strings.backdropPaddingLabel)
-                    .font(.system(size: 12))
+                    .font(.system(.callout))
                     // The column keeps the sliders aligned; the longest of
                     // these words runs past 64 points in Turkish and Spanish,
                     // so it gives a little rather than being cut.
@@ -372,7 +372,7 @@ struct ScreenshotBackdropPopover<Model: BackdropEditing>: View {
             }
             HStack(spacing: 8) {
                 Text(strings.backdropCornersLabel)
-                    .font(.system(size: 12))
+                    .font(.system(.callout))
                     // The column keeps the sliders aligned; the longest of
                     // these words runs past 64 points in Turkish and Spanish,
                     // so it gives a little rather than being cut.
@@ -385,7 +385,7 @@ struct ScreenshotBackdropPopover<Model: BackdropEditing>: View {
             }
             HStack(spacing: 8) {
                 Text(strings.backdropBlurLabel)
-                    .font(.system(size: 12))
+                    .font(.system(.callout))
                     // The column keeps the sliders aligned; the longest of
                     // these words runs past 64 points in Turkish and Spanish,
                     // so it gives a little rather than being cut.

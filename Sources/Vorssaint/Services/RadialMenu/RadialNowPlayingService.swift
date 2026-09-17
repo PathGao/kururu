@@ -157,11 +157,11 @@ private struct RadialNowPlayingCard: View {
                 artwork
                 VStack(alignment: .leading, spacing: 3) {
                     Text(title)
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.system(.body, weight: .semibold))
                         .lineLimit(2)
                     if let album = snapshot.album {
                         Text(album)
-                            .font(.system(size: 11))
+                            .font(.system(.subheadline))
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                     }

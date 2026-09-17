@@ -51,11 +51,11 @@ enum QuickToolHUD {
                     )
             } else {
                 Image(systemName: icon)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(.body, weight: .semibold))
                     .foregroundStyle(Color.accentColor)
             }
             Text(message)
-                .font(.system(size: 12, weight: .semibold))
+                .font(.system(.callout, weight: .semibold))
                 // What was copied can be a whole paragraph, and the panel is
                 // laid out at whatever the text asks for. Unbounded, one long
                 // line measures wider than the screen and the panel, centred on
@@ -284,11 +284,11 @@ private struct ScrollingCaptureHUDView: View {
     var body: some View {
         HStack(spacing: 10) {
             Image(systemName: "rectangle.stack.fill")
-                .font(.system(size: 13, weight: .semibold))
+                .font(.system(.body, weight: .semibold))
                 .foregroundStyle(Color.accentColor)
             VStack(alignment: .leading, spacing: 1) {
                 Text(model.message)
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(.callout, weight: .semibold))
                     .lineLimit(2)
                     // Same panel geometry as the confirmation above, so the
                     // same bound: this one is laid out from fittingSize and
@@ -296,7 +296,7 @@ private struct ScrollingCaptureHUDView: View {
                     .truncationMode(.tail)
                     .frame(maxWidth: QuickToolHUD.messageWidthLimit, alignment: .leading)
                 Text("\(model.height) px")
-                    .font(.system(size: 10, weight: .medium, design: .rounded))
+                    .font(.system(.caption, design: .rounded, weight: .medium))
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
             }

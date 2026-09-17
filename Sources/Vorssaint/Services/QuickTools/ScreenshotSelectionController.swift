@@ -1559,17 +1559,17 @@ private struct CaptureGuideView: View {
     private var standardGuide: some View {
         HStack(spacing: 12) {
             Image(systemName: "viewfinder")
-                .font(.system(size: 17, weight: .semibold))
+                .font(.system(.title2, weight: .semibold))
                 .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(.secondary)
                 .frame(width: 28, height: 28)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(.body, weight: .semibold))
                     .foregroundStyle(.primary)
                     .lineLimit(1)
                 Text(subtitle)
-                    .font(.system(size: 11))
+                    .font(.system(.subheadline))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
@@ -1688,9 +1688,9 @@ private struct UnifiedCaptureGuideContent: View {
     private var escapeHint: some View {
         HStack(spacing: 5) {
             Image(systemName: "xmark")
-                .font(.system(size: 10, weight: .bold))
+                .font(.system(.caption, weight: .bold))
             Text("esc")
-                .font(.system(size: 10, weight: .semibold, design: .rounded))
+                .font(.system(.caption, design: .rounded, weight: .semibold))
         }
         .foregroundStyle(.secondary)
         .padding(.horizontal, 10)
@@ -1734,13 +1734,13 @@ private struct UnifiedCaptureGuideContent: View {
             VStack(spacing: 3) {
                 HStack(spacing: 6) {
                     Text(tool.shortcutKey)
-                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                        .font(.system(.caption, design: .rounded, weight: .bold))
                         .foregroundStyle(selected ? Color.white : Color.primary)
                         .frame(width: 19, height: 19)
                         .background(selected ? Color.accentColor : Color.primary.opacity(0.11),
                                     in: RoundedRectangle(cornerRadius: 5, style: .continuous))
                     Image(systemName: tool.systemImageName)
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.system(.body, weight: .semibold))
                         .symbolRenderingMode(.hierarchical)
                 }
                 Text(title)
@@ -1798,9 +1798,9 @@ private struct CaptureKeyHint: View {
     var body: some View {
         HStack(spacing: 5) {
             Image(systemName: icon)
-                .font(.system(size: 10, weight: .semibold))
+                .font(.system(.caption, weight: .semibold))
             Text(key)
-                .font(.system(size: 10, weight: .semibold, design: .rounded))
+                .font(.system(.caption, design: .rounded, weight: .semibold))
         }
         .foregroundStyle(.secondary)
         .padding(.horizontal, 8)
