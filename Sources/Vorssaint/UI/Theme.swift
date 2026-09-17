@@ -164,7 +164,7 @@ func appDelegate() -> AppDelegate? {
     NSApp.delegate as? AppDelegate
 }
 
-/// Static, template-colored interpretation of the supplied octopus study.
+/// Template-colored horn spirit shared by in-app entry points.
 struct BrandMark: View {
     var width: CGFloat
     var tint: Color = .white
@@ -173,7 +173,7 @@ struct BrandMark: View {
         Rectangle().fill(tint).mask {
             Canvas { context, size in
                 context.withCGContext { graphics in
-                    OctopusMark.draw(in: graphics, size: size, color: NSColor.white.cgColor)
+                    HornSpiritMark.draw(in: graphics, size: size, color: NSColor.white.cgColor)
                 }
             }
         }
@@ -182,17 +182,14 @@ struct BrandMark: View {
     }
 }
 
-/// Squircle badge with the mark on the space gradient — the app's face in the
-/// About tab and onboarding.
+/// The same Composer artwork used by Finder and the Dock.
 struct BrandBadge: View {
     var size: CGFloat
 
     var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: size * 0.26, style: .continuous)
-                .fill(Theme.spaceGradient)
-            BrandMark(width: size * 0.8)
-        }
-        .frame(width: size, height: size)
+        Image(nsImage: NSImage(named: "AppIcon") ?? NSImage())
+            .resizable()
+            .scaledToFit()
+            .frame(width: size, height: size)
     }
 }
