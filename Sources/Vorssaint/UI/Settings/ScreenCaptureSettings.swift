@@ -44,14 +44,11 @@ struct ScreenCaptureSettings: View {
                         .labelsHidden()
                         .controlSize(.large)
                     }
-                    Divider()
                     ToolShortcutRows(tool: currentTool, keys: currentTool.dedicatedShortcut)
                         .id(currentTool)
                     if AppFeature.screenshot.isAvailable || AppFeature.screenRecorder.isAvailable {
-                        Divider()
                         RecentCapturesShortcutRows()
                     }
-                    Divider()
                     if currentTool != .recording {
                         Toggle(strings.hideVorssaintWindowsToggle, isOn: $hideVorssaintWindows)
                     }
@@ -196,7 +193,6 @@ private struct ScreenTextCaptureSettings: View {
             }
             .settingsAction(.primary)
             SettingsInfo(text: l10n.s.ocrCaption, systemImage: "text.viewfinder")
-            Divider()
             SettingsToggleWithCaption(title: l10n.s.ocrRemoveLineBreaksToggle,
                                       caption: l10n.s.ocrRemoveLineBreaksCaption,
                                       isOn: $removesLineBreaks)
@@ -226,7 +222,6 @@ private struct ColorCaptureSettings: View {
             }
             .settingsAction(.primary)
             SettingsInfo(text: l10n.s.colorPickerCaption, systemImage: "eyedropper")
-            Divider()
             Picker(l10n.s.colorPickerFormatLabel, selection: $format) {
                 ForEach(ColorCopyFormat.allCases) { format in
                     Text(format.label).tag(format.rawValue)

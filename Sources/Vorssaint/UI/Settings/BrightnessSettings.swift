@@ -20,6 +20,12 @@ struct BrightnessSettings: View {
             if AppFeature.brightness.isAvailable {
                 let strings = FeatureStrings.brightness(l10n.language)
                 SettingsSection(title: UXEntryStrings(l10n.language).displayDevices, systemImage: "display") {
+                    HStack {
+                        Text(strings.enable)
+                            .font(SettingsTypography.body)
+                        SettingsHelpButton(title: UXEntryStrings(l10n.language).displayDevices,
+                                           text: strings.enableCaption + "\n\n" + strings.externalCaption)
+                    }
                     if brightness.displays.isEmpty {
                         SettingsCaptionText(strings.noDisplays)
                     } else {

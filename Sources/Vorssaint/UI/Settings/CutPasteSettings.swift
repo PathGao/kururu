@@ -54,7 +54,6 @@ struct CutPasteSettings: View {
                             .font(SettingsTypography.caption)
                             .foregroundStyle(.green)
                     }
-                    Divider()
                     Text(l10n.s.cutPasteHowTitle).font(SettingsTypography.sectionTitle)
                         .accessibilityAddTraits(.isHeader)
                     howRow(keys: ["⌘", "X"], text: l10n.s.cutPasteStep1)
@@ -62,7 +61,6 @@ struct CutPasteSettings: View {
                     Text(l10n.s.cutPasteTextNote)
                         .font(SettingsTypography.caption)
                         .foregroundStyle(.secondary)
-                    Divider()
                     SettingsToggleWithCaption(title: FeatureStrings.clipboard(l10n.language).pasteImageAsFile,
                                               caption: FeatureStrings.clipboard(l10n.language).pasteImageAsFileCaption,
                                               isOn: $pasteImageAsFile)
