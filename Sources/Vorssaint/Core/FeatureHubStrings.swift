@@ -1296,12 +1296,10 @@ struct ModuleWorkspaceStrings {
     var noSeparateSwitch = "No separate behavior switch"
     var noMetrics = "No metrics shown in the menu bar"
     var addMetrics = "Add metrics…"
-    var metricSetup = "Add metrics to the menu bar"
     var inactiveMonitor = "System monitoring is disabled. Enable it, then choose which metrics to show."
     var deferredAppearance = "Appearance choices below are saved and take effect after you add a metric."
     var showMenuBarMetric = "Show in menu bar"
     var hideMenuBarMetric = "Hide from menu bar"
-    var done = "Done"
     private var actionCountFormat = "Saved: %1$d of %2$d actions on"
 
     func actionCount(_ enabled: Int, _ total: Int) -> String {
@@ -1329,10 +1327,8 @@ struct ModuleWorkspaceStrings {
             noSeparateSwitch = "没有独立运行开关"
             noMetrics = "尚未在菜单栏显示指标"
             addMetrics = "添加指标…"
-            metricSetup = "添加指标到菜单栏"
             inactiveMonitor = "系统监控已关闭。请先启用，再选择要显示的指标。"
             deferredAppearance = "以下外观选项会保留，在添加指标后生效。"
-            done = "完成"
             actionCountFormat = "已保存：%2$d 项动作中 %1$d 项开启"
         case .de:
             showMenuBarMetric = "In Menüleiste anzeigen"
@@ -1353,10 +1349,8 @@ struct ModuleWorkspaceStrings {
             noSeparateSwitch = "Kein separater Betriebsschalter"
             noMetrics = "Keine Messwerte in der Menüleiste"
             addMetrics = "Messwerte hinzufügen…"
-            metricSetup = "Messwerte zur Menüleiste hinzufügen"
             inactiveMonitor = "Die Systemüberwachung ist deaktiviert. Aktiviere sie und wähle dann die anzuzeigenden Messwerte."
             deferredAppearance = "Die folgenden Darstellungsoptionen werden gespeichert und nach dem Hinzufügen eines Messwerts angewendet."
-            done = "Fertig"
             actionCountFormat = "Gespeichert: %1$d von %2$d Aktionen ein"
         case .fr:
             showMenuBarMetric = "Afficher dans la barre des menus"
@@ -1377,10 +1371,8 @@ struct ModuleWorkspaceStrings {
             noSeparateSwitch = "Aucun interrupteur de fonctionnement distinct"
             noMetrics = "Aucune mesure affichée dans la barre des menus"
             addMetrics = "Ajouter des mesures…"
-            metricSetup = "Ajouter des mesures à la barre des menus"
             inactiveMonitor = "La surveillance du système est désactivée. Activez-la, puis choisissez les mesures à afficher."
             deferredAppearance = "Les options d’apparence ci-dessous sont enregistrées et prendront effet après l’ajout d’une mesure."
-            done = "Terminé"
             actionCountFormat = "Enregistré : %1$d actions sur %2$d activées"
         case .es:
             showMenuBarMetric = "Mostrar en la barra de menús"
@@ -1401,10 +1393,8 @@ struct ModuleWorkspaceStrings {
             noSeparateSwitch = "Sin interruptor de funcionamiento independiente"
             noMetrics = "No se muestran métricas en la barra de menús"
             addMetrics = "Añadir métricas…"
-            metricSetup = "Añadir métricas a la barra de menús"
             inactiveMonitor = "La monitorización del sistema está desactivada. Actívala y elige las métricas que quieres mostrar."
             deferredAppearance = "Las opciones de apariencia siguientes se guardan y se aplicarán cuando añadas una métrica."
-            done = "Listo"
             actionCountFormat = "Guardado: %1$d de %2$d acciones activadas"
         case .ja:
             showMenuBarMetric = "メニューバーに表示"
@@ -1425,10 +1415,8 @@ struct ModuleWorkspaceStrings {
             noSeparateSwitch = "個別の動作スイッチなし"
             noMetrics = "メニューバーに指標が表示されていません"
             addMetrics = "指標を追加…"
-            metricSetup = "メニューバーに指標を追加"
             inactiveMonitor = "システム監視は無効です。有効にしてから、表示する指標を選んでください。"
             deferredAppearance = "以下の表示設定は保存され、指標を追加すると適用されます。"
-            done = "完了"
             actionCountFormat = "保存済み：%2$d 件中 %1$d 件のアクションがオン"
         default:
             break
