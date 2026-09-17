@@ -684,7 +684,7 @@ struct FeatureSwitchRow: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .toggleStyle(.switch).controlSize(.small)
+                .toggleStyle(.switch).controlSize(.regular)
                 .disabled(blocked != nil)
             } else {
                 HStack(spacing: 12) {

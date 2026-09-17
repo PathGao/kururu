@@ -189,7 +189,7 @@ struct MonitorPanelConfig: View {
                 Spacer()
             }
             Toggle(l10n.s.monitorShowInPanel, isOn: master)
-                .toggleStyle(.switch).controlSize(.small)
+                .toggleStyle(.switch).controlSize(.regular)
                 .labelsHidden()
                 .accessibilityLabel("\(title): \(l10n.s.monitorShowInPanel)")
         }

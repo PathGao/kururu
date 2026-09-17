@@ -855,7 +855,7 @@ struct SwitcherSettings: View {
                             Spacer(minLength: 8)
                         }
                     }
-                    .toggleStyle(.switch).controlSize(.small)
+                    .toggleStyle(.switch).controlSize(.regular)
                     .onChange(of: switcherEnabled) { _, _ in
                         AppSwitcher.shared.syncWithPreferences()
                     }
