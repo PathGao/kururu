@@ -70,10 +70,8 @@ struct BrightnessSettings: View {
                        !permissions.accessibility {
                         PermissionRow(kind: .accessibility)
                     }
-                    Divider()
                     displayBrightnessShortcutControls
                     if BrightnessService.keyboardLightIsSupported {
-                        Divider()
                         keyboardBrightnessShortcutControls
                     }
                 }
