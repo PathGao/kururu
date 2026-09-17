@@ -21,6 +21,28 @@ newest release first. The app and release workflow read these version headings.
     - Removed capabilities or compatibility.
 -->
 
+## [0.1.3] - 2026-09-17
+
+### Changed
+- A new app, menu bar and installer icon: the gray Dianlian horn spirit.
+- Settings pages use native grouped forms with switches, regular-size switches for section toggles, and system text styles. The menu bar panel shows the system material behind its cards.
+- The settings sidebar starts with search and the page list. The version stays on the About page.
+- Menu bar metrics appear as tokens in menu bar order. Drag to reorder, click for options, and add hidden metrics from a menu.
+- Menu Bar Panel settings list each section once, with its visibility, order and per-item options together. The Monitor page links to these settings instead of repeating them.
+- Dock click settings are one choice (default, minimize or hide) plus a switch to cycle windows first.
+- The three-finger spread trigger moved from the Trackpad page to each Radial Menu profile.
+- Enabling a feature with a single behavior, such as Bluetooth Sleep, also turns that behavior on.
+- The Sound Mixer no longer has its own switch. A saved off state becomes an uninstalled mixer.
+- Peripheral batteries are read, and Bluetooth access requested, only while a peripheral battery is shown.
+- Keyboard backlight shortcuts have a section on the Keyboard page.
+
+### Fixed
+- PDF image compression now shrinks existing images and keeps the original when the result is not smaller.
+- Settings that depend on a switch are disabled while it is off, including Dock Preview options, ⌘Q / ⌘W protection options and display brightness shortcut recorders.
+- Window maximizing shows the Accessibility permission row when access is missing.
+- Removed blank rows, duplicate permission rows and a search result pointing to a page without the setting.
+- The Environment page is translated into all six languages.
+
 ## [0.1.2] - 2026-09-16
 
 ### Changed
