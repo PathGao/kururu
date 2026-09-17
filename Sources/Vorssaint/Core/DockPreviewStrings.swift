@@ -286,7 +286,7 @@ extension DockPreviewFeatureStrings {
         openDelay: "打开延迟",
         openDelayCaption: "指针停在图标上多久之后才打开面板。",
         quitAppOnClose: "使用 × 按钮退出 App",
-        quitAppOnCloseCaption: "在 Dock Preview 中，× 会退出整个 App，而不只是关闭该窗口。",
+        quitAppOnCloseCaption: "在 Dock 窗口预览中，× 会退出整个 App，而不只是关闭该窗口。",
         activeNow: "已在 Dock 中启用",
         dockUnavailable: "无法读取 Dock 项目。",
         autohideBeta: "测试版。你可能会遇到一些错误。",

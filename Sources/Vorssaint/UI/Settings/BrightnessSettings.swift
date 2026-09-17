@@ -69,7 +69,6 @@ struct BrightnessSettings: View {
                        !permissions.accessibility {
                         PermissionRow(kind: .accessibility)
                     }
-                    Divider()
                     displayBrightnessShortcutControls
                 }
             }
