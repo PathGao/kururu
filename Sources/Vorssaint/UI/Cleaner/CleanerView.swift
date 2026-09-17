@@ -289,7 +289,6 @@ struct CleanerView: View {
                                       caption: whatsAppStrings.hubDescription,
                                       isOn: $whatsAppEnabled)
         }
-        .toggleStyle(.checkbox)
         .frame(maxWidth: 760)
     }
 
@@ -576,7 +575,7 @@ struct CleanerView: View {
                     Spacer()
                 }
                 Toggle(l10n.s.cleanerScheduleNotifyToggle, isOn: $scheduleNotify)
-                    .toggleStyle(.checkbox)
+                    .toggleStyle(compact: compact)
                     .font(compact ? .system(size: 11.5) : SettingsTypography.body)
                 if scheduleNotify, notificationsDenied {
                     Text(l10n.s.cleanerNotifDenied)

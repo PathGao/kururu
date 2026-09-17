@@ -87,6 +87,12 @@ extension EnvironmentValues {
 }
 
 extension View {
+    /// Compact panel surfaces keep checkboxes; the same controls in Settings use switches.
+    @ViewBuilder
+    func toggleStyle(compact: Bool) -> some View {
+        if compact { toggleStyle(.checkbox) } else { toggleStyle(.switch) }
+    }
+
     func settingsSurface() -> some View { modifier(SettingsSurfaceModifier(item: false)) }
     func settingsItemSurface() -> some View { modifier(SettingsSurfaceModifier(item: true)) }
 }

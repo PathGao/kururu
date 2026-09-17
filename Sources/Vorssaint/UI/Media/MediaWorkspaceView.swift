@@ -382,7 +382,7 @@ struct MediaWorkspaceView: View {
                     targetSizeRow(value: $gifTargetMegabytes)
                 }
                 Toggle(l10n.s.mediaLoopGIF, isOn: $gifLoops)
-                    .toggleStyle(.checkbox)
+                    .toggleStyle(compact: compact)
             }
             .mediaWorkspaceSurface(compact: compact, settings: false)
         case .imageCompressor:
@@ -409,13 +409,13 @@ struct MediaWorkspaceView: View {
                         // into the document), so the toggle would be a dead control.
                         if MediaImageFormat.sanitized(imageFormatRaw) != .pdf {
                             Toggle(l10n.s.mediaStripMetadata, isOn: $imageStripMetadata)
-                                .toggleStyle(.checkbox)
+                                .toggleStyle(compact: compact)
                         }
                         imageBackgroundSection
                         imageWatermarkSection
                         imageRenameSection
                         Toggle(imageText.preserveDate, isOn: $imagePreserveModificationDate)
-                            .toggleStyle(.checkbox)
+                            .toggleStyle(compact: compact)
                     }
                     .padding(.top, 6)
                     .disclosureIndent()
