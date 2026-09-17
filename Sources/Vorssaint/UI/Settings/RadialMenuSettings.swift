@@ -13,6 +13,7 @@ struct RadialMenuSettings: View {
     @ObservedObject private var service = RadialMenuService.shared
     @ObservedObject private var middleClick = MiddleClickService.shared
     @AppStorage(DefaultsKey.middleClickTapFingers) private var middleClickTapFingers = 0
+    @AppStorage(DefaultsKey.trackpadSpreadProfile) private var spreadProfile = ""
     @AppStorage(DefaultsKey.radialMenuEnabled) private var enabled = false
     @AppStorage(DefaultsKey.radialMenuAtPointer) private var atPointer = true
     @AppStorage(DefaultsKey.radialMenuActivationMode) private var activationModeRaw =
@@ -31,6 +32,7 @@ struct RadialMenuSettings: View {
     @Environment(\.colorScheme) private var colorScheme
 
     private var gestureText: TrackpadGestureStrings { .localized(l10n.language) }
+    private var tuningText: InputTuningStrings { InputTuningStrings(language: l10n.language) }
 
     private var actionText: SettingsActionStrings { SettingsActionStrings(language: l10n.language) }
 
@@ -336,7 +338,6 @@ struct RadialMenuSettings: View {
             }
         )
 
-        Divider()
         VStack(alignment: .leading, spacing: 6) {
             SettingsControlRow(title: gestureText.trigger, systemImage: "hand.tap",
                                caption: gestureText.hint + "\n" + gestureText.reservation) {
@@ -381,7 +382,18 @@ struct RadialMenuSettings: View {
             }
         }
 
-        Divider()
+        // One profile at a time owns the spread gesture; choosing it here moves it.
+        SettingsToggleWithCaption(title: tuningText.spread, caption: tuningText.spreadHint,
+                                  isOn: Binding(
+                                    get: { spreadProfile == profile.id.uuidString },
+                                    set: { on in
+                                        spreadProfile = on ? profile.id.uuidString : ""
+                                        MiddleClickService.shared.syncWithPreferences()
+                                        if on, enabled, !permissions.accessibility {
+                                            permissions.requestAccessibility()
+                                        }
+                                    }))
+
         VStack(alignment: .leading, spacing: 6) {
             SettingsControlRow(title: text.profileMouseTriggerLabel, systemImage: "computermouse",
                                caption: text.mouseTriggerRequirement) {
