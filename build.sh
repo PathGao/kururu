@@ -33,11 +33,14 @@ trap 'exit 1' INT TERM HUP
 DEV=0
 INSTALL=0
 TEST=0
+TEST_ARGS=()
 for arg in "$@"; do
     case "$arg" in
         --dev)     DEV=1 ;;
         --install) INSTALL=1 ;;
         --test)    TEST=1 ;;
+        --test-suite=*) TEST=1; TEST_ARGS+=("--suite=${arg#*=}") ;;
+        --list-tests) TEST=1; TEST_ARGS+=(--list) ;;
     esac
 done
 
@@ -239,8 +242,9 @@ discard_test_preferences() {
 # then exit. Fast and deterministic; no XCTest needed.
 if (( TEST )); then
     echo "▸ Building & running unit tests against $(basename "$SDK")…"
-    rm -rf build
-    mkdir -p build
+    python3 Tests/generate_upstream_sources.py
+    TEST_OBJECT_DIR="build/objects/tests"
+    mkdir -p "$TEST_OBJECT_DIR"
     # The full app build below remains optimized and is the optimizer gate.
     # Unit assertions do not need optimization; avoiding it cuts most of the
     # test harness compile time without reducing the code the tests exercise.
@@ -546,13 +550,44 @@ if (( TEST )); then
         Tests/RecentCaptureStoreTests.swift \
         Tests/RecorderPresetImageStoreTests.swift \
         Tests/SpeedTestTests.swift \
+        Tests/TestSuite.swift \
+        Tests/BoundedProcessCancellationTests.swift \
+        Sources/Vorssaint/Services/Homebrew/HomebrewEnvironmentCheckSettlement.swift \
+        Tests/HomebrewEnvironmentCheckSettlementTests.swift \
+        Sources/Vorssaint/UI/PlainTextEditor.swift \
+        Tests/PlainTextEditorLifecycleTests.swift \
+        Sources/Vorssaint/Services/Recorder/RecorderComposition.swift \
+        Sources/Vorssaint/Services/Recorder/RecorderCaptureEngine.swift \
+        Sources/Vorssaint/Services/Recorder/RecorderWriter.swift \
+        Sources/Vorssaint/Services/Recorder/RecorderSampleTiming.swift \
+        Sources/Vorssaint/Core/ShelfPromiseDeliveryStrings.swift \
+        Sources/Vorssaint/Services/Shelf/ShelfFilePromiseTransfer.swift \
+        Tests/UpstreamPolicyTests.swift \
+        Tests/ShelfPromiseCleanupTests.swift \
+        Tests/CleanerEligibilityTests.swift \
+        Tests/SwitcherScrollTests.swift \
+        Tests/ScreenshotSelectionRefreshTests.swift \
+        Tests/RecorderSampleTimingTests.swift \
+        Tests/RecorderWriterTests.swift \
+        Tests/ShelfFilePromiseTests.swift \
+        Tests/ShelfDropRoutingTests.swift \
+        build/generated-tests/*.swift \
     )
-    swiftc -Onone -target "$TARGET" -sdk "$SDK" "${SDK_COMPAT_FLAGS[@]}" \
+    TEST_OUTPUT_FILE_MAP="$TEST_OBJECT_DIR/output-file-map.json"
+    write_swift_output_file_map "$TEST_OUTPUT_FILE_MAP" "$TEST_OBJECT_DIR" "${test_sources[@]}"
+    swiftc -Onone -incremental -enable-batch-mode -j "$(sysctl -n hw.logicalcpu)" \
+        -module-name VorssaintTests -output-file-map "$TEST_OUTPUT_FILE_MAP" \
+        -target "$TARGET" -sdk "$SDK" "${SDK_COMPAT_FLAGS[@]}" \
         "${VM_STATISTICS_COMPAT_FLAGS[@]}" \
         "${test_sources[@]}" -o build/metrics-tests
     # `set -e` would end the script on a failing run before the sweep below.
     test_status=0
-    ./build/metrics-tests || test_status=$?
+    ./build/metrics-tests "${TEST_ARGS[@]}" || test_status=$?
+    # A selected suite or listing runs only the binary above.
+    if (( ${#TEST_ARGS} )); then
+        discard_test_preferences || test_status=1
+        exit $test_status
+    fi
     if python3 Tests/BrightnessServiceContract.py \
         Sources/Vorssaint/Services/Display/BrightnessService.swift \
         build/brightness-contract/main.swift && \
@@ -563,35 +598,6 @@ if (( TEST )); then
     else
         test_status=1
     fi
-    if swiftc Sources/Vorssaint/Services/BoundedProcessRunner.swift \
-        Tests/BoundedProcessCancellationTests.swift -o build/process-cancellation-tests; then
-        ./build/process-cancellation-tests || test_status=1
-    else
-        test_status=1
-    fi
-    if swiftc Sources/Vorssaint/Services/Update/UpdateServiceSupport.swift \
-        Sources/Vorssaint/Services/Homebrew/HomebrewSupport.swift \
-        Sources/Vorssaint/Services/Environment/EnvironmentUpdateSupport.swift \
-        Sources/Vorssaint/Services/Homebrew/HomebrewEnvironmentCheckSettlement.swift \
-        Tests/HomebrewEnvironmentCheckSettlementTests.swift -o build/homebrew-settlement-tests; then
-        ./build/homebrew-settlement-tests || test_status=1
-    else
-        test_status=1
-    fi
-    if swiftc -target "$TARGET" -sdk "$SDK" \
-        Sources/Vorssaint/UI/PlainTextEditor.swift \
-        Tests/PlainTextEditorLifecycleTests.swift Tests/PlainTextEditorLifecycleMain.swift \
-        -o build/editor-lifecycle-tests; then
-        ./build/editor-lifecycle-tests || test_status=1
-    else
-        test_status=1
-    fi
-    upstream_sources=()
-    for source in "${test_sources[@]}"; do
-        [[ "$source" == Tests/* ]] || upstream_sources+=("$source")
-    done
-    zsh Tests/run-upstream-tests.sh -target "$TARGET" -sdk "$SDK" "${SDK_COMPAT_FLAGS[@]}" \
-        "${VM_STATISTICS_COMPAT_FLAGS[@]}" "${upstream_sources[@]}" || test_status=1
     ./Tests/PreferenceCleanupTests.sh || test_status=1
     discard_test_preferences || test_status=1
     exit $test_status

@@ -2,15 +2,8 @@
 
 import Foundation
 
-@main
-struct BoundedProcessCancellationTests {
-    static func main() {
-        var failures: [String] = []
-
-        func expect(_ condition: Bool, _ message: String) {
-            if !condition { failures.append(message) }
-        }
-
+enum BoundedProcessCancellationTests {
+    static func run(_ expect: (Bool, String) -> Void) {
         let prelaunch = BoundedProcessCancellation()
         prelaunch.cancel()
         let marker = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
@@ -62,12 +55,5 @@ struct BoundedProcessCancellationTests {
         expect(first.cancelled && second.cancelled
                 && !FileManager.default.fileExists(atPath: secondMarker.path),
                "one token cancels the active read and prevents the next sequential read")
-
-        if failures.isEmpty {
-            print("5 process cancellation checks passed")
-        } else {
-            failures.forEach { fputs("FAIL: \($0)\n", stderr) }
-            exit(1)
-        }
     }
 }

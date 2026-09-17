@@ -2,14 +2,8 @@
 
 import Foundation
 
-@main
-struct HomebrewEnvironmentCheckSettlementTests {
-    static func main() {
-        var failures: [String] = []
-        func expect(_ condition: Bool, _ message: String) {
-            if !condition { failures.append(message) }
-        }
-
+enum HomebrewEnvironmentCheckSettlementTests {
+    static func run(_ expect: @escaping (Bool, String) -> Void) {
         var cancellations = 0
         let cancelled = HomebrewEnvironmentCheckSettlement { snapshot in
             cancellations += 1
@@ -40,12 +34,5 @@ struct HomebrewEnvironmentCheckSettlementTests {
         RunLoop.main.run(until: Date().addingTimeInterval(0.05))
         expect(racedValue != nil, "cancel settles while a worker result waits for the main thread")
         expect(racedValue! == nil, "cancel wins over an already queued late worker result")
-
-        if failures.isEmpty {
-            print("6 Homebrew settlement checks passed")
-        } else {
-            failures.forEach { fputs("FAIL: \($0)\n", stderr) }
-            exit(1)
-        }
     }
 }
