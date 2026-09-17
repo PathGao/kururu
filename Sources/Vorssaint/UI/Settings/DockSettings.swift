@@ -19,6 +19,17 @@ struct DockSettings: View {
     private var text: DockPreviewFeatureStrings { FeatureStrings.dockPreview(l10n.language) }
     private var clickText: DockClickFeatureStrings { FeatureStrings.dockClick(l10n.language) }
 
+    private enum DockClickChoice: Hashable { case none, minimize, hide }
+
+    private var dockClickActionBinding: Binding<DockClickChoice> {
+        Binding(get: { dockClickMinimize ? .minimize : dockClickHide ? .hide : .none },
+                set: { choice in
+                    dockClickMinimize = choice == .minimize
+                    dockClickHide = choice == .hide
+                    DockClickService.shared.syncWithPreferences()
+                })
+    }
+
     var body: some View {
         SettingsForm {
             SettingsSection {
@@ -31,6 +42,7 @@ struct DockSettings: View {
                         HStack(spacing: 6) {
                             TextField(text.openDelay, value: dockPreviewOpenDelayBinding,
                                       formatter: Self.dockPreviewOpenDelayFormatter)
+                                .labelsHidden()
                                 .textFieldStyle(.roundedBorder).frame(width: 64)
                             Stepper(text.openDelay, value: dockPreviewOpenDelayBinding,
                                     in: DockPreviewSupport.openDelayMillisecondsRange, step: 50)
@@ -61,22 +73,20 @@ struct DockSettings: View {
             if AppFeature.dockClick.isAvailable {
                 SettingsSection(title: AppFeature.dockClick.name(l10n.s, language: l10n.language),
                                 systemImage: "cursorarrow.click") {
-                    SettingsToggleWithCaption(title: clickText.minimize,
-                                              caption: clickText.minimizeCaption,
-                                              isOn: $dockClickMinimize)
-                        .onChange(of: dockClickMinimize) { _, enabled in
-                            if enabled { dockClickHide = false }
-                            DockClickService.shared.syncWithPreferences()
+                    // Minimize and hide answer the same click, so they are one choice;
+                    // cycling comes first whenever the app has several windows.
+                    HStack(spacing: 6) {
+                        Picker(clickText.clickAction, selection: dockClickActionBinding) {
+                            Text(clickText.clickActionDefault).tag(DockClickChoice.none)
+                            Text(clickText.clickActionMinimize).tag(DockClickChoice.minimize)
+                            Text(clickText.clickActionHide).tag(DockClickChoice.hide)
                         }
-                    SettingsToggleWithCaption(title: clickText.hide,
-                                              caption: clickText.hideCaption,
-                                              isOn: $dockClickHide)
-                        .onChange(of: dockClickHide) { _, enabled in
-                            if enabled { dockClickMinimize = false }
-                            DockClickService.shared.syncWithPreferences()
-                        }
-                    SettingsToggleWithCaption(title: clickText.cycleWindows,
+                        SettingsHelpButton(title: clickText.clickAction,
+                                           text: clickText.minimizeCaption + "\n\n" + clickText.hideCaption)
+                    }
+                    SettingsToggleWithCaption(title: clickText.cycleFirst,
                                               caption: clickText.cycleWindowsCaption,
+                                              showsCaptionInline: false,
                                               isOn: $dockClickCycleWindows)
                         .onChange(of: dockClickCycleWindows) { _, _ in
                             DockClickService.shared.syncWithPreferences()

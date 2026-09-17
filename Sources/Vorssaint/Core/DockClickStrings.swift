@@ -12,6 +12,11 @@ struct DockClickFeatureStrings {
     var hideCaption: String = "The active app hides when you click its Dock icon. Click again to bring it back."
     var cycleWindows: String = "Click the Dock icon to cycle windows"
     var cycleWindowsCaption: String = "Click an active app’s Dock icon to rotate through its windows, like ⌘`."
+    var clickAction: String = "Clicking the active app’s icon"
+    var clickActionDefault: String = "Default"
+    var clickActionMinimize: String = "Minimize windows"
+    var clickActionHide: String = "Hide the app"
+    var cycleFirst: String = "Cycle windows first when there are several"
 }
 
 extension FeatureStrings {
@@ -74,7 +79,12 @@ extension DockClickFeatureStrings {
         hide: "Ocultar la app al hacer clic en el Dock",
         hideCaption: "La app activa se oculta al hacer clic en su icono del Dock. Haz clic de nuevo para recuperarla.",
         cycleWindows: "Clic en el Dock para alternar ventanas",
-        cycleWindowsCaption: "Haz clic en el icono del Dock de la app activa para rotar entre sus ventanas, como ⌘`."
+        cycleWindowsCaption: "Haz clic en el icono del Dock de la app activa para rotar entre sus ventanas, como ⌘`.",
+        clickAction: "Al hacer clic en el icono de la app activa",
+        clickActionDefault: "Predeterminado",
+        clickActionMinimize: "Minimizar ventanas",
+        clickActionHide: "Ocultar la app",
+        cycleFirst: "Si hay varias ventanas, alternarlas primero"
     )
 
     static let de = DockClickFeatureStrings(
@@ -84,7 +94,12 @@ extension DockClickFeatureStrings {
         hide: "Klick aufs Dock-Symbol blendet App aus",
         hideCaption: "Die aktive App wird ausgeblendet, wenn du auf ihr Dock-Symbol klickst. Ein weiterer Klick holt sie zurück.",
         cycleWindows: "Klick aufs Dock-Symbol wechselt Fenster",
-        cycleWindowsCaption: "Ein Klick auf das Dock-Symbol der aktiven App wechselt zwischen ihren Fenstern, wie ⌘`."
+        cycleWindowsCaption: "Ein Klick auf das Dock-Symbol der aktiven App wechselt zwischen ihren Fenstern, wie ⌘`.",
+        clickAction: "Klick auf das Symbol der aktiven App",
+        clickActionDefault: "Standard",
+        clickActionMinimize: "Fenster minimieren",
+        clickActionHide: "App ausblenden",
+        cycleFirst: "Bei mehreren Fenstern zuerst Fenster wechseln"
     )
 
     static let fr = DockClickFeatureStrings(
@@ -94,7 +109,12 @@ extension DockClickFeatureStrings {
         hide: "Masquer l’app d’un clic sur le Dock",
         hideCaption: "L’app active se masque lorsque vous cliquez sur son icône dans le Dock. Cliquez à nouveau pour la faire revenir.",
         cycleWindows: "Clic sur le Dock pour alterner les fenêtres",
-        cycleWindowsCaption: "Cliquez sur l’icône d’une app active dans le Dock pour passer d’une fenêtre à l’autre, comme ⌘`."
+        cycleWindowsCaption: "Cliquez sur l’icône d’une app active dans le Dock pour passer d’une fenêtre à l’autre, comme ⌘`.",
+        clickAction: "Clic sur l’icône de l’app active",
+        clickActionDefault: "Par défaut",
+        clickActionMinimize: "Réduire les fenêtres",
+        clickActionHide: "Masquer l’app",
+        cycleFirst: "Parcourir d’abord les fenêtres s’il y en a plusieurs"
     )
 
     static let it = DockClickFeatureStrings(
@@ -114,7 +134,12 @@ extension DockClickFeatureStrings {
         hide: "Dock クリックでアプリを隠す",
         hideCaption: "手前のアプリの Dock アイコンをクリックすると、そのアプリを隠します。もう一度クリックすると戻ります。",
         cycleWindows: "Dock クリックでウインドウを切り替え",
-        cycleWindowsCaption: "手前のアプリの Dock アイコンをクリックするとウインドウを順に切り替えます（⌘` と同様）。"
+        cycleWindowsCaption: "手前のアプリの Dock アイコンをクリックするとウインドウを順に切り替えます（⌘` と同様）。",
+        clickAction: "アクティブなアプリのアイコンをクリックしたとき",
+        clickActionDefault: "標準",
+        clickActionMinimize: "ウインドウをしまう",
+        clickActionHide: "アプリを隠す",
+        cycleFirst: "複数のウインドウがあるときは先に切り替える"
     )
 
     static let ko = DockClickFeatureStrings(
@@ -134,7 +159,12 @@ extension DockClickFeatureStrings {
         hide: "点按 Dock 图标隐藏 App",
         hideCaption: "点按当前 App 的 Dock 图标可隐藏它。再次点按即可恢复。",
         cycleWindows: "点按 Dock 图标切换窗口",
-        cycleWindowsCaption: "点按最前面 App 的 Dock 图标可在其窗口之间轮换，类似 ⌘`。"
+        cycleWindowsCaption: "点按最前面 App 的 Dock 图标可在其窗口之间轮换，类似 ⌘`。",
+        clickAction: "点按当前 App 的图标时",
+        clickActionDefault: "系统默认",
+        clickActionMinimize: "最小化窗口",
+        clickActionHide: "隐藏 App",
+        cycleFirst: "有多个窗口时先轮换窗口"
     )
 
     static let zhTW = DockClickFeatureStrings(

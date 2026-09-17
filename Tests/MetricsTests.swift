@@ -24519,7 +24519,7 @@ UninstallerSelectionTests.run { expect($0, $1) }
         }
         let storageStructs: [(String, Int, [Any])] = [
             ("dockPreview", 22, AppLanguage.allCases.map { FeatureStrings.dockPreview($0) as Any }),
-            ("dockClick", 7, AppLanguage.allCases.map { FeatureStrings.dockClick($0) as Any }),
+            ("dockClick", 12, AppLanguage.allCases.map { FeatureStrings.dockClick($0) as Any }),
             ("micMute", 16, AppLanguage.allCases.map { FeatureStrings.micMute($0) as Any }),
             ("mixer", 35, AppLanguage.allCases.map { FeatureStrings.mixer($0) as Any }),
             ("musicBlock", 10, AppLanguage.allCases.map { FeatureStrings.musicBlock($0) as Any }),
