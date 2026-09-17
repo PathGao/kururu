@@ -24,7 +24,7 @@ enum ShelfDockBackupTests {
         }
         expect(Defaults.registeredDefaults[key] as? String == "menuBar", "registered shelf position preserves legacy default")
 
-        let suite = "vorssaint-tests-shelf-dock-backup-\(UUID())"
+        let suite = "com.vorssaint.tests.shelf-dock-backup.\(UUID())"
         guard let defaults = UserDefaults(suiteName: suite) else { expect(false, "shelf suite available"); return }
         defer { defaults.removePersistentDomain(forName: suite) }
         // Never register defaults: registration domains can be shared across suites.

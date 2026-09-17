@@ -4,7 +4,7 @@ enum FeatureSwitchRetirementTests {
     static func run(_ expect: (Bool, String) -> Void) {
         let registration = UserDefaults.standard.volatileDomain(forName: UserDefaults.registrationDomain)
         defer { UserDefaults.standard.setVolatileDomain(registration, forName: UserDefaults.registrationDomain) }
-        let suite = "com.kururu.switch-retirement.\(UUID().uuidString)"
+        let suite = "com.vorssaint.tests.switch-retirement.\(UUID().uuidString)"
         guard let defaults = UserDefaults(suiteName: suite) else {
             expect(false, "isolated retirement preferences are available")
             return

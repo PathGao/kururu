@@ -69,7 +69,7 @@ enum SettingsBackupIdentityTests {
             expect(accepted[key] == nil, "legacy payload cannot import identity state: \(key)")
         }
         expect(accepted[portable] as? Bool == true, "portable legacy setting remains accepted")
-        let suite = "vorssaint-tests-backup-identity-\(UUID())"
+        let suite = "com.vorssaint.tests.backup-identity.\(UUID())"
         guard let defaults = UserDefaults(suiteName: suite) else { expect(false, "unique preference suite available"); return }
         defer { defaults.removePersistentDomain(forName: suite) }
         // No registration domain: this fixture cannot pollute other tests.

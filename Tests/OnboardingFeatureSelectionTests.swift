@@ -65,7 +65,7 @@ enum OnboardingFeatureSelectionTests {
     }
 
     static func runRestoration(_ expect: (Bool, String) -> Void) {
-        let suite = "com.vorssaint.onboarding-tests.\(UUID().uuidString)"
+        let suite = "com.vorssaint.tests.onboarding.\(UUID().uuidString)"
         guard let defaults = UserDefaults(suiteName: suite) else {
             expect(false, "isolated onboarding preferences are available")
             return
