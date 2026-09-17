@@ -137,10 +137,10 @@ private struct WelcomeStep: View {
                 VStack(spacing: 10) {
                     BrandMark(width: 130)
                     Text(AppInfo.name)
-                        .font(.system(size: 26, weight: .bold))
+                        .font(.system(.largeTitle, weight: .bold))
                         .foregroundStyle(.white)
                     Text(l10n.s.obStepWelcomeBody)
-                        .font(.system(size: 12))
+                        .font(.system(.callout))
                         .foregroundStyle(.white.opacity(0.85))
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 40)
@@ -180,12 +180,12 @@ private struct WelcomeStep: View {
                     .fill(Theme.spaceGradient)
                     .frame(width: 30, height: 30)
                 Image(systemName: icon)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(.body, weight: .semibold))
                     .foregroundStyle(.white)
             }
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(.body, weight: .semibold))
                 Text(text)
                     .font(.system(size: 11.5))
                     .foregroundStyle(.secondary)
@@ -212,7 +212,7 @@ private struct PurposeStep: View {
 
             HStack {
                 Text(hub.tabFeatures.uppercased())
-                    .font(.system(size: 11, weight: .bold))
+                    .font(.system(.subheadline, weight: .bold))
                     .foregroundStyle(.secondary)
                     .tracking(1)
                 Spacer()
@@ -432,7 +432,7 @@ private struct DoneStep: View {
                 VStack(spacing: 14) {
                     BrandMark(width: 150)
                     Text(l10n.s.obStepDoneTitle)
-                        .font(.system(size: 26, weight: .bold))
+                        .font(.system(.largeTitle, weight: .bold))
                         .foregroundStyle(.white)
                     Text(l10n.s.obStepDoneBody)
                         .font(.system(size: 12.5))
@@ -443,10 +443,10 @@ private struct DoneStep: View {
 
             VStack(spacing: 10) {
                 Image(systemName: "menubar.arrow.up.rectangle")
-                    .font(.system(size: 26))
+                    .font(.system(.largeTitle))
                     .foregroundStyle(.secondary)
                 Text(l10n.s.obDoneHint)
-                    .font(.system(size: 12))
+                    .font(.system(.callout))
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 60)
@@ -478,7 +478,7 @@ private struct StepHeader: View {
             Text(title)
                 .font(.system(size: 19, weight: .bold))
             Text(subtitle)
-                .font(.system(size: 12))
+                .font(.system(.callout))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)

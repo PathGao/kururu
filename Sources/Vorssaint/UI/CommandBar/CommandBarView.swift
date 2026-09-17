@@ -173,11 +173,11 @@ struct CommandBarView: View {
             Image(systemName: "exclamationmark.triangle")
             VStack(alignment: .leading, spacing: 3) {
                 Text(failure.target)
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(.callout, weight: .semibold))
                     .lineLimit(1)
                     .truncationMode(.middle)
                 Text(failure.message)
-                    .font(.system(size: 11))
+                    .font(.system(.subheadline))
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 0)
@@ -208,7 +208,7 @@ struct CommandBarView: View {
             if case .naming(let entryID) = service.mode,
                let entry = service.entry(withID: entryID) {
                 Text(entry.title)
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(.callout, weight: .semibold))
                     .foregroundStyle(Color.accentColor)
                     .lineLimit(1)
                     .padding(.horizontal, 8)
@@ -218,7 +218,7 @@ struct CommandBarView: View {
             if case .argument(let entryID) = service.mode,
                let entry = service.entry(withID: entryID) {
                 Text(entry.title)
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(.callout, weight: .semibold))
                     .foregroundStyle(Color.accentColor)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 3)
@@ -236,7 +236,7 @@ struct CommandBarView: View {
                     service.query = ""
                 } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 13))
+                        .font(.system(.body))
                         .foregroundStyle(.tertiary)
                 }
                 .buttonStyle(.plain)
@@ -294,11 +294,11 @@ struct CommandBarView: View {
                                     Text(action.title)
                                         .lineLimit(1)
                                         .truncationMode(.middle)
-                                        .font(.system(size: 13, weight: .medium))
+                                        .font(.system(.body, weight: .medium))
                                         .foregroundStyle(action.isDestructive ? Color.red : Color.primary)
                                     Spacer(minLength: 12)
                                     Image(systemName: "return")
-                                        .font(.system(size: 10, weight: .semibold))
+                                        .font(.system(.caption, weight: .semibold))
                                         .foregroundStyle(.tertiary)
                                         .opacity(index == service.actionIndex ? 1 : 0)
                                 }
@@ -338,7 +338,7 @@ struct CommandBarView: View {
                 HStack(spacing: 10) {
                     iconView(entry)
                     Text(entry.title)
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.system(.body, weight: .medium))
                     Spacer()
                 }
                 .padding(.horizontal, 17)
@@ -362,11 +362,11 @@ struct CommandBarView: View {
                 HStack(spacing: 10) {
                     iconView(entry)
                     Text(entry.title)
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.system(.body, weight: .medium))
                     Spacer()
                     if let existing = service.rowShortcut(for: entry) {
                         Text(existing.displayString)
-                            .font(.system(size: 11, weight: .semibold, design: .rounded))
+                            .font(.system(.subheadline, design: .rounded, weight: .semibold))
                             .foregroundStyle(Color.accentColor)
                             .padding(.horizontal, 7)
                             .padding(.vertical, 3)
@@ -448,7 +448,7 @@ struct CommandBarView: View {
                             service.query = example
                         } label: {
                             Text(example)
-                                .font(.system(size: 10, design: .rounded))
+                                .font(.system(.caption, design: .rounded))
                                 .foregroundStyle(.secondary)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
@@ -551,7 +551,7 @@ struct CommandBarView: View {
                 if service.commandIsHeld, index < 9 {
                     // Holding Command turns the list into nine numbered rows.
                     Text("⌘\(index + 1)")
-                        .font(.system(size: 10, weight: .semibold, design: .rounded))
+                        .font(.system(.caption, design: .rounded, weight: .semibold))
                         .foregroundStyle(Color.accentColor)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2.5)
@@ -561,13 +561,13 @@ struct CommandBarView: View {
                         )
                 } else if let value = entry.answerValue {
                     Text(value)
-                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                        .font(.system(.callout, design: .rounded, weight: .semibold))
                         .foregroundStyle(Color.accentColor)
                         .monospacedDigit()
                 } else if let shortcut = service.rowShortcut(for: entry)?.displayString
                             ?? entry.shortcut?.displayString ?? entry.menuShortcut {
                     Text(shortcut)
-                        .font(.system(size: 10, weight: .semibold, design: .rounded))
+                        .font(.system(.caption, design: .rounded, weight: .semibold))
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2.5)
@@ -577,7 +577,7 @@ struct CommandBarView: View {
                         )
                 }
                 Image(systemName: "return")
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(.system(.caption, weight: .semibold))
                     .foregroundStyle(.tertiary)
                     // Always laid out, only drawn on the selected row: without
                     // the reserved width every row shifted as the selection
@@ -624,7 +624,7 @@ struct CommandBarView: View {
     private func titleView(_ entry: CommandBarEntry) -> some View {
         if entry.isAnswer {
             Text(entry.title)
-                .font(.system(size: 17, weight: .semibold, design: .rounded))
+                .font(.system(.title2, design: .rounded, weight: .semibold))
                 .foregroundStyle(.primary)
                 .monospacedDigit()
                 .lineLimit(1)
@@ -633,14 +633,14 @@ struct CommandBarView: View {
             let offsets = service.highlightOffsets(for: entry)
             if offsets.isEmpty {
                 Text(entry.title)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(.body, weight: .medium))
                     .foregroundStyle(.primary)
                     .lineLimit(1)
                     .truncationMode(.tail)
                     .help(entry.title)
             } else {
                 Text(highlighted(entry.title, offsets: offsets))
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(.body, weight: .medium))
                     .lineLimit(1)
                     .truncationMode(.tail)
             }
@@ -653,7 +653,7 @@ struct CommandBarView: View {
             var piece = AttributedString(String(character))
             if offsets.contains(index) {
                 piece.foregroundColor = Color.accentColor
-                piece.font = .system(size: 13, weight: .bold)
+                piece.font = .system(.body, weight: .bold)
             } else {
                 piece.foregroundColor = .primary
             }
@@ -754,13 +754,13 @@ struct CommandBarView: View {
                 .frame(width: 26, height: 26)
                 .padding(.bottom, 2)
             Text(text.noResultsTitle)
-                .font(.system(size: 12))
+                .font(.system(.callout))
                 .foregroundStyle(.secondary)
             Button {
                 service.goHome()
             } label: {
                 Text(text.noResultsAction)
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.system(.subheadline, weight: .semibold))
                     .foregroundStyle(Color.accentColor)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 4)
@@ -778,7 +778,7 @@ struct CommandBarView: View {
                 HStack(spacing: 10) {
                     iconView(entry)
                     Text(entry.title)
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.system(.body, weight: .medium))
                     Spacer()
                 }
                 .padding(.horizontal, 17)
@@ -800,7 +800,7 @@ struct CommandBarView: View {
                     iconView(entry)
                     VStack(alignment: .leading, spacing: 1.5) {
                         Text(entry.confirmationPrompt ?? entry.title)
-                            .font(.system(size: 13, weight: .semibold))
+                            .font(.system(.body, weight: .semibold))
                         Text(text.confirmHint)
                             .font(.system(size: 10.5))
                             .foregroundStyle(.secondary)
@@ -866,7 +866,7 @@ struct CommandBarView: View {
                     .font(.system(size: 9, weight: .semibold))
                     .foregroundStyle(.secondary)
                 Text(title)
-                    .font(.system(size: 10, weight: .medium))
+                    .font(.system(.caption, weight: .medium))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .truncationMode(.middle)

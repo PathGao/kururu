@@ -146,12 +146,12 @@ private struct PermissionGuideCard: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 7) {
                 Image(systemName: "hand.raised.fill")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(.body, weight: .semibold))
                     .foregroundStyle(Color.accentColor)
                 Text(guide.title)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(.body, weight: .semibold))
                 Text(permissionName)
-                    .font(.system(size: 11))
+                    .font(.system(.subheadline))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                 Spacer(minLength: 12)
@@ -175,7 +175,7 @@ private struct PermissionGuideCard: View {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(.green)
                     Text(guide.granted)
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.system(.callout, weight: .semibold))
                         .foregroundStyle(.green)
                     if kind == .screenRecording {
                         Spacer(minLength: 8)
@@ -187,7 +187,7 @@ private struct PermissionGuideCard: View {
                     ProgressView()
                         .controlSize(.small)
                     Text(guide.waiting)
-                        .font(.system(size: 12))
+                        .font(.system(.callout))
                         .foregroundStyle(.secondary)
                 }
             }
@@ -196,7 +196,7 @@ private struct PermissionGuideCard: View {
             if model.stale, !model.granted {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(guide.staleHint)
-                        .font(.system(size: 11))
+                        .font(.system(.subheadline))
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                     Button(guide.startOver, action: onStartOver)
@@ -222,12 +222,12 @@ private struct PermissionGuideCard: View {
     private func stepRow(_ number: Int, _ text: String) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
             Text("\(number)")
-                .font(.system(size: 10, weight: .bold, design: .rounded))
+                .font(.system(.caption, design: .rounded, weight: .bold))
                 .foregroundStyle(.white)
                 .frame(width: 16, height: 16)
                 .background(Circle().fill(Color.accentColor))
             Text(text)
-                .font(.system(size: 12))
+                .font(.system(.callout))
                 .fixedSize(horizontal: false, vertical: true)
         }
     }

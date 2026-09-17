@@ -254,7 +254,7 @@ struct CleanerView: View {
             Text(l10n.s.cleanerIntroTitle)
                 .font(.system(size: compact ? 15 : 17, weight: .semibold))
             Text(l10n.s.cleanerIntroCaption)
-                .font(.system(size: 12))
+                .font(.system(.callout))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
@@ -320,7 +320,7 @@ struct CleanerView: View {
                         .frame(width: 9)
                     Image(systemName: "arrow.down.doc").foregroundStyle(.secondary)
                     Text(whatsAppStrings.title)
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.system(.callout, weight: .medium))
                     Spacer()
                     Text(whatsAppSummary)
                         .font(.caption2)
@@ -471,7 +471,7 @@ struct CleanerView: View {
                             .frame(width: 9)
                         Image(systemName: "clock").foregroundStyle(.secondary)
                         Text(l10n.s.cleanerScheduleTitle)
-                            .font(.system(size: 12, weight: .medium))
+                            .font(.system(.callout, weight: .medium))
                         Spacer()
                         Text(scheduleSummary)
                             .font(.caption2)
@@ -690,7 +690,7 @@ struct CleanerView: View {
                         .font(.system(size: 34, weight: .light))
                         .foregroundStyle(.green)
                     Text(l10n.s.cleanerNothingFound)
-                        .font(.system(size: 13))
+                        .font(.system(.body))
                         .foregroundStyle(.secondary)
                     Spacer(minLength: 24)
                 }
@@ -715,7 +715,7 @@ struct CleanerView: View {
         HStack(spacing: 12) {
             SparkleGlyph(size: 22)
             VStack(alignment: .leading, spacing: 2) {
-                Text(AppFeature.cleaner.name(l10n.s, language: l10n.language)).font(.system(size: 15, weight: .semibold))
+                Text(AppFeature.cleaner.name(l10n.s, language: l10n.language)).font(.system(.title3, weight: .semibold))
                 Text("\(Self.byteString(cleaner.totalSize)) \(l10n.s.uninstallerFoundTitle)")
                     .font(.caption).foregroundStyle(.secondary)
             }
@@ -772,7 +772,7 @@ struct CleanerView: View {
                     .foregroundStyle(.secondary)
                     .frame(width: 20)
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(title(for: group)).font(.system(size: 13, weight: .medium))
+                    Text(title(for: group)).font(.system(.body, weight: .medium))
                     Text(caption(for: group))
                         .font(.system(size: 10.5)).foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -790,14 +790,14 @@ struct CleanerView: View {
             Toggle("", isOn: includeBinding(item)).labelsHidden().toggleStyle(.checkbox)
                 .accessibilityLabel(item.name)
             VStack(alignment: .leading, spacing: 1) {
-                Text(item.name).font(.system(size: 12)).lineLimit(1).truncationMode(.middle)
+                Text(item.name).font(.system(.callout)).lineLimit(1).truncationMode(.middle)
                 Text(prettyPath(item.url))
-                    .font(.system(size: 10)).foregroundStyle(.tertiary)
+                    .font(.system(.caption)).foregroundStyle(.tertiary)
                     .lineLimit(1).truncationMode(.head)
             }
             Spacer()
             Text(Self.byteString(item.size))
-                .font(.system(size: 11)).foregroundStyle(.secondary)
+                .font(.system(.subheadline)).foregroundStyle(.secondary)
                 .monospacedDigit()
         }
         .padding(.leading, 8)
@@ -813,7 +813,7 @@ struct CleanerView: View {
         HStack {
             Text(String(format: l10n.s.uninstallerSelectedFormat,
                         cleaner.selectedCount, cleaner.items.count))
-                .font(.system(size: 12))
+                .font(.system(.callout))
                 .foregroundStyle(.secondary)
             Spacer()
             Button(l10n.s.uninstallerCancel) { cleaner.reset() }
@@ -838,7 +838,7 @@ struct CleanerView: View {
                 .foregroundStyle(failed == 0 ? .green : .orange)
             Text(failed == 0 ? l10n.s.uninstallerDoneTitle : l10n.s.cleanerIncompleteTitle).font(.system(size: compact ? 17 : 20, weight: .bold))
             Text(String(format: l10n.s.uninstallerFreedFormat, Self.byteString(freed)))
-                .font(.system(size: 13)).foregroundStyle(.secondary)
+                .font(.system(.body)).foregroundStyle(.secondary)
             if failed == 0 {
                 Text(l10n.s.cleanerDoneNote)
                     .font(.caption).foregroundStyle(.tertiary)
@@ -912,9 +912,9 @@ struct PanelCleanerView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
                 Image(systemName: "sparkle")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(.body, weight: .semibold))
                 Text(AppFeature.cleaner.name(l10n.s, language: l10n.language))
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(.body, weight: .semibold))
                 Spacer()
                 Button {
                     onClose()

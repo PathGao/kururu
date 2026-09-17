@@ -101,7 +101,7 @@ struct SwitcherView: View {
                     .foregroundStyle(.primary)
                     .frame(maxWidth: SwitcherGrid.cardWidth - 36)
                 Text("0/\(switcher.totalWindowCount)")
-                    .font(.system(size: 11, weight: .medium, design: .monospaced))
+                    .font(.system(.subheadline, design: .monospaced, weight: .medium))
                     .foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -123,14 +123,14 @@ struct SwitcherView: View {
         if !switcher.searchQuery.isEmpty || switcher.isSearchPinned {
             HStack(spacing: 6) {
                 Image(systemName: "magnifyingglass")
-                    .font(.system(size: 10, weight: .bold))
+                    .font(.system(.caption, weight: .bold))
                 Text(switcher.searchQuery.isEmpty ? l10n.s.switcherSearchPin : switcher.searchQuery)
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.system(.subheadline, weight: .semibold))
                     .lineLimit(1)
                     .truncationMode(.middle)
                     .frame(maxWidth: 180)
                 Text("\(switcher.windows.count)/\(switcher.totalWindowCount)")
-                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                    .font(.system(.caption, design: .monospaced, weight: .medium))
                     .foregroundStyle(.secondary)
             }
             .foregroundStyle(.primary)
@@ -253,10 +253,10 @@ struct SwitcherView: View {
     private func shortcutHint(label: String, value: String) -> some View {
         HStack(spacing: 6) {
             Text(label)
-                .font(.system(size: 10, weight: .semibold))
+                .font(.system(.caption, weight: .semibold))
                 .foregroundStyle(SwitcherIconStyle.secondaryText)
             Text(value)
-                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                .font(.system(.subheadline, design: .monospaced, weight: .bold))
                 .foregroundStyle(SwitcherIconStyle.text)
         }
         .lineLimit(1)
@@ -279,14 +279,14 @@ struct SwitcherView: View {
                         }
                         VStack(alignment: .leading, spacing: 1) {
                             Text(selected.appName)
-                                .font(.system(size: 13, weight: .semibold))
+                                .font(.system(.body, weight: .semibold))
                                 .foregroundStyle(SwitcherIconStyle.text)
                                 .lineLimit(1)
                                 .truncationMode(.tail)
                             if let detail = selected.windowDetail(
                                 noOpenWindow: l10n.s.switcherNoOpenWindow) {
                                 Text(detail)
-                                    .font(.system(size: 11, weight: .medium))
+                                    .font(.system(.subheadline, weight: .medium))
                                     .foregroundStyle(SwitcherIconStyle.secondaryText)
                                     .lineLimit(1)
                                     .truncationMode(.middle)
@@ -294,7 +294,7 @@ struct SwitcherView: View {
                         }
                         Spacer(minLength: 0)
                         Text("\(appWindows.count)")
-                            .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                            .font(.system(.subheadline, design: .monospaced, weight: .semibold))
                             .foregroundStyle(SwitcherIconStyle.secondaryText)
                             .padding(.horizontal, 7)
                             .padding(.vertical, 3)
@@ -377,11 +377,11 @@ struct SwitcherView: View {
                             .switcherHiddenAppBadge(selected.isAppHidden, size: 9)
                     }
                     Text(selected.appName)
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.system(.callout, weight: .semibold))
                         .foregroundStyle(SwitcherIconStyle.text)
                         .lineLimit(1)
                     Text("\(appWindows.count)")
-                        .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                        .font(.system(.caption, design: .monospaced, weight: .semibold))
                         .foregroundStyle(SwitcherIconStyle.secondaryText)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
@@ -389,7 +389,7 @@ struct SwitcherView: View {
                     if let detail = selected.windowDetail(
                         noOpenWindow: l10n.s.switcherNoOpenWindow) {
                         Text(detail)
-                            .font(.system(size: 11, weight: .medium))
+                            .font(.system(.subheadline, weight: .medium))
                             .foregroundStyle(SwitcherIconStyle.secondaryText)
                             .lineLimit(1)
                             .truncationMode(.middle)
@@ -699,7 +699,7 @@ private struct SwitcherIconTile: View {
                 }
                 if windowCount > 1 {
                     Text("\(windowCount)")
-                        .font(.system(size: 10, weight: .bold, design: .monospaced))
+                        .font(.system(.caption, design: .monospaced, weight: .bold))
                         .foregroundStyle(Color.white)
                         .padding(.horizontal, 5)
                         .padding(.vertical, 2)
@@ -1075,7 +1075,7 @@ private struct WindowCard: View {
 
     private func statusBadge(systemName: String) -> some View {
         Image(systemName: systemName)
-            .font(.system(size: 10, weight: .bold))
+            .font(.system(.caption, weight: .bold))
             .foregroundStyle(Color.white.opacity(0.9))
             .frame(width: 22, height: 20)
             .background(

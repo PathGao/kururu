@@ -220,7 +220,7 @@ struct MediaWorkspaceView: View {
     private var header: some View {
         HStack(spacing: 9) {
             Label(AppFeature.mediaTools.name(l10n.s, language: l10n.language), systemImage: "photo.on.rectangle.angled")
-                .font(compact ? .system(size: 12, weight: .semibold) : SettingsTypography.body.weight(.semibold))
+                .font(compact ? .system(.callout, weight: .semibold) : SettingsTypography.body.weight(.semibold))
             Spacer(minLength: 0)
             Text(l10n.s.mediaLocalNote)
                 .font(compact ? .system(size: 9.5, weight: .medium) : SettingsTypography.body.weight(.medium))
@@ -338,7 +338,7 @@ struct MediaWorkspaceView: View {
                     .font(compact ? .system(size: 9.5, weight: .semibold) : SettingsTypography.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
                 Text(outputURL?.lastPathComponent ?? l10n.s.mediaOutputAutomatic)
-                    .font(compact ? .system(size: 10) : SettingsTypography.body)
+                    .font(compact ? .system(.caption) : SettingsTypography.body)
                     .lineLimit(1)
                     .truncationMode(.middle)
                 Spacer(minLength: 0)
@@ -560,7 +560,7 @@ struct MediaWorkspaceView: View {
                     Spacer()
                     if selectedTool != .pdfCompressor {
                         Text("\(Int((progress * 100).rounded()))%")
-                            .font(compact ? .system(size: 10, weight: .medium, design: .monospaced) : SettingsTypography.body.weight(.medium).monospaced())
+                            .font(compact ? .system(.caption, design: .monospaced, weight: .medium) : SettingsTypography.body.weight(.medium).monospaced())
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -594,7 +594,7 @@ struct MediaWorkspaceView: View {
             }
             if let outputURL = result.outputURL {
                 Text(result.imageBatchItems.count > 1 ? batchSummary(result) : String(format: l10n.s.mediaResultSavedFormat, outputURL.lastPathComponent))
-                    .font(compact ? .system(size: 10) : SettingsTypography.body)
+                    .font(compact ? .system(.caption) : SettingsTypography.body)
                     .lineLimit(2)
                     .truncationMode(.middle)
                 Text(String(format: l10n.s.mediaResultSizeFormat,
@@ -624,7 +624,7 @@ struct MediaWorkspaceView: View {
             }
             if let text = result.text {
                 Text(text.isEmpty ? l10n.s.mediaEmptyText : text)
-                    .font(compact ? .system(size: 10, design: .monospaced) : SettingsTypography.body.monospaced())
+                    .font(compact ? .system(.caption, design: .monospaced) : SettingsTypography.body.monospaced())
                     .lineLimit(compact ? 5 : 8)
                     .textSelection(.enabled)
                     .padding(8)
@@ -815,7 +815,7 @@ struct MediaWorkspaceView: View {
 
             VStack(alignment: .leading, spacing: 5) {
                 Text(imageText.preview)
-                    .font(compact ? .system(size: 10, weight: .semibold) : SettingsTypography.body.weight(.semibold))
+                    .font(compact ? .system(.caption, weight: .semibold) : SettingsTypography.body.weight(.semibold))
                 Text("\(imageText.outputName): \(previewOutputName)")
                     .font(compact ? .system(size: 9.5) : SettingsTypography.caption)
                     .lineLimit(2)
@@ -917,7 +917,7 @@ struct MediaWorkspaceView: View {
             if currentWatermarkKind == .logo || currentWatermarkKind == .textAndLogo {
                 HStack(spacing: 6) {
                     Text(imageWatermarkLogoPath.isEmpty ? imageText.noLogo : URL(fileURLWithPath: imageWatermarkLogoPath).lastPathComponent)
-                        .font(compact ? .system(size: 10) : SettingsTypography.body)
+                        .font(compact ? .system(.caption) : SettingsTypography.body)
                         .lineLimit(1)
                         .truncationMode(.middle)
                     Spacer(minLength: 0)
@@ -969,7 +969,7 @@ struct MediaWorkspaceView: View {
     private var imageRenameSection: some View {
         VStack(alignment: .leading, spacing: 5) {
             Text(imageText.rename)
-                .font(compact ? .system(size: 10, weight: .semibold) : SettingsTypography.body.weight(.semibold))
+                .font(compact ? .system(.caption, weight: .semibold) : SettingsTypography.body.weight(.semibold))
             TextField("{name}-{index:03}", text: $imageRenamePattern)
                 .textFieldStyle(.roundedBorder)
             Text("{name} {index} {index:03} {counter} {date} {time} {datetime} {width} {height} {format}")
@@ -1018,7 +1018,7 @@ struct MediaWorkspaceView: View {
     private func compressionRow(value: Binding<Double>) -> some View {
         VStack(alignment: .leading, spacing: 5) {
             Text(l10n.s.mediaQuality)
-                .font(compact ? .system(size: 10, weight: .semibold) : SettingsTypography.body.weight(.semibold))
+                .font(compact ? .system(.caption, weight: .semibold) : SettingsTypography.body.weight(.semibold))
             HStack(spacing: 6) {
                 ForEach(MediaCompressionLevel.allCases) { level in
                     compressionButton(level, value: value)
@@ -1034,9 +1034,9 @@ struct MediaWorkspaceView: View {
         } label: {
             HStack(spacing: 5) {
                 Image(systemName: level.symbolName)
-                    .font(compact ? .system(size: 10, weight: .semibold) : SettingsTypography.body.weight(.semibold))
+                    .font(compact ? .system(.caption, weight: .semibold) : SettingsTypography.body.weight(.semibold))
                 Text(compressionTitle(for: level))
-                    .font(compact ? .system(size: 10, weight: .semibold) : SettingsTypography.body.weight(.semibold))
+                    .font(compact ? .system(.caption, weight: .semibold) : SettingsTypography.body.weight(.semibold))
                     .lineLimit(1)
             }
             .frame(maxWidth: .infinity)
@@ -1059,10 +1059,10 @@ struct MediaWorkspaceView: View {
         VStack(alignment: .leading, spacing: 5) {
             HStack {
                 Text(l10n.s.mediaFPS)
-                    .font(compact ? .system(size: 10, weight: .semibold) : SettingsTypography.body.weight(.semibold))
+                    .font(compact ? .system(.caption, weight: .semibold) : SettingsTypography.body.weight(.semibold))
                 Spacer()
                 Text("\(Int(value.wrappedValue.rounded()))")
-                    .font(compact ? .system(size: 10, design: .monospaced) : SettingsTypography.body.monospaced())
+                    .font(compact ? .system(.caption, design: .monospaced) : SettingsTypography.body.monospaced())
                     .foregroundStyle(.secondary)
             }
             Slider(value: value, in: range, step: 1)
@@ -1089,13 +1089,13 @@ struct MediaWorkspaceView: View {
                                           @ViewBuilder field: () -> Field) -> some View {
         HStack(spacing: 5) {
             Text(label)
-                .font(compact ? .system(size: 10, weight: .semibold) : SettingsTypography.body.weight(.semibold))
+                .font(compact ? .system(.caption, weight: .semibold) : SettingsTypography.body.weight(.semibold))
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
                 .frame(width: labelWidth ?? (compact ? 48 : 62), alignment: .leading)
             field()
                 .textFieldStyle(.plain)
-                .font(compact ? .system(size: 13, weight: .medium, design: .monospaced) : SettingsTypography.body.weight(.medium).monospaced())
+                .font(compact ? .system(.body, design: .monospaced, weight: .medium) : SettingsTypography.body.weight(.medium).monospaced())
                 .padding(.horizontal, 9)
                 .frame(width: compact ? 62 : 76, height: compact ? 28 : 30, alignment: .leading)
                 .background(
@@ -1117,10 +1117,10 @@ struct MediaWorkspaceView: View {
         Stepper(value: value, in: range, step: step) {
             HStack(spacing: 4) {
                 Text(label)
-                    .font(compact ? .system(size: 10, weight: .semibold) : SettingsTypography.body.weight(.semibold))
+                    .font(compact ? .system(.caption, weight: .semibold) : SettingsTypography.body.weight(.semibold))
                 Spacer(minLength: 0)
                 Text("\(value.wrappedValue)\(suffix)")
-                    .font(compact ? .system(size: 10, design: .monospaced) : SettingsTypography.body.monospaced())
+                    .font(compact ? .system(.caption, design: .monospaced) : SettingsTypography.body.monospaced())
                     .foregroundStyle(.secondary)
             }
         }
@@ -1135,10 +1135,10 @@ struct MediaWorkspaceView: View {
         Stepper(value: value, in: range, step: step) {
             HStack(spacing: 4) {
                 Text(label)
-                    .font(compact ? .system(size: 10, weight: .semibold) : SettingsTypography.body.weight(.semibold))
+                    .font(compact ? .system(.caption, weight: .semibold) : SettingsTypography.body.weight(.semibold))
                 Spacer(minLength: 0)
                 Text("\(display(value.wrappedValue))\(suffix)")
-                    .font(compact ? .system(size: 10, design: .monospaced) : SettingsTypography.body.monospaced())
+                    .font(compact ? .system(.caption, design: .monospaced) : SettingsTypography.body.monospaced())
                     .foregroundStyle(.secondary)
             }
         }

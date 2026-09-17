@@ -393,7 +393,7 @@ struct PanelInlineHideButton: View {
             isVisible.toggle()
         } label: {
             Image(systemName: isVisible ? "eye.slash.fill" : "eye.fill")
-                .font(.system(size: 11, weight: .bold))
+                .font(.system(.subheadline, weight: .bold))
                 .foregroundStyle(isVisible ? Color.secondary : Color.accentColor)
                 .frame(width: 28, height: 28)
                 .background(

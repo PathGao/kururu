@@ -35,7 +35,7 @@ struct CleaningOverlayView: View {
                 .foregroundStyle(.white)
 
             Text(l10n.s.cleaningOverlaySubtitle)
-                .font(.system(size: 15))
+                .font(.system(.title3))
                 .foregroundStyle(.white.opacity(0.75))
                 .multilineTextAlignment(.center)
 
@@ -58,7 +58,7 @@ struct CleaningOverlayView: View {
             .padding(.top, 6)
 
             Text(l10n.s.cleaningOverlayMouseHint)
-                .font(.system(size: 12))
+                .font(.system(.callout))
                 .foregroundStyle(.white.opacity(0.5))
         }
         .padding(44)
@@ -79,12 +79,12 @@ struct CleaningOverlayView: View {
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(l10n.s.cleaningOverlayTitle)
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.system(.body, weight: .semibold))
                         .foregroundStyle(Color.primary)
 
                     HStack(spacing: 8) {
                         Text(l10n.s.cleaningOverlaySubtitle)
-                            .font(.system(size: 11))
+                            .font(.system(.subheadline))
                             .foregroundStyle(Color.secondary)
 
                         compactProgressDots
@@ -93,7 +93,7 @@ struct CleaningOverlayView: View {
 
                 Button(action: { manager.deactivate() }) {
                     Text(l10n.s.cleaningOverlayUnlock)
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(.system(.subheadline, weight: .semibold))
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.small)

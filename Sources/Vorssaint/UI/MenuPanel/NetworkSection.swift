@@ -195,7 +195,7 @@ struct NetworkSection: View {
     private func rateColumn(icon: String, label: String, value: Double?, color: Color, metric: MonitorMetric, editing: Bool) -> some View {
         VStack(alignment: .leading, spacing: 14) {
             Label(label, systemImage: icon)
-                .font(.system(size: 11, weight: .medium))
+                .font(.system(.subheadline, weight: .medium))
                 .foregroundStyle(color)
             Text(value.map { MetricFormat.bytesPerSec($0) } ?? l10n.s.networkMeasuring)
                 .font(PanelTypography.metric)
@@ -246,7 +246,7 @@ struct NetworkSection: View {
                     if speed.isRunning {
                         ProgressView().controlSize(.small)
                         Text(l10n.s.speedTestTesting)
-                            .font(.system(size: 11))
+                            .font(.system(.subheadline))
                             .foregroundStyle(.secondary)
                     } else {
                         Button {
@@ -254,7 +254,7 @@ struct NetworkSection: View {
                         } label: {
                             Label(speed.downloadMbps == nil ? l10n.s.speedTestRun : l10n.s.speedTestAgain,
                                   systemImage: "gauge.with.dots.needle.67percent")
-                                .font(.system(size: 11))
+                                .font(.system(.subheadline))
                         }
                         .buttonStyle(.bordered)
                         .controlSize(.small)
@@ -262,7 +262,7 @@ struct NetworkSection: View {
                     Spacer()
                     if let down = speed.downloadMbps, let up = speed.uploadMbps {
                         Text("↓\(mbps(down)) ↑\(mbps(up)) Mbps")
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(.system(.subheadline, weight: .semibold))
                             .monospacedDigit()
                             .contentTransition(.numericText())
                     }

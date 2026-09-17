@@ -28,7 +28,7 @@ struct UpdatePreviewView: View {
         VStack(spacing: 0) {
             HStack {
                 Text(l10n.s.tabReleaseNotes)
-                    .font(.system(size: 22, weight: .bold))
+                    .font(.system(.title, weight: .bold))
                 Spacer()
             }
             .padding(.horizontal, 28)
@@ -250,7 +250,7 @@ struct ReleaseNotesContent: View {
     private var fallbackNote: some View {
         HStack(alignment: .top, spacing: 9) {
             Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 13, weight: .semibold))
+                .font(.system(.body, weight: .semibold))
                 .foregroundStyle(Color.accentColor)
                 .frame(width: 18, alignment: .center)
             Text(l10n.s.obWhatsNewFallback)
@@ -264,7 +264,7 @@ struct ReleaseNotesContent: View {
         VStack(alignment: .leading, spacing: 9) {
             if !section.title.isEmpty {
                 Text(section.title.uppercased())
-                    .font(.system(size: 11, weight: .bold))
+                    .font(.system(.subheadline, weight: .bold))
                     .foregroundStyle(.secondary)
                     .tracking(1.2)
             }
@@ -285,7 +285,7 @@ struct ReleaseNotesContent: View {
         case let .bullet(text):
             HStack(alignment: .top, spacing: 9) {
                 Image(systemName: iconName(for: sectionTitle))
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(.callout, weight: .semibold))
                     .foregroundStyle(Color.accentColor)
                     .frame(width: 18, alignment: .center)
                 Text(text)

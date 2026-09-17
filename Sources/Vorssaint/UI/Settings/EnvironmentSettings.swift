@@ -163,7 +163,7 @@ struct EnvironmentSettings: View {
                             Text(index == 0 ? label("用户安装", "User installed", "Vom Benutzer installiert", "Installés par l’utilisateur", "Instalados por el usuario", "ユーザーがインストール") : index == 1
                                 ? label("系统与开发工具附带", "Bundled tools", "Mitgelieferte Werkzeuge", "Outils fournis", "Herramientas incluidas", "付属ツール") : label("其他命令", "Other commands", "Weitere Befehle", "Autres commandes", "Otros comandos", "その他のコマンド"))
                             Text("\(tools.count)")
-                                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                                .font(.system(.subheadline, design: .rounded, weight: .semibold))
                                 .foregroundStyle(.secondary)
                                 .padding(.horizontal, 5).padding(.vertical, 1)
                                 .background(Capsule().fill(Color.primary.opacity(0.06)))
@@ -185,7 +185,7 @@ struct EnvironmentSettings: View {
                     if !expanded.insert(tool.id).inserted { expanded.remove(tool.id) }
                 } label: {
                     Image(systemName: expanded.contains(tool.id) ? "chevron.down" : "chevron.right")
-                        .font(.system(size: 10, weight: .semibold)).frame(width: 12)
+                        .font(.system(.caption, weight: .semibold)).frame(width: 12)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(label("显示详情：", "Show details: ", "Details anzeigen: ", "Afficher les détails : ", "Mostrar detalles: ", "詳細を表示：") + tool.command)
@@ -336,7 +336,7 @@ struct EnvironmentSettings: View {
                         .foregroundStyle(.secondary)
                 }
                 Text(abbreviate(path))
-                    .font(.system(size: 12, design: .monospaced))
+                    .font(.system(.callout, design: .monospaced))
                     .textSelection(.enabled)
                     .fixedSize(horizontal: false, vertical: true)
                     .help(path)
@@ -393,7 +393,7 @@ struct EnvironmentSettings: View {
             } else {
                 ForEach(entries, id: \.self) { entry in
                     Text(abbreviate(entry))
-                        .font(.system(size: 12, design: .monospaced))
+                        .font(.system(.callout, design: .monospaced))
                         .foregroundStyle(highlighted ? Color.orange : Color.secondary)
                         .textSelection(.enabled)
                         .fixedSize(horizontal: false, vertical: true)
@@ -417,7 +417,7 @@ struct EnvironmentSettings: View {
                     ForEach(inspector.report.caches) { cache in
                         HStack(spacing: 8) {
                             Text(abbreviate(cache.path))
-                                .font(.system(size: 12, design: .monospaced))
+                                .font(.system(.callout, design: .monospaced))
                                 .textSelection(.enabled)
                                 .fixedSize(horizontal: false, vertical: true)
                                 .help(cache.path)

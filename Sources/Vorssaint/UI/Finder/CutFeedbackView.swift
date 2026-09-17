@@ -40,13 +40,13 @@ struct CutFeedbackView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
                 Image(systemName: "scissors")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(.body, weight: .semibold))
                     .foregroundStyle(.orange)
                 Text(l10n.s.cutReadyTitle)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(.body, weight: .semibold))
                 Spacer()
                 Text("\(service.marked.count)")
-                    .font(.system(size: 12, weight: .bold))
+                    .font(.system(.callout, weight: .bold))
                     .padding(.horizontal, 7).padding(.vertical, 2)
                     .background(Capsule().fill(Color.orange.opacity(0.18)))
                     .foregroundStyle(.orange)
@@ -71,13 +71,13 @@ struct CutFeedbackView: View {
                         Image(nsImage: item.icon)
                             .resizable().frame(width: 17, height: 17)
                         Text(item.name)
-                            .font(.system(size: 12))
+                            .font(.system(.callout))
                             .lineLimit(1).truncationMode(.middle)
                     }
                 }
                 if service.marked.count > maxRows {
                     Text("+\(service.marked.count - maxRows)")
-                        .font(.system(size: 11))
+                        .font(.system(.subheadline))
                         .foregroundStyle(.secondary)
                         .padding(.leading, 24)
                 }
@@ -86,7 +86,7 @@ struct CutFeedbackView: View {
             HStack(spacing: 6) {
                 ShortcutCaps(keys: ["⌘", "V"])
                 Text(l10n.s.cutReadyHint)
-                    .font(.system(size: 11))
+                    .font(.system(.subheadline))
                     .foregroundStyle(.secondary)
             }
             .padding(.top, 1)
@@ -99,17 +99,17 @@ struct CutFeedbackView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
                 Image(systemName: "arrow.forward.circle")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(.body, weight: .semibold))
                     .foregroundStyle(.blue)
                 Text(l10n.s.cutMovingTitle)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(.body, weight: .semibold))
                 Spacer()
                 if progress.total > 1 {
                     Text(String(format: l10n.s.cutMovingCountFormat,
                                 CutPasteProgressSupport.displayPosition(completed: progress.completed,
                                                                         total: progress.total),
                                 progress.total))
-                        .font(.system(size: 11))
+                        .font(.system(.subheadline))
                         .foregroundStyle(.secondary)
                 }
             }
@@ -121,7 +121,7 @@ struct CutFeedbackView: View {
                     .progressViewStyle(.linear)
             }
             Text(progress.currentName)
-                .font(.system(size: 11))
+                .font(.system(.subheadline))
                 .foregroundStyle(.secondary)
                 .lineLimit(1).truncationMode(.middle)
         }
@@ -136,13 +136,13 @@ struct CutFeedbackView: View {
                 .foregroundStyle(result.failed == 0 ? .green : .orange)
             VStack(alignment: .leading, spacing: 2) {
                 Text(l10n.s.cutDoneTitle)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(.body, weight: .semibold))
                 Text(movedText(result.moved))
                     .font(.system(size: 11.5))
                     .foregroundStyle(.secondary)
                 if result.failed > 0 {
                     Text(l10n.s.cutSomeFailed)
-                        .font(.system(size: 11))
+                        .font(.system(.subheadline))
                         .foregroundStyle(.orange)
                 }
             }

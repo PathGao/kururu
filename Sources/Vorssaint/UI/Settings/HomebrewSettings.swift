@@ -197,7 +197,7 @@ struct HomebrewSettings: View {
 
     private func countBadge(_ count: Int) -> some View {
         Text("\(count)")
-            .font(.system(size: 11, weight: .semibold, design: .rounded))
+            .font(.system(.subheadline, design: .rounded, weight: .semibold))
             .monospacedDigit()
             .foregroundStyle(.secondary)
             .padding(.horizontal, 5)
@@ -302,7 +302,7 @@ struct HomebrewSettings: View {
                 HStack(spacing: 3) {
                     Image(systemName: "shippingbox")
                     Text("\(count)")
-                        .font(.system(size: 11, weight: .semibold, design: .rounded))
+                        .font(.system(.subheadline, design: .rounded, weight: .semibold))
                         .monospacedDigit()
                     Image(systemName: "chevron.down")
                         .font(.system(size: 9, weight: .semibold))
@@ -332,7 +332,7 @@ struct HomebrewSettings: View {
                     .lineLimit(1)
                 if let version = dependency.versionText {
                     Text(version)
-                        .font(.system(size: 12, design: .monospaced))
+                        .font(.system(.callout, design: .monospaced))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
@@ -417,7 +417,7 @@ struct HomebrewTrustCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: compact ? 6 : 8) {
             Label(l10n.s.homebrewTrustTitle, systemImage: "checkmark.shield")
-                .font(compact ? .system(size: 11, weight: .semibold) : SettingsTypography.sectionTitle)
+                .font(compact ? .system(.subheadline, weight: .semibold) : SettingsTypography.sectionTitle)
             Text(String(format: l10n.s.homebrewTrustCaption, tap))
                 .font(compact ? .system(size: 9.5) : SettingsTypography.caption)
                 .foregroundStyle(.secondary)

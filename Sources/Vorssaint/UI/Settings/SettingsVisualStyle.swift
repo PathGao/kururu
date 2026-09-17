@@ -142,7 +142,7 @@ struct SettingsSymbol: View {
     var body: some View {
         let accent = isEnabled ? SettingsVisualStyle.current.accent : Color.secondary
         Image(systemName: systemImage)
-            .font(.system(size: 15, weight: .medium))
+            .font(.system(.title3, weight: .medium))
             .symbolRenderingMode(.hierarchical)
             .foregroundStyle(accent)
             .frame(width: 30, height: 30)

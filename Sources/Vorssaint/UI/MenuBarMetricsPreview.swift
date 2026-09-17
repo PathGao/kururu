@@ -70,7 +70,7 @@ struct MenuBarMetricsPreview: View {
                 }
             }
         }
-          .font(.system(size: 12))
+          .font(.system(.callout))
           .padding(.horizontal, 14)
           .frame(height: 32)
         }

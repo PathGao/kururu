@@ -562,7 +562,7 @@ private struct CommandBarLinkEditor: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text(text.linksTitle)
-                .font(.system(size: 15, weight: .semibold))
+                .font(.system(.title3, weight: .semibold))
 
             Picker("", selection: $draft.kind) {
                 Text(text.linkKindLink).tag(CommandBarLink.Kind.link)

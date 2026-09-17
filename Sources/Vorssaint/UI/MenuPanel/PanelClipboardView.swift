@@ -42,7 +42,7 @@ struct PanelClipboardView: View {
     private var header: some View {
         HStack(spacing: 8) {
             Label(AppFeature.clipboardHistory.name(l10n.s, language: l10n.language), systemImage: "doc.on.clipboard")
-                .font(.system(size: 12, weight: .semibold))
+                .font(.system(.callout, weight: .semibold))
             Spacer()
             Button(action: onClose) {
                 Image(systemName: "xmark.circle.fill")
@@ -75,7 +75,7 @@ struct PanelClipboardView: View {
             HStack(spacing: 6) {
                 TextField(text.search, text: $query)
                     .textFieldStyle(.roundedBorder)
-                    .font(.system(size: 11))
+                    .font(.system(.subheadline))
                     .disabled(history.entries.isEmpty)
                 ClipboardClearRecentButton()
                     .labelStyle(.iconOnly)
@@ -85,7 +85,7 @@ struct PanelClipboardView: View {
                     history.showHistoryWindow()
                 } label: {
                     Image(systemName: "arrow.up.forward.app")
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(.system(.subheadline, weight: .semibold))
                         .frame(width: 24, height: 22)
                 }
                 .buttonStyle(.bordered)
@@ -177,7 +177,7 @@ struct PanelClipboardView: View {
             } else {
                 HStack(alignment: .center, spacing: 7) {
                     Image(systemName: "folder")
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(.system(.subheadline, weight: .semibold))
                         .foregroundStyle(.secondary)
                     Text(entry.filePaths.count == 1
                          ? (entry.fileNames.first ?? entry.preview)

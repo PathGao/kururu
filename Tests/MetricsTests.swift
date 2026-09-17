@@ -17677,10 +17677,10 @@ UninstallerSelectionTests.run { expect($0, $1) }
             contentsOfFile: "Sources/Vorssaint/UI/Scratchpad/ScratchpadView.swift",
             encoding: .utf8)) ?? ""
         let scratchpadHitTargetContracts = [
-            "Image(systemName: \"plus\")\n                    .font(.system(size: 12, weight: .semibold))\n                    .frame(width: 22, height: 22)\n                    .contentShape(Rectangle())",
-            "Image(systemName: \"ellipsis\")\n                    .font(.system(size: 12, weight: .semibold))\n                    .frame(width: 22, height: 22)\n                    .contentShape(Rectangle())",
+            "Image(systemName: \"plus\")\n                    .font(.system(.callout, weight: .semibold))\n                    .frame(width: 22, height: 22)\n                    .contentShape(Rectangle())",
+            "Image(systemName: \"ellipsis\")\n                    .font(.system(.callout, weight: .semibold))\n                    .frame(width: 22, height: 22)\n                    .contentShape(Rectangle())",
             ".fill(selected ? Color.accentColor.opacity(0.16) : Color.clear)\n                }\n                .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))",
-            "Image(systemName: service.isPinned ? \"pin.fill\" : \"pin\")\n                    .font(.system(size: 12, weight: .semibold))\n                    .frame(width: 22, height: 22)\n                    .contentShape(Rectangle())",
+            "Image(systemName: service.isPinned ? \"pin.fill\" : \"pin\")\n                    .font(.system(.callout, weight: .semibold))\n                    .frame(width: 22, height: 22)\n                    .contentShape(Rectangle())",
             "Image(systemName: service.isAtTop ? \"chevron.up\" : \"xmark.circle.fill\")\n                    .font(.system(size: 14))\n                    .foregroundStyle(.secondary)\n                    .frame(width: 22, height: 22)\n                    .contentShape(Rectangle())",
         ]
         expect(scratchpadHitTargetContracts.allSatisfy { scratchpadViewSource.contains($0) },

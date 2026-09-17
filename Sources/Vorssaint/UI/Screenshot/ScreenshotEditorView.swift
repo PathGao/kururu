@@ -571,7 +571,7 @@ struct ScreenshotEditorView: View {
                 toolOptionsShown.toggle()
             } label: {
                 Image(systemName: "gearshape.fill")
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(.body, weight: .medium))
                     .frame(width: 33, height: 29)
                     .background(
                         RoundedRectangle(cornerRadius: 9, style: .continuous)
@@ -1008,11 +1008,11 @@ struct ScreenshotEditorView: View {
                 switch model.backdropStyle.sanitized().kind {
                 case .none:
                     Image(systemName: "sparkles.rectangle.stack")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.system(.callout, weight: .medium))
                         .foregroundStyle(Color.primary.opacity(0.85))
                 case .image:
                     Image(systemName: "photo.fill")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.system(.callout, weight: .medium))
                         .foregroundStyle(Color.primary.opacity(0.85))
                 case .preset, .solid, .gradient:
                     RoundedRectangle(cornerRadius: 4.5, style: .continuous)
@@ -1060,7 +1060,7 @@ struct ScreenshotEditorView: View {
         HStack(spacing: 8) {
             dragOutHandle
             Text(dimensionsLabel)
-                .font(.system(size: 11, weight: .medium).monospacedDigit())
+                .font(.system(.subheadline, weight: .medium).monospacedDigit())
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
                 .fixedSize()
@@ -1075,7 +1075,7 @@ struct ScreenshotEditorView: View {
         HStack(spacing: 3) {
             zoomButton(active: model.zoomOverride == nil, help: "⌘0") {
                 Image(systemName: "arrow.down.right.and.arrow.up.left")
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.system(.subheadline, weight: .medium))
             } action: {
                 model.zoomOverride = nil
             }
@@ -1087,7 +1087,7 @@ struct ScreenshotEditorView: View {
                 .fixedSize()
             zoomButton(active: isActualZoom, help: "⌘1") {
                 Text("1:1")
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.system(.subheadline, weight: .medium))
             } action: {
                 model.zoomOverride = 1 / model.scale
             }
@@ -1139,7 +1139,7 @@ struct ScreenshotEditorView: View {
     private var dragOutHandle: some View {
         Label(strings.dragOutHandleLabel, systemImage: "arrow.up.doc")
             .labelStyle(.iconOnly)
-            .font(.system(size: 11, weight: .medium))
+            .font(.system(.subheadline, weight: .medium))
             .frame(width: 26, height: 18)
             .contentShape(Rectangle())
             .onDrag {

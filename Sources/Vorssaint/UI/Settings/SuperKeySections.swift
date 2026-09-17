@@ -96,11 +96,11 @@ struct SuperKeySections: View {
                        symbol: source == .capsLock ? "capslock" : nil,
                        wide: true)
                 Text(text.holdHint)
-                    .font(.system(size: 10))
+                    .font(.system(.caption))
                     .foregroundStyle(.tertiary)
             }
             Image(systemName: "arrow.right")
-                .font(.system(size: 11, weight: .semibold))
+                .font(.system(.subheadline, weight: .semibold))
                 .foregroundStyle(.tertiary)
                 .padding(.bottom, 14)
             HStack(spacing: 5) {
@@ -120,10 +120,10 @@ struct SuperKeySections: View {
         HStack(spacing: 4) {
             if let symbol {
                 Image(systemName: symbol)
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.system(.subheadline, weight: .semibold))
             }
             Text(title)
-                .font(.system(size: 12, weight: .medium))
+                .font(.system(.callout, weight: .medium))
         }
         .frame(minWidth: wide ? 84 : 30, minHeight: 30)
         .background(
@@ -142,7 +142,7 @@ struct SuperKeySections: View {
             toggle(choice.modifier)
         } label: {
             Text(choice.symbol)
-                .font(.system(size: 12, weight: .medium))
+                .font(.system(.callout, weight: .medium))
                 .frame(minWidth: 30, minHeight: 30)
                 .foregroundStyle(selected ? Color.accentColor : Color.secondary)
                 .background(

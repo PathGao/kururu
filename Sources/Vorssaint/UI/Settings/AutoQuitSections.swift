@@ -99,7 +99,7 @@ struct AutoQuitSections: View {
     private func bullet(_ icon: String, _ text: String) -> some View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: icon)
-                .font(.system(size: 12))
+                .font(.system(.callout))
                 .foregroundStyle(.tint)
                 .frame(width: 18)
             Text(text)

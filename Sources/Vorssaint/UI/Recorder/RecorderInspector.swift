@@ -54,7 +54,7 @@ struct RecorderInspector: View {
                             pointerSection
                         } else {
                             Text(strings.noPointerNote)
-                                .font(.system(size: 11))
+                                .font(.system(.subheadline))
                                 .foregroundStyle(.secondary)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
@@ -130,7 +130,7 @@ struct RecorderInspector: View {
             .contentShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
             .overlay(alignment: .topTrailing) {
                 Image(systemName: selected ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(.callout, weight: .semibold))
                     .foregroundStyle(selected ? Color.accentColor : Color.secondary.opacity(0.28))
                     .padding(6)
             }
@@ -187,7 +187,7 @@ struct RecorderInspector: View {
                     Text(model.showsBackdrop
                          ? strings.backgroundSectionLabel
                          : FeatureStrings.screenshot(l10n.language).backdropNone)
-                        .font(.system(size: 12))
+                        .font(.system(.callout))
                     Spacer()
                     Image(systemName: "chevron.up.chevron.down")
                         .font(.system(size: 9, weight: .semibold))
@@ -275,9 +275,9 @@ struct RecorderInspector: View {
             } label: {
                 HStack(spacing: 4) {
                     Image(systemName: "chevron.left")
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(.system(.caption, weight: .semibold))
                     Text(strings.backToOptions)
-                        .font(.system(size: 11, weight: .medium))
+                        .font(.system(.subheadline, weight: .medium))
                     Spacer()
                 }
                 .contentShape(Rectangle())
@@ -298,7 +298,7 @@ struct RecorderInspector: View {
                         })
             VStack(alignment: .leading, spacing: 5) {
                 Text(strings.zoomWhereLabel)
-                    .font(.system(size: 11))
+                    .font(.system(.subheadline))
                     .foregroundStyle(Color(white: 0.72))
                 Picker("", selection: Binding(
                     get: { segment.followsPointer },
@@ -337,9 +337,9 @@ struct RecorderInspector: View {
             } label: {
                 HStack(spacing: 4) {
                     Image(systemName: "chevron.left")
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(.system(.caption, weight: .semibold))
                     Text(strings.backToOptions)
-                        .font(.system(size: 11, weight: .medium))
+                        .font(.system(.subheadline, weight: .medium))
                     Spacer()
                 }
                 .contentShape(Rectangle())
@@ -376,7 +376,7 @@ struct RecorderInspector: View {
 
             VStack(alignment: .leading, spacing: 5) {
                 Text(strings.textPositionLabel)
-                    .font(.system(size: 11))
+                    .font(.system(.subheadline))
                     .foregroundStyle(Color(white: 0.72))
                 anchorGrid(selected: overlay.anchor) { anchor in
                     model.updateSelectedText { $0.anchor = anchor }
@@ -385,7 +385,7 @@ struct RecorderInspector: View {
 
             VStack(alignment: .leading, spacing: 5) {
                 Text(strings.textColorLabel)
-                    .font(.system(size: 11))
+                    .font(.system(.subheadline))
                     .foregroundStyle(Color(white: 0.72))
                 HStack(spacing: 6) {
                     ForEach(RecorderTextOverlay.Palette.allCases, id: \.rawValue) { palette in
@@ -426,9 +426,9 @@ struct RecorderInspector: View {
             } label: {
                 HStack(spacing: 4) {
                     Image(systemName: "chevron.left")
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(.system(.caption, weight: .semibold))
                     Text(strings.backToOptions)
-                        .font(.system(size: 11, weight: .medium))
+                        .font(.system(.subheadline, weight: .medium))
                     Spacer()
                 }
                 .contentShape(Rectangle())
@@ -439,7 +439,7 @@ struct RecorderInspector: View {
             sectionTitle(strings.thisImageLabel)
 
             Text(URL(fileURLWithPath: overlay.path).lastPathComponent)
-                .font(.system(size: 11))
+                .font(.system(.subheadline))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
                 .truncationMode(.middle)
@@ -470,7 +470,7 @@ struct RecorderInspector: View {
 
             VStack(alignment: .leading, spacing: 5) {
                 Text(strings.imagePositionLabel)
-                    .font(.system(size: 11))
+                    .font(.system(.subheadline))
                     .foregroundStyle(Color(white: 0.72))
                 anchorGrid(selected: overlay.anchor) { anchor in
                     model.updateSelectedImage { $0.anchor = anchor }
@@ -495,9 +495,9 @@ struct RecorderInspector: View {
             } label: {
                 HStack(spacing: 4) {
                     Image(systemName: "chevron.left")
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(.system(.caption, weight: .semibold))
                     Text(strings.backToOptions)
-                        .font(.system(size: 11, weight: .medium))
+                        .font(.system(.subheadline, weight: .medium))
                     Spacer()
                 }
                 .contentShape(Rectangle())
@@ -572,11 +572,11 @@ struct RecorderInspector: View {
         VStack(alignment: .leading, spacing: 2) {
             HStack {
                 Text(title)
-                    .font(.system(size: 11))
+                    .font(.system(.subheadline))
                     .foregroundStyle(Color(white: 0.72))
                 Spacer()
                 Text(String(format: format, value * scale))
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.system(.subheadline, weight: .medium))
                     .monospacedDigit()
                     .foregroundStyle(Color(white: 0.86))
             }
@@ -682,7 +682,7 @@ struct RecorderInspector: View {
             }
             VStack(spacing: 3) {
                 Text(strings.zoomEmptyTitle)
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(.callout, weight: .semibold))
                 Text(strings.zoomEmptyCaption)
                     .font(.system(size: 10.5))
                     .foregroundStyle(.secondary)
@@ -715,7 +715,7 @@ struct RecorderInspector: View {
 
     private func sectionTitle(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 11, weight: .semibold))
+            .font(.system(.subheadline, weight: .semibold))
             .foregroundStyle(Color(white: 0.62))
             .textCase(.uppercase)
             .kerning(0.4)

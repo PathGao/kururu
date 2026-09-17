@@ -105,7 +105,7 @@ struct ScratchpadView: View {
                 service.createPad(defaultName: text.pageTitle)
             } label: {
                 Image(systemName: "plus")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(.callout, weight: .semibold))
                     .frame(width: 22, height: 22)
                     .contentShape(Rectangle())
             }
@@ -124,7 +124,7 @@ struct ScratchpadView: View {
                 }
             } label: {
                 Image(systemName: "ellipsis")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(.callout, weight: .semibold))
                     .frame(width: 22, height: 22)
                     .contentShape(Rectangle())
             }
@@ -246,7 +246,7 @@ struct ScratchpadView: View {
     private var header: some View {
         HStack(spacing: 8) {
             Text(AppFeature.scratchpad.name(l10n.s, language: l10n.language))
-                .font(.system(size: 12, weight: .semibold))
+                .font(.system(.callout, weight: .semibold))
                 .foregroundStyle(.secondary)
                 .padding(.leading, 12)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
@@ -271,7 +271,7 @@ struct ScratchpadView: View {
                 service.togglePin()
             } label: {
                 Image(systemName: service.isPinned ? "pin.fill" : "pin")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(.callout, weight: .semibold))
                     .frame(width: 22, height: 22)
                     .contentShape(Rectangle())
             }
@@ -369,7 +369,7 @@ struct ScratchpadView: View {
                               action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: symbol)
-                .font(.system(size: 13, weight: .medium))
+                .font(.system(.body, weight: .medium))
                 .foregroundStyle(tint.map(AnyShapeStyle.init) ?? AnyShapeStyle(.secondary))
                 .frame(width: 26, height: 26)
                 .contentShape(Rectangle())

@@ -152,7 +152,7 @@ struct BrightnessOSDView: View {
                     .minimumScaleFactor(0.7)
                     .lineLimit(1)
                 Text("%")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.system(.subheadline, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.52))
             }
             .frame(height: 36)

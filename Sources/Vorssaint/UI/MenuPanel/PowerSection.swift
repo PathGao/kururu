@@ -221,7 +221,7 @@ struct PowerSection: View {
                 HStack {
                     Label(l10n.s.batteryLabel,
                           systemImage: (monitor.snapshot.power?.isCharging ?? false) ? "bolt.fill" : "battery.100")
-                        .font(.system(size: 11, weight: .medium)).foregroundStyle(.secondary)
+                        .font(.system(.subheadline, weight: .medium)).foregroundStyle(.secondary)
                     Spacer()
                     if editing { PanelInlineHideButton(isVisible: $showCharge) }
                 }

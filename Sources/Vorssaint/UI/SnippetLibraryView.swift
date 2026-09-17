@@ -43,7 +43,7 @@ struct SnippetLibraryView: View {
                 .foregroundStyle(.secondary)
             TextField(text.librarySearchPlaceholder, text: $library.query)
                 .textFieldStyle(.plain)
-                .font(.system(size: 15))
+                .font(.system(.title3))
                 .focused($searchFocused)
             if !library.query.isEmpty {
                 Button {
@@ -122,7 +122,7 @@ struct SnippetLibraryView: View {
     private func folderHeader(_ name: String, topPadding: CGFloat) -> some View {
         HStack(spacing: 5) {
             Image(systemName: "folder")
-                .font(.system(size: 10, weight: .semibold))
+                .font(.system(.caption, weight: .semibold))
             Text(name)
                 .font(.caption.weight(.semibold))
         }
@@ -141,7 +141,7 @@ struct SnippetLibraryView: View {
                 VStack(alignment: .leading, spacing: 1) {
                     HStack(spacing: 6) {
                         Text(snippet.name.isEmpty ? snippet.trigger : snippet.name)
-                            .font(.system(size: 13, weight: .medium))
+                            .font(.system(.body, weight: .medium))
                             .lineLimit(1)
                         if !snippet.trigger.isEmpty {
                             Text(snippet.trigger)

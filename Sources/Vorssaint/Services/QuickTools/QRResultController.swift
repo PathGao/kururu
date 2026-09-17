@@ -178,7 +178,7 @@ private struct QRResultView: View {
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(Color.accentColor)
                 Text(isText ? strings.ocrName : strings.qrResultTitle)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(.body, weight: .semibold))
             }
 
             ScrollView(.vertical) {

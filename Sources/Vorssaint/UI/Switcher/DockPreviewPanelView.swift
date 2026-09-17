@@ -228,7 +228,7 @@ private struct DockPreviewPanelContent: View {
                     onTogglePinned()
                 } label: {
                     Image(systemName: "pin.slash.fill")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.system(.callout, weight: .semibold))
                         .frame(width: 22, height: 20)
                 }
                 .buttonStyle(.plain)
@@ -239,7 +239,7 @@ private struct DockPreviewPanelContent: View {
                     onClosePanel()
                 } label: {
                     Image(systemName: "xmark")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(.system(.subheadline, weight: .bold))
                         .frame(width: 20, height: 20)
                 }
                 .buttonStyle(.plain)
@@ -271,7 +271,7 @@ private struct DockPreviewPanelContent: View {
                             .frame(width: 16, height: 16)
                     }
                     Text(currentAppName ?? "")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.system(.callout, weight: .semibold))
                         .lineLimit(1)
                         .truncationMode(.middle)
                 }
@@ -283,7 +283,7 @@ private struct DockPreviewPanelContent: View {
                         Image(systemName: "rectangle.stack")
                             .font(.system(size: 9, weight: .semibold))
                         Text(positionText)
-                            .font(.system(size: 10, weight: .semibold, design: .rounded))
+                            .font(.system(.caption, design: .rounded, weight: .semibold))
                             .monospacedDigit()
                     }
                     .foregroundStyle(.secondary)
@@ -293,7 +293,7 @@ private struct DockPreviewPanelContent: View {
                 }
                 if isPinned {
                     Text(text.pinned)
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(.system(.caption, weight: .semibold))
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
@@ -315,7 +315,7 @@ private struct DockPreviewPanelContent: View {
                     onSelectPrevious()
                 } label: {
                     Image(systemName: "chevron.left")
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(.system(.subheadline, weight: .semibold))
                         .frame(width: 18, height: 18)
                 }
                 .help(text.previousWindow)
@@ -325,7 +325,7 @@ private struct DockPreviewPanelContent: View {
                     onSelectNext()
                 } label: {
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(.system(.subheadline, weight: .semibold))
                         .frame(width: 18, height: 18)
                 }
                 .help(text.nextWindow)
@@ -592,7 +592,7 @@ private struct DockPreviewCard: View {
             }
         } label: {
             Image(systemName: "xmark.circle.fill")
-                .font(.system(size: 13, weight: .medium))
+                .font(.system(.body, weight: .medium))
                 .symbolRenderingMode(.palette)
                 .foregroundStyle(Color.white.opacity(isCloseHovering ? 0.95 : 0.72),
                                  Color(red: 1.0, green: 0.38, blue: 0.33).opacity(isCloseHovering ? 1 : 0.92))
@@ -616,7 +616,7 @@ private struct DockPreviewCard: View {
             }
         } label: {
             Image(systemName: window.isMinimized ? "plus.circle.fill" : "minus.circle.fill")
-                .font(.system(size: 13, weight: .medium))
+                .font(.system(.body, weight: .medium))
                 .symbolRenderingMode(.palette)
                 .foregroundStyle(Color.white.opacity(isMinimizeHovering ? 0.95 : 0.72),
                                  Color.black.opacity(isMinimizeHovering ? 0.58 : 0.46))

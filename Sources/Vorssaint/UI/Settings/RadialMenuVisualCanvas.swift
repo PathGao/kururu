@@ -64,9 +64,9 @@ struct RadialMenuVisualCanvas: View {
                 } label: {
                     HStack(spacing: 4) {
                         Image(systemName: "chevron.backward")
-                            .font(.system(size: 11, weight: .bold))
+                            .font(.system(.subheadline, weight: .bold))
                         Text(openSubmenu.displayName(text))
-                            .font(.system(size: 12, weight: .medium))
+                            .font(.system(.callout, weight: .medium))
                     }
                     .foregroundStyle(profileColor)
                 }
@@ -74,7 +74,7 @@ struct RadialMenuVisualCanvas: View {
                 .help(text.backButton)
             } else {
                 Text(AppFeature.radialMenu.name(L10n.shared.s, language: L10n.shared.language))
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.system(.subheadline, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.6))
                     .textCase(.uppercase)
             }
@@ -294,7 +294,7 @@ struct RadialMenuVisualCanvas: View {
         if let target = targetIndex, items.indices.contains(target) {
             VStack(spacing: 2) {
                 Image(systemName: "arrow.triangle.swap")
-                    .font(.system(size: 13, weight: .bold))
+                    .font(.system(.body, weight: .bold))
                     .foregroundStyle(profileColor)
                 Text(items[target].displayName(text))
                     .font(.system(size: 9, weight: .semibold))
@@ -307,7 +307,7 @@ struct RadialMenuVisualCanvas: View {
             let item = items[index]
             VStack(spacing: 1) {
                 Text(item.displayName(text))
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(.system(.caption, weight: .semibold))
                     .foregroundStyle(.white)
                     .lineLimit(2)
                     .multilineTextAlignment(.center)
@@ -319,7 +319,7 @@ struct RadialMenuVisualCanvas: View {
         } else if openSubmenu != nil {
             VStack(spacing: 3) {
                 Image(systemName: "chevron.backward")
-                    .font(.system(size: 12, weight: .bold))
+                    .font(.system(.callout, weight: .bold))
                     .foregroundStyle(profileColor)
                 Text(text.backButton)
                     .font(.system(size: 9, weight: .medium))

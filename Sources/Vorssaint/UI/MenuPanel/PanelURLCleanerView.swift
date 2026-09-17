@@ -28,7 +28,7 @@ struct PanelURLCleanerView: View {
     private var header: some View {
         HStack(spacing: 8) {
             Label(AppFeature.urlCleaner.name(l10n.s, language: l10n.language), systemImage: "link")
-                .font(.system(size: 12, weight: .semibold))
+                .font(.system(.callout, weight: .semibold))
             Spacer()
             Button(action: onClose) {
                 Image(systemName: "xmark.circle.fill")
@@ -50,12 +50,12 @@ struct PanelURLCleanerView: View {
                     URLCleanerService.shared.syncWithPreferences()
                 }
             Text(l10n.s.urlCleanerEnableCaption)
-                .font(.system(size: 10))
+                .font(.system(.caption))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             if autoClean, cleaner.isRunning {
                 Label(l10n.s.urlCleanerActiveNow, systemImage: "checkmark.circle.fill")
-                    .font(.system(size: 10))
+                    .font(.system(.caption))
                     .foregroundStyle(.green)
             }
         }
@@ -65,17 +65,17 @@ struct PanelURLCleanerView: View {
     private var manualCleaner: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(l10n.s.urlCleanerManualTitle)
-                .font(.system(size: 10, weight: .semibold))
+                .font(.system(.caption, weight: .semibold))
                 .foregroundStyle(.tertiary)
             HStack(spacing: 6) {
                 TextField(l10n.s.urlCleanerInputPlaceholder, text: $input)
                     .textFieldStyle(.roundedBorder)
-                    .font(.system(size: 11))
+                    .font(.system(.subheadline))
                 Button {
                     clearInput()
                 } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 13))
+                        .font(.system(.body))
                         .foregroundStyle(Color.secondary.opacity(canClearInput ? 1 : 0.35))
                         .frame(width: 20, height: 20)
                 }
@@ -109,7 +109,7 @@ struct PanelURLCleanerView: View {
     private var resultView: some View {
         if output.isEmpty {
             Text(message ?? l10n.s.urlCleanerOutputPlaceholder)
-                .font(.system(size: 10))
+                .font(.system(.caption))
                 .foregroundStyle(.tertiary)
                 .lineLimit(2)
         } else {
@@ -121,7 +121,7 @@ struct PanelURLCleanerView: View {
                     .textSelection(.enabled)
                 if let message {
                     Text(message)
-                        .font(.system(size: 10))
+                        .font(.system(.caption))
                         .foregroundStyle(.secondary)
                 }
             }

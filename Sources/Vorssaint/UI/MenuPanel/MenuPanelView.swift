@@ -362,7 +362,7 @@ struct MenuPanelView: View {
                     focusedSection = id
                 } label: {
                     Image(systemName: id.symbolName)
-                        .font(.system(size: 17, weight: .medium))
+                        .font(.system(.title2, weight: .medium))
                         .frame(width: 44, height: 52)
                         .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
@@ -390,7 +390,7 @@ struct MenuPanelView: View {
                 MenuPanelFocus.shared.clearMetricFocus()
             } label: {
                 Image(systemName: "chevron.left")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.system(.subheadline, weight: .semibold))
                     .frame(width: 24, height: 24)
                     .contentShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
             }
@@ -444,7 +444,7 @@ struct MenuPanelView: View {
             .accessibilityLabel(l10n.s.panelQuit)
         }
         .buttonStyle(.plain)
-        .font(.system(size: 13, weight: .medium))
+        .font(.system(.body, weight: .medium))
         .foregroundStyle(.secondary)
     }
 
@@ -1150,7 +1150,7 @@ struct QuickControlsSection: View {
                     .foregroundStyle(.secondary)
                     .rotationEffect(.degrees(editing || isExpanded(category) ? 90 : 0))
                 Text(title(for: category).uppercased())
-                    .font(.system(size: 10, weight: .bold))
+                    .font(.system(.caption, weight: .bold))
                     .foregroundStyle(.secondary)
                     .tracking(0.5)
                 Spacer(minLength: 0)
@@ -1915,13 +1915,13 @@ struct UtilityActionButton: View {
                 PanelDragHandle()
             }
             Image(systemName: systemImage)
-                .font(.system(size: 15, weight: .semibold))
+                .font(.system(.title3, weight: .semibold))
                 .foregroundStyle(iconColor)
                 .frame(width: 22)
             VStack(alignment: .leading, spacing: 1) {
                 HStack(spacing: 5) {
                     Text(title)
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.system(.callout, weight: .semibold))
                         .foregroundStyle(isHiddenInEditor ? Color.secondary : Color.primary)
                         .lineLimit(2)
                         .fixedSize(horizontal: false, vertical: true)
@@ -1930,7 +1930,7 @@ struct UtilityActionButton: View {
                     }
                 }
                 Text(caption)
-                    .font(.system(size: 10))
+                    .font(.system(.caption))
                     .foregroundStyle(captionColor)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -1966,7 +1966,7 @@ struct UtilityActionButton: View {
             permissionAction?()
         } label: {
             Label(permissionButtonTitle ?? "", systemImage: "hand.raised.fill")
-                .font(.system(size: 10, weight: .semibold))
+                .font(.system(.caption, weight: .semibold))
         }
         .buttonStyle(.bordered)
         .controlSize(.mini)
@@ -2019,13 +2019,13 @@ struct PanelToggleRow: View {
                 PanelDragHandle()
             }
             Image(systemName: systemImage)
-                .font(.system(size: 15, weight: .semibold))
+                .font(.system(.title3, weight: .semibold))
                 .foregroundStyle(iconColor)
                 .frame(width: 22)
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 5) {
                     Text(title)
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.system(.callout, weight: .semibold))
                         .foregroundStyle(isHiddenInEditor ? Color.secondary : Color.primary)
                         .lineLimit(2)
                         .fixedSize(horizontal: false, vertical: true)
@@ -2034,7 +2034,7 @@ struct PanelToggleRow: View {
                     }
                 }
                 Text(caption)
-                    .font(.system(size: 10))
+                    .font(.system(.caption))
                     .foregroundStyle(captionColor)
                     .fixedSize(horizontal: false, vertical: true)
                 if isActive, let activeText {
@@ -2273,7 +2273,7 @@ struct UpdateBanner: View {
                         .foregroundStyle(.white)
                     VStack(alignment: .leading, spacing: 1) {
                         Text(l10n.s.updateBannerTitle)
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(.system(.callout, weight: .semibold))
                             .foregroundStyle(.white)
                         // The title above already says an update is waiting,
                         // so this line carries the version instead of saying
@@ -2284,7 +2284,7 @@ struct UpdateBanner: View {
                     }
                     Spacer()
                     Text(l10n.s.updateBannerAction)
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(.system(.subheadline, weight: .semibold))
                         .foregroundStyle(tintColor)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 4)
@@ -2382,7 +2382,7 @@ struct KeepAwakeCard: View {
                 if !awake.isActive {
                     HStack {
                         Text(l10n.s.durationLabel)
-                            .font(.system(size: 11))
+                            .font(.system(.subheadline))
                             .foregroundStyle(.secondary)
                         Spacer()
                         DurationPicker(selection: $defaultDuration)
@@ -2473,11 +2473,11 @@ struct KeepAwakeCard: View {
             } label: {
                 HStack(spacing: 7) {
                     Image(systemName: "bolt.fill")
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(.system(.subheadline, weight: .semibold))
                         .foregroundStyle(.secondary)
                         .frame(width: 15)
                     Text(automationStrings.automationSection)
-                        .font(.system(size: 11, weight: .medium))
+                        .font(.system(.subheadline, weight: .medium))
                         .foregroundStyle(.primary)
                         .lineLimit(1)
                     Spacer(minLength: 6)
@@ -2546,11 +2546,11 @@ struct KeepAwakeCard: View {
         VStack(alignment: .leading, spacing: 3) {
             HStack(spacing: 7) {
                 Image(systemName: icon)
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.system(.subheadline, weight: .medium))
                     .foregroundStyle(.secondary)
                     .frame(width: 15)
                 Text(title)
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.system(.subheadline, weight: .medium))
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 8)
@@ -2572,7 +2572,7 @@ struct KeepAwakeCard: View {
     private var mouseJiggleIntervalRow: some View {
         HStack(spacing: 8) {
             Text(l10n.s.keepAwakeMouseJiggleInterval)
-                .font(.system(size: 11))
+                .font(.system(.subheadline))
                 .foregroundStyle(.secondary)
             Spacer(minLength: 0)
             KeepAwakeMouseJiggleIntervalPicker(selection: $keepAwakeMouseJiggleInterval)
@@ -2659,10 +2659,10 @@ struct KeepAwakeCard: View {
         HStack {
             VStack(alignment: .leading, spacing: 1) {
                 Text(title)
-                    .font(.system(size: 12))
+                    .font(.system(.callout))
                 if let caption {
                     Text(caption)
-                        .font(.system(size: 10))
+                        .font(.system(.caption))
                         .foregroundStyle(captionIsError ? Color.red : Color.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -2683,7 +2683,7 @@ struct KeepAwakeCard: View {
         }
         .buttonStyle(.bordered)
         .controlSize(.small)
-        .font(.system(size: 10))
+        .font(.system(.caption))
     }
 
     private static func remainingText(until end: Date) -> String {
