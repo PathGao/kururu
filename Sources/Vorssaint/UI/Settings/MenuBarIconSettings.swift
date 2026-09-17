@@ -109,21 +109,6 @@ struct MenuBarIconSettings: View {
     }
 }
 
-struct MenuBarMetricPickerRow: View {
-    @ObservedObject private var l10n = L10n.shared
-    let metric: MenuBarMetric
-    @AppStorage private var shown: Bool
-
-    init(metric: MenuBarMetric) {
-        self.metric = metric
-        _shown = AppStorage(wrappedValue: false, metric.defaultsKey)
-    }
-
-    var body: some View {
-        Toggle(metric.title(l10n.s), isOn: $shown)
-    }
-}
-
 private struct MenuBarUsageBarSettings: View {
     let strings: MenuBarAppearanceStrings
 
