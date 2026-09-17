@@ -649,7 +649,7 @@ struct Strings {
     var obLanguageLabel: String = "Language"
     var obStepDoneTitle: String = "All set!"
     var obStepDoneBody: String = "\(AppInfo.name) is already looking after your Mac."
-    var obDoneHint: String = "Look for the octopus icon in the menu bar, at the top right of the screen."
+    var obDoneHint: String = "Look for the kururu icon in the menu bar, at the top right of the screen."
     var obWhatsNewTitle: String = "What’s new in this version"
     var obWhatsNewFallback: String = "This update includes the latest fixes and improvements."
     var obPurposeTitle: String = "What brought you here?"
@@ -1438,7 +1438,7 @@ extension Strings {
         obLanguageLabel: "Idioma",
         obStepDoneTitle: "Tudo pronto!",
         obStepDoneBody: "O \(AppInfo.name) já está cuidando do seu Mac.",
-        obDoneHint: "Look for the octopus icon in the menu bar, at the top right of the screen.",
+        obDoneHint: "Look for the kururu icon in the menu bar, at the top right of the screen.",
         obWhatsNewTitle: "Novidades nesta versão",
         obWhatsNewFallback: "Esta atualização inclui as correções e melhorias mais recentes.",
         obPurposeTitle: "O que te trouxe aqui?",

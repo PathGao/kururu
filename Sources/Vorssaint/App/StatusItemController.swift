@@ -681,7 +681,7 @@ enum BlackHoleGlyph {
     /// costs about a point of what is asked for here.
     private static let symbolHeight: CGFloat = 16
 
-    /// Render both template scales from the same geometry as the in-app mark.
+    /// Render both template scales from the horn spirit's vector outline.
     private static let base: NSImage? = {
         let image = NSImage(size: pointSize)
         for scale in [1, 2] {
@@ -695,7 +695,7 @@ enum BlackHoleGlyph {
             context.translateBy(x: 0, y: CGFloat(height))
             context.scaleBy(x: CGFloat(scale), y: -CGFloat(scale))
             context.translateBy(x: 1, y: 1)
-            OctopusMark.draw(in: context,
+            HornSpiritMark.draw(in: context,
                              size: NSSize(width: pointSize.width - 2, height: pointSize.height - 2),
                              color: NSColor.black.cgColor)
             rep.size = pointSize

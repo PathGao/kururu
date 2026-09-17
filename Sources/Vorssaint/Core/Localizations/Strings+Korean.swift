@@ -495,7 +495,7 @@ extension Strings {
         obLanguageLabel: "언어",
         obStepDoneTitle: "준비 완료!",
         obStepDoneBody: "\(AppInfo.name)가 이미 Mac을 살피고 있습니다.",
-        obDoneHint: "Look for the octopus icon in the menu bar, at the top right of the screen.",
+        obDoneHint: "Look for the kururu icon in the menu bar, at the top right of the screen.",
         obWhatsNewTitle: "이번 버전의 새로운 기능",
         obWhatsNewFallback: "이 업데이트에는 최신 수정 사항과 개선 사항이 포함되어 있습니다.",
         obPurposeTitle: "무엇을 하고 싶으신가요?",

@@ -494,7 +494,7 @@ extension Strings {
         obLanguageLabel: "Dil",
         obStepDoneTitle: "Her şey hazır!",
         obStepDoneBody: "\(AppInfo.name) Mac’inle ilgilenmeye başladı bile.",
-        obDoneHint: "Look for the octopus icon in the menu bar, at the top right of the screen.",
+        obDoneHint: "Look for the kururu icon in the menu bar, at the top right of the screen.",
         obWhatsNewTitle: "Bu sürümdeki yenilikler",
         obWhatsNewFallback: "Bu güncelleme en son düzeltmeleri ve iyileştirmeleri içerir.",
         obPurposeTitle: "Sizi buraya ne getirdi?",
