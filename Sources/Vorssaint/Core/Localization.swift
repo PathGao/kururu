@@ -770,7 +770,6 @@ struct Strings {
     var monitorItemDiskSMART: String = "SMART"
     var monitorItemDiskProtection: String = "External protection"
     var monitorItemDiskTools: String = "Tools"
-    var monitorPanelConfigHint: String = "Open a block to choose what it shows."
     var monitorOrderSection: String = "Section order"
     var monitorOrderHint: String = "Drag to reorder the panel sections and use the eye to show or hide each one."
 
@@ -1552,7 +1551,6 @@ extension Strings {
         monitorItemDiskSMART: "SMART",
         monitorItemDiskProtection: "Proteção externa",
         monitorItemDiskTools: "Ferramentas",
-        monitorPanelConfigHint: "Abra um bloco para escolher o que ele mostra.",
         monitorOrderSection: "Ordem das seções",
         monitorOrderHint: "Arraste para reordenar as seções do painel e use o olho para mostrar ou ocultar cada uma.",
 

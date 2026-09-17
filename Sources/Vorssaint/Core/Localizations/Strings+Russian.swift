@@ -609,7 +609,6 @@ extension Strings {
         monitorItemDiskSMART: "SMART",
         monitorItemDiskProtection: "Защита внешних дисков",
         monitorItemDiskTools: "Инструменты",
-        monitorPanelConfigHint: "Откройте блок, чтобы выбрать, что он показывает.",
         monitorOrderSection: "Порядок секций",
         monitorOrderHint: "Перетаскивайте, чтобы менять порядок секций панели, и используйте глаз, чтобы показывать или скрывать каждую из них.",
 

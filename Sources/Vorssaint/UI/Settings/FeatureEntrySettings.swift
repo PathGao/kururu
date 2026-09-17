@@ -68,7 +68,6 @@ struct MonitorEntrySettings: View {
             Button(text.iconLayout) { SettingsRouter.shared.request(FeatureSettingsDestination(.menuBarIcon)) }
         }
         SettingsSection(l10n.s.monitorPanelSection) {
-            MonitorPanelConfig(includeMixer: false, includeUtilities: false)
             Button(text.panelLayout) { SettingsRouter.shared.request(FeatureSettingsDestination(.menuBarPanel, sectionAnchor: .panelConfiguration)) }
         }
     }

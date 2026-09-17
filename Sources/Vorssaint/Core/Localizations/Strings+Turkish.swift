@@ -608,7 +608,6 @@ extension Strings {
         monitorItemDiskSMART: "SMART",
         monitorItemDiskProtection: "Harici koruma",
         monitorItemDiskTools: "Araçlar",
-        monitorPanelConfigHint: "Ne göstereceğini seçmek için bir blok aç.",
         monitorOrderSection: "Bölüm sırası",
         monitorOrderHint: "Panel bölümlerini yeniden sıralamak için sürükle ve her birini göstermek veya gizlemek için göz simgesini kullan.",
 
