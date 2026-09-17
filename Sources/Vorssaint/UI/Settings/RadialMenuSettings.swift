@@ -77,7 +77,7 @@ struct RadialMenuSettings: View {
                         RadialMenuService.shared.presentPreview(for: selectedProfile)
                     }
                     .settingsAction(.primary)
-                    Toggle(text.enableLabel, isOn: $enabled).labelsHidden().toggleStyle(.switch).controlSize(.small)
+                    Toggle(text.enableLabel, isOn: $enabled).labelsHidden().toggleStyle(.switch).controlSize(.regular)
                 }
                 if service.registrationFailed {
                     SettingsInfo(text: l10n.s.shortcutInvalid,
