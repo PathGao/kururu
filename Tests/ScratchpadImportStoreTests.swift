@@ -5,7 +5,7 @@ enum ScratchpadImportStoreTests {
     static func run(_ expect: (Bool, String) -> Void) {
         let fm = FileManager.default
         let root = fm.temporaryDirectory.appendingPathComponent("vorssaint-tests-import-store-\(UUID())")
-        let suite = "vorssaint-tests-import-store-\(UUID())"
+        let suite = "com.vorssaint.tests.import-store.\(UUID())"
         let defaults = UserDefaults(suiteName: suite)!
         defer { try? fm.removeItem(at: root); defaults.removePersistentDomain(forName: suite) }
         do {

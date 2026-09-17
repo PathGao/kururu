@@ -23276,10 +23276,15 @@ struct MetricsTests {
         // even after `removePersistentDomain`, and cfprefsd writes that file
         // back out around the time this process exits, so the run cannot delete
         // it itself. `build.sh --test` clears them afterwards, by name prefix.
-        // A suite named outside those prefixes survives every run instead.
-        let testSource = (try? String(contentsOfFile: "Tests/MetricsTests.swift",
-                                      encoding: .utf8)) ?? ""
-        expect(!testSource.isEmpty, "the test file reads back for its own source checks")
+        // A suite named outside those prefixes survives every run instead, so
+        // every test file and every `--selftest` fixture is held to them.
+        let suiteSources = [("Tests", ".swift"), ("Sources/Vorssaint/Support", "SelfTest.swift")]
+            .flatMap { directory, suffix in
+                ((try? FileManager.default.contentsOfDirectory(atPath: directory)) ?? [])
+                    .filter { $0.hasSuffix(suffix) }.map { "\(directory)/\($0)" }
+            }
+        expect(suiteSources.contains("Tests/MetricsTests.swift"),
+               "the test files read back for their own source checks")
         // The prefixes are read out of the sweep itself, so the check and the
         // thing it guards cannot drift apart.
         let buildScript = (try? String(contentsOfFile: "build.sh", encoding: .utf8)) ?? ""
@@ -23293,22 +23298,27 @@ struct MetricsTests {
                "the defaults preference sweep tolerates an already-empty namespace")
         // Split so this needle is not itself a match in the text it scans.
         let suiteCall = "UserDefaults(suiteName" + ": "
-        let suiteArguments = testSource.components(separatedBy: suiteCall)
-            .dropFirst()
-            .map { String($0.prefix { $0 != ")" && $0 != "," && !$0.isNewline }) }
-        expect(!suiteArguments.isEmpty, "the namespace check finds the suites it guards")
-        for argument in Set(suiteArguments) {
-            let name: String?
-            if argument.hasPrefix("\"") {
-                name = String(argument.dropFirst().prefix { $0 != "\"" })
-            } else {
-                name = testSource.components(separatedBy: "let \(argument) = \"")
-                    .dropFirst().first
-                    .map { String($0.prefix { $0 != "\"" }) }
+        var guardedSuites = 0
+        for path in suiteSources {
+            let source = (try? String(contentsOfFile: path, encoding: .utf8)) ?? ""
+            let suiteArguments = source.components(separatedBy: suiteCall)
+                .dropFirst()
+                .map { String($0.prefix { $0 != ")" && $0 != "," && !$0.isNewline }) }
+            guardedSuites += suiteArguments.count
+            for argument in Set(suiteArguments) {
+                let name: String?
+                if argument.hasPrefix("\"") {
+                    name = String(argument.dropFirst().prefix { $0 != "\"" })
+                } else {
+                    name = source.components(separatedBy: "let \(argument) = \"")
+                        .dropFirst().first
+                        .map { String($0.prefix { $0 != "\"" }) }
+                }
+                expect(name.map { value in sweptNamespaces.contains { value.hasPrefix($0) } } == true,
+                       "defaults suite \(argument) in \(path) is named inside a namespace build.sh sweeps")
             }
-            expect(name.map { value in sweptNamespaces.contains { value.hasPrefix($0) } } == true,
-                   "defaults suite \(argument) is named inside a namespace build.sh sweeps")
         }
+        expect(guardedSuites > 0, "the namespace check finds the suites it guards")
 
         // MARK: Every temp dir build.sh stages in is swept when the script ends
         // `mktemp -d` lands outside the repo, so a dir the script does not

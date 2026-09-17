@@ -137,7 +137,7 @@ enum SelfTest {
             warnings.append("no power metrics on this Mac")
         }
 
-        let suiteName = "kururu-selftest-\(UUID().uuidString)"
+        let suiteName = "com.vorssaint.tests.selftest.\(UUID().uuidString)"
         if let defaults = UserDefaults(suiteName: suiteName) {
             defaults.set("ok", forKey: "selftest")
             if defaults.string(forKey: "selftest") != "ok" {

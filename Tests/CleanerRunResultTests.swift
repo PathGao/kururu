@@ -2,7 +2,7 @@ import Foundation
 
 enum CleanerRunResultTests {
     static func run(_ expect: (Bool, String) -> Void) {
-        let name = "CleanerRunResultTests.\(UUID().uuidString)"
+        let name = "com.vorssaint.tests.cleaner-run-result.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: name)!
         defer { defaults.removePersistentDomain(forName: name) }
         defaults.set(123.0, forKey: DefaultsKey.cleanerLastAutoRun)
