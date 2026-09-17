@@ -637,20 +637,20 @@ swiftc -O -target "$TARGET" -sdk "$SDK" "${SDK_COMPAT_FLAGS[@]}" -emit-library \
     -o "build/$NOW_PLAYING_ADAPTER"
 
 echo "▸ Generating app icon…"
-swiftc Sources/Vorssaint/UI/OctopusMark.swift Tools/MakeIcon.swift -o build/MakeIcon
-build/MakeIcon build/AppIcon.iconset
+swiftc Sources/Vorssaint/UI/HornSpiritMark.swift Tools/MakeIcon.swift -o build/MakeIcon
+build/MakeIcon assets/brand/AppIcon-Default.png build/AppIcon.iconset
 xattr -c -r build/AppIcon.iconset build/AppIcon.icns build/MenuBarIcon.png build/MenuBarIcon@2x.png build/BrandMark.png 2>/dev/null || true
 ACTOOL_BIN="$(xcrun --find actool 2>/dev/null || true)"
 ICON_TMP="$(mktemp -d)"
 ADAPTIVE_SKIP=""
-if [[ ! -d "Resources/Brand/KururuAppIcon.icon" ]]; then
+if [[ ! -d "assets/brand/kururu.icon" ]]; then
     ADAPTIVE_SKIP="kururu adaptive source is not provided"
 elif [[ -z "$ACTOOL_BIN" ]]; then
     ADAPTIVE_SKIP="actool not found (adaptive icons need Xcode 26+)"
 else
     echo "▸ Compiling adaptive icon catalog…"
     # actool crashes on File Provider-synced paths, so compile a local copy.
-    ditto "Resources/Brand/KururuAppIcon.icon" "$ICON_TMP/AppIcon.icon"
+    ditto "assets/brand/kururu.icon" "$ICON_TMP/AppIcon.icon"
     # Xcode 27 beta actool requires the --compile target directory to already exist.
     mkdir -p "$ICON_TMP/catalog"
     if "$ACTOOL_BIN" "$ICON_TMP/AppIcon.icon" \

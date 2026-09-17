@@ -495,7 +495,7 @@ extension Strings {
         obLanguageLabel: "語言",
         obStepDoneTitle: "全部就緒！",
         obStepDoneBody: "\(AppInfo.name) 已開始照顧你的 Mac。",
-        obDoneHint: "Look for the octopus icon in the menu bar, at the top right of the screen.",
+        obDoneHint: "Look for the kururu icon in the menu bar, at the top right of the screen.",
         obWhatsNewTitle: "此版本的新功能",
         obWhatsNewFallback: "此更新包含最新修正與改進。",
         obPurposeTitle: "你想用它做什麼？",

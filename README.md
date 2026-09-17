@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="Resources/Brand/logo.png" alt="kururu octopus icon" width="128" height="128">
+  <img src="Resources/Brand/logo.png" alt="kururu horn spirit icon" width="128" height="128">
 </p>
 
 <h1 align="center">kururu</h1>

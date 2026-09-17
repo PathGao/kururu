@@ -3,16 +3,20 @@
 
 import AppKit
 
-/// Compile together with Sources/Vorssaint/UI/OctopusMark.swift.
-/// All renditions share the application's native geometry; no bitmap master is read.
+/// Compile together with HornSpiritMark.swift.
+/// ICNS uses the Composer export; monochrome marks use native vector geometry.
 @main
 struct MakeIcon {
     static func main() throws {
-        guard CommandLine.arguments.count == 2 else {
-            throw NSError(domain: "MakeIcon", code: 1, userInfo: [NSLocalizedDescriptionKey: "Usage: MakeIcon OUTPUT.iconset"])
+        guard CommandLine.arguments.count == 3 else {
+            throw NSError(domain: "MakeIcon", code: 1, userInfo: [NSLocalizedDescriptionKey: "Usage: MakeIcon COMPOSER_EXPORT.png OUTPUT.iconset"])
         }
-        let output = URL(fileURLWithPath: CommandLine.arguments[1], isDirectory: true)
+        let output = URL(fileURLWithPath: CommandLine.arguments[2], isDirectory: true)
         try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
+        guard let source = NSImage(contentsOfFile: CommandLine.arguments[1]),
+              let artwork = source.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
+            throw NSError(domain: "MakeIcon", code: 4)
+        }
         let sizes: [(String, Int, String?)] = [
             ("icon_16x16", 16, nil), ("icon_16x16@2x", 32, "ic11"),
             ("icon_32x32", 32, nil), ("icon_32x32@2x", 64, "ic12"),
@@ -23,7 +27,7 @@ struct MakeIcon {
         var entries: [(type: String, data: Data)] = []
         for (name, pixels, type) in sizes {
             let data = try render(width: pixels, height: pixels, scale: 1,
-                                  inset: CGFloat(pixels) * 0.09, color: .white, badge: true)
+                                  inset: CGFloat(pixels) * 0.09, color: .white, artwork: artwork)
             try data.write(to: output.appendingPathComponent(name + ".png"))
             if let type { entries.append((type, data)) }
         }
@@ -37,12 +41,10 @@ struct MakeIcon {
         }
         try render(width: 640, height: 538, scale: 1, inset: 0, color: .white)
             .write(to: parent.appendingPathComponent("BrandMark.png"))
-        try render(width: 512, height: 512, scale: 1, inset: 48, color: .white, artwork: true)
-            .write(to: parent.appendingPathComponent("OctopusArtwork.png"))
-        print("Native octopus iconset written to \(output.path)")
+        print("Composer fallback iconset written to \(output.path)")
     }
 
-    private static func render(width: Int, height: Int, scale: Int, inset: CGFloat, color: NSColor, badge: Bool = false, artwork: Bool = false) throws -> Data {
+    private static func render(width: Int, height: Int, scale: Int, inset: CGFloat, color: NSColor, artwork: CGImage? = nil) throws -> Data {
         guard let rep = NSBitmapImageRep(bitmapDataPlanes: nil,
                                          pixelsWide: width * scale, pixelsHigh: height * scale,
                                          bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true,
@@ -55,34 +57,14 @@ struct MakeIcon {
         context.scaleBy(x: CGFloat(scale), y: -CGFloat(scale))
         context.translateBy(x: inset, y: inset)
         let available = CGSize(width: CGFloat(width) - inset * 2, height: CGFloat(height) - inset * 2)
-        if badge {
-            context.saveGState()
-            let radius = available.width * 0.26
-            context.addPath(CGPath(roundedRect: CGRect(origin: .zero, size: available),
-                                   cornerWidth: radius, cornerHeight: radius, transform: nil))
-            context.clip()
-            let colors = [NSColor(white: 0.98, alpha: 1).cgColor,
-                          NSColor(white: 0.94, alpha: 1).cgColor,
-                          NSColor(white: 0.87, alpha: 1).cgColor] as CFArray
-            if let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors,
-                                         locations: [0, 0.5, 1]) {
-                context.drawLinearGradient(gradient, start: .zero,
-                                           end: CGPoint(x: available.width, y: available.height), options: [])
-            }
-            context.restoreGState()
-            context.translateBy(x: available.width * 0.10, y: available.height * 0.10)
-        }
-        // Eye cutouts clear only the mark layer, leaving the badge behind them.
-        context.beginTransparencyLayer(auxiliaryInfo: nil)
-        if badge || artwork {
-            let markSize = badge
-                ? CGSize(width: available.width * 0.8, height: available.height * 0.8)
-                : available
-            OctopusMark.drawArtwork(in: context, size: markSize)
+        if let artwork {
+            context.interpolationQuality = .high
+            context.translateBy(x: 0, y: available.height)
+            context.scaleBy(x: 1, y: -1)
+            context.draw(artwork, in: CGRect(origin: .zero, size: available))
         } else {
-            OctopusMark.draw(in: context, size: available, color: color.cgColor)
+            HornSpiritMark.draw(in: context, size: available, color: color.cgColor)
         }
-        context.endTransparencyLayer()
         rep.size = NSSize(width: width, height: height)
         guard let png = rep.representation(using: .png, properties: [:]) else {
             throw NSError(domain: "MakeIcon", code: 3)

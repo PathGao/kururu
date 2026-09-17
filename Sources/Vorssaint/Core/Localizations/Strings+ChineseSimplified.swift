@@ -500,7 +500,7 @@ extension Strings {
         obLanguageLabel: "语言",
         obStepDoneTitle: "全部就绪！",
         obStepDoneBody: "\(AppInfo.name) 已开始照看你的 Mac。",
-        obDoneHint: "在菜单栏（屏幕右上角）寻找章鱼图标。",
+        obDoneHint: "在菜单栏（屏幕右上角）寻找角灵图标。",
         obWhatsNewTitle: "此版本的新功能",
         obWhatsNewFallback: "此更新包含最新的修复和改进。",
         obPurposeTitle: "你想用它做什么？",
