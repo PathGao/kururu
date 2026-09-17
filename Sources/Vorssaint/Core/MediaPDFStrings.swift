@@ -33,9 +33,9 @@ struct MediaPDFStrings {
     var singleSelectionRejected = "Choose one PDF file only. The whole selection was rejected."
     var preserveResolution = "Keep image resolution"
     var screen = "Optimize for screen"
-    var compressionHint = "Transparency is preserved first. Image encoding depends on the document and may be lossy; savings vary. Text remains selectable. The original stays unchanged, and a new PDF is saved only if smaller."
-    var preserveHint = "Keep image pixel dimensions. JPEG is used only when compatible with transparency and may reduce image quality. Some documents may not become smaller."
-    var screenHint = "Reduce image resolution for screen reading while preserving transparency. Fine image detail may be lost, and savings vary. This mode is not intended for high-quality printing."
+    var compressionHint = "Text stays selectable. The original is kept; a new PDF is saved only if smaller."
+    var preserveHint = "Keep image resolution with moderate lossy compression. Transparency is preserved."
+    var screenHint = "Reduce images to 144 dpi for screen reading. Fine detail may be lost; transparency is preserved."
     var notSmaller = "No space to save. No copy was created."
     var originalSizeFormat = "Original size: %@"
     var unsupportedStructure = "This PDF contains a structure this tool cannot safely preserve, such as forms, signatures or attachments. No copy was created."
@@ -56,9 +56,9 @@ struct MediaPDFStrings {
                     compressorTitle: "PDF 压缩", compress: "压缩 PDF", chooseSingle: "选择一份 PDF 文件",
                     singleSelectionRejected: "只能选择一份 PDF 文件，本次选择已整批拒绝。",
                     preserveResolution: "保持图片分辨率", screen: "适合屏幕",
-                    compressionHint: "优先保留透明效果，根据文档选择图片编码，可能采用有损压缩，收益因文档而异。文字保持可选择，原件不改，只有体积更小时才保存新的 PDF。",
-                    preserveHint: "保持图片像素尺寸。仅在不影响透明效果时使用 JPEG，可能降低图片质量；部分文档可能无法进一步缩小。",
-                    screenHint: "保留透明效果，降低图片分辨率以便屏幕阅读，可能损失图片细节。收益因文档而异，不适合高质量打印。",
+                    compressionHint: "文字保持可选择，保留原件。仅在体积更小时保存副本。",
+                    preserveHint: "保持图片分辨率，适度降低图片质量，保留透明效果。",
+                    screenHint: "图片降至 144 dpi，适合屏幕阅读。可能损失细节，保留透明效果。",
                     notSmaller: "没有可节省的空间，未生成副本。", originalSizeFormat: "原始大小：%@",
                     unsupportedStructure: "此 PDF 含有工具无法安全保留的结构，例如表单、签名或附件，未生成副本。")
     }

@@ -439,7 +439,7 @@ struct MediaWorkspaceView: View {
                     Text(pdfText.preserveResolution).tag(MediaPDFCompressionMode.preserveResolution)
                     Text(pdfText.screen).tag(MediaPDFCompressionMode.screen)
                 }
-                .pickerStyle(.menu)
+                .pickerStyle(.segmented)
                 Text(pdfText.compressionHint).font(compact ? .caption : SettingsTypography.caption).foregroundStyle(.secondary)
                 Text(pdfCompressionMode == .preserveResolution ? pdfText.preserveHint : pdfText.screenHint)
                     .font(compact ? .caption : SettingsTypography.caption).foregroundStyle(.secondary)
