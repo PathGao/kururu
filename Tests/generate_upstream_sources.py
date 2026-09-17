@@ -28,7 +28,11 @@ def declaration(path, prefix):
     return f'#sourceLocation(file: {json.dumps(path)}, line: {start + 1})\n{body}\n#sourceLocation()\n'
 
 
+WRITTEN = set()
+
+
 def write(name, text):
+    WRITTEN.add(name)
     path = OUTPUT / name
     if not path.exists() or path.read_text() != text:
         path.write_text(text)
@@ -101,3 +105,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+    # build.sh compiles every file here, so one no longer generated must not linger.
+    for stale in OUTPUT.glob("*.swift"):
+        if stale.name not in WRITTEN:
+            stale.unlink()

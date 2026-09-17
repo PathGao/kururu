@@ -19,95 +19,134 @@ import VMStatisticsCompat
 @main
 struct MetricsTests {
     static func main() {
-        var failures: [String] = []
-        var checks = 0
+        let suite = TestSuite()
 
-        func expect(_ condition: Bool, _ message: @autoclosure () -> String) {
-            checks += 1
-            if !condition { failures.append(message()) }
+        func expect(_ condition: Bool, _ message: @autoclosure () -> String,
+                    file: StaticString = #filePath, line: UInt = #line) {
+            suite.expect(condition, message(), file: file, line: line)
         }
-        func expectEqual(_ actual: String, _ expected: String, _ label: String) {
-            checks += 1
-            if actual != expected { failures.append("\(label): got \"\(actual)\", expected \"\(expected)\"") }
+        func expectEqual(_ actual: String, _ expected: String, _ label: String,
+                         file: StaticString = #filePath, line: UInt = #line) {
+            suite.expect(actual == expected, "\(label): got \"\(actual)\", expected \"\(expected)\"",
+                         file: file, line: line)
         }
-        func expectClose(_ actual: Double, _ expected: Double, _ label: String, tol: Double = 0.0001) {
-            checks += 1
-            if abs(actual - expected) > tol { failures.append("\(label): got \(actual), expected \(expected)") }
+        func expectClose(_ actual: Double, _ expected: Double, _ label: String, tol: Double = 0.0001,
+                         file: StaticString = #filePath, line: UInt = #line) {
+            suite.expect(!(abs(actual - expected) > tol), "\(label): got \(actual), expected \(expected)",
+                         file: file, line: line)
         }
-        func expectFormat(_ format: String, _ expected: [String], _ label: String) {
-            checks += 1
+        func expectFormat(_ format: String, _ expected: [String], _ label: String,
+                          file: StaticString = #filePath, line: UInt = #line) {
             let actual = formatSpecifiers(in: format)
-            if actual != expected { failures.append("\(label): got \(actual), expected \(expected)") }
+            suite.expect(actual == expected, "\(label): got \(actual), expected \(expected)",
+                         file: file, line: line)
         }
 
 
-        MonitorHistoryTests.run { expect($0, $1) }
-        MusicLaunchBlockerTests.run { expect($0, $1) }
-        EnvironmentCopyTests.run { expect($0, $1) }
-        EnvironmentUpdateTests.run { expect($0, $1) }
-        EnvironmentConfigurationTests.run { expect($0, $1) }
-        CommandBarActionTests.run { expect($0, $1) }
-        CommandBarDestinationTests.run { expect($0, $1) }
-        LocalPortTests.run { expect($0, $1) }
-        CleanerPackageCacheTests.run { expect($0, $1) }
-        BrightnessNativeBoundaryTests.run { expect($0, $1) }
-        BrightnessPipelineTests.run { expect($0, $1) }
-        OnboardingFeatureSelectionTests.run { expect($0, $1) }
-        FeatureSwitchRetirementTests.run { expect($0, $1) }
-        ShelfDockPlacementTests.run { expect($0, $1) }
-        ShelfDockVisibilityTests.run { expect($0, $1) }
-        ShelfIndexStoreTests.run { expect($0, $1) }
-        ShelfImportTests.run { expect($0, $1) }
-        ShelfImportAssetsTests.run { expect($0, $1) }
-        ShelfImportTransactionTests.run { expect($0, $1) }
-        ShelfPayloadCleanupTests.run { expect($0, $1) }
-        ScratchpadPresentationTests.run { expect($0, $1) }
-        ScratchpadImportTests.run { expect($0, $1) }
-        ClipboardImportTests.run { expect($0, $1) }
-        ClipboardEncodingTests.run { expect($0, $1) }
-        ClipboardImportTransactionTests.run { expect($0, $1) }
-        ScratchpadImportStoreTests.run { expect($0, $1) }
-        ShelfDockBackupTests.run { expect($0, $1) }
-        ClipboardJSONPreviewTests.run { expect($0, $1) }
-        URLAutomaticCleaningTests.run { expect($0, $1) }
-        URLRuleImportTests.run { expect($0, $1) }
-        URLRuleEditingTests.run { expect($0, $1) }
-        SettingsNavigationTests.run { expect($0, $1) }
-        CleanerRunResultTests.run { expect($0, $1) }
-        WhatsAppOrganizerPolicyTests.run { expect($0, $1) }
-        SpotifyPhoneProtectionTests.run { expect($0, $1) }
-        SwitcherRegressionTests.run { expect($0, $1) }
-        assistiveKeyboardChecks { expect($0, $1) }
-        SettingsActionTests.run { expect($0, $1) }
-        MusicReplacementActionTests.run { expect($0, $1) }
-        MouseButtonConfigurationTests.run { expect($0, $1) }
-        FinderArrangementTests.run { expect($0, $1) }
-        FinderTargetAcquisitionTests.run { expect($0, $1) }
-        DisplayBrightnessShortcutTests.run { expect($0, $1) }
-        BrightnessModuleMigrationTests.run { expect($0, $1) }
-        MixerSwitchMigrationTests.run { expect($0, $1) }
-        FeatureLifecycleTests.run { expect($0, $1) }
-        ShelfImportStoreTests.run { expect($0, $1) }
-        CommandBarExecutorTests.run { expect($0, $1) }
-        MediaPDFTests.run { expect($0, $1) }
-        MediaPDFCompressionTests.run { expect($0, $1) }
-        MediaPDFCompressionSelectionTests.run { expect($0, $1) }
-        MediaPDFSelectionTests.run { expect($0, $1) }
-        MediaCancellationTests.run { expect($0, $1) }
-        MicMuteBatchTests.run { expect($0, $1) }
-        BuildCapabilityPolicyTests.run { expect($0, $1) }
-        ScreenshotSharingBoundaryTests.run { expect($0, $1) }
-        SettingsBackupIdentityTests.run { expect($0, $1) }
-        FeedbackDraftTests.run { expect($0, $1) }
-StableUpdateTests.run { expect($0, $1) }
-ProductSettingsTests.run { expect($0, $1) }
-UninstallerSelectionTests.run { expect($0, $1) }
-        ProductIdentityBoundaryTests.run { expect($0, $1) }
-        TrackpadGestureTests.run { expect($0, $1) }
-        RadialTrackpadBindingTests.run { expect($0, $1) }
-        RadialTrackpadIntegrationTests.run { expect($0, $1) }
-        CPUCoreUsageTests.run { expect($0, $1) }
-        CPUCoreTopologyTests.run { expect($0, $1) }
+        // `--list` prints every name `--suite=NAME` accepts; "MetricsTests" is
+        // the checks written inline below. An unknown name is an error.
+        let groups: [(String, () -> Void)] = [
+            ("MonitorHistoryTests", { MonitorHistoryTests.run { suite.expect($0, $1) } }),
+            ("MusicLaunchBlockerTests", { MusicLaunchBlockerTests.run { suite.expect($0, $1) } }),
+            ("EnvironmentCopyTests", { EnvironmentCopyTests.run { suite.expect($0, $1) } }),
+            ("EnvironmentUpdateTests", { EnvironmentUpdateTests.run { suite.expect($0, $1) } }),
+            ("EnvironmentConfigurationTests", { EnvironmentConfigurationTests.run { suite.expect($0, $1) } }),
+            ("CommandBarActionTests", { CommandBarActionTests.run { suite.expect($0, $1) } }),
+            ("CommandBarDestinationTests", { CommandBarDestinationTests.run { suite.expect($0, $1) } }),
+            ("LocalPortTests", { LocalPortTests.run { suite.expect($0, $1) } }),
+            ("CleanerPackageCacheTests", { CleanerPackageCacheTests.run { suite.expect($0, $1) } }),
+            ("BrightnessNativeBoundaryTests", { BrightnessNativeBoundaryTests.run { suite.expect($0, $1) } }),
+            ("BrightnessPipelineTests", { BrightnessPipelineTests.run { suite.expect($0, $1) } }),
+            ("OnboardingFeatureSelectionTests", { OnboardingFeatureSelectionTests.run { suite.expect($0, $1) } }),
+            ("FeatureSwitchRetirementTests", { FeatureSwitchRetirementTests.run { suite.expect($0, $1) } }),
+            ("ShelfDockPlacementTests", { ShelfDockPlacementTests.run { suite.expect($0, $1) } }),
+            ("ShelfDockVisibilityTests", { ShelfDockVisibilityTests.run { suite.expect($0, $1) } }),
+            ("ShelfIndexStoreTests", { ShelfIndexStoreTests.run { suite.expect($0, $1) } }),
+            ("ShelfImportTests", { ShelfImportTests.run { suite.expect($0, $1) } }),
+            ("ShelfImportAssetsTests", { ShelfImportAssetsTests.run { suite.expect($0, $1) } }),
+            ("ShelfImportTransactionTests", { ShelfImportTransactionTests.run { suite.expect($0, $1) } }),
+            ("ShelfPayloadCleanupTests", { ShelfPayloadCleanupTests.run { suite.expect($0, $1) } }),
+            ("ScratchpadPresentationTests", { ScratchpadPresentationTests.run { suite.expect($0, $1) } }),
+            ("ScratchpadImportTests", { ScratchpadImportTests.run { suite.expect($0, $1) } }),
+            ("ClipboardImportTests", { ClipboardImportTests.run { suite.expect($0, $1) } }),
+            ("ClipboardEncodingTests", { ClipboardEncodingTests.run { suite.expect($0, $1) } }),
+            ("ClipboardImportTransactionTests", { ClipboardImportTransactionTests.run { suite.expect($0, $1) } }),
+            ("ScratchpadImportStoreTests", { ScratchpadImportStoreTests.run { suite.expect($0, $1) } }),
+            ("ShelfDockBackupTests", { ShelfDockBackupTests.run { suite.expect($0, $1) } }),
+            ("ClipboardJSONPreviewTests", { ClipboardJSONPreviewTests.run { suite.expect($0, $1) } }),
+            ("URLAutomaticCleaningTests", { URLAutomaticCleaningTests.run { suite.expect($0, $1) } }),
+            ("URLRuleImportTests", { URLRuleImportTests.run { suite.expect($0, $1) } }),
+            ("URLRuleEditingTests", { URLRuleEditingTests.run { suite.expect($0, $1) } }),
+            ("SettingsNavigationTests", { SettingsNavigationTests.run { suite.expect($0, $1) } }),
+            ("CleanerRunResultTests", { CleanerRunResultTests.run { suite.expect($0, $1) } }),
+            ("WhatsAppOrganizerPolicyTests", { WhatsAppOrganizerPolicyTests.run { suite.expect($0, $1) } }),
+            ("SpotifyPhoneProtectionTests", { SpotifyPhoneProtectionTests.run { suite.expect($0, $1) } }),
+            ("SwitcherRegressionTests", { SwitcherRegressionTests.run { suite.expect($0, $1) } }),
+            ("assistiveKeyboardChecks", { assistiveKeyboardChecks { suite.expect($0, $1) } }),
+            ("SettingsActionTests", { SettingsActionTests.run { suite.expect($0, $1) } }),
+            ("MusicReplacementActionTests", { MusicReplacementActionTests.run { suite.expect($0, $1) } }),
+            ("MouseButtonConfigurationTests", { MouseButtonConfigurationTests.run { suite.expect($0, $1) } }),
+            ("FinderArrangementTests", { FinderArrangementTests.run { suite.expect($0, $1) } }),
+            ("FinderTargetAcquisitionTests", { FinderTargetAcquisitionTests.run { suite.expect($0, $1) } }),
+            ("DisplayBrightnessShortcutTests", { DisplayBrightnessShortcutTests.run { suite.expect($0, $1) } }),
+            ("BrightnessModuleMigrationTests", { BrightnessModuleMigrationTests.run { suite.expect($0, $1) } }),
+            ("MixerSwitchMigrationTests", { MixerSwitchMigrationTests.run { suite.expect($0, $1) } }),
+            ("FeatureLifecycleTests", { FeatureLifecycleTests.run { suite.expect($0, $1) } }),
+            ("ShelfImportStoreTests", { ShelfImportStoreTests.run { suite.expect($0, $1) } }),
+            ("CommandBarExecutorTests", { CommandBarExecutorTests.run { suite.expect($0, $1) } }),
+            ("MediaPDFTests", { MediaPDFTests.run { suite.expect($0, $1) } }),
+            ("MediaPDFCompressionTests", { MediaPDFCompressionTests.run { suite.expect($0, $1) } }),
+            ("MediaPDFCompressionSelectionTests", { MediaPDFCompressionSelectionTests.run { suite.expect($0, $1) } }),
+            ("MediaPDFSelectionTests", { MediaPDFSelectionTests.run { suite.expect($0, $1) } }),
+            ("MediaCancellationTests", { MediaCancellationTests.run { suite.expect($0, $1) } }),
+            ("MicMuteBatchTests", { MicMuteBatchTests.run { suite.expect($0, $1) } }),
+            ("BuildCapabilityPolicyTests", { BuildCapabilityPolicyTests.run { suite.expect($0, $1) } }),
+            ("ScreenshotSharingBoundaryTests", { ScreenshotSharingBoundaryTests.run { suite.expect($0, $1) } }),
+            ("SettingsBackupIdentityTests", { SettingsBackupIdentityTests.run { suite.expect($0, $1) } }),
+            ("FeedbackDraftTests", { FeedbackDraftTests.run { suite.expect($0, $1) } }),
+            ("StableUpdateTests", { StableUpdateTests.run { suite.expect($0, $1) } }),
+            ("ProductSettingsTests", { ProductSettingsTests.run { suite.expect($0, $1) } }),
+            ("UninstallerSelectionTests", { UninstallerSelectionTests.run { suite.expect($0, $1) } }),
+            ("ProductIdentityBoundaryTests", { ProductIdentityBoundaryTests.run { suite.expect($0, $1) } }),
+            ("TrackpadGestureTests", { TrackpadGestureTests.run { suite.expect($0, $1) } }),
+            ("RadialTrackpadBindingTests", { RadialTrackpadBindingTests.run { suite.expect($0, $1) } }),
+            ("RadialTrackpadIntegrationTests", { RadialTrackpadIntegrationTests.run { suite.expect($0, $1) } }),
+            ("CPUCoreUsageTests", { CPUCoreUsageTests.run { suite.expect($0, $1) } }),
+            ("CPUCoreTopologyTests", { CPUCoreTopologyTests.run { suite.expect($0, $1) } }),
+            ("BoundedProcessCancellationTests", { BoundedProcessCancellationTests.run { suite.expect($0, $1) } }),
+            ("HomebrewEnvironmentCheckSettlementTests", {
+                HomebrewEnvironmentCheckSettlementTests.run { suite.expect($0, $1) }
+            }),
+            ("PlainTextEditorLifecycleTests", {
+                MainActor.assumeIsolated { PlainTextEditorLifecycleTests.run { suite.expect($0, $1) } }
+            }),
+            ("CleanerEligibilityTests", { CleanerEligibilityTests.run(suite) }),
+            ("SwitcherScrollContract", { SwitcherScrollContract.run(suite) }),
+            ("ScreenshotSelectionRefreshContract", { ScreenshotSelectionRefreshContract.run(suite) }),
+            ("RecorderSampleTimingTests", { RecorderSampleTimingTests.run(expect: { suite.expect($0, $1) }) }),
+            ("RecorderWriterTests", { RecorderWriterTests.run(expect: { suite.expect($0, $1) }) }),
+            ("ShelfFilePromiseTests", { ShelfFilePromiseTests.run(expect: { suite.expect($0, $1) }) }),
+            ("ShelfDropRoutingTests", { ShelfDropRoutingTests.run(expect: { suite.expect($0, $1) }) }),
+            ("UpstreamPolicyTests", { UpstreamPolicyTests.run { suite.expect($0, $1) } }),
+            ("ShelfPromiseCleanupTests", { ShelfPromiseCleanupTests.run { suite.expect($0, $1) } }),
+        ]
+        let names = groups.map(\.0) + ["MetricsTests"]
+        var selected = Set<String>()
+        for argument in CommandLine.arguments.dropFirst() {
+            if argument == "--list" {
+                names.forEach { print($0) }
+                exit(0)
+            }
+            guard argument.hasPrefix("--suite="), names.contains(String(argument.dropFirst(8))) else {
+                fputs("Unknown test selection: \(argument)\n", stderr)
+                exit(2)
+            }
+            selected.insert(String(argument.dropFirst(8)))
+        }
+        for (name, body) in groups where selected.isEmpty || selected.contains(name) {
+            suite.run(name, body)
+        }
+        guard selected.isEmpty || selected.contains("MetricsTests") else { suite.finish() }
 
         // MARK: Byte / rate formatting
 
@@ -25383,14 +25422,7 @@ UninstallerSelectionTests.run { expect($0, $1) }
 
         scratchPaths.forEach { try? FileManager.default.removeItem(at: $0) }
 
-        if failures.isEmpty {
-            print("TESTS OK (\(checks) checks)")
-            exit(0)
-        } else {
-            print("TESTS FAILED (\(failures.count) of \(checks)):")
-            failures.forEach { print("  - \($0)") }
-            exit(1)
-        }
+        suite.finish()
     }
 
     private static func scratchpadStoreChecks(_ expect: (Bool, String) -> Void) {
