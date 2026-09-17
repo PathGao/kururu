@@ -609,7 +609,6 @@ extension Strings {
         monitorItemDiskSMART: "SMART",
         monitorItemDiskProtection: "외장 디스크 보호",
         monitorItemDiskTools: "도구",
-        monitorPanelConfigHint: "블록을 열어 표시할 내용을 선택하세요.",
         monitorOrderSection: "섹션 순서",
         monitorOrderHint: "드래그하여 패널 섹션의 순서를 바꾸고 눈 아이콘으로 각 섹션을 표시하거나 숨길 수 있습니다.",
 

@@ -24130,7 +24130,7 @@ UninstallerSelectionTests.run { expect($0, $1) }
         expect(generalSettingsStructs == 0, "no GeneralSettings view remains (found \(generalSettingsStructs))")
         let menuBarIconButtons = occurrences("Button(l10n.s.showMenuBarIcon)",
                                              codeLines("Sources/Vorssaint/UI/Settings/MenuBarIconSettings.swift"))
-        let orderSections = occurrences("Section(l10n.s.monitorOrderSection)",
+        let orderSections = occurrences("PanelSectionsEditor()",
                                         codeLines("Sources/Vorssaint/UI/Settings/MenuBarPanelSettings.swift"))
         expect(menuBarIconButtons == 1 && orderSections == 1,
                "the icon button is on the icon page and the panel order editor on the panel page (found \(menuBarIconButtons)/\(orderSections))")
@@ -24154,7 +24154,7 @@ UninstallerSelectionTests.run { expect($0, $1) }
                     && occurrences(look, monitorPageCode) == 0,
                    "\(look) is about the icon, so only the icon page names it")
         }
-        for held in ["PanelOrderEditor", "MonitorPanelConfig"] {
+        for held in ["PanelSectionsEditor"] {
             expect(occurrences(held, panelPageCode) > 0
                     && occurrences(held, iconPageCode) == 0
                     && occurrences(held, monitorPageCode) == 0,
@@ -24167,9 +24167,8 @@ UninstallerSelectionTests.run { expect($0, $1) }
                    "\(measure) is about what is measured, so only the monitor page names it")
         }
         // Display controls belong to the panel page; collection stays in monitoring.
-        let panelConfigCode = codeLines("Sources/Vorssaint/UI/Settings/MonitorPanelConfig.swift")
         let trendCode = codeLines("Sources/Vorssaint/UI/MenuPanel/MonitorTrendView.swift")
-        expect(occurrences("MonitorGraphSwitch", panelConfigCode) == 3
+        expect(occurrences("PanelGraphToggle(", panelPageCode) == 1
                 && occurrences("selection: $historyMinutes", panelPageCode) == 1
                 && occurrences("monitorGraph", monitorPageCode) == 0
                 && occurrences("Picker(", trendCode) == 0,
@@ -25055,8 +25054,7 @@ UninstallerSelectionTests.run { expect($0, $1) }
         let menuBarPanelPageShape = settingsShape("MenuBarPanelSettings.swift")
         for (symbol, home) in [("s.showMenuBarIcon)", menuBarIconPageShape),
                                ("menuBarHideIconWithMetrics", menuBarIconPageShape),
-                               ("monitorOrderSection", menuBarPanelPageShape),
-                               ("MonitorPanelConfig(", menuBarPanelPageShape)] {
+                               ("PanelSectionsEditor()", menuBarPanelPageShape)] {
             let onMonitor = occurrenceCount(symbol, in: monitorPageShape)
             let onPanelPage = occurrenceCount(symbol, in: home)
             expect(onMonitor == 0 && onPanelPage == 1,

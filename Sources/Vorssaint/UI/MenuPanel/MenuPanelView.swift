@@ -1011,7 +1011,7 @@ enum ControlPanelItem: String, PanelOrderItem, Identifiable {
 
 /// Groups the quick controls so the section stays short: categories start
 /// collapsed and remember whether the user opened them.
-private enum ControlCategory: String, CaseIterable, Identifiable {
+enum ControlCategory: String, CaseIterable, Identifiable {
     case windows, inputDevices, files
 
     var id: String { rawValue }

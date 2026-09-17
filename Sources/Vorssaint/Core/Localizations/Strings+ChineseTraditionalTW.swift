@@ -609,7 +609,6 @@ extension Strings {
         monitorItemDiskSMART: "SMART",
         monitorItemDiskProtection: "外接保護",
         monitorItemDiskTools: "工具",
-        monitorPanelConfigHint: "開啟某個模組，以選擇要顯示的內容。",
         monitorOrderSection: "區段順序",
         monitorOrderHint: "拖曳以重新排列面板區段，按一下眼睛圖示可顯示或隱藏各區段。",
 

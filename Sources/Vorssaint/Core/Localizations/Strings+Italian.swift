@@ -608,7 +608,6 @@ extension Strings {
         monitorItemDiskSMART: "SMART",
         monitorItemDiskProtection: "Protezione esterna",
         monitorItemDiskTools: "Strumenti",
-        monitorPanelConfigHint: "Apri un blocco per scegliere cosa mostra.",
         monitorOrderSection: "Ordine delle sezioni",
         monitorOrderHint: "Trascina per riordinare le sezioni del pannello e usa l’occhio per mostrarne o nasconderne ognuna.",
 
