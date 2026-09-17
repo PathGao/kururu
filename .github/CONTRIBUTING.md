@@ -168,6 +168,10 @@ change yourself before submitting it; you do not need to declare your tools.
 - **Check existing work first.** Search open and closed issues and PRs, then
   read the relevant code path and its callers. The roadmap defines current
   scope; historical upstream decisions are context, not new requirements.
+- **Follow the design guidelines.** Settings pages, the menu bar panel,
+  controls and Simplified Chinese copy follow
+  [docs/design-guidelines.md](../docs/design-guidelines.md). Add or change a
+  rule there when a change needs one.
 - **Reuse what the app already handles.** Permission prompts, file writes,
   window handling and shortcuts have failure and recovery behavior. Check
   those boundaries before adding a new mechanism or dependency.
