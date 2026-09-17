@@ -913,7 +913,6 @@ struct SwitcherSettings: View {
                         .labelsHidden()
                     }
 
-                    Divider()
                     WindowPreviewControls(sizeKey: DefaultsKey.switcherPreviewSize,
                                           exclusionsKey: DefaultsKey.switcherPreviewExcludedApps,
                                           onSizeChange: AppSwitcher.shared.syncWithPreferences)

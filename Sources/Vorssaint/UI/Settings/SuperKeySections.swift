@@ -66,7 +66,6 @@ struct SuperKeySections: View {
                         .font(SettingsTypography.caption)
                         .foregroundStyle(.green)
                 }
-                Divider()
                 Text(text.soloSection).font(SettingsTypography.sectionTitle)
                     .accessibilityAddTraits(.isHeader)
                 Picker(text.soloSection, selection: soloBinding) {
@@ -80,7 +79,6 @@ struct SuperKeySections: View {
                 Text(text.soloCaption)
                     .font(SettingsTypography.caption)
                     .foregroundStyle(.secondary)
-                Divider()
                 MouseExceptionsList(scope: .superKey)
             }
 
