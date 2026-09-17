@@ -74,6 +74,21 @@ jobs:
             exit 1
           fi
 
+  # Runs beside the signed build; publish waits for both.
+  tests:
+    name: Unit tests
+    needs: preflight
+    if: needs.preflight.result == 'success'
+    runs-on: macos-26
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
       - name: Unit tests
         run: ./build.sh --test
 
@@ -252,9 +267,10 @@ jobs:
 
   publish:
     name: Publish immutable release
-    needs: release
+    needs: [release, tests]
     if: >-
       needs.release.result == 'success' &&
+      needs.tests.result == 'success' &&
       github.repository == 'PathGao/kururu' &&
       ((github.event_name == 'push' && github.ref_type == 'tag') ||
        (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')) &&

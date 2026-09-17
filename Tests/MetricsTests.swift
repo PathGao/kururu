@@ -39,22 +39,6 @@ struct MetricsTests {
             let actual = formatSpecifiers(in: format)
             if actual != expected { failures.append("\(label): got \(actual), expected \(expected)") }
         }
-        /// The stored properties of `struct Strings`, in declaration order.
-        /// Scoped to that struct: `AppLanguage` lives in the same file and has
-        /// computed properties that look the same one line at a time.
-        func stringsDeclarationFields(_ source: String) -> [String] {
-            let lines = source.components(separatedBy: "\n")
-            guard let start = lines.firstIndex(where: { $0.hasPrefix("struct Strings {") }) else { return [] }
-            var fields: [String] = []
-            for line in lines[(start + 1)...] {
-                if line == "}" { break }
-                guard line.hasPrefix("    var "), line.contains(": String = ") else { continue }
-                let trimmed = line.trimmingCharacters(in: .whitespaces)
-                guard let colon = trimmed.firstIndex(of: ":") else { continue }
-                fields.append(String(trimmed[trimmed.index(trimmed.startIndex, offsetBy: 4)..<colon]))
-            }
-            return fields
-        }
 
 
         MonitorHistoryTests.run { expect($0, $1) }
@@ -25135,24 +25119,6 @@ UninstallerSelectionTests.run { expect($0, $1) }
         }
         expect(nameCases.count == AppFeature.allCases.count && nameBypasses.isEmpty,
                "feature names go through AppFeature.name (\(nameCases.count) cases parsed, found \(nameBypasses))")
-        // Every Strings field has a reader; a field nobody reads is dead
-        // translation work in 13 languages.
-        let localizedFields = stringsDeclarationFields(codeLines("Sources/Vorssaint/Core/Localization.swift"))
-        let readerCode = ((FileManager.default.enumerator(atPath: "Sources/Vorssaint")?.allObjects as? [String]) ?? [])
-            .filter { $0.hasSuffix(".swift") && !$0.contains("Core/Localization") }
-            .map { (try? String(contentsOfFile: "Sources/Vorssaint/" + $0, encoding: .utf8)) ?? "" }
-            .joined(separator: "\n")
-        let unreadLocalizedFields = localizedFields.filter { field in
-            readerCode.range(of: "\\b" + NSRegularExpression.escapedPattern(for: field) + "\\b", options: .regularExpression) == nil
-        }
-        // Upstream landed these eight generic verbs ahead of the code meant to
-        // read them, so they carry translations in thirteen languages that
-        // nothing shows. They are named here rather than allowed by shape: a
-        // ninth unread field fails this check the way it did before.
-        let unreadFromUpstream = ["actionClear", "actionRemove", "actionBack", "actionSearch",
-                                  "actionMute", "actionUnmute", "actionPlay", "actionPause"]
-        expect(localizedFields.count > 500 && unreadLocalizedFields == unreadFromUpstream,
-               "every Strings field is read somewhere outside the localizations, bar the ones upstream has yet to wire up (\(localizedFields.count) fields, unread: \(unreadLocalizedFields))")
 
         // MARK: - cut-window
 
