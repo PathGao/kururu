@@ -62,7 +62,6 @@ struct ScreenshotCaptureSettings: View {
                 }
                 .controlSize(.large)
                 SettingsInfo(text: strings.panelCaption, systemImage: "camera.viewfinder")
-                Divider()
                 Toggle(strings.fullScreenShortcutTitle, isOn: $fullScreenShortcutEnabled)
                     .onChange(of: fullScreenShortcutEnabled) { _, _ in
                         ScreenshotService.shared.syncWithPreferences()
@@ -126,7 +125,6 @@ struct ScreenshotCaptureSettings: View {
                     .pickerStyle(.segmented)
                     .labelsHidden()
                 }
-                Divider()
                 Toggle(strings.pointerToggle, isOn: $includePointer)
                 Toggle(strings.lastRegionToggle, isOn: $showLastRegion)
                 previewPositionRow
@@ -161,7 +159,6 @@ struct ScreenshotCaptureSettings: View {
                 defaultActionRow
                 SettingsToggleWithCaption(title: strings.autoCopyToggle,
                                           caption: strings.autoCopyCaption, isOn: $copyToClipboard)
-                Divider()
                 folderRow
                 subfolderRow
                 fileNameRow

@@ -264,8 +264,7 @@ enum SettingsDirectory {
                 SettingsDirectoryItem(page: .micMute, s: s, language: language,
                                        icon: AppFeature.micMute.symbolName,
                                        featureKeywords: [
-                                        (.micMute, [FeatureStrings.micMute(language).pageTitle,
-                                                    FeatureStrings.micMute(language).menuBarToggle]),
+                                        (.micMute, [FeatureStrings.micMute(language).pageTitle]),
                                        ]),
                 SettingsDirectoryItem(page: .musicBlock, s: s, language: language,
                                        icon: AppFeature.musicBlock.symbolName,
