@@ -73,7 +73,6 @@ struct CommandBarSettings: View {
                 // No callback: the bar reads this on every open, and opening
                 // Settings has already hidden it, so the two can never be on
                 // screen with a stale value between them.
-                Divider()
                 SettingsToggleWithCaption(title: text.compactModeToggle,
                                           caption: text.compactModeCaption,
                                           showsCaptionInline: false, isOn: $compactMode)

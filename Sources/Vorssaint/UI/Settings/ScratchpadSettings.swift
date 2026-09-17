@@ -32,7 +32,6 @@ struct ScratchpadSettings: View {
                         }
                         .settingsAction(.primary)
                     }
-                    Divider()
                     Toggle(l10n.s.quickToolShortcutToggle, isOn: $scratchpadShortcutEnabled)
                         .onChange(of: scratchpadShortcutEnabled) { _, _ in
                             ScratchpadService.shared.syncWithPreferences()
@@ -65,7 +64,6 @@ struct ScratchpadSettings: View {
                         .labelsHidden()
                     }
                     SettingsExplanation(FeatureStrings.scratchpad(l10n.language).retentionCaption)
-                    Divider()
                     Toggle(FeatureStrings.scratchpad(l10n.language).closeOnClickOutside,
                            isOn: $scratchpadCloseOnClickOutside)
                         .onChange(of: scratchpadCloseOnClickOutside) { _, _ in

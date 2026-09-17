@@ -31,7 +31,6 @@ struct AutoQuitSections: View {
                 Text(l10n.s.autoQuitPredictableNote)
                     .font(SettingsTypography.caption)
                     .foregroundStyle(.secondary)
-                Divider()
                 Text(l10n.s.autoQuitExceptionsTitle).font(SettingsTypography.sectionTitle)
                     .accessibilityAddTraits(.isHeader)
                 if sortedExceptions.isEmpty {

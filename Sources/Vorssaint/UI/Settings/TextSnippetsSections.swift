@@ -35,7 +35,6 @@ struct TextSnippetsSections: View {
                 if enabled, !permissions.accessibility {
                     PermissionRow(kind: .accessibility)
                 }
-                Divider()
                 Text(text.libraryTitle).font(SettingsTypography.sectionTitle)
                     .accessibilityAddTraits(.isHeader)
                 SettingsToggleWithCaption(title: text.libraryToggle,
@@ -55,7 +54,6 @@ struct TextSnippetsSections: View {
                             .foregroundStyle(.orange)
                     }
                 }
-                Divider()
                 Text(text.manageButton).font(SettingsTypography.sectionTitle)
                     .accessibilityAddTraits(.isHeader)
                 if snippets.isEmpty {

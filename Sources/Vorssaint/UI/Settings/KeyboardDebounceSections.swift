@@ -44,7 +44,6 @@ struct KeyboardDebounceSections: View {
                             .monospacedDigit()
                     }
                 }
-                Divider()
                 Text(l10n.s.keyDebouncePerKeySection).font(SettingsTypography.sectionTitle)
                     .accessibilityAddTraits(.isHeader)
                 Text(l10n.s.keyDebouncePerKeyCaption)

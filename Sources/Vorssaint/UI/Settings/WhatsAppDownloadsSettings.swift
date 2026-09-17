@@ -162,9 +162,7 @@ struct WhatsAppDownloadsSettings: View {
             Text(text.retentionCaption)
                 .font(SettingsTypography.caption)
                 .foregroundStyle(.secondary)
-            Divider()
             typesSection
-            Divider()
             Toggle(l10n.s.cleanerScheduleNotifyToggle, isOn: $notify)
                 .onChange(of: notify) { _, enabled in
                     if enabled { Notifier.requestPermission() }
@@ -513,7 +511,6 @@ struct WhatsAppDownloadsSettings: View {
                     .font(SettingsTypography.caption)
                     .foregroundStyle(.orange)
             }
-            Divider()
             activitySection
         } header: {
             Text(l10n.s.urlCleanerManualTitle)
