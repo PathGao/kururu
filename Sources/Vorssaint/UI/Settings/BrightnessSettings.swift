@@ -9,7 +9,6 @@ struct BrightnessSettings: View {
     @ObservedObject private var permissions = Permissions.shared
     @ObservedObject private var brightness = BrightnessService.shared
     @AppStorage(DefaultsKey.brightnessKeysEnabled) private var brightnessKeysEnabled = false
-    @AppStorage(DefaultsKey.keyboardBrightnessShortcutsEnabled) private var keyboardBrightnessShortcutsEnabled = false
     @AppStorage(DefaultsKey.brightnessOSDEnabled) private var brightnessOSDEnabled = false
     @AppStorage(BrightnessShortcutPreferenceKey.enabled)
     private var displayBrightnessShortcutsEnabled = false
@@ -71,38 +70,12 @@ struct BrightnessSettings: View {
                         PermissionRow(kind: .accessibility)
                     }
                     displayBrightnessShortcutControls
-                    if BrightnessService.keyboardLightIsSupported {
-                        keyboardBrightnessShortcutControls
-                    }
                 }
             }
         }
         .formStyle(.grouped)
         .onAppear { brightness.beginVisibleRefresh(refreshOwner) }
         .onDisappear { brightness.endVisibleRefresh(refreshOwner) }
-    }
-
-    private var keyboardBrightnessShortcutControls: some View {
-        Group {
-            Toggle(FeatureStrings.brightness(l10n.language).keyboardBrightnessShortcuts,
-                   isOn: $keyboardBrightnessShortcutsEnabled)
-                .onChange(of: keyboardBrightnessShortcutsEnabled) { _, _ in
-                    BrightnessService.shared.syncWithPreferences()
-                }
-            ForEach([GlobalShortcutRole.keyboardBrightnessDecrease, .keyboardBrightnessIncrease], id: \.self) { role in
-                ShortcutPreferenceRow(
-                    role: role,
-                    isEnabled: keyboardBrightnessShortcutsEnabled,
-                    label: role.title(l10n.s),
-                    symbolName: "keyboard",
-                    includeInactiveConflicts: true,
-                    onChange: { BrightnessService.shared.syncWithPreferences() })
-            }
-            if keyboardBrightnessShortcutsEnabled, brightness.keyboardBrightnessShortcutRegistrationFailed {
-                SettingsCaptionText(l10n.s.shortcutUnavailable)
-                    .foregroundStyle(.orange)
-            }
-        }
     }
 
     private var displayBrightnessShortcutControls: some View {

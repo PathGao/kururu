@@ -160,7 +160,8 @@ struct SettingsView: View {
         List(selection: $router.page) {
             ForEach(sidebarSections, id: \.title) { section in
                 let items = section.items.filter {
-                    FeatureVisibilitySupport.isSidebarPageVisible($0.page, selectedPage: router.page) { $0.unit.isAvailable }
+                    (FeatureVisibilitySupport.isSidebarPageVisible($0.page, selectedPage: router.page) { $0.unit.isAvailable }
+                        || ($0.page == .keyboard && KeyboardSettings.showsBacklight))
                         && SettingsSearchSupport.matches(query: searchQuery, title: $0.title,
                                                          keywords: $0.keywords)
                 }
@@ -375,7 +376,8 @@ struct SettingsView: View {
 
     @ViewBuilder
     private var detail: some View {
-        if let unit = FeatureVisibilitySupport.configurationUnit(for: router.page), !unit.isAvailable {
+        if let unit = FeatureVisibilitySupport.configurationUnit(for: router.page), !unit.isAvailable,
+           !(router.page == .keyboard && KeyboardSettings.showsBacklight) {
             SavedModuleConfigurationView(unit: unit)
         } else {
             activeDetail
