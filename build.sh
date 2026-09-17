@@ -612,7 +612,8 @@ if (( DEV )); then
 else
     rm -rf build
     mkdir -p build
-    swiftc "${APP_OPTIMIZATION_FLAGS[@]}" -target "$TARGET" -sdk "$SDK" \
+    # Whole-module optimization is the SwiftPM/Xcode release default and halves this compile.
+    swiftc "${APP_OPTIMIZATION_FLAGS[@]}" -wmo -num-threads "$(sysctl -n hw.logicalcpu)" -target "$TARGET" -sdk "$SDK" \
         "${SDK_COMPAT_FLAGS[@]}" "${VM_STATISTICS_COMPAT_FLAGS[@]}" "${HID_EVENT_SYSTEM_FLAGS[@]}" "${BUILD_VARIANT_FLAGS[@]}" \
         "${APP_SOURCES[@]}" -o "build/$EXECUTABLE"
 fi
