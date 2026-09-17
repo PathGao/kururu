@@ -33,6 +33,7 @@ struct MenuBarMetricsPreview: View {
     @AppStorage(DefaultsKey.menuBarNetworkUploadFirst) private var networkUploadFirst = false
     @AppStorage(DefaultsKey.menuBarMemoryStyle) private var memoryStyle = "percent"
     @AppStorage(DefaultsKey.temperatureUnit) private var temperatureUnit = TemperatureUnit.celsius.rawValue
+    @AppStorage(DefaultsKey.menuBarHideIconWithMetrics) private var hideIconWithMetrics = false
 
     var body: some View {
         let _ = metricOrder
@@ -53,9 +54,13 @@ struct MenuBarMetricsPreview: View {
         ScrollView(.horizontal) {
           HStack(spacing: 12) {
             HStack(spacing: 5) {
-                glyph
-                    .frame(width: BlackHoleGlyph.pointSize.width,
-                           height: BlackHoleGlyph.pointSize.height)
+                // The live item also keeps the glyph for an update or mute
+                // signal; the preview shows the steady state.
+                if !hideIconWithMetrics || lines.isEmpty {
+                    glyph
+                        .frame(width: BlackHoleGlyph.pointSize.width,
+                               height: BlackHoleGlyph.pointSize.height)
+                }
                 if !lines.isEmpty {
                     VStack(alignment: .leading, spacing: 0) {
                         ForEach(Array(lines.enumerated()), id: \.offset) { _, line in

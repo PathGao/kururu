@@ -25083,6 +25083,10 @@ struct MetricsTests {
             expect(onMonitor == 0 && onPanelPage == 1,
                    "\(symbol) left the Monitor page for its surface's page (monitor \(onMonitor), surface \(onPanelPage))")
         }
+        let previewGlyphGates = occurrenceCount("if !hideIconWithMetrics || lines.isEmpty {",
+                                                in: settingsShape("../MenuBarMetricsPreview.swift"))
+        expect(previewGlyphGates == 1,
+               "the settings preview hides the glyph with the hide-icon option, found \(previewGlyphGates)")
         let monitorGroupSection = directoryCode.range(of: "(hub.groupMonitor")?.lowerBound
         let focusEnergyGroupSection = directoryCode.range(of: "(hub.groupFocusEnergy")?.lowerBound
         expect(monitorGroupSection != nil && focusEnergyGroupSection != nil
