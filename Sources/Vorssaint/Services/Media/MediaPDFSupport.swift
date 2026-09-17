@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Vorssaint
 
 import Foundation
-import PDFKit
+import Quartz
 import Darwin
 
 enum MediaPDFError: Error, Equatable {
@@ -39,9 +39,19 @@ enum MediaPDFSupport {
         try checkCompressibleStructure(document)
         let hasTransparency = try checkImageResources(document, isCancelled: isCancelled)
         let expected = try compressionSnapshot(document, isCancelled: isCancelled)
-        var options: [PDFDocumentWriteOption: Any] = [:]
-        if !hasTransparency { options[.saveImagesAsJPEGOption] = true }
-        if mode == .screen { options[.optimizeImagesForScreenOption] = true }
+        // Use Preview's Quartz export path: PDFKit's image options can leave existing streams unchanged.
+        var imageSettings: [String: Any] = [:]
+        if !hasTransparency {
+            imageSettings["ImageCompression"] = "ImageJPEGCompress"
+            imageSettings["Compression Quality"] = 0.8
+        }
+        if mode == .screen {
+            imageSettings["ImageScaleSettings"] = ["ImageResolution": 144, "ImageScaleInterpolate": true,
+                                                   "ImageSizeMax": 2400, "ImageSizeMin": 0]
+        }
+        guard let filter = QuartzFilter(properties: ["FilterType": 1, "Name": "PDF Compression",
+            "FilterData": ["ColorSettings": ["ImageSettings": imageSettings]]]) else { throw MediaPDFError.writeFailed }
+        let options: [PDFDocumentWriteOption: Any] = [PDFDocumentWriteOption(rawValue: "QuartzFilter"): filter]
         try checkCancelled()
         guard let data = document.dataRepresentation(options: options) else { throw MediaPDFError.writeFailed }
         try checkCancelled()
@@ -263,8 +273,24 @@ enum MediaPDFSupport {
                     "display": annotation.shouldDisplay, "print": annotation.shouldPrint]
                 // Compare only stable annotation values, never parent-page or
                 // appearance-stream object identity after serialization.
-                for key in ["QuadPoints", "InkList", "Vertices", "L", "LE", "IC", "DA", "Q"] {
-                    if let value = annotation.value(forAnnotationKey: PDFAnnotationKey(rawValue: key)) { values[key] = value }
+                for key in ["QuadPoints", "Vertices", "L", "LE", "IC"] {
+                    if let value = annotation.value(forAnnotationKey: PDFAnnotationKey(rawValue: "/" + key)) { values[key] = value }
+                }
+                if let paths = annotation.paths {
+                    values["ink"] = paths.map { path in
+                        (0..<path.elementCount).map { index in
+                            var points = [NSPoint](repeating: .zero, count: 3)
+                            let element = path.element(at: index, associatedPoints: &points)
+                            let count = element == .cubicCurveTo ? 3 : (element == .quadraticCurveTo ? 2 : (element == .closePath ? 0 : 1))
+                            return [String(element.rawValue)] + points.prefix(count).map(NSStringFromPoint)
+                        }
+                    }
+                }
+                if annotation.type == "FreeText" {
+                    values["font"] = annotation.font?.fontName ?? ""
+                    values["fontSize"] = annotation.font?.pointSize ?? 0
+                    values["fontColor"] = annotation.fontColor?.usingColorSpace(.deviceRGB)?.description ?? ""
+                    values["alignment"] = annotation.alignment.rawValue
                 }
                 var destination = annotation.destination
                 if let action = annotation.action {

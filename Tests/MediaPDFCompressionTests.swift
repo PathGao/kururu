@@ -22,16 +22,23 @@ enum MediaPDFCompressionTests {
             let link = PDFAnnotation(bounds: CGRect(x: 80, y: 20, width: 100, height: 30), forType: .link, withProperties: nil)
             link.action = PDFActionURL(url: URL(string: "https://example.com/pdf")!)
             doc.page(at: 0)!.addAnnotation(link)
-            let internalLink = PDFAnnotation(bounds: CGRect(x: 190, y: 20, width: 50, height: 30), forType: .link, withProperties: nil)
-            internalLink.action = PDFActionGoTo(destination: PDFDestination(page: doc.page(at: 0)!, at: CGPoint(x: 35, y: 80)))
-            doc.page(at: 0)!.addAnnotation(internalLink)
             let highlight = PDFAnnotation(bounds: CGRect(x: 20, y: 80, width: 80, height: 20), forType: .highlight, withProperties: nil)
             highlight.quadrilateralPoints = [NSValue(point: CGPoint(x: 0, y: 20)), NSValue(point: CGPoint(x: 80, y: 20)), NSValue(point: .zero), NSValue(point: CGPoint(x: 80, y: 0))]
             doc.page(at: 0)!.addAnnotation(highlight)
             let ink = PDFAnnotation(bounds: CGRect(x: 20, y: 120, width: 80, height: 20), forType: .ink, withProperties: nil)
             let stroke = NSBezierPath(); stroke.move(to: .zero); stroke.line(to: CGPoint(x: 40, y: 10)); ink.add(stroke)
             doc.page(at: 0)!.addAnnotation(ink)
+            let textNote = PDFAnnotation(bounds: CGRect(x: 120, y: 120, width: 140, height: 30), forType: .freeText, withProperties: nil)
+            textNote.contents = "Editable text"
+            textNote.font = NSFont.systemFont(ofSize: 14)
+            textNote.fontColor = .red
+            doc.page(at: 0)!.addAnnotation(textNote)
             guard doc.write(to: input) else { throw MediaPDFError.writeFailed }
+            let sourceDocument = PDFDocument(url: input)!
+            let sourceDestination = sourceDocument.page(at: 0)?.annotations
+                .compactMap { ($0.action as? PDFActionGoTo)?.destination }.first
+            expect(sourceDestination?.page != nil && sourceDestination?.point == CGPoint(x: 35, y: 80),
+                   "compression fixture has a valid internal destination")
             let original = try Data(contentsOf: input)
             for mode in MediaPDFCompressionMode.allCases {
                 let output = directory.appendingPathComponent(mode.rawValue + ".pdf")
@@ -47,6 +54,7 @@ enum MediaPDFCompressionTests {
                     expect(saved?.annotations.contains { ($0.action as? PDFActionGoTo)?.destination.point == CGPoint(x: 35, y: 80) } == true, "internal destination survives \(mode)")
                     expect(saved?.annotations.first { $0.type == "Highlight" }?.quadrilateralPoints == source?.annotations.first { $0.type == "Highlight" }?.quadrilateralPoints, "highlight geometry survives \(mode)")
                     expect(saved?.annotations.first { $0.type == "Ink" }?.paths?.first?.elementCount == 2, "ink path survives \(mode)")
+                    expect(saved?.annotations.first { $0.type == "FreeText" }?.contents == "Editable text", "free text survives \(mode)")
                 } catch { expect(false, "compression succeeds: \(error)") }
             }
             expect(try Data(contentsOf: input) == original, "original is unchanged")
@@ -99,6 +107,9 @@ enum MediaPDFCompressionTests {
             let action = directory.appendingPathComponent("action.pdf")
             try rawFixture(action, catalog: "/OpenAction << /S /JavaScript /JS (app.alert) >>")
             reject(action, "action-out.pdf", .unsupportedStructure)
+            let brokenLink = directory.appendingPathComponent("broken-link.pdf")
+            try rawFixture(brokenLink, page: "/Annots [4 0 R]", extra: ["<< /Type /Annot /Subtype /Link /Rect [0 0 20 20] /A << /S /GoTo /D [/Missing /XYZ 35 80 0] >> >>"])
+            reject(brokenLink, "broken-link-out.pdf", .verificationFailed)
             let giant = directory.appendingPathComponent("giant.pdf")
             let largeImage = "<< /Type /XObject /Subtype /Image /Width 20001 /Height 1 /ColorSpace /DeviceRGB /BitsPerComponent 8 /Length 0 >>\nstream\n\nendstream"
             try rawFixture(giant, page: "/Resources << /XObject << /Im1 4 0 R >> >>", extra: [largeImage])
@@ -111,14 +122,16 @@ enum MediaPDFCompressionTests {
             try transparencyFixture(transparent)
             let transparentSource = PDFDocument(url: transparent)!
             let referencePixels = pixels(transparentSource)
-            let jpeg = PDFDocument(data: transparentSource.dataRepresentation(options: [PDFDocumentWriteOption.saveImagesAsJPEGOption: true, PDFDocumentWriteOption.optimizeImagesForScreenOption: true])!)!
-            let jpegError = pixelDifference(referencePixels, pixels(jpeg))
+            let opaque = directory.appendingPathComponent("opaque.pdf")
+            try transparencyFixture(opaque, alpha: false)
+            let opaqueError = pixelDifference(referencePixels, pixels(PDFDocument(url: opaque)!))
+            expect(opaqueError > 5, "transparency fixture detects lost alpha")
             for mode in MediaPDFCompressionMode.allCases {
                 let out = directory.appendingPathComponent("transparent-" + mode.rawValue + ".pdf")
                 let result = try MediaPDFSupport.compress(transparent, to: out, mode: mode)
                 let candidate = result.didCompress ? PDFDocument(url: out)! : transparentSource
                 let error = pixelDifference(referencePixels, pixels(candidate))
-                expect(error < jpegError / 2, "transparent \(mode) preserves pixels better than faulty JPEG path (\(error) vs \(jpegError))")
+                expect(error < 0.5 && error < opaqueError / 10, "transparent \(mode) preserves appearance (mean pixel error \(error))")
             }
             let many = PDFDocument()
             for index in 0...MediaPDFSupport.maximumPages { many.insert(PDFPage(), at: index) }
@@ -127,7 +140,7 @@ enum MediaPDFCompressionTests {
             reject(manyURL, "many-out.pdf", .tooManyPages)
         } catch { expect(false, "compression fixture setup: \(error)") }
     }
-    private static func transparencyFixture(_ url: URL) throws {
+    private static func transparencyFixture(_ url: URL, alpha: Bool = true) throws {
         var box = CGRect(x: 0, y: 0, width: 480, height: 560)
         guard let context = CGContext(url as CFURL, mediaBox: &box, nil) else { throw MediaPDFError.writeFailed }
         context.beginPDFPage(nil)
@@ -136,7 +149,7 @@ enum MediaPDFCompressionTests {
             context.setFillColor(CGColor(gray: (x+y)%2 == 0 ? 0.88 : 0.55, alpha: 1))
             context.fill(CGRect(x: 30+x*21, y: 165+y*21, width: 21, height: 21))
         } }
-        context.draw(alphaImage(alpha: true), in: CGRect(x: 30, y: 165, width: 420, height: 294))
+        context.draw(alphaImage(alpha: alpha), in: CGRect(x: 30, y: 165, width: 420, height: 294))
         context.endPDFPage(); context.closePDF()
     }
     private static func pixels(_ document: PDFDocument) -> [UInt8] {
@@ -176,6 +189,8 @@ private static func fixture(_ url: URL, image: Bool) throws {
     var box = CGRect(x: 0, y: 0, width: 420, height: 360)
     guard let context = CGContext(url as CFURL, mediaBox: &box, nil) else { fatalError("context") }
     context.beginPDFPage(nil)
+    context.addDestination("start" as CFString, at: CGPoint(x: 35, y: 80))
+    context.setDestination("start" as CFString, for: CGRect(x: 190, y: 20, width: 50, height: 30))
     context.setStrokeColor(CGColor(gray: 0.15, alpha: 1))
     context.setLineWidth(1.25)
     context.stroke(CGRect(x: 20, y: 20, width: 380, height: 320))
