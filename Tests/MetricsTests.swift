@@ -24410,7 +24410,7 @@ struct MetricsTests {
             (FeatureStrings.micMute(.enUS).mutedHUD, "Microphone muted", "micMute.mutedHUD"),
             (FeatureStrings.micMute(.enUS).unmutedHUD, "Microphone state restored", "micMute.unmutedHUD"),
             (FeatureStrings.micMute(.enUS).menuBarToggle, "Show in the menu bar while muted", "micMute.menuBarToggle"),
-            (FeatureStrings.micMute(.enUS).menuBarCaption, "A red crossed-out mic appears beside the app’s icon in the menu bar.", "micMute.menuBarCaption"),
+            (FeatureStrings.micMute(.enUS).menuBarCaption, "The red crossed-out mic only reflects this feature’s mute, not mutes set in macOS or other apps.", "micMute.menuBarCaption"),
             (FeatureStrings.mixer(.enUS).pageTitle, "Volume mixer", "mixer.pageTitle"),
             (FeatureStrings.mixer(.enUS).empty, "Apps that use audio show up here", "mixer.empty"),
             (FeatureStrings.mixer(.enUS).unavailable, "Available on macOS 14.4 and later", "mixer.unavailable"),
@@ -24498,7 +24498,7 @@ struct MetricsTests {
             (FeatureStrings.micMute(.zhHans).mutedHUD, "麦克风已静音", "micMute.mutedHUD"),
             (FeatureStrings.micMute(.zhHans).unmutedHUD, "已恢复麦克风状态", "micMute.unmutedHUD"),
             (FeatureStrings.micMute(.zhHans).menuBarToggle, "静音时在菜单栏显示", "micMute.menuBarToggle"),
-            (FeatureStrings.micMute(.zhHans).menuBarCaption, "菜单栏中的 App 图标旁会出现一个红色的划线麦克风。", "micMute.menuBarCaption"),
+            (FeatureStrings.micMute(.zhHans).menuBarCaption, "红色划线麦克风只反映此功能的静音，系统或其他 App 的静音不会显示。", "micMute.menuBarCaption"),
             (FeatureStrings.mixer(.zhHans).pageTitle, "音量混音器", "mixer.pageTitle"),
             (FeatureStrings.mixer(.zhHans).empty, "使用音频的 App 会显示在这里", "mixer.empty"),
             (FeatureStrings.mixer(.zhHans).unavailable, "需 macOS 14.4 及更高版本", "mixer.unavailable"),
@@ -25097,6 +25097,26 @@ struct MetricsTests {
                                                 in: settingsShape("../MenuBarMetricsPreview.swift"))
         expect(previewGlyphGates == 1,
                "the settings preview hides the glyph with the hide-icon option, found \(previewGlyphGates)")
+        // The icon page reads like the panel's Controls and Utilities rows:
+        // one row per source feature, Monitor expanding to its order strip
+        // above one checkbox grid, Mic mute a row of its own.
+        let iconSourceRows = occurrenceCount("FeatureUnit.monitor.title(", in: menuBarIconPageShape)
+            + occurrenceCount("FeatureUnit.micMute.title(", in: menuBarIconPageShape)
+        let iconDisclosures = occurrenceCount("DisclosureHeaderRow(", in: menuBarIconPageShape)
+        let iconGrids = occurrenceCount("LazyVGrid(", in: menuBarIconPageShape)
+        let iconOrderDrops = occurrenceCount("delegate: MenuBarMetricOrderDropDelegate(", in: menuBarIconPageShape)
+        expect(iconSourceRows == 2 && iconDisclosures == 1 && iconGrids == 1 && iconOrderDrops == 1,
+               "the icon page is one row per source with an order strip over one grid "
+               + "(sources \(iconSourceRows), disclosures \(iconDisclosures), grids \(iconGrids), "
+               + "order drops \(iconOrderDrops))")
+        // Both pages say how many items a collapsed row shows, and the panel's
+        // trend-chart toggle is a bordered button, not a bare glyph.
+        let countBadges = occurrenceCount("SettingsCountBadge(text:", in: menuBarIconPageShape)
+            + occurrenceCount("SettingsCountBadge(text:", in: menuBarPanelPageShape)
+        let graphToggleBorders = occurrenceCount(".strokeBorder(active ?", in: menuBarPanelPageShape)
+        expect(countBadges == 2 && graphToggleBorders == 1,
+               "collapsed rows count their items and the chart toggle keeps its border "
+               + "(badges \(countBadges), borders \(graphToggleBorders))")
         let monitorGroupSection = directoryCode.range(of: "(hub.groupMonitor")?.lowerBound
         let focusEnergyGroupSection = directoryCode.range(of: "(hub.groupFocusEnergy")?.lowerBound
         expect(monitorGroupSection != nil && focusEnergyGroupSection != nil

@@ -11,7 +11,7 @@ struct MicMuteFeatureStrings {
     var mutedHUD: String = "Microphone muted"
     var unmutedHUD: String = "Microphone state restored"
     var menuBarToggle: String = "Show in the menu bar while muted"
-    var menuBarCaption: String = "A red crossed-out mic appears beside the app’s icon in the menu bar."
+    var menuBarCaption: String = "The red crossed-out mic only reflects this feature’s mute, not mutes set in macOS or other apps."
     var applyingStatus = "Updating microphones…"
     var partialMuteFormat = "%d microphones muted; %d could not be muted."
     var partialUnmuteFormat = "%d microphones restored; %d could not be restored."
@@ -54,7 +54,7 @@ extension MicMuteFeatureStrings {
         mutedHUD: "Microfone silenciado",
         unmutedHUD: "Estado do microfone restaurado",
         menuBarToggle: "Mostrar na barra de menus enquanto silenciado",
-        menuBarCaption: "Um microfone cortado em vermelho aparece ao lado do ícone do app na barra de menus."
+        menuBarCaption: "O microfone cortado em vermelho só reflete o silenciamento deste recurso, não o do macOS nem de outros apps."
     )
 
     static let tr = MicMuteFeatureStrings(
@@ -64,7 +64,7 @@ extension MicMuteFeatureStrings {
         mutedHUD: "Mikrofon sessize alındı",
         unmutedHUD: "Mikrofon durumu geri yüklendi",
         menuBarToggle: "Sessizken menü çubuğunda göster",
-        menuBarCaption: "Menü çubuğundaki uygulama simgesinin yanında üstü çizili kırmızı bir mikrofon görünür."
+        menuBarCaption: "Kırmızı üstü çizili mikrofon macOS veya başka uygulamalardaki sessize almayı değil, yalnızca bu özelliğinkini gösterir."
     )
 
     static let ru = MicMuteFeatureStrings(
@@ -74,7 +74,7 @@ extension MicMuteFeatureStrings {
         mutedHUD: "Микрофон выключен",
         unmutedHUD: "Состояние микрофона восстановлено",
         menuBarToggle: "Показывать в строке меню, пока микрофон выключен",
-        menuBarCaption: "Рядом со значком приложения в строке меню появляется красный перечёркнутый микрофон."
+        menuBarCaption: "Красный перечёркнутый микрофон показывает только отключение этой функцией, а не в macOS или других приложениях."
     )
 
     static let es = MicMuteFeatureStrings(
@@ -84,7 +84,7 @@ extension MicMuteFeatureStrings {
         mutedHUD: "Micrófono silenciado",
         unmutedHUD: "Estado del micrófono restaurado",
         menuBarToggle: "Mostrar en la barra de menús mientras está silenciado",
-        menuBarCaption: "Un micrófono tachado en rojo aparece junto al icono de la app en la barra de menús."
+        menuBarCaption: "El micrófono tachado en rojo solo refleja el silencio de esta función, no el de macOS ni el de otras apps."
     )
 
     static let de = MicMuteFeatureStrings(
@@ -94,7 +94,7 @@ extension MicMuteFeatureStrings {
         mutedHUD: "Mikrofon stumm",
         unmutedHUD: "Mikrofonzustand wiederhergestellt",
         menuBarToggle: "In der Menüleiste anzeigen, solange stumm",
-        menuBarCaption: "Ein rot durchgestrichenes Mikrofon erscheint neben dem Symbol der App in der Menüleiste."
+        menuBarCaption: "Das rot durchgestrichene Mikrofon zeigt nur die Stummschaltung dieser Funktion, nicht die von macOS oder anderen Apps."
     )
 
     static let fr = MicMuteFeatureStrings(
@@ -104,7 +104,7 @@ extension MicMuteFeatureStrings {
         mutedHUD: "Micro coupé",
         unmutedHUD: "État du microphone restauré",
         menuBarToggle: "Afficher dans la barre des menus quand le micro est coupé",
-        menuBarCaption: "Un micro barré en rouge apparaît à côté de l’icône de l’app dans la barre des menus."
+        menuBarCaption: "Le micro barré en rouge ne reflète que la coupure faite par cette fonction, pas celle de macOS ou d’autres apps."
     )
 
     static let it = MicMuteFeatureStrings(
@@ -114,7 +114,7 @@ extension MicMuteFeatureStrings {
         mutedHUD: "Microfono silenziato",
         unmutedHUD: "Stato del microfono ripristinato",
         menuBarToggle: "Mostra nella barra dei menu quando è silenziato",
-        menuBarCaption: "Un microfono barrato in rosso appare accanto all’icona dell’app nella barra dei menu."
+        menuBarCaption: "Il microfono barrato in rosso riflette solo il silenziamento di questa funzione, non quello di macOS o di altre app."
     )
 
     static let ja = MicMuteFeatureStrings(
@@ -124,7 +124,7 @@ extension MicMuteFeatureStrings {
         mutedHUD: "マイクを消音しました",
         unmutedHUD: "マイクの状態を復元しました",
         menuBarToggle: "消音中はメニューバーに表示",
-        menuBarCaption: "メニューバーのアプリアイコンの横に、赤い斜線入りのマイクが表示されます。"
+        menuBarCaption: "赤い斜線入りのマイクはこの機能によるミュートだけを示し、macOS や他のアプリのミュートは表示しません。"
     )
 
     static let ko = MicMuteFeatureStrings(
@@ -134,7 +134,7 @@ extension MicMuteFeatureStrings {
         mutedHUD: "마이크를 음소거했습니다",
         unmutedHUD: "마이크 상태를 복원했습니다",
         menuBarToggle: "음소거 중 메뉴 막대에 표시",
-        menuBarCaption: "메뉴 막대의 앱 아이콘 옆에 빨간 줄이 그어진 마이크가 표시됩니다."
+        menuBarCaption: "빨간 줄이 그어진 마이크는 이 기능으로 음소거한 경우에만 표시되며, macOS나 다른 앱의 음소거는 표시되지 않습니다."
     )
 
     static let zhHans = MicMuteFeatureStrings(
@@ -144,7 +144,7 @@ extension MicMuteFeatureStrings {
         mutedHUD: "麦克风已静音",
         unmutedHUD: "已恢复麦克风状态",
         menuBarToggle: "静音时在菜单栏显示",
-        menuBarCaption: "菜单栏中的 App 图标旁会出现一个红色的划线麦克风。",
+        menuBarCaption: "红色划线麦克风只反映此功能的静音，系统或其他 App 的静音不会显示。",
         applyingStatus: "正在更新麦克风状态…",
         partialMuteFormat: "%d 个麦克风已静音，%d 个未能静音。",
         partialUnmuteFormat: "%d 个麦克风已恢复，%d 个未能恢复。",
@@ -162,7 +162,7 @@ extension MicMuteFeatureStrings {
         mutedHUD: "麥克風已靜音",
         unmutedHUD: "已恢復麥克風狀態",
         menuBarToggle: "靜音時在選單列顯示",
-        menuBarCaption: "選單列中的 App 圖示旁會出現一個紅色的劃線麥克風。",
+        menuBarCaption: "紅色劃線麥克風只反映此功能的靜音，系統或其他 App 的靜音不會顯示。",
         applyingStatus: "正在更新麥克風狀態…",
         partialMuteFormat: "%d 個麥克風已靜音，%d 個未能靜音。",
         partialUnmuteFormat: "%d 個麥克風已恢復，%d 個未能恢復。",
@@ -180,7 +180,7 @@ extension MicMuteFeatureStrings {
         mutedHUD: "麥克風已靜音",
         unmutedHUD: "已恢復麥克風狀態",
         menuBarToggle: "靜音時在選單列顯示",
-        menuBarCaption: "選單列中的 App 圖示旁會出現一個紅色的劃線麥克風。",
+        menuBarCaption: "紅色劃線麥克風只反映此功能的靜音，系統或其他 App 的靜音不會顯示。",
         applyingStatus: "正在更新麥克風狀態…",
         partialMuteFormat: "%d 個麥克風已靜音，%d 個未能靜音。",
         partialUnmuteFormat: "%d 個麥克風已恢復，%d 個未能恢復。",

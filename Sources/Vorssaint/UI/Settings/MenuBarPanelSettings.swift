@@ -22,7 +22,7 @@ struct MenuBarPanelSettings: View {
                 }
                 .settingsSectionAnchor(.panelConfiguration)
             }
-            SettingsSection {
+            SettingsSection(history.history) {
                 HStack(spacing: 6) {
                     Picker(history.range, selection: $historyMinutes) {
                         ForEach(1...5, id: \.self) { value in
@@ -60,9 +60,11 @@ struct PanelSectionsEditor: View {
                             return NSItemProvider(object: id.rawValue as NSString)
                         }
                         .help(UXEntryStrings(l10n.language).panelOrderHint)
-                    PanelOptionCheckbox(title: id.title(l10n.s), key: id.visibilityKey, symbolName: id.symbolName)
+                    SettingsVisibilityCheckbox(title: id.title(l10n.s), key: id.visibilityKey, symbolName: id.symbolName)
                     Spacer(minLength: 0)
-                    if !PanelSectionOptions.options(for: id, l10n: l10n).isEmpty {
+                    let options = PanelSectionOptions.options(for: id, l10n: l10n)
+                    if !options.isEmpty {
+                        SettingsCountBadge(text: "\(options.filter { UserDefaults.standard.bool(forKey: $0.key) }.count)/\(options.count)")
                         Button {
                             if expanded.contains(id) { expanded.remove(id) } else { expanded.insert(id) }
                         } label: {
@@ -95,31 +97,6 @@ struct PanelSectionsEditor: View {
     }
 }
 
-/// A checkbox bound by key, so a section or option needs no stored property here.
-private struct PanelOptionCheckbox: View {
-    let title: String
-    var symbolName: String? = nil
-    @AppStorage private var isOn: Bool
-
-    init(title: String, key: String, symbolName: String? = nil) {
-        self.title = title
-        self.symbolName = symbolName
-        _isOn = AppStorage(wrappedValue: true, key)
-    }
-
-    var body: some View {
-        Toggle(isOn: $isOn) {
-            if let symbolName {
-                Label(title, systemImage: symbolName)
-            } else {
-                Text(title).lineLimit(1).truncationMode(.tail)
-            }
-        }
-        .toggleStyle(.checkbox)
-        .help(title)
-    }
-}
-
 /// Shows or hides an option's trend chart; dims while the option itself is hidden.
 private struct PanelGraphToggle: View {
     let title: String
@@ -135,11 +112,19 @@ private struct PanelGraphToggle: View {
 
     var body: some View {
         let label = MonitorHistoryStrings.text(l10n.language).history
+        let active = isOn && optionShown
         Button { isOn.toggle() } label: {
             Image(systemName: "chart.xyaxis.line")
-                .font(.caption)
-                .foregroundStyle(isOn && optionShown ? Color.accentColor : Color.secondary.opacity(0.5))
-                .frame(width: 18, height: 18)
+                .font(.caption.weight(.medium))
+                .foregroundStyle(active ? Color.accentColor : Color.secondary)
+                .frame(width: 26, height: 20)
+                .background(active ? Color.accentColor.opacity(0.16) : Color.secondary.opacity(0.06),
+                            in: RoundedRectangle(cornerRadius: 5))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 5)
+                        .strokeBorder(active ? Color.accentColor : Color.secondary.opacity(0.3), lineWidth: 1)
+                }
+                .opacity(optionShown ? 1 : 0.45)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -263,7 +248,7 @@ private struct PanelSectionOptionsGrid: View {
                               alignment: .leading, spacing: 6) {
                         ForEach(options.filter { $0.group == group }) { option in
                             HStack(spacing: 2) {
-                                PanelOptionCheckbox(title: option.title, key: option.key)
+                                SettingsVisibilityCheckbox(title: option.title, key: option.key)
                                 if let graphKey = option.graphKey {
                                     PanelGraphToggle(title: option.title, key: graphKey, optionKey: option.key)
                                 }

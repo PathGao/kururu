@@ -16,7 +16,6 @@ struct MenuBarIconSettings: View {
     @AppStorage(DefaultsKey.menuBarSeparateMetrics) private var separateMetrics = false
     @AppStorage(DefaultsKey.menuBarMetricSpacing) private var metricSpacing = "standard"
     @AppStorage(DefaultsKey.menuBarMetricAppearance) private var metricAppearance = "values"
-    @AppStorage(DefaultsKey.micMuteMenuBarIndicator) private var micMenuBarIndicator = true
 
     private var workspace: ModuleWorkspaceStrings { ModuleWorkspaceStrings(l10n.language) }
 
@@ -29,30 +28,37 @@ struct MenuBarIconSettings: View {
             SettingsSection(l10n.s.monitorMenuBarSection) {
                 if FeatureUnit.monitor.isAvailable {
                     MenuBarMetricsPreview()
-                    MenuBarMetricOrderEditor()
-                    Text(activeMetricCount == 0 ? workspace.noMetrics : l10n.s.monitorMenuBarCaption)
-                        .font(SettingsTypography.caption)
-                        .foregroundStyle(.secondary)
                 } else {
+                    // Mic mute's row does not depend on the monitor, so the
+                    // editor below renders either way.
                     Text(workspace.inactiveMonitor)
                         .fixedSize(horizontal: false, vertical: true)
                     Button(workspace.add) { FeatureRuntime.shared.setAvailable(.monitor, true) }
                         .buttonStyle(.borderedProminent)
                 }
+                MenuBarMetricOrderEditor()
+                if FeatureUnit.monitor.isAvailable, activeMetricCount == 0 {
+                    Text(workspace.noMetrics)
+                        .font(SettingsTypography.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
-            SettingsSection(appearanceStrings.label) {
+            SettingsSection(appearanceStrings.metricStyle) {
                 if activeMetricCount == 0 {
                     Text(workspace.deferredAppearance)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                Picker(appearanceStrings.label, selection: $metricAppearance) {
-                    Text(appearanceStrings.values).tag("values")
-                    Text(appearanceStrings.bars).tag("bars")
+                SettingsControlRow(title: appearanceStrings.label,
+                                   systemImage: "chart.bar",
+                                   help: appearanceStrings.caption) {
+                    Picker(appearanceStrings.label, selection: $metricAppearance) {
+                        Text(appearanceStrings.values).tag("values")
+                        Text(appearanceStrings.bars).tag("bars")
+                    }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
                 }
-                .pickerStyle(.segmented)
                 if appearance == .bars {
-                    Text(appearanceStrings.caption)
-                        .font(SettingsTypography.caption).foregroundStyle(.secondary)
                     MenuBarUsageBarSettings(strings: appearanceStrings)
                 } else {
                     SettingsToggleWithCaption(title: l10n.s.monitorCombineTemperatures,
@@ -74,17 +80,11 @@ struct MenuBarIconSettings: View {
                     Toggle(l10n.s.monitorSeparateMenuBarMetrics, isOn: $separateMetrics)
                 }
             }
-            SettingsSection {
+            SettingsSection(l10n.s.menuBarIconSection) {
                 SettingsToggleWithCaption(title: l10n.s.menuBarHideIconToggle,
                                           caption: l10n.s.menuBarHideIconCaption,
                                           showsCaptionInline: false,
                                           isOn: $hideIconWithMetrics)
-                if AppFeature.micMute.isAvailable {
-                    SettingsToggleWithCaption(title: FeatureStrings.micMute(l10n.language).menuBarToggle,
-                                              caption: FeatureStrings.micMute(l10n.language).menuBarCaption,
-                                              showsCaptionInline: false,
-                                              isOn: $micMenuBarIndicator)
-                }
                 HStack(spacing: 6) {
                     Button(l10n.s.showMenuBarIcon) {
                         appDelegate()?.reshowStatusItem()
@@ -194,24 +194,69 @@ private struct MenuBarUsageBarSettings: View {
     }
 }
 
-/// The metrics shown in the menu bar, as tokens in menu bar order. Drag a token
-/// to reorder, click it for its options, add hidden metrics from the menu. The
-/// saved order keeps a slot for hidden metrics, so hiding does not reshuffle it.
+/// What the icon carries, one row per feature it comes from, like the panel's
+/// Controls and Utilities rows. Monitor expands to its order strip above a
+/// checkbox grid; Mic mute has a single item, so its row is the checkbox.
 struct MenuBarMetricOrderEditor: View {
     @ObservedObject private var l10n = L10n.shared
     @ObservedObject private var features = FeatureRuntime.shared
     @AppStorage(DefaultsKey.menuBarMetricOrder) private var metricOrder = ""
     @State private var order: [MenuBarMetric] = MenuBarMetric.order(in: .standard)
     @State private var dragging: MenuBarMetric?
-    @State private var visibilityRevision = 0
+    @State private var monitorExpanded = false
+    @State private var revision = 0
 
     var body: some View {
-        let workspace = ModuleWorkspaceStrings(l10n.language)
-        let _ = visibilityRevision
+        let _ = revision
         let available = Self.availableOrder(order)
-        let hidden = available.filter { !UserDefaults.standard.bool(forKey: $0.defaultsKey) }
+        let shown = available.filter { UserDefaults.standard.bool(forKey: $0.defaultsKey) }
+        Group {
+            if FeatureUnit.monitor.isAvailable, !available.isEmpty {
+                DisclosureHeaderRow(isExpanded: $monitorExpanded) {
+                    Label(FeatureUnit.monitor.title(l10n.s, language: l10n.language),
+                          systemImage: FeatureUnit.monitor.symbolName)
+                    Spacer()
+                    SettingsCountBadge(text: "\(shown.count)/\(available.count)")
+                }
+                if monitorExpanded {
+                    VStack(alignment: .leading, spacing: 10) {
+                        // Order first: it is the menu bar read left to right.
+                        if !shown.isEmpty { orderStrip(shown) }
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), alignment: .leading), count: 3),
+                                  alignment: .leading, spacing: 6) {
+                            ForEach(available) { metric in
+                                SettingsVisibilityCheckbox(title: metric.title(l10n.s), key: metric.defaultsKey)
+                            }
+                        }
+                    }
+                    .disclosureIndent()
+                }
+            }
+            if AppFeature.micMute.isAvailable {
+                let micMute = FeatureStrings.micMute(l10n.language)
+                HStack(spacing: 6) {
+                    Label(FeatureUnit.micMute.title(l10n.s, language: l10n.language),
+                          systemImage: FeatureUnit.micMute.symbolName)
+                    Spacer()
+                    SettingsVisibilityCheckbox(title: micMute.menuBarToggle,
+                                               key: DefaultsKey.micMuteMenuBarIndicator)
+                        .fixedSize()
+                    SettingsHelpButton(title: micMute.menuBarToggle, text: micMute.menuBarCaption)
+                }
+            }
+        }
+        .onAppear { order = MenuBarMetric.order(in: .standard) }
+        .onChange(of: metricOrder) { _, _ in order = MenuBarMetric.order(in: .standard) }
+        .onReceive(NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)) { _ in
+            revision &+= 1
+        }
+    }
+
+    /// The shown metrics in menu bar order. Drag to reorder; a metric with
+    /// options of its own opens them on click.
+    private func orderStrip(_ shown: [MenuBarMetric]) -> some View {
         MenuBarMetricTokenLayout(spacing: 6) {
-            ForEach(available.filter { UserDefaults.standard.bool(forKey: $0.defaultsKey) }) { metric in
+            ForEach(shown) { metric in
                 MenuBarMetricToken(metric: metric)
                     .opacity(dragging == metric ? 0.45 : 1)
                     .onDrag {
@@ -223,26 +268,6 @@ struct MenuBarMetricOrderEditor: View {
                                                                      order: $order,
                                                                      dragging: $dragging))
             }
-            Menu {
-                ForEach(hidden) { metric in
-                    Button {
-                        UserDefaults.standard.set(true, forKey: metric.defaultsKey)
-                    } label: {
-                        Label(metric.title(l10n.s), systemImage: metric.symbolName)
-                    }
-                }
-            } label: {
-                Label(workspace.addMetrics, systemImage: "plus")
-            }
-            .menuStyle(.borderlessButton)
-            .fixedSize()
-            .disabled(hidden.isEmpty)
-        }
-        .padding(.vertical, 2)
-        .onAppear { order = MenuBarMetric.order(in: .standard) }
-        .onChange(of: metricOrder) { _, _ in order = MenuBarMetric.order(in: .standard) }
-        .onReceive(NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)) { _ in
-            visibilityRevision += 1
         }
     }
 
@@ -253,17 +278,16 @@ struct MenuBarMetricOrderEditor: View {
     }
 }
 
+/// Moves within the full saved order, so hidden metrics keep their slots.
 private struct MenuBarMetricOrderDropDelegate: DropDelegate {
     let target: MenuBarMetric
     @Binding var order: [MenuBarMetric]
     @Binding var dragging: MenuBarMetric?
 
     func dropEntered(info: DropInfo) {
-        guard let dragging,
-              dragging != target,
+        guard let dragging, dragging != target,
               let from = order.firstIndex(of: dragging),
               let to = order.firstIndex(of: target) else { return }
-
         withAnimation(.easeInOut(duration: 0.12)) {
             order.move(fromOffsets: IndexSet(integer: from), toOffset: to > from ? to + 1 : to)
         }
@@ -276,54 +300,63 @@ private struct MenuBarMetricOrderDropDelegate: DropDelegate {
 
     func performDrop(info: DropInfo) -> Bool {
         dragging = nil
-        MenuBarMetric.setOrder(order)
         return true
     }
 }
 
-/// One shown metric. A Button rather than a Toggle: inside a draggable view a
-/// Button still receives the click. Its options live in the popover.
+/// One shown metric in the order strip. Only memory and network have options
+/// of their own; the others are drag handles and nothing more.
 private struct MenuBarMetricToken: View {
     @ObservedObject private var l10n = L10n.shared
     let metric: MenuBarMetric
-    @AppStorage private var shown: Bool
     @AppStorage(DefaultsKey.menuBarMemoryStyle) private var memoryStyle = "percent"
     @AppStorage(DefaultsKey.menuBarNetworkUploadFirst) private var uploadFirst = false
     @State private var presented = false
 
-    init(metric: MenuBarMetric) {
-        self.metric = metric
-        _shown = AppStorage(wrappedValue: false, metric.defaultsKey)
-    }
+    private var hasOptions: Bool { metric == .memory || metric == .network }
 
     var body: some View {
         let title = metric.title(l10n.s)
-        Button { presented = true } label: {
+        if hasOptions {
+            Button { presented = true } label: { capsule(title) }
+                .buttonStyle(.plain)
+                .accessibilityLabel(title)
+                .popover(isPresented: $presented, arrowEdge: .bottom) { options(title) }
+        } else {
+            capsule(title)
+        }
+    }
+
+    private func capsule(_ title: String) -> some View {
+        HStack(spacing: 4) {
             Label(title, systemImage: metric.symbolName)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 3)
-                .background(Color.primary.opacity(0.07), in: Capsule())
-                .contentShape(Capsule())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(title)
-        .popover(isPresented: $presented, arrowEdge: .bottom) {
-            VStack(alignment: .leading, spacing: 10) {
-                Text(title).font(.headline)
-                Toggle(ModuleWorkspaceStrings(l10n.language).showMenuBarMetric, isOn: $shown)
-                if metric == .memory {
-                    Toggle(l10n.s.monitorMemoryPressureDot, isOn: Binding(
-                        get: { Defaults.sanitizedMenuBarMemoryStyle(memoryStyle) != "percent" },
-                        set: { memoryStyle = $0 ? "both" : "percent" }))
-                }
-                if metric == .network {
-                    Toggle(l10n.s.monitorNetworkUploadFirst, isOn: $uploadFirst)
-                }
+            if hasOptions {
+                Image(systemName: "chevron.down")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.secondary)
             }
-            .toggleStyle(.checkbox)
-            .padding(14)
-            .frame(minWidth: 200, alignment: .leading)
         }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 3)
+        .background(Color.primary.opacity(0.07), in: Capsule())
+        .contentShape(Capsule())
+    }
+
+    private func options(_ title: String) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title).font(.headline)
+            if metric == .memory {
+                Toggle(l10n.s.monitorMemoryPressureDot, isOn: Binding(
+                    get: { Defaults.sanitizedMenuBarMemoryStyle(memoryStyle) != "percent" },
+                    set: { memoryStyle = $0 ? "both" : "percent" }))
+            }
+            if metric == .network {
+                Toggle(l10n.s.monitorNetworkUploadFirst, isOn: $uploadFirst)
+            }
+        }
+        .toggleStyle(.checkbox)
+        .padding(14)
+        .frame(minWidth: 200, alignment: .leading)
     }
 }
 

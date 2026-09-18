@@ -661,7 +661,6 @@ struct Strings {
     var tabMenuBarIcon: String = "Menu bar icon"
     var tabMenuBarPanel: String = "Menu bar panel"
     var monitorMenuBarSection: String = "In the menu bar"
-    var monitorMenuBarCaption: String = "Choose what appears next to the icon in the menu bar."
     var monitorCombineTemperatures: String = "Combine usage and temperature"
     var monitorCombineTemperaturesCaption: String = "When usage and temperature for the same item are enabled, show them in one block."
     var monitorSeparateMenuBarMetrics: String = "Separate metrics into their own items"
@@ -742,6 +741,7 @@ struct Strings {
     var menuBarSpacingCompact: String = "Compact"
     var menuBarHideIconToggle: String = "Hide the app icon while metrics are shown"
     var menuBarHideIconCaption: String = "The icon returns by itself when metrics leave the bar and when there is something to signal (an update ready or the microphone muted)."
+    var menuBarIconSection: String = "App icon"
     var monitorMemoryPressureDot: String = "Pressure dot"
     // MARK: System uptime, battery health, speed test
     var systemUptime: String = "Up for"
@@ -1448,7 +1448,6 @@ extension Strings {
         tabMenuBarIcon: "Ícone da barra de menus",
         tabMenuBarPanel: "Painel da barra de menus",
         monitorMenuBarSection: "Na barra de menus",
-        monitorMenuBarCaption: "Escolha o que aparece ao lado do ícone na barra de menus.",
         monitorCombineTemperatures: "Combinar uso e temperatura",
         monitorCombineTemperaturesCaption: "Quando uso e temperatura do mesmo item estiverem ativos, mostra tudo em um bloco só.",
         monitorSeparateMenuBarMetrics: "Separar métricas em itens próprios",
@@ -1525,6 +1524,7 @@ extension Strings {
         menuBarSpacingCompact: "Compacto",
         menuBarHideIconToggle: "Ocultar o ícone do app enquanto houver métricas",
         menuBarHideIconCaption: "O ícone volta sozinho quando as métricas saem da barra e quando há algo a avisar (atualização pronta ou microfone silenciado).",
+        menuBarIconSection: "Ícone do app",
         monitorMemoryPressureDot: "Ponto de pressão",
         systemUptime: "Ativo há",
         batteryCharge: "Carga",

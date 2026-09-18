@@ -5,6 +5,7 @@ import Foundation
 
 struct MenuBarAppearanceStrings {
     var label: String = "Usage display"
+    var metricStyle: String = "Metric style"
     var values: String = "Values"
     var bars: String = "Bars"
     var caption: String = "Bars apply to CPU, GPU, memory and disk usage. Other readings stay numeric."
@@ -41,6 +42,7 @@ extension MenuBarAppearanceStrings {
 
     static let ptBR = MenuBarAppearanceStrings(
         label: "Exibição de uso",
+        metricStyle: "Estilo dos indicadores",
         values: "Valores",
         bars: "Barras",
         caption: "As barras mostram o uso de CPU, GPU, memória e disco. As outras leituras continuam numéricas.",
@@ -54,6 +56,7 @@ extension MenuBarAppearanceStrings {
 
     static let tr = MenuBarAppearanceStrings(
         label: "Kullanım görünümü",
+        metricStyle: "Gösterge stili",
         values: "Değerler",
         bars: "Çubuklar",
         caption: "Çubuklar CPU, GPU, bellek ve disk kullanımını gösterir. Diğer ölçümler sayısal kalır.",
@@ -67,6 +70,7 @@ extension MenuBarAppearanceStrings {
 
     static let ru = MenuBarAppearanceStrings(
         label: "Отображение нагрузки",
+        metricStyle: "Стиль показателей",
         values: "Значения",
         bars: "Шкалы",
         caption: "Шкалы показывают загрузку CPU, GPU, памяти и диска. Остальные показатели остаются числовыми.",
@@ -80,6 +84,7 @@ extension MenuBarAppearanceStrings {
 
     static let es = MenuBarAppearanceStrings(
         label: "Vista de uso",
+        metricStyle: "Estilo de los indicadores",
         values: "Valores",
         bars: "Barras",
         caption: "Las barras muestran el uso de CPU, GPU, memoria y disco. Las demás lecturas siguen siendo numéricas.",
@@ -93,6 +98,7 @@ extension MenuBarAppearanceStrings {
 
     static let de = MenuBarAppearanceStrings(
         label: "Auslastungsanzeige",
+        metricStyle: "Stil der Messwerte",
         values: "Werte",
         bars: "Balken",
         caption: "Balken zeigen die Auslastung von CPU, GPU, Speicher und Festplatte. Andere Messwerte bleiben numerisch.",
@@ -106,6 +112,7 @@ extension MenuBarAppearanceStrings {
 
     static let fr = MenuBarAppearanceStrings(
         label: "Affichage de l’utilisation",
+        metricStyle: "Style des mesures",
         values: "Valeurs",
         bars: "Barres",
         caption: "Les barres indiquent l’utilisation du CPU, du GPU, de la mémoire et du disque. Les autres mesures restent numériques.",
@@ -119,6 +126,7 @@ extension MenuBarAppearanceStrings {
 
     static let it = MenuBarAppearanceStrings(
         label: "Visualizzazione utilizzo",
+        metricStyle: "Stile degli indicatori",
         values: "Valori",
         bars: "Barre",
         caption: "Le barre mostrano l’utilizzo di CPU, GPU, memoria e disco. Le altre letture restano numeriche.",
@@ -132,6 +140,7 @@ extension MenuBarAppearanceStrings {
 
     static let ja = MenuBarAppearanceStrings(
         label: "使用率の表示",
+        metricStyle: "指標のスタイル",
         values: "数値",
         bars: "バー",
         caption: "CPU、GPU、メモリ、ディスクの使用率をバーで表示します。その他の測定値は数値のままです。",
@@ -145,6 +154,7 @@ extension MenuBarAppearanceStrings {
 
     static let ko = MenuBarAppearanceStrings(
         label: "사용량 표시",
+        metricStyle: "지표 스타일",
         values: "값",
         bars: "막대",
         caption: "CPU, GPU, 메모리 및 디스크 사용량을 막대로 표시합니다. 다른 측정값은 숫자로 유지됩니다.",
@@ -158,6 +168,7 @@ extension MenuBarAppearanceStrings {
 
     static let zhHans = MenuBarAppearanceStrings(
         label: "使用率显示",
+        metricStyle: "指标样式",
         values: "数值",
         bars: "条形",
         caption: "CPU、GPU、内存和磁盘使用率以条形显示。其他读数保持数字显示。",
@@ -171,6 +182,7 @@ extension MenuBarAppearanceStrings {
 
     static let zhTW = MenuBarAppearanceStrings(
         label: "使用率顯示",
+        metricStyle: "指標樣式",
         values: "數值",
         bars: "長條",
         caption: "CPU、GPU、記憶體和磁碟使用率以長條顯示。其他讀數維持數字顯示。",
@@ -184,6 +196,7 @@ extension MenuBarAppearanceStrings {
 
     static let zhHK = MenuBarAppearanceStrings(
         label: "使用率顯示",
+        metricStyle: "指標樣式",
         values: "數值",
         bars: "長條",
         caption: "CPU、GPU、記憶體及磁碟使用率以長條顯示。其他讀數維持數字顯示。",
