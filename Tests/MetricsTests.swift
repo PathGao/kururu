@@ -25097,6 +25097,26 @@ struct MetricsTests {
                                                 in: settingsShape("../MenuBarMetricsPreview.swift"))
         expect(previewGlyphGates == 1,
                "the settings preview hides the glyph with the hide-icon option, found \(previewGlyphGates)")
+        // The icon page reads like the panel's Controls and Utilities rows:
+        // one row per source feature, Monitor expanding to its order strip
+        // above one checkbox grid, Mic mute a row of its own.
+        let iconSourceRows = occurrenceCount("FeatureUnit.monitor.title(", in: menuBarIconPageShape)
+            + occurrenceCount("FeatureUnit.micMute.title(", in: menuBarIconPageShape)
+        let iconDisclosures = occurrenceCount("DisclosureHeaderRow(", in: menuBarIconPageShape)
+        let iconGrids = occurrenceCount("LazyVGrid(", in: menuBarIconPageShape)
+        let iconOrderDrops = occurrenceCount("delegate: MenuBarMetricOrderDropDelegate(", in: menuBarIconPageShape)
+        expect(iconSourceRows == 2 && iconDisclosures == 1 && iconGrids == 1 && iconOrderDrops == 1,
+               "the icon page is one row per source with an order strip over one grid "
+               + "(sources \(iconSourceRows), disclosures \(iconDisclosures), grids \(iconGrids), "
+               + "order drops \(iconOrderDrops))")
+        // Both pages say how many items a collapsed row shows, and the panel's
+        // trend-chart toggle is a bordered button, not a bare glyph.
+        let countBadges = occurrenceCount("SettingsCountBadge(text:", in: menuBarIconPageShape)
+            + occurrenceCount("SettingsCountBadge(text:", in: menuBarPanelPageShape)
+        let graphToggleBorders = occurrenceCount(".strokeBorder(active ?", in: menuBarPanelPageShape)
+        expect(countBadges == 2 && graphToggleBorders == 1,
+               "collapsed rows count their items and the chart toggle keeps its border "
+               + "(badges \(countBadges), borders \(graphToggleBorders))")
         let monitorGroupSection = directoryCode.range(of: "(hub.groupMonitor")?.lowerBound
         let focusEnergyGroupSection = directoryCode.range(of: "(hub.groupFocusEnergy")?.lowerBound
         expect(monitorGroupSection != nil && focusEnergyGroupSection != nil

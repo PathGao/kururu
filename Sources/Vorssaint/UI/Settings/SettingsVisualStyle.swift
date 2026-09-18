@@ -244,3 +244,42 @@ struct SettingsInfo: View {
         .background(Color.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 9))
     }
 }
+
+/// A checkbox bound by key, so a row needs no stored property of its own.
+struct SettingsVisibilityCheckbox: View {
+    let title: String
+    var symbolName: String? = nil
+    @AppStorage private var isOn: Bool
+
+    init(title: String, key: String, symbolName: String? = nil) {
+        self.title = title
+        self.symbolName = symbolName
+        _isOn = AppStorage(wrappedValue: true, key)
+    }
+
+    var body: some View {
+        Toggle(isOn: $isOn) {
+            if let symbolName {
+                Label(title, systemImage: symbolName)
+            } else {
+                Text(title).lineLimit(1).truncationMode(.tail)
+            }
+        }
+        .toggleStyle(.checkbox)
+        .help(title)
+    }
+}
+
+/// How many of a row's items are on, readable without expanding it.
+struct SettingsCountBadge: View {
+    let text: String
+
+    var body: some View {
+        Text(text)
+            .font(SettingsTypography.caption.monospacedDigit())
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 7)
+            .padding(.vertical, 2)
+            .background(Capsule().fill(Color.primary.opacity(0.06)))
+    }
+}
