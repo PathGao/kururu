@@ -21,6 +21,15 @@ newest release first. The app and release workflow read these version headings.
     - Removed capabilities or compatibility.
 -->
 
+## [0.1.4] - 2026-09-19
+
+### Changed
+- Menu Bar Icon settings group metrics into one row per source. Monitor metrics are ordered in a draggable strip above a checkbox grid, and Mic mute has its own row.
+- Collapsed Menu Bar Panel rows show how many of their options are on. The trend chart toggle has its border back and the chart range section has a title.
+
+### Fixed
+- The menu bar preview in settings hides the app icon when "Hide the app icon while metrics are shown" is on.
+
 ## [0.1.3] - 2026-09-17
 
 ### Changed
