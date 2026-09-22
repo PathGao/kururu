@@ -13790,7 +13790,7 @@ struct MetricsTests {
             "keepAwake", "brightness", "bluetoothSleep",
             "colorPicker", "screenOCR", "cleaningMode", "mediaTools",
             "cleaner", "uninstaller", "homebrew", "screenshot",
-            "radialMenu", "scratchpad", "commandBar", "screenRecorder", "environment",
+            "radialMenu", "scratchpad", "commandBar", "screenRecorder", "environment", "killProcess",
             "monitorCPU", "monitorGPU", "monitorMemory", "monitorNetwork", "monitorDisk", "monitorPower",
             "fanControl",
         ], "feature ids are stable (they persist inside availability keys)")
@@ -14743,13 +14743,14 @@ struct MetricsTests {
                    "no em-dash in visible menu bar appearance strings (\(language.rawValue))")
             let killProcessValues = Mirror(reflecting: FeatureStrings.killProcess(language)).children
                 .compactMap { $0.value as? String }
-            expect(killProcessValues.count == 14 && killProcessValues.allSatisfy { !$0.isEmpty },
+            expect(killProcessValues.count == 27 && killProcessValues.allSatisfy { !$0.isEmpty },
                    "every kill process string is set for \(language.rawValue)")
             expect(killProcessValues.allSatisfy { !$0.contains("—") },
                    "no em-dash in visible kill process strings (\(language.rawValue))")
             expectFormat(FeatureStrings.killProcess(language).monitorKillFailedFormat, ["@"],
                          "\(language.rawValue) monitor process failure format")
             expect(FeatureStrings.killProcess(language).pidLabelFormat.contains("%d")
+                    && FeatureStrings.killProcess(language).processCountFormat.contains("%d")
                     && FeatureStrings.killProcess(language).killAllFormat.contains("%@")
                     && FeatureStrings.killProcess(language).confirmKillFormat.contains("%@")
                     && FeatureStrings.killProcess(language).confirmForceKillFormat.contains("%@")
@@ -14801,6 +14802,51 @@ struct MetricsTests {
         expect(KillProcessSupport.descendants(of: 30, parents: processTable).isEmpty
                && KillProcessSupport.descendants(of: 50, parents: processTable).isEmpty,
                "Kill Process reports no descendants for a leaf and never follows a self-parenting row")
+
+        // MARK: Kill Process is reachable
+        // Every surface a hub feature needs, checked together: switch it off
+        // in the hub and the page, its sidebar row and its search keywords all
+        // have to leave with it.
+        expect(AppFeature.killProcess.unit == .killProcess
+                && FeatureUnit.killProcess.page == .killProcess
+                && AppFeature.killProcess.settingsDestination == FeatureSettingsDestination(.killProcess)
+                && AppFeature.killProcess.hasNavigableSettingsDestination
+                && FeatureVisibilitySupport.features(for: .killProcess) == [.killProcess],
+               "Kill Process owns one unit, one page and one destination")
+        expect(AppFeature.killProcess.group == .appManagement
+                && AppFeature.killProcess.isBeta
+                && AppFeature.killProcess.enabledKeys.isEmpty
+                && AppFeature.killProcess.permissions.isEmpty
+                && AppFeature.killProcess.switchKey == nil,
+               "Kill Process is an on-demand beta tool under app management, asking for no permission")
+        expect(!FeatureVisibilitySupport.isPageVisible(.killProcess, isAvailable: { _ in false })
+                && FeatureVisibilitySupport.isPageVisible(.killProcess, isAvailable: { $0 == .killProcess }),
+               "the Kill Process page follows its own feature")
+        // The page renders, the sidebar lists it and the search finds it by
+        // what the page holds, not only by its title.
+        let killPageCode = stripCommentLines((try? String(
+            contentsOfFile: "Sources/Vorssaint/UI/Settings/SettingsView.swift", encoding: .utf8)) ?? "")
+        expect(killPageCode.contains("case .killProcess: KillProcessView()"),
+               "the Kill Process page has a view behind it")
+        let killDirectoryCode = stripCommentLines((try? String(
+            contentsOfFile: "Sources/Vorssaint/UI/Settings/SettingsDirectory.swift", encoding: .utf8)) ?? "")
+        expect(killDirectoryCode.contains("SettingsDirectoryItem(page: .killProcess")
+                && killDirectoryCode.contains("FeatureStrings.killProcess(language).killTreeButton"),
+               "the Kill Process page has a sidebar row that search finds by what it holds")
+        expect(SettingsSearchSupport.featureItems(language: .enUS) {
+            $0.name(L10n.shared.s, language: .enUS)
+        }.contains { $0.id == .feature(.killProcess) },
+               "searching the feature name finds Kill Process even while it is switched off")
+        // Both surfaces that could already end a process follow the feature,
+        // so switching it off in the hub takes every one of them away.
+        for (path, needle) in [
+            ("Sources/Vorssaint/UI/MenuPanel/ProcessUsageRow.swift", "AppFeature.killProcess.isAvailable"),
+            ("Sources/Vorssaint/Services/CommandBar/CommandBarCatalog.swift", "AppFeature.killProcess.isAvailable"),
+            ("Sources/Vorssaint/Services/CommandBar/CommandBarService.swift", "AppFeature.killProcess.isAvailable"),
+        ] {
+            let code = stripCommentLines((try? String(contentsOfFile: path, encoding: .utf8)) ?? "")
+            expect(code.contains(needle), "\(path) gates ending a process on the hub feature")
+        }
 
         for language in AppLanguage.allCases {
             let superKeyValues = Mirror(reflecting: FeatureStrings.superKey(language)).children
@@ -18283,12 +18329,16 @@ struct MetricsTests {
         // macOS 15 and starves whatever shares that row (issue #569), so the
         // rule is checked for every borderless menu in the app rather than for
         // the one this fix touches.
+        // Kill Process is the one deliberate exception: its row controls take
+        // a shared minimum width so the Kill button and the menu beside it
+        // line up down the list.
+        let borderlessMenuException = "KillProcess/KillProcessView"
         var unpinnedBorderlessMenus: [String] = []
         let uiFiles = FileManager.default
             .enumerator(atPath: "Sources/Vorssaint/UI")?
             .compactMap { $0 as? String }
             .filter { $0.hasSuffix(".swift") && !$0.contains(" 2") } ?? []
-        for file in uiFiles.sorted() {
+        for file in uiFiles.sorted() where !file.contains(borderlessMenuException) {
             let path = "Sources/Vorssaint/UI/\(file)"
             guard let source = try? String(contentsOfFile: path, encoding: .utf8) else { continue }
             let lines = source.components(separatedBy: "\n")
@@ -24648,7 +24698,7 @@ struct MetricsTests {
             (.capture, [.screenshot, .screenRecorder, .colorPicker, .screenOCR, .mediaTools]),
             (.soundDevices, [.mixer, .soundOutputSwitcher, .micMute, .musicBlock]),
             (.focusEnergy, [.keepAwake, .brightness, .bluetoothSleep, .cleaningMode]),
-            (.appManagement, [.cleaner, .uninstaller, .homebrew, .environment]),
+            (.appManagement, [.cleaner, .uninstaller, .homebrew, .environment, .killProcess]),
         ]
         for (group, members) in taxonomy {
             expect(Set(AppFeature.features(in: group)) == members,
@@ -24865,7 +24915,8 @@ struct MetricsTests {
             "Output switcher", "Mute microphone", "App launch blocker", "Keep awake", "Displays",
             "Bluetooth on sleep", "Color picker", "Copy text from screen", "Cleaning Mode", "Media", "Cleaner",
             "Uninstaller", "Homebrew", "Screenshot",
-            "Radial menu", "Notes", "Command Bar", "Screen recording", "Global environment", "CPU",
+            "Radial menu", "Notes", "Command Bar", "Screen recording", "Global environment",
+            "Kill Process", "CPU",
             "GPU", "Memory", "Network", "Disks", "Power", "Fan Control"
         ]
         let featureNamesZhHans = [
@@ -24873,7 +24924,7 @@ struct MetricsTests {
             "关闭鼠标加速", "侧键", "鼠标按键快捷键", "三指中键", "点击防抖", "按键防抖", "文本片段", "超级键", "退出与关闭保护", "剪贴板",
             "粘贴为纯文本", "剪切和粘贴", "重命名快捷键", "暂存架", "清理 URL", "音量混音器", "输出切换器", "静音麦克风",
             "App 启动拦截", "保持唤醒", "显示器", "睡眠时的蓝牙", "颜色吸管", "拷贝屏幕文字", "清洁模式",
-            "媒体", "清理", "卸载器", "Homebrew", "截屏", "径向菜单", "便条", "命令栏", "屏幕录制", "全局环境",
+            "媒体", "清理", "卸载器", "Homebrew", "截屏", "径向菜单", "便条", "命令栏", "屏幕录制", "全局环境", "结束进程",
             "CPU", "GPU", "内存", "网络", "磁盘", "电源", "风扇控制"
         ]
         let pageTitlesEnUS = [
@@ -24884,13 +24935,14 @@ struct MetricsTests {
             "Homebrew", "Global environment", "Media", "Clipboard", "Clean URL", "Shelf",
             "Screen capture", "Radial menu", "Command Bar",
             "Volume mixer", "Mute microphone", "App launch blocker", "Notes",
+            "Kill Process",
             "Keyboard shortcuts", "General & appearance", "About", "What’s New"
         ]
         let pageTitlesZhHans = [
             "功能", "菜单栏图标", "菜单栏面板", "监控", "保持唤醒", "显示器", "睡眠时的蓝牙", "清洁模式", "鼠标", "触控板", "窗口切换器", "Dock", "键盘", "访达快捷键",
             "窗口行为", "清理", "卸载器", "Homebrew", "全局环境", "媒体", "剪贴板", "清理 URL",
             "暂存架", "屏幕捕捉", "径向菜单", "命令栏", "音量混音器", "静音麦克风", "App 启动拦截",
-            "便条",
+            "便条", "结束进程",
             "键盘快捷键", "通用与外观", "关于", "新功能"
         ]
         expect(featureNamesEnUS.count == AppFeature.allCases.count
@@ -25274,7 +25326,7 @@ struct MetricsTests {
             (.clipboardFiles, [.clipboard, .cutPaste, .shelf, .scratchpad]),
             (.capture, [.screenshot, .media]),
             (.soundDevices, [.mixer, .micMute, .musicBlock]),
-            (.appManagement, [.cleaner, .uninstaller, .homebrew, .environment]),
+            (.appManagement, [.cleaner, .uninstaller, .homebrew, .environment, .killProcess]),
         ]
         for (group, units) in unitsByGroup {
             expect(group.units == units,
@@ -25980,9 +26032,9 @@ struct MetricsTests {
         }
         L10n.shared.language = previousLanguage
         // MARK: - cut-panel
-        // The quick panel and the Kill Process page are gone. What they did is
-        // reachable from the command bar and, for ending a process, from the
-        // monitor's own rows.
+        // The quick panel is gone. What it did is reachable from the command
+        // bar. Kill Process kept its page, and ending a process is also a
+        // right click away on the monitor's own rows.
         let cutPanelStripped = { (path: String) -> String in
             ((try? String(contentsOfFile: path, encoding: .utf8)) ?? "")
                 .components(separatedBy: "\n")
@@ -25992,16 +26044,16 @@ struct MetricsTests {
         for gone in ["Sources/Vorssaint/UI/QuickLauncher/QuickLauncherView.swift",
                      "Sources/Vorssaint/Services/QuickTools/QuickLauncherService.swift",
                      "Sources/Vorssaint/UI/Settings/QuickToolsSettings.swift",
-                     "Sources/Vorssaint/UI/MenuPanel/QuickTogglesSection.swift",
-                     "Sources/Vorssaint/UI/KillProcess/KillProcessView.swift"] {
+                     "Sources/Vorssaint/UI/MenuPanel/QuickTogglesSection.swift"] {
             expect(!FileManager.default.fileExists(atPath: gone),
-                   "\(gone) is gone with the quick panel and the Kill Process page")
+                   "\(gone) is gone with the quick panel")
         }
-        // The service and its pure rules stay: the command bar and the monitor
-        // both end processes through them.
-        expect(FileManager.default.fileExists(atPath: "Sources/Vorssaint/Services/KillProcess/KillProcessSupport.swift")
+        // The page, the service and its pure rules: the page, the command bar
+        // and the monitor all end processes through the same two files.
+        expect(FileManager.default.fileExists(atPath: "Sources/Vorssaint/UI/KillProcess/KillProcessView.swift")
+                && FileManager.default.fileExists(atPath: "Sources/Vorssaint/Services/KillProcess/KillProcessSupport.swift")
                 && FileManager.default.fileExists(atPath: "Sources/Vorssaint/Services/KillProcess/KillProcessService.swift"),
-               "ending a process keeps its service and its safety rules")
+               "ending a process keeps its page, its service and its safety rules")
         let cutPanelSources = ((FileManager.default.enumerator(atPath: "Sources/Vorssaint")?.allObjects as? [String]) ?? [])
             .filter { $0.hasSuffix(".swift") }
             .map { "Sources/Vorssaint/" + $0 }

@@ -650,11 +650,11 @@ enum CommandBarCatalog {
             icon: .symbol("face.smiling"),
             keepsBarOpen: true,
             run: { _ in CommandBarService.shared.setCategory(.emoji) }))
-        if FeatureUnit.monitor.isAvailable {
+        if AppFeature.killProcess.isAvailable {
             let killStrings = FeatureStrings.killProcess(language)
             entries.append(CommandBarEntry(
                 id: CommandBarPreferences.killProcessBrowserRowID,
-                title: killStrings.pageTitle,
+                title: AppFeature.killProcess.name(s, language: language),
                 subtitle: killStrings.browseSubtitle,
                 icon: .symbol("xmark.octagon"),
                 keepsBarOpen: true,

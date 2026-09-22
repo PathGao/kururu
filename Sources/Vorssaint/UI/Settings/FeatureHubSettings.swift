@@ -598,6 +598,7 @@ extension AppFeature {
         case .uninstaller: return hub.descUninstaller
         case .homebrew: return hub.descHomebrew
         case .environment: return FeatureStrings.environment(L10n.shared.language).hubDescription
+        case .killProcess: return FeatureStrings.killProcess(L10n.shared.language).hubDescription
         case .monitorCPU: return hub.descMonitorCPU
         case .monitorGPU: return hub.descMonitorGPU
         case .monitorMemory: return hub.descMonitorMemory

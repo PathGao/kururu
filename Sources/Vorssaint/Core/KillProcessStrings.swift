@@ -3,19 +3,32 @@
 
 import Foundation
 
-/// Strings for ending a process, shared by the Command Bar rows and the
-/// monitor's Force Quit. Same contract as the other
+/// Strings for ending a process, shared by the Force Quit page, the Command
+/// Bar rows and the monitor's own rows. Same contract as the other
 /// FeatureStrings structs: memberwise init in declaration order, one static
 /// per language, all in this file.
 struct KillProcessFeatureStrings {
     var pageTitle: String = "Kill Process"
     var browseSubtitle: String = "Browse & Kill"
+    var hubDescription: String = "Search running processes and force quit, restart, or kill process trees"
+    var searchPlaceholder: String = "Filter by name"
+    var columnProcess: String = "Process"
+    var columnCPU: String = "CPU"
+    var columnMemory: String = "Memory"
+    var columnPID: String = "PID"
+    var groupToggle: String = "Group related processes"
+    var groupCaption: String = "Groups helper processes under the app responsible for them."
+    var refreshTooltip: String = "Refresh"
     var pidLabelFormat: String = "PID %d"
+    var processCountFormat: String = "Processes: %d"
     var killButton: String = "Kill"
     var forceKillButton: String = "Force Kill"
     var killAllFormat: String = "Kill All “%@”"
     var killTreeButton: String = "Kill Process Tree"
     var restartButton: String = "Restart"
+    var copyPID: String = "Copy PID"
+    var copyPath: String = "Copy Path"
+    var emptyStateTitle: String = "No Processes Found"
     var confirmKillFormat: String = "Kill %@?"
     var confirmForceKillFormat: String = "Force Kill %@?"
     var confirmKillAllFormat: String = "Kill all “%@” processes?"
@@ -198,12 +211,25 @@ extension KillProcessFeatureStrings {
     static let zhHans = KillProcessFeatureStrings(
         pageTitle: "结束进程",
         browseSubtitle: "浏览并结束",
+        hubDescription: "搜索正在运行的进程，强制退出、重新启动或结束整个进程树",
+        searchPlaceholder: "按名称筛选",
+        columnProcess: "进程",
+        columnCPU: "CPU",
+        columnMemory: "内存",
+        columnPID: "PID",
+        groupToggle: "合并相关进程",
+        groupCaption: "将辅助进程归并到负责它们的 App 下面。",
+        refreshTooltip: "刷新",
         pidLabelFormat: "PID %d",
+        processCountFormat: "%d 个进程",
         killButton: "结束",
         forceKillButton: "强制结束",
         killAllFormat: "结束所有“%@”",
         killTreeButton: "结束进程树",
         restartButton: "重新启动",
+        copyPID: "拷贝 PID",
+        copyPath: "拷贝路径",
+        emptyStateTitle: "未找到进程",
         confirmKillFormat: "要结束“%@”吗？",
         confirmForceKillFormat: "要强制结束“%@”吗？",
         confirmKillAllFormat: "要结束所有“%@”进程吗？",

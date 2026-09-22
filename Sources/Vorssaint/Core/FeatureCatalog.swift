@@ -28,7 +28,7 @@ enum AppFeature: String, CaseIterable {
     // new cases append here rather than move.
     case colorPicker, screenOCR, cleaningMode, mediaTools,
          cleaner, uninstaller, homebrew, screenshot, radialMenu, scratchpad,
-         commandBar, screenRecorder, environment
+         commandBar, screenRecorder, environment, killProcess
     // System monitor, one entry per metric family (temperatures live with
     // their parent metric: CPU temp with CPU, battery temp with power).
     case monitorCPU, monitorGPU, monitorMemory, monitorNetwork, monitorDisk, monitorPower, fanControl
@@ -46,7 +46,7 @@ enum FeatureUnit: String, CaseIterable {
     case clipboard, cutPaste, shelf
     case mixer, micMute, musicBlock, keepAwake, brightness, bluetoothSleep, cleaningMode
     case screenshot, media, cleaner, uninstaller, homebrew, environment,
-         radialMenu, scratchpad, commandBar
+         radialMenu, scratchpad, commandBar, killProcess
     case monitor
 }
 
@@ -109,6 +109,7 @@ extension AppFeature {
         case .homebrew: return .homebrew
         case .environment: return .environment
         case .uninstaller: return .uninstaller
+        case .killProcess: return .killProcess
         case .monitorCPU, .monitorGPU, .monitorMemory, .monitorNetwork, .monitorDisk, .monitorPower,
              .fanControl:
             return .monitor
@@ -221,6 +222,7 @@ extension FeatureUnit {
         case .homebrew: return .homebrew
         case .environment: return .environment
         case .uninstaller: return .uninstaller
+        case .killProcess: return .killProcess
         case .monitor: return .monitor
         }
     }
@@ -314,7 +316,7 @@ extension AppFeature {
             return .soundDevices
         case .keepAwake, .brightness, .bluetoothSleep, .cleaningMode:
             return .focusEnergy
-        case .cleaner, .uninstaller, .homebrew, .environment:
+        case .cleaner, .uninstaller, .homebrew, .environment, .killProcess:
             return .appManagement
         }
     }
@@ -368,6 +370,7 @@ extension AppFeature {
         case .radialMenu: return "circle.grid.cross"
         case .scratchpad: return "note.text"
         case .commandBar: return "command"
+        case .killProcess: return "xmark.octagon"
         case .monitorCPU: return "cpu"
         case .monitorGPU: return "rectangle.connected.to.line.below"
         case .monitorMemory: return "memorychip"
@@ -378,7 +381,9 @@ extension AppFeature {
         }
     }
 
-    var isBeta: Bool { self == .fanControl }
+    // Ending other people's processes is powerful and still settling, so it
+    // carries the same badge upstream gives it.
+    var isBeta: Bool { self == .fanControl || self == .killProcess }
 
     var isAvailable: Bool { isAvailable(in: .standard) }
 
@@ -426,7 +431,7 @@ extension AppFeature {
         case .mixer, .micMute, .keepAwake,
  .colorPicker, .screenOCR, .cleaningMode, .mediaTools,
              .cleaner, .uninstaller, .homebrew, .environment, .screenshot, .scratchpad,
-             .commandBar, .screenRecorder,
+             .commandBar, .screenRecorder, .killProcess,
              .monitorCPU, .monitorGPU, .monitorMemory, .monitorNetwork, .monitorDisk, .monitorPower,
              .fanControl:
             return []
@@ -473,7 +478,7 @@ extension AppFeature {
         case .clipboardHistory, .shelf, .urlCleaner,
              .soundOutputSwitcher, .musicBlock,
              .bluetoothSleep, .colorPicker, .micMute, .mediaTools,
-             .scratchpad, .monitorGPU, .monitorNetwork, .fanControl:
+             .scratchpad, .monitorGPU, .monitorNetwork, .fanControl, .killProcess:
             return []
         }
     }
@@ -648,6 +653,7 @@ extension AppFeature {
         case .uninstaller: return s.uninstallerName
         case .homebrew: return s.homebrewName
         case .environment: return FeatureStrings.environment(language).pageTitle
+        case .killProcess: return FeatureStrings.killProcess(language).pageTitle
         case .monitorCPU: return s.monitorShowCPU
         case .monitorGPU: return s.monitorShowGPU
         case .monitorMemory: return s.monitorShowMemory

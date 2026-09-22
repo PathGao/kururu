@@ -8,7 +8,7 @@ import Foundation
 /// below and the unit tests can reason about pages without pulling UI in.
 enum SettingsPage: Hashable {
     case features, menuBarIcon, menuBarPanel, monitor
-    case keepAwake, brightness, bluetoothSleep, cleaningMode, mouse, trackpad, switcher, dock, keyboard, cutPaste, windowBehavior, cleaner, uninstaller, homebrew, environment, media, clipboard, urlCleaner, shelf, screenshot, radialMenu, commandBar, mixer, micMute, musicBlock, scratchpad
+    case keepAwake, brightness, bluetoothSleep, cleaningMode, mouse, trackpad, switcher, dock, keyboard, cutPaste, windowBehavior, cleaner, uninstaller, homebrew, environment, media, clipboard, urlCleaner, shelf, screenshot, radialMenu, commandBar, mixer, micMute, musicBlock, scratchpad, killProcess
     case shortcuts, advanced, about, releaseNotes
 }
 
@@ -46,6 +46,7 @@ extension SettingsPage: CaseIterable {
         case .homebrew: return s.homebrewName
         case .environment: return FeatureStrings.environment(language).pageTitle
         case .uninstaller: return s.uninstallerName
+        case .killProcess: return FeatureStrings.killProcess(language).pageTitle
         case .shortcuts: return s.shortcutsPageTitle
         case .advanced: return SettingsHierarchyStrings(language: language).pageTitle
         case .about: return s.tabAbout
@@ -273,6 +274,7 @@ extension AppFeature {
         case .uninstaller: return FeatureSettingsDestination(.uninstaller)
         case .homebrew: return FeatureSettingsDestination(.homebrew)
         case .environment: return FeatureSettingsDestination(.environment)
+        case .killProcess: return FeatureSettingsDestination(.killProcess)
         case .screenshot:
             return FeatureSettingsDestination(.screenshot, sectionAnchor: .screenshot)
         case .radialMenu: return FeatureSettingsDestination(.radialMenu)
@@ -325,6 +327,7 @@ enum FeatureVisibilitySupport {
         case .homebrew: return [.homebrew]
         case .environment: return [.environment]
         case .uninstaller: return [.uninstaller]
+        case .killProcess: return [.killProcess]
         case .keyboard: return [.keyboardDebounce, .textSnippets, .superKey]
         case .screenshot: return [.screenshot, .screenRecorder, .screenOCR, .colorPicker]
         case .radialMenu: return [.radialMenu]

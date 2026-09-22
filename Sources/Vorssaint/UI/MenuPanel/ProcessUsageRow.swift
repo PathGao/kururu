@@ -32,7 +32,8 @@ struct ProcessUsageRow: View {
     /// window server, this app) never offer it.
     @ViewBuilder
     private var forceQuitItem: some View {
-        if row.startedAt != nil, !KillProcessSupport.isProtected(pid: row.pid, name: row.name) {
+        if AppFeature.killProcess.isAvailable, row.startedAt != nil,
+           !KillProcessSupport.isProtected(pid: row.pid, name: row.name) {
             Button(FeatureStrings.killProcess(L10n.shared.language).forceKillButton, role: .destructive) {
                 confirmForceQuit()
             }

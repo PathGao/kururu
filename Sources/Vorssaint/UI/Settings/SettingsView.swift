@@ -391,6 +391,7 @@ struct SettingsView: View {
         case .cutPaste: CutPasteSettings()
         case .windowBehavior: WindowBehaviorSettings()
         case .uninstaller: UninstallerView()
+        case .killProcess: KillProcessView()
         case .cleaner: CleanerSettings()
         case .homebrew: HomebrewSettings()
         case .environment: EnvironmentSettings()

@@ -137,7 +137,7 @@ extension AppFeature {
         case .mouseAcceleration, .pastePlain, .soundOutputSwitcher, .micMute,
              .musicBlock, .bluetoothSleep, .keepAwake, .brightness, .colorPicker,
              .screenOCR, .cleaningMode, .mediaTools, .cleaner, .uninstaller, .homebrew, .environment, .screenshot,
-             .scratchpad, .commandBar, .screenRecorder, .fanControl:
+             .scratchpad, .commandBar, .screenRecorder, .fanControl, .killProcess:
             return .idle
         }
     }
