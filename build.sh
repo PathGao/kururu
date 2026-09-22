@@ -297,6 +297,8 @@ if (( TEST )); then
         Tests/ScratchpadImportTests.swift \
         Tests/ClipboardImportTests.swift \
         Tests/ClipboardEncodingTests.swift \
+        Tests/ClipboardHistoryWriteTests.swift \
+        Tests/ClipboardHistoryAccessTests.swift \
         Tests/ClipboardImportTransactionTests.swift \
         Tests/ScratchpadImportStoreTests.swift \
         Tests/ShelfDockBackupTests.swift \
@@ -409,6 +411,7 @@ if (( TEST )); then
         Sources/Vorssaint/Core/URLCleanerResultState.swift \
         Sources/Vorssaint/Core/UXTaskFlowStrings.swift \
         Sources/Vorssaint/Services/GeneralPasteboardAccess.swift \
+        Sources/Vorssaint/Services/Clipboard/ClipboardHistoryWrite.swift \
         Sources/Vorssaint/Services/Audio/MixerRoutingSupport.swift \
         Sources/Vorssaint/Services/Audio/MusicLaunchSupport.swift \
         Sources/Vorssaint/Services/Bluetooth/BluetoothSleepSupport.swift \

@@ -808,6 +808,9 @@ struct MetricsTests {
         ClipboardHistoryWriteTests.run { expect($0, $1) }
         ClipboardHistoryAccessTests.run { expect($0, $1) }
 
+        ClipboardHistoryWriteTests.run { expect($0, $1) }
+        ClipboardHistoryAccessTests.run { expect($0, $1) }
+
         let pasteboardAccess = GeneralPasteboardAccess(label: "Vorssaint.Tests.PasteboardAccess")
         let pasteboardGroup = DispatchGroup()
         let pasteboardStateLock = NSLock()
