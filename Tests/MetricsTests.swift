@@ -129,6 +129,7 @@ struct MetricsTests {
             ("ShelfDropRoutingTests", { ShelfDropRoutingTests.run(expect: { suite.expect($0, $1) }) }),
             ("UpstreamPolicyTests", { UpstreamPolicyTests.run { suite.expect($0, $1) } }),
             ("ShelfPromiseCleanupTests", { ShelfPromiseCleanupTests.run { suite.expect($0, $1) } }),
+            ("KeepAwakeCatalogContract", { KeepAwakeCatalogContract.run(suite) }),
         ]
         let names = groups.map(\.0) + ["MetricsTests"]
         var selected = Set<String>()

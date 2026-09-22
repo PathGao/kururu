@@ -571,6 +571,7 @@ if (( TEST )); then
         Tests/RecorderWriterTests.swift \
         Tests/ShelfFilePromiseTests.swift \
         Tests/ShelfDropRoutingTests.swift \
+        Tests/KeepAwakeCatalogTests.swift \
         build/generated-tests/*.swift \
     )
     TEST_OUTPUT_FILE_MAP="$TEST_OBJECT_DIR/output-file-map.json"
