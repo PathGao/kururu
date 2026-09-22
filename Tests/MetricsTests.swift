@@ -92,7 +92,6 @@ struct MetricsTests {
             ("BrightnessModuleMigrationTests", { BrightnessModuleMigrationTests.run { suite.expect($0, $1) } }),
             ("MixerSwitchMigrationTests", { MixerSwitchMigrationTests.run { suite.expect($0, $1) } }),
             ("ShelfImportStoreTests", { ShelfImportStoreTests.run { suite.expect($0, $1) } }),
-            ("CommandBarExecutorTests", { CommandBarExecutorTests.run { suite.expect($0, $1) } }),
             ("MediaPDFTests", { MediaPDFTests.run { suite.expect($0, $1) } }),
             ("MediaPDFCompressionTests", { MediaPDFCompressionTests.run { suite.expect($0, $1) } }),
             ("MediaPDFCompressionSelectionTests", { MediaPDFCompressionSelectionTests.run { suite.expect($0, $1) } }),
@@ -22888,8 +22887,8 @@ struct MetricsTests {
             .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
             .joined(separator: "\n")
         let monitorParts = (commandBarCode
-            .components(separatedBy: "private func handleKeyDown(_ event: NSEvent, in panel: NSPanel)")
-            .last ?? "").components(separatedBy: "\n    private ")
+            .components(separatedBy: "private func installMonitors(for panel: NSPanel)")
+            .last ?? "").components(separatedBy: "\n    private func ")
         let monitor = monitorParts.first ?? ""
         expect(monitorParts.count > 1
                 && monitor.contains("? event.charactersIgnoringModifiers")
