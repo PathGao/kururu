@@ -25966,6 +25966,17 @@ struct MetricsTests {
                 && windowLayoutAppCode.contains("WindowLayoutService.shared.suspend()")
                 && windowLayoutAppCode.contains(".middleClick, .windowMaximizer, .keyboardDebounce, .windowLayout,"),
                "window layout is synced by the hub, re-synced on Accessibility and suspended on quit")
+        // Deliberately stricter than upstream: a window layout shortcut is also
+        // checked against installed features whose shortcut is switched off,
+        // as every other recorder here is, so turning one on later cannot collide.
+        let windowLayoutSettingsCode = stripCommentLines((try? String(
+            contentsOfFile: "Sources/Vorssaint/UI/Settings/WindowLayoutSettings.swift", encoding: .utf8)) ?? "")
+        let windowLayoutServiceCode = stripCommentLines((try? String(
+            contentsOfFile: "Sources/Vorssaint/Services/WindowLayout/WindowLayoutService.swift", encoding: .utf8)) ?? "")
+        let strictConflictCount = windowLayoutSettingsCode.components(separatedBy: "includeInactive: true").count - 1
+            + windowLayoutServiceCode.components(separatedBy: "includeInactive: true").count - 1
+        expect(strictConflictCount == 2,
+               "window layout shortcuts conflict with installed features even when their shortcut is off, found \(strictConflictCount)")
 
         // Maximize windows and quit/close protection share one unit and one
         // page, because both change what a standard window control does.
