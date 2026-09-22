@@ -226,6 +226,45 @@ enum DefaultsKey {
     static let urlCleanerSiteParameters = "urlCleanerSiteParameters"       // host|name pairs added to one site
     static let urlCleanerDisabledParameters = "urlCleanerDisabledParameters" // built-in host|name pairs switched off
     static let windowMaximizeEnabled = "windowMaximizeEnabled"
+    static let windowLayoutHiddenActions = "windowLayoutHiddenActions" // comma-separated action ids hidden from the grid
+    static let windowLayoutWindowGap = "windowLayoutWindowGap" // px between adjacent snapped windows
+    static let windowLayoutScreenGap = "windowLayoutScreenGap" // px between a snapped window and the visible frame edge
+    static let windowLayoutShortcutsEnabled = "windowLayoutShortcutsEnabled"
+    static let windowDirectionalEnabled = "windowDirectionalEnabled"
+    static let windowDirectionalShortcut = "windowDirectionalShortcut"
+    static let windowEdgeSnapEnabled = "windowEdgeSnapEnabled"
+    static let windowEdgeSnapDisabledZones = "windowEdgeSnapDisabledZones" // comma-separated visual zone ids
+    static let windowGestureEnabled = "windowGestureEnabled"
+    static let windowGestureModifiers = "windowGestureModifiers"
+    static let windowGestureRaiseWindow = "windowGestureRaiseWindow"
+    static let windowLayoutShortcutLeft = "windowLayoutShortcutLeft"
+    static let windowLayoutShortcutRight = "windowLayoutShortcutRight"
+    static let windowLayoutShortcutTop = "windowLayoutShortcutTop"
+    static let windowLayoutShortcutBottom = "windowLayoutShortcutBottom"
+    static let windowLayoutShortcutCenterHalf = "windowLayoutShortcutCenterHalf"
+    static let windowLayoutShortcutTopLeft = "windowLayoutShortcutTopLeft"
+    static let windowLayoutShortcutTopRight = "windowLayoutShortcutTopRight"
+    static let windowLayoutShortcutBottomLeft = "windowLayoutShortcutBottomLeft"
+    static let windowLayoutShortcutBottomRight = "windowLayoutShortcutBottomRight"
+    static let windowLayoutShortcutMaximize = "windowLayoutShortcutMaximize"
+    static let windowLayoutShortcutMarginMaximize = "windowLayoutShortcutMarginMaximize"
+    static let windowLayoutShortcutCenter = "windowLayoutShortcutCenter"
+    static let windowLayoutShortcutRestore = "windowLayoutShortcutRestore"
+    static let windowLayoutShortcutLeftThird = "windowLayoutShortcutLeftThird"
+    static let windowLayoutShortcutCenterThird = "windowLayoutShortcutCenterThird"
+    static let windowLayoutShortcutRightThird = "windowLayoutShortcutRightThird"
+    static let windowLayoutShortcutLeftTwoThirds = "windowLayoutShortcutLeftTwoThirds"
+    static let windowLayoutShortcutRightTwoThirds = "windowLayoutShortcutRightTwoThirds"
+    static let windowLayoutShortcutCenterTwoThirds = "windowLayoutShortcutCenterTwoThirds"
+    static let windowLayoutShortcutPreviousDisplay = "windowLayoutShortcutPreviousDisplay"
+    static let windowLayoutShortcutNextDisplay = "windowLayoutShortcutNextDisplay"
+    static let windowLayoutShortcutFullScreen = "windowLayoutShortcutFullScreen"
+    static let windowLayoutShortcutTopLeftSixth = "windowLayoutShortcutTopLeftSixth"
+    static let windowLayoutShortcutTopCenterSixth = "windowLayoutShortcutTopCenterSixth"
+    static let windowLayoutShortcutTopRightSixth = "windowLayoutShortcutTopRightSixth"
+    static let windowLayoutShortcutBottomLeftSixth = "windowLayoutShortcutBottomLeftSixth"
+    static let windowLayoutShortcutBottomCenterSixth = "windowLayoutShortcutBottomCenterSixth"
+    static let windowLayoutShortcutBottomRightSixth = "windowLayoutShortcutBottomRightSixth"
     static let keyboardDebounceEnabled = "keyboardDebounceEnabled"
     static let keyboardDebounceWindowMs = "keyboardDebounceWindowMs"
     static let keyboardDebounceKeyWindows = "keyboardDebounceKeyWindows" // comma-separated keyCode:ms
@@ -239,6 +278,7 @@ enum DefaultsKey {
     static let panelUtilityCleaner = "panelUtilityCleaner"
     static let panelUtilityMedia = "panelUtilityMedia"
     static let panelUtilityClipboard = "panelUtilityClipboard"
+    static let panelUtilityWindowLayout = "panelUtilityWindowLayout"
     static let panelControlMouseScroll = "panelControlMouseScroll"
     static let panelControlFocusFollowsMouse = "panelControlFocusFollowsMouse"
     static let panelControlMouseNavigation = "panelControlMouseNavigation"
@@ -993,6 +1033,45 @@ enum Defaults {
         DefaultsKey.radialMenuMouseButton: RadialMenuMouseTrigger.off.rawValue,
         DefaultsKey.radialMenuActivationMode: RadialMenuActivationMode.pressOrHold.rawValue,
         DefaultsKey.windowMaximizeEnabled: false,
+        DefaultsKey.windowLayoutHiddenActions: "",
+        DefaultsKey.windowLayoutWindowGap: 0,
+        DefaultsKey.windowLayoutScreenGap: 0,
+        DefaultsKey.windowLayoutShortcutsEnabled: false,
+        DefaultsKey.windowDirectionalEnabled: false,
+        DefaultsKey.windowDirectionalShortcut: GlobalShortcut.windowDirectionalDefault.storageValue,
+        DefaultsKey.windowEdgeSnapEnabled: false,
+        DefaultsKey.windowEdgeSnapDisabledZones: "",
+        DefaultsKey.windowGestureEnabled: false,
+        DefaultsKey.windowGestureModifiers: WindowGestureSupport.defaultModifierStorageValue,
+        DefaultsKey.windowGestureRaiseWindow: false,
+        DefaultsKey.windowLayoutShortcutLeft: GlobalShortcut.windowLayoutLeftDefault.storageValue,
+        DefaultsKey.windowLayoutShortcutRight: GlobalShortcut.windowLayoutRightDefault.storageValue,
+        DefaultsKey.windowLayoutShortcutTop: GlobalShortcut.windowLayoutTopDefault.storageValue,
+        DefaultsKey.windowLayoutShortcutBottom: GlobalShortcut.windowLayoutBottomDefault.storageValue,
+        DefaultsKey.windowLayoutShortcutCenterHalf: WindowLayoutAction.clearedShortcutStorageValue,
+        DefaultsKey.windowLayoutShortcutTopLeft: GlobalShortcut.windowLayoutTopLeftDefault.storageValue,
+        DefaultsKey.windowLayoutShortcutTopRight: GlobalShortcut.windowLayoutTopRightDefault.storageValue,
+        DefaultsKey.windowLayoutShortcutBottomLeft: GlobalShortcut.windowLayoutBottomLeftDefault.storageValue,
+        DefaultsKey.windowLayoutShortcutBottomRight: GlobalShortcut.windowLayoutBottomRightDefault.storageValue,
+        DefaultsKey.windowLayoutShortcutMaximize: GlobalShortcut.windowLayoutMaximizeDefault.storageValue,
+        DefaultsKey.windowLayoutShortcutMarginMaximize: WindowLayoutAction.clearedShortcutStorageValue,
+        DefaultsKey.windowLayoutShortcutCenter: GlobalShortcut.windowLayoutCenterDefault.storageValue,
+        DefaultsKey.windowLayoutShortcutRestore: GlobalShortcut.windowLayoutRestoreDefault.storageValue,
+        DefaultsKey.windowLayoutShortcutLeftThird: GlobalShortcut.windowLayoutLeftThirdDefault.storageValue,
+        DefaultsKey.windowLayoutShortcutCenterThird: GlobalShortcut.windowLayoutCenterThirdDefault.storageValue,
+        DefaultsKey.windowLayoutShortcutRightThird: GlobalShortcut.windowLayoutRightThirdDefault.storageValue,
+        DefaultsKey.windowLayoutShortcutLeftTwoThirds: GlobalShortcut.windowLayoutLeftTwoThirdsDefault.storageValue,
+        DefaultsKey.windowLayoutShortcutRightTwoThirds: GlobalShortcut.windowLayoutRightTwoThirdsDefault.storageValue,
+        DefaultsKey.windowLayoutShortcutCenterTwoThirds: WindowLayoutAction.clearedShortcutStorageValue,
+        DefaultsKey.windowLayoutShortcutPreviousDisplay: WindowLayoutAction.clearedShortcutStorageValue,
+        DefaultsKey.windowLayoutShortcutNextDisplay: GlobalShortcut.windowLayoutNextDisplayDefault.storageValue,
+        DefaultsKey.windowLayoutShortcutTopLeftSixth: WindowLayoutAction.clearedShortcutStorageValue,
+        DefaultsKey.windowLayoutShortcutTopCenterSixth: WindowLayoutAction.clearedShortcutStorageValue,
+        DefaultsKey.windowLayoutShortcutTopRightSixth: WindowLayoutAction.clearedShortcutStorageValue,
+        DefaultsKey.windowLayoutShortcutBottomLeftSixth: WindowLayoutAction.clearedShortcutStorageValue,
+        DefaultsKey.windowLayoutShortcutBottomCenterSixth: WindowLayoutAction.clearedShortcutStorageValue,
+        DefaultsKey.windowLayoutShortcutBottomRightSixth: WindowLayoutAction.clearedShortcutStorageValue,
+        DefaultsKey.windowLayoutShortcutFullScreen: WindowLayoutAction.clearedShortcutStorageValue,
         DefaultsKey.keyboardDebounceEnabled: false,
         DefaultsKey.keyboardDebounceWindowMs: defaultKeyboardDebounceWindowMs,
         DefaultsKey.keyboardDebounceKeyWindows: "",
@@ -1006,6 +1085,7 @@ enum Defaults {
         DefaultsKey.panelUtilityCleaner: true,
         DefaultsKey.panelUtilityMedia: true,
         DefaultsKey.panelUtilityClipboard: true,
+        DefaultsKey.panelUtilityWindowLayout: true,
         DefaultsKey.panelControlMouseScroll: true,
         DefaultsKey.panelControlFocusFollowsMouse: true,
         DefaultsKey.panelControlMouseNavigation: true,
