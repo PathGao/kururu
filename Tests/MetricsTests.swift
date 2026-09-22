@@ -24802,6 +24802,13 @@ struct MetricsTests {
             encoding: .utf8)) ?? "")
         let groupSections = directoryCode.components(separatedBy: "(hub.group").count - 1
         expect(groupSections == 8, "eight feature group sections in the sidebar, found \(groupSections)")
+        // A module without a sidebar row is unreachable and unsearchable,
+        // however completely the rest of it is registered.
+        let pagelessUnits = FeatureUnit.allCases.compactMap(\.page).filter { page in
+            !directoryCode.contains("SettingsDirectoryItem(page: .\(page),")
+        }
+        expect(pagelessUnits.isEmpty,
+               "every module page has a sidebar row, missing \(pagelessUnits)")
         // The four ways into everything else share the unnamed block at the
         // top: the hub, the panel, the shortcut table, the wheel and the bar
         // hold what is installed and nothing of their own.
