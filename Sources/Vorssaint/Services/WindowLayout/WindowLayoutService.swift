@@ -157,7 +157,7 @@ final class WindowLayoutService: ObservableObject {
     }
 
     func directionalShortcutConflictTitle(_ shortcut: GlobalShortcut) -> String? {
-        if let role = GlobalShortcutRole.conflict(for: shortcut, excluding: nil) {
+        if let role = GlobalShortcutRole.conflict(for: shortcut, excluding: nil, includeInactive: true) {
             return role.title(L10n.shared.s)
         }
         return shortcutConflictTitle(shortcut, excluding: nil, includingDirectional: false)

@@ -426,6 +426,7 @@ struct WindowLayoutActionRow: View {
 
     private func save(_ shortcut: GlobalShortcut) {
         if let conflict = GlobalShortcutRole.conflict(for: shortcut, excluding: nil,
+                                                      includeInactive: true,
                                                       hasClipboardHistory: { !ClipboardHistoryService.shared.entries.isEmpty }) {
             errorText = String(format: l10n.s.shortcutConflictFormat, conflict.title(l10n.s))
             return
