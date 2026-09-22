@@ -4143,6 +4143,99 @@ struct MetricsTests {
         expect(!postUpdateCode.contains("NSAlert") && !postUpdateCode.contains("runModal"),
                "the post-update recovery never interrupts the person with an alert")
 
+        // An item macOS never placed is not "on screen" (issue #1394).
+        // Measured on macOS 26 with the app switched off under System Settings
+        // > Menu Bar > "Allow in the Menu Bar": AppKit builds the status window
+        // at the bottom-left origin of the main display and never moves it.
+        // That rectangle intersects the screen, which is all the recovery used
+        // to ask, so it logged "appeared" for an icon nobody could see.
+        let unplacedMain = CGRect(x: 0, y: 0, width: 2304, height: 1296)
+        let unplacedPortrait = CGRect(x: -1080, y: -173, width: 1080, height: 1920)
+        let unplacedScreens = [unplacedMain, unplacedPortrait]
+        let unplacedFrame = CGRect(x: -1, y: -23, width: 38, height: 24)
+        expect(unplacedMain.intersects(unplacedFrame),
+               "the unplaced frame does intersect the main screen, which is why intersection alone passed it")
+        expect(!StatusItemAnchorSupport.isSettlingStatusFrame(unplacedFrame),
+               "the unplaced frame has real size, so the settling grace does not cover it")
+        expect(!StatusItemPlacementSupport.isPlacedStatusFrame(unplacedFrame, screenFrames: unplacedScreens),
+               "a status window parked at the bottom-left origin is not a placed icon")
+        expect(StatusItemPlacementSupport.isPlacedStatusFrame(CGRect(x: 1792, y: 1269, width: 38, height: 24),
+                                                              screenFrames: unplacedScreens),
+               "the same item placed in the main display's menu bar is")
+        expect(StatusItemPlacementSupport.isPlacedStatusFrame(CGRect(x: -900, y: 1710, width: 38, height: 24),
+                                                              screenFrames: unplacedScreens),
+               "a placement in the portrait display's own menu bar counts too")
+        expect(!StatusItemPlacementSupport.isPlacedStatusFrame(CGRect(x: 1792, y: 1269, width: 0, height: 0),
+                                                               screenFrames: unplacedScreens),
+               "a sizeless frame is not a placement")
+        let iconIsOnScreenCode = stripCommentLines((statusAnchorAppDelegateSource
+            .components(separatedBy: "private func iconIsOnScreen() -> Bool {").last ?? "")
+            .components(separatedBy: "\n    }").first ?? "")
+        expect(iconIsOnScreenCode.contains("StatusItemPlacementSupport.isPlacedStatusFrame("),
+               "the recovery judges placement by the menu bar band, not by screen intersection")
+
+        // macOS 26 lets the person switch an app's menu bar items off per app,
+        // and remembers the choice in Control Center's group container. The
+        // app cannot override it, so recovery must recognise it and say so
+        // instead of resetting the item's identity for nothing.
+        func tracked(_ bundleID: String, allowed: Bool?) -> [[String: Any]] {
+            var entry: [String: Any] = ["location": ["bundle": ["_0": bundleID]],
+                                        "menuItemLocations": [["bundle": ["_0": bundleID]]]]
+            if let allowed { entry["isAllowed"] = allowed }
+            return [["bundle": ["_0": bundleID]], entry]
+        }
+        let trackedApplications: [Any] = tracked("com.lowtechguys.Clop", allowed: true)
+            + tracked(ProductIdentity.releaseBundleID, allowed: false)
+            + tracked(ProductIdentity.developmentBundleID, allowed: true)
+            + tracked("com.example.legacy", allowed: nil)
+        expect(MenuBarAllowanceSupport.allowance(forBundleID: ProductIdentity.releaseBundleID,
+                                                 trackedApplications: trackedApplications) == .disallowed,
+               "an app switched off under Allow in the Menu Bar reads as disallowed")
+        expect(MenuBarAllowanceSupport.allowance(forBundleID: ProductIdentity.developmentBundleID,
+                                                 trackedApplications: trackedApplications) == .allowed,
+               "a sibling bundle id with its own entry does not bleed over")
+        expect(MenuBarAllowanceSupport.allowance(forBundleID: "com.example.legacy",
+                                                 trackedApplications: trackedApplications) == .unknown,
+               "an entry without the flag is unknown, never a verdict")
+        expect(MenuBarAllowanceSupport.allowance(forBundleID: "com.example.absent",
+                                                 trackedApplications: trackedApplications) == .unknown,
+               "an app Control Center has never tracked is unknown")
+        expect(MenuBarAllowanceSupport.allowance(forBundleID: ProductIdentity.releaseBundleID,
+                                                 trackedApplications: ["garbage", 3]) == .unknown,
+               "a malformed store is unknown rather than a crash or a verdict")
+        // The on-disk shape: an outer plist whose trackedApplications value is
+        // itself a binary plist, serialized as data.
+        let innerAllowanceData = try? PropertyListSerialization.data(fromPropertyList: trackedApplications,
+                                                                     format: .binary, options: 0)
+        let outerAllowanceData = innerAllowanceData.flatMap {
+            try? PropertyListSerialization.data(fromPropertyList: ["trackedApplications": $0,
+                                                                   "showSpotlight": false],
+                                                format: .binary, options: 0)
+        }
+        expect(outerAllowanceData.map {
+                   MenuBarAllowanceSupport.allowance(forBundleID: ProductIdentity.releaseBundleID,
+                                                     groupContainerPlist: $0)
+               } == .disallowed,
+               "the nested Control Center store decodes down to the per-app verdict")
+        expect(MenuBarAllowanceSupport.allowance(forBundleID: ProductIdentity.releaseBundleID,
+                                                 groupContainerPlist: Data([0x00, 0x01])) == .unknown,
+               "an unreadable store is unknown")
+        let verifyIconCode = stripCommentLines((statusAnchorAppDelegateSource
+            .components(separatedBy: "private func verifyIconReappeared(").last ?? "")
+            .components(separatedBy: "\n    }").first ?? "")
+        expect(verifyIconCode.contains("MenuBarAllowanceSupport.currentAllowance(")
+               && verifyIconCode.contains("menuBarIconDisallowedBody"),
+               "recovery names the Allow in the Menu Bar setting instead of blaming a full bar")
+        let allowanceCheck = verifyIconCode.range(of: "MenuBarAllowanceSupport.currentAllowance(")
+        let identityReset = verifyIconCode.range(of: "resetStatusItemPlacementIdentity()")
+        expect(allowanceCheck != nil && identityReset != nil
+               && allowanceCheck!.lowerBound < identityReset!.lowerBound,
+               "the setting is checked before the identity reset burns the arranged spot")
+        expect(!Strings.enUS.menuBarIconDisallowedBody.isEmpty
+               && !Strings.zhHans.menuBarIconDisallowedBody.isEmpty
+               && Strings.enUS.menuBarIconDisallowedBody.contains("Allow in the Menu Bar"),
+               "the hint names the System Settings switch by its own label")
+
         // The panel keeps its top edge and its center while its content resizes.
         let panelArea = CGRect(x: 0, y: 0, width: 1470, height: 932)
         let shortPanel = StatusItemAnchorSupport.pinnedPanelFrame(size: CGSize(width: 332, height: 375),
