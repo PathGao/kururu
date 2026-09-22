@@ -28,7 +28,7 @@ enum AppFeature: String, CaseIterable {
     // new cases append here rather than move.
     case colorPicker, screenOCR, cleaningMode, mediaTools,
          cleaner, uninstaller, homebrew, screenshot, radialMenu, scratchpad,
-         commandBar, screenRecorder, environment, killProcess
+         commandBar, screenRecorder, environment, killProcess, cameraPreview
     // System monitor, one entry per metric family (temperatures live with
     // their parent metric: CPU temp with CPU, battery temp with power).
     case monitorCPU, monitorGPU, monitorMemory, monitorNetwork, monitorDisk, monitorPower, fanControl
@@ -46,7 +46,7 @@ enum FeatureUnit: String, CaseIterable {
     case clipboard, cutPaste, shelf
     case mixer, micMute, musicBlock, keepAwake, brightness, bluetoothSleep, cleaningMode
     case screenshot, media, cleaner, uninstaller, homebrew, environment,
-         radialMenu, scratchpad, commandBar, killProcess
+         radialMenu, scratchpad, commandBar, killProcess, cameraPreview
     case monitor
 }
 
@@ -110,6 +110,7 @@ extension AppFeature {
         case .environment: return .environment
         case .uninstaller: return .uninstaller
         case .killProcess: return .killProcess
+        case .cameraPreview: return .cameraPreview
         case .monitorCPU, .monitorGPU, .monitorMemory, .monitorNetwork, .monitorDisk, .monitorPower,
              .fanControl:
             return .monitor
@@ -223,6 +224,7 @@ extension FeatureUnit {
         case .environment: return .environment
         case .uninstaller: return .uninstaller
         case .killProcess: return .killProcess
+        case .cameraPreview: return .cameraPreview
         case .monitor: return .monitor
         }
     }
@@ -258,7 +260,7 @@ extension FeatureUnit {
 /// System permissions surfaced by the hub's transparency portal.
 enum AppPermission: String, CaseIterable {
     case accessibility, screenRecording, fullDiskAccess, filesAndFolders, notifications,
-         automationFinder, automationTerminal, audioCapture, microphone, appManagement
+         automationFinder, automationTerminal, audioCapture, microphone, camera, appManagement
 }
 
 enum PermissionPollingSupport {
@@ -310,7 +312,7 @@ extension AppFeature {
         case .clipboardHistory, .pastePlain, .finderCutPaste, .finderRename, .shelf, .urlCleaner,
              .scratchpad:
             return .clipboardFiles
-        case .screenshot, .screenRecorder, .colorPicker, .screenOCR, .mediaTools:
+        case .screenshot, .screenRecorder, .colorPicker, .screenOCR, .mediaTools, .cameraPreview:
             return .capture
         case .mixer, .soundOutputSwitcher, .micMute, .musicBlock:
             return .soundDevices
@@ -371,6 +373,7 @@ extension AppFeature {
         case .scratchpad: return "note.text"
         case .commandBar: return "command"
         case .killProcess: return "xmark.octagon"
+        case .cameraPreview: return "web.camera"
         case .monitorCPU: return "cpu"
         case .monitorGPU: return "rectangle.connected.to.line.below"
         case .monitorMemory: return "memorychip"
@@ -431,7 +434,7 @@ extension AppFeature {
         case .mixer, .micMute, .keepAwake,
  .colorPicker, .screenOCR, .cleaningMode, .mediaTools,
              .cleaner, .uninstaller, .homebrew, .environment, .screenshot, .scratchpad,
-             .commandBar, .screenRecorder, .killProcess,
+             .commandBar, .screenRecorder, .killProcess, .cameraPreview,
              .monitorCPU, .monitorGPU, .monitorMemory, .monitorNetwork, .monitorDisk, .monitorPower,
              .fanControl:
             return []
@@ -462,6 +465,8 @@ extension AppFeature {
         case .dockPreview: return [.accessibility, .screenRecording]
         case .screenOCR: return [.screenRecording]
         case .screenshot: return [.screenRecording]
+        // The mirror only ever draws the image; nothing is written anywhere.
+        case .cameraPreview: return [.camera]
         // The sound of the Mac is read through an audio grant of its own.
         // Microphone access stays contextual, and Accessibility only keeps
         // typing timing.
@@ -490,7 +495,8 @@ extension AppFeature {
         switch self {
         case .keepAwake, .brightness, .radialMenu, .cleaner,
              .uninstaller, .homebrew, .environment, .mixer,
-             .micMute, .cleaningMode, .screenshot, .screenRecorder, .screenOCR, .colorPicker:
+             .micMute, .cleaningMode, .screenshot, .screenRecorder, .screenOCR, .colorPicker,
+             .cameraPreview:
             return []
         default:
             return permissions.filter { $0 == .accessibility || $0 == .screenRecording }
@@ -598,6 +604,7 @@ extension AppPermission {
         case .automationFinder, .automationTerminal: return "gearshape.2"
         case .audioCapture: return "waveform"
         case .microphone: return "mic"
+        case .camera: return "camera"
         case .appManagement: return "app.badge"
         }
     }
@@ -654,6 +661,7 @@ extension AppFeature {
         case .homebrew: return s.homebrewName
         case .environment: return FeatureStrings.environment(language).pageTitle
         case .killProcess: return FeatureStrings.killProcess(language).pageTitle
+        case .cameraPreview: return FeatureStrings.cameraPreview(language).pageTitle
         case .monitorCPU: return s.monitorShowCPU
         case .monitorGPU: return s.monitorShowGPU
         case .monitorMemory: return s.monitorShowMemory

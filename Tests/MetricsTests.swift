@@ -12996,6 +12996,15 @@ struct MetricsTests {
         let baseAudioPrompt = infoPlist?["NSAudioCaptureUsageDescription"] as? String ?? ""
         expect(baseAudioPrompt.contains("__APP_NAME__ uses each app's audio"),
                "base audio permission prompt is an English fallback")
+        // Without this string macOS ends the process the first time the
+        // preview asks for the camera, before any prompt is shown.
+        expect((infoPlist?["NSCameraUsageDescription"] as? String ?? "")
+                .contains("__APP_NAME__ shows your camera only in the preview window"),
+               "Info.plist explains why the preview needs the camera")
+        let hardenedEntitlements = NSDictionary(
+            contentsOfFile: "Resources/Vorssaint.entitlements") as? [String: Any]
+        expect(hardenedEntitlements?["com.apple.security.device.camera"] as? Bool == true,
+               "the hardened runtime entitlement the preview needs is signed into the bundle")
         let organizerFolderPromptKeys = [
             "NSDesktopFolderUsageDescription", "NSDocumentsFolderUsageDescription",
             "NSNetworkVolumesUsageDescription", "NSRemovableVolumesUsageDescription",
@@ -13185,6 +13194,7 @@ struct MetricsTests {
         // would leave that feature with no shortcut at all, on a fresh install,
         // with nothing to show for it.
         let defaultShortcuts: [(String, GlobalShortcut)] = [
+            ("cameraPreviewDefault", GlobalShortcut.cameraPreviewDefault),
             ("clipboardDefault", GlobalShortcut.clipboardDefault),
             ("colorPickerDefault", GlobalShortcut.colorPickerDefault),
             ("commandBarDefault", GlobalShortcut.commandBarDefault),
@@ -13206,7 +13216,7 @@ struct MetricsTests {
             ("switcherDefault", GlobalShortcut.switcherDefault),
             ("switcherWindowDefault", GlobalShortcut.switcherWindowDefault),
         ]
-        expect(defaultShortcuts.count == 20, "every default shortcut is in the round trip")
+        expect(defaultShortcuts.count == 21, "every default shortcut is in the round trip")
         var brokenShortcuts: [String] = []
         for (name, shortcut) in defaultShortcuts {
             guard let restored = GlobalShortcut(storageValue: shortcut.storageValue),
@@ -13778,7 +13788,7 @@ struct MetricsTests {
 
         // MARK: Features hub catalog
 
-        expect(AppFeature.allCases.count == 51, "feature catalog has 51 features")
+        expect(AppFeature.allCases.count == 53, "feature catalog has 53 features")
         expect(Set(AppFeature.allCases.map(\.rawValue)).count == AppFeature.allCases.count,
                "feature ids are unique")
         expect(AppFeature.allCases.map(\.rawValue) == [
@@ -13791,6 +13801,7 @@ struct MetricsTests {
             "colorPicker", "screenOCR", "cleaningMode", "mediaTools",
             "cleaner", "uninstaller", "homebrew", "screenshot",
             "radialMenu", "scratchpad", "commandBar", "screenRecorder", "environment", "killProcess",
+            "cameraPreview",
             "monitorCPU", "monitorGPU", "monitorMemory", "monitorNetwork", "monitorDisk", "monitorPower",
             "fanControl",
         ], "feature ids are stable (they persist inside availability keys)")
@@ -13956,7 +13967,7 @@ struct MetricsTests {
                "no hub group is empty")
         expect(AppPermission.allCases.map(\.rawValue) == [
             "accessibility", "screenRecording", "fullDiskAccess", "filesAndFolders", "notifications",
-            "automationFinder", "automationTerminal", "audioCapture", "microphone",
+            "automationFinder", "automationTerminal", "audioCapture", "microphone", "camera",
             "appManagement",
         ], "permission portal contains every supported permission")
         let onboardingViewSource = (try? String(
@@ -14741,6 +14752,14 @@ struct MetricsTests {
                    "every menu bar appearance string is set for \(language.rawValue)")
             expect(menuBarAppearanceValues.allSatisfy { !$0.contains("—") },
                    "no em-dash in visible menu bar appearance strings (\(language.rawValue))")
+            let cameraPreviewValues = Mirror(reflecting: FeatureStrings.cameraPreview(language)).children
+                .compactMap { $0.value as? String }
+            expect(cameraPreviewValues.count == 11 && cameraPreviewValues.allSatisfy { !$0.isEmpty },
+                   "every camera preview string is set for \(language.rawValue)")
+            expect(cameraPreviewValues.allSatisfy { !$0.contains("—") },
+                   "no em-dash in visible camera preview strings (\(language.rawValue))")
+            expect(!FeatureStrings.cameraPreview(language).deniedMessage.contains("Vorssaint"),
+                   "the camera preview names this product, not the upstream one (\(language.rawValue))")
             let killProcessValues = Mirror(reflecting: FeatureStrings.killProcess(language)).children
                 .compactMap { $0.value as? String }
             expect(killProcessValues.count == 27 && killProcessValues.allSatisfy { !$0.isEmpty },
@@ -14802,6 +14821,63 @@ struct MetricsTests {
         expect(KillProcessSupport.descendants(of: 30, parents: processTable).isEmpty
                && KillProcessSupport.descendants(of: 50, parents: processTable).isEmpty,
                "Kill Process reports no descendants for a leaf and never follows a self-parenting row")
+
+        // MARK: Camera preview is reachable
+        // Ported from upstream's feature catalog and screenshot suites: the
+        // camera grant belongs to this one feature, and switching it off in
+        // the hub takes the grant out of the portal with it.
+        expect(activeSet(.camera) == [.cameraPreview],
+               "the camera permission belongs to the preview alone")
+        expect(activeSet(.camera, available: Set(AppFeature.allCases).subtracting([.cameraPreview]))
+                .isEmpty,
+               "switching the preview off in the hub takes the camera grant out of the portal")
+        expect(AppFeature.cameraPreview.permissions == [.camera]
+                && AppFeature.cameraPreview.enabledKeys.isEmpty
+                && AppFeature.cameraPreview.onboardingPermissions.isEmpty,
+               "the preview asks for the camera on demand, never during onboarding")
+        expect(Defaults.registeredDefaults[DefaultsKey.cameraPreviewShortcutEnabled] as? Bool == false
+                && Defaults.registeredDefaults[DefaultsKey.cameraPreviewShortcut] as? String
+                    == GlobalShortcut.cameraPreviewDefault.storageValue
+                && Defaults.registeredDefaults[DefaultsKey.panelUtilityCameraPreview] as? Bool == true,
+               "the preview ships with its shortcut off, its combination set and its panel tile on")
+        expect(GlobalShortcutRole.cameraPreview.requiredEnableKeys
+                    == [DefaultsKey.cameraPreviewShortcutEnabled]
+                && GlobalShortcutRole.cameraPreview.feature == .cameraPreview
+                && GlobalShortcutRole.cameraPreview.storageKey == DefaultsKey.cameraPreviewShortcut,
+               "the preview's shortcut role gates on its own toggle and follows its feature")
+        expect(!Defaults.droppedFeatureKeys.contains(DefaultsKey.cameraPreviewShortcut)
+                && !Defaults.droppedFeatureKeys.contains(FeatureUnit.cameraPreview.availabilityKey),
+               "no upgrade wipes the preview's keys now that it is back")
+        expect(AppFeature.cameraPreview.unit == .cameraPreview
+                && FeatureUnit.cameraPreview.page == .cameraPreview
+                && AppFeature.cameraPreview.group == .capture
+                && AppFeature.cameraPreview.settingsDestination
+                    == FeatureSettingsDestination(.cameraPreview)
+                && AppFeature.cameraPreview.hasNavigableSettingsDestination
+                && FeatureVisibilitySupport.features(for: .cameraPreview) == [.cameraPreview],
+               "the camera preview owns one unit, one page and one destination")
+        let cameraViewCode = stripCommentLines((try? String(
+            contentsOfFile: "Sources/Vorssaint/UI/Settings/SettingsView.swift", encoding: .utf8)) ?? "")
+        expect(cameraViewCode.contains("case .cameraPreview: CameraPreviewSettings()"),
+               "the camera preview page has a view behind it")
+        let cameraDirectoryCode = stripCommentLines((try? String(
+            contentsOfFile: "Sources/Vorssaint/UI/Settings/SettingsDirectory.swift", encoding: .utf8)) ?? "")
+        expect(cameraDirectoryCode.contains("SettingsDirectoryItem(page: .cameraPreview")
+                && cameraDirectoryCode.contains("FeatureStrings.cameraPreview(language).openButton"),
+               "the camera preview has a sidebar row that search finds by what it holds")
+        let cameraPanelCode = stripCommentLines((try? String(
+            contentsOfFile: "Sources/Vorssaint/UI/MenuPanel/MenuPanelView.swift", encoding: .utf8)) ?? "")
+        expect(cameraPanelCode.contains("case .cameraPreview: return DefaultsKey.panelUtilityCameraPreview")
+                && cameraPanelCode.contains("CameraPreviewService.shared.show()"),
+               "the menu panel has a camera preview tile that opens the mirror")
+        let cameraRuntimeCode = stripCommentLines((try? String(
+            contentsOfFile: "Sources/Vorssaint/App/FeatureRuntime.swift", encoding: .utf8)) ?? "")
+        expect(cameraRuntimeCode.contains(".cameraPreview: { CameraPreviewService.shared.syncWithPreferences() }"),
+               "switching the preview off in the hub tears its panel and hotkey down")
+        let cameraQuitCode = stripCommentLines((try? String(
+            contentsOfFile: "Sources/Vorssaint/App/AppDelegate.swift", encoding: .utf8)) ?? "")
+        expect(cameraQuitCode.contains("CameraPreviewService.shared.suspend()"),
+               "quitting releases the camera instead of leaving the session running")
 
         // MARK: Kill Process is reachable
         // Every surface a hub feature needs, checked together: switch it off
@@ -20267,6 +20343,10 @@ struct MetricsTests {
                "the cleaning mode keep screen visible choice travels with the settings backup")
         expect(backupKeys.contains(DefaultsKey.appearance),
                "the light or dark choice travels with the settings backup")
+        expect(backupKeys.contains(DefaultsKey.cameraPreviewShortcut)
+                && backupKeys.contains(DefaultsKey.cameraPreviewShortcutEnabled)
+                && backupKeys.contains(DefaultsKey.panelUtilityCameraPreview),
+               "the camera preview shortcut and panel tile travel with the settings backup")
         expect(Set([
             DefaultsKey.mediaImageResizeKind,
             DefaultsKey.mediaImageResizeWidth,
@@ -24695,7 +24775,8 @@ struct MetricsTests {
             (.globalEntry, [.commandBar, .radialMenu]),
             (.clipboardFiles, [.clipboardHistory, .pastePlain, .finderCutPaste, .finderRename, .shelf,
                                .urlCleaner, .scratchpad]),
-            (.capture, [.screenshot, .screenRecorder, .colorPicker, .screenOCR, .mediaTools]),
+            (.capture, [.screenshot, .screenRecorder, .colorPicker, .screenOCR, .mediaTools,
+                        .cameraPreview]),
             (.soundDevices, [.mixer, .soundOutputSwitcher, .micMute, .musicBlock]),
             (.focusEnergy, [.keepAwake, .brightness, .bluetoothSleep, .cleaningMode]),
             (.appManagement, [.cleaner, .uninstaller, .homebrew, .environment, .killProcess]),
@@ -24916,7 +24997,7 @@ struct MetricsTests {
             "Bluetooth on sleep", "Color picker", "Copy text from screen", "Cleaning Mode", "Media", "Cleaner",
             "Uninstaller", "Homebrew", "Screenshot",
             "Radial menu", "Notes", "Command Bar", "Screen recording", "Global environment",
-            "Kill Process", "CPU",
+            "Kill Process", "Camera preview", "CPU",
             "GPU", "Memory", "Network", "Disks", "Power", "Fan Control"
         ]
         let featureNamesZhHans = [
@@ -24925,6 +25006,7 @@ struct MetricsTests {
             "粘贴为纯文本", "剪切和粘贴", "重命名快捷键", "暂存架", "清理 URL", "音量混音器", "输出切换器", "静音麦克风",
             "App 启动拦截", "保持唤醒", "显示器", "睡眠时的蓝牙", "颜色吸管", "拷贝屏幕文字", "清洁模式",
             "媒体", "清理", "卸载器", "Homebrew", "截屏", "径向菜单", "便条", "命令栏", "屏幕录制", "全局环境", "结束进程",
+            "相机预览",
             "CPU", "GPU", "内存", "网络", "磁盘", "电源", "风扇控制"
         ]
         let pageTitlesEnUS = [
@@ -24935,14 +25017,14 @@ struct MetricsTests {
             "Homebrew", "Global environment", "Media", "Clipboard", "Clean URL", "Shelf",
             "Screen capture", "Radial menu", "Command Bar",
             "Volume mixer", "Mute microphone", "App launch blocker", "Notes",
-            "Kill Process",
+            "Kill Process", "Camera preview",
             "Keyboard shortcuts", "General & appearance", "About", "What’s New"
         ]
         let pageTitlesZhHans = [
             "功能", "菜单栏图标", "菜单栏面板", "监控", "保持唤醒", "显示器", "睡眠时的蓝牙", "清洁模式", "鼠标", "触控板", "窗口切换器", "Dock", "键盘", "访达快捷键",
             "窗口行为", "清理", "卸载器", "Homebrew", "全局环境", "媒体", "剪贴板", "清理 URL",
             "暂存架", "屏幕捕捉", "径向菜单", "命令栏", "音量混音器", "静音麦克风", "App 启动拦截",
-            "便条", "结束进程",
+            "便条", "结束进程", "相机预览",
             "键盘快捷键", "通用与外观", "关于", "新功能"
         ]
         expect(featureNamesEnUS.count == AppFeature.allCases.count
@@ -25324,7 +25406,7 @@ struct MetricsTests {
             (.inputDevices, [.mouse, .trackpad, .keyboard]),
             (.globalEntry, [.radialMenu, .commandBar]),
             (.clipboardFiles, [.clipboard, .cutPaste, .shelf, .scratchpad]),
-            (.capture, [.screenshot, .media]),
+            (.capture, [.screenshot, .media, .cameraPreview]),
             (.soundDevices, [.mixer, .micMute, .musicBlock]),
             (.appManagement, [.cleaner, .uninstaller, .homebrew, .environment, .killProcess]),
         ]
@@ -26290,7 +26372,7 @@ struct MetricsTests {
 
         // MARK: - cut-drop
 
-        // Five features left the app. A leftover mention is not a compile
+        // Four features left the app. A leftover mention is not a compile
         // error (a string key, a panel id, a settings row), so the identifiers
         // are counted in the source itself. The migration list below is the
         // one place they may still appear, so it is cut out before counting.
@@ -26309,13 +26391,12 @@ struct MetricsTests {
         }()
         expect(cutDropLivingCode.contains("droppedFeatureKeys"),
                "the dropped-key list is excised by its literal, not by losing the whole file")
-        for identifier in ["diskImageInstaller", "cameraPreview", "appUpdates",
+        for identifier in ["diskImageInstaller", "appUpdates",
                            "extraBrightness", "minimalWindowPreviews"] {
             let found = cutDropLivingCode.components(separatedBy: identifier).count - 1
             expect(found == 0, "no code still names \(identifier), found \(found)")
         }
-        for file in ["Sources/Vorssaint/UI/Settings/CameraPreviewSettings.swift",
-                     "Sources/Vorssaint/UI/Settings/AppUpdatesSettings.swift",
+        for file in ["Sources/Vorssaint/UI/Settings/AppUpdatesSettings.swift",
                      "Sources/Vorssaint/Services/AppUpdates/AppUpdateFeedSupport.swift",
                      "Sources/Vorssaint/Services/DiskImageInstaller/DiskImageInstallerService.swift"] {
             expect(!FileManager.default.fileExists(atPath: file), "\(file) is gone")

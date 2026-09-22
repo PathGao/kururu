@@ -251,6 +251,11 @@ enum SettingsDirectory {
                                       keywords: ["PDF", "GIF", "PNG", "JPEG", "convert", "resize", "watermark",
                                                  "rename", "profile", "fit", "fill", "crop",
                                                  s.mediaStartConvertPDF, s.ocrName]),
+                SettingsDirectoryItem(page: .cameraPreview, s: s, language: language,
+                                      icon: AppFeature.cameraPreview.symbolName,
+                                      keywords: [FeatureStrings.cameraPreview(language).openButton,
+                                                 FeatureStrings.cameraPreview(language).cameraMenuLabel,
+                                                 FeatureStrings.cameraPreview(language).permName]),
             ]),
             (hub.groupSoundDevices, [
                 SettingsDirectoryItem(page: .mixer, s: s, language: language,

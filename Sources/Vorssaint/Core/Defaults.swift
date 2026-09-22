@@ -457,6 +457,8 @@ enum DefaultsKey {
     static let micMuteShortcut = "micMuteShortcut"
     static let scratchpadShortcutEnabled = "scratchpadShortcutEnabled"
     static let scratchpadShortcut = "scratchpadShortcut"
+    static let cameraPreviewShortcutEnabled = "cameraPreviewShortcutEnabled"
+    static let cameraPreviewShortcut = "cameraPreviewShortcut"
     static let commandBarShortcutEnabled = "commandBarShortcutEnabled"
     static let commandBarShortcut = "commandBarShortcut"
     /// Compact mode: an empty field shows nothing but itself. Off by default
@@ -489,6 +491,7 @@ enum DefaultsKey {
     static let panelUtilityColorPicker = "panelUtilityColorPicker"
     static let panelUtilityScreenOCR = "panelUtilityScreenOCR"
     static let panelUtilityScratchpad = "panelUtilityScratchpad"
+    static let panelUtilityCameraPreview = "panelUtilityCameraPreview"
     static let clipboardHistoryShortcutEnabled = "clipboardHistoryShortcutEnabled"
     static let clipboardHistoryShortcut = "clipboardHistoryShortcut"
     // Mode chooser visibility for dedicated capture shortcuts.
@@ -1190,6 +1193,8 @@ enum Defaults {
         DefaultsKey.micMuteShortcut: GlobalShortcut.micMuteDefault.storageValue,
         DefaultsKey.scratchpadShortcutEnabled: false,
         DefaultsKey.scratchpadShortcut: GlobalShortcut.scratchpadDefault.storageValue,
+        DefaultsKey.cameraPreviewShortcutEnabled: false,
+        DefaultsKey.cameraPreviewShortcut: GlobalShortcut.cameraPreviewDefault.storageValue,
         DefaultsKey.commandBarShortcutEnabled: false,
         DefaultsKey.commandBarCompactMode: false,
         DefaultsKey.commandBarDisabledSources: "",
@@ -1211,6 +1216,7 @@ enum Defaults {
         DefaultsKey.panelUtilityColorPicker: true,
         DefaultsKey.panelUtilityScreenOCR: true,
         DefaultsKey.panelUtilityScratchpad: true,
+        DefaultsKey.panelUtilityCameraPreview: true,
         DefaultsKey.clipboardHistoryShortcutEnabled: true,
         DefaultsKey.clipboardHistoryShortcut: GlobalShortcut.clipboardDefault.storageValue,
         DefaultsKey.recorderShortcutEnabled: false,
@@ -1407,12 +1413,6 @@ enum Defaults {
         DefaultsKey.unitAvailable("diskImageInstaller"),
         "diskImageInstallerTrashesDownload",
         "diskImageInstallerRevealsApp",
-        // Camera preview
-        DefaultsKey.featureAvailable("cameraPreview"),
-        DefaultsKey.unitAvailable("cameraPreview"),
-        "cameraPreviewShortcutEnabled",
-        "cameraPreviewShortcut",
-        "panelUtilityCameraPreview",
         // Retired capture uploads.
         "recorderSharingEnabled",
         DefaultsKey.screenshotSharingEnabled,

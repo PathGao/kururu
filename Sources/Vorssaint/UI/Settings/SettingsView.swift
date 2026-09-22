@@ -392,6 +392,7 @@ struct SettingsView: View {
         case .windowBehavior: WindowBehaviorSettings()
         case .uninstaller: UninstallerView()
         case .killProcess: KillProcessView()
+        case .cameraPreview: CameraPreviewSettings()
         case .cleaner: CleanerSettings()
         case .homebrew: HomebrewSettings()
         case .environment: EnvironmentSettings()
