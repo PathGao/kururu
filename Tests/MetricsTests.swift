@@ -4104,6 +4104,45 @@ struct MetricsTests {
         expect(foreignCloseCode.contains("restoring: anchor"),
                "an unexpected close reopens the panel at its preserved anchor")
 
+        // An in-app update can leave the rebuilt item without a slot. Only the
+        // first launch on a newer official version may look, because the check
+        // ends in recreating the item and no ordinary launch should risk that.
+        expect(StatusItemPlacementSupport.isFirstLaunchAfterUpdate(previousVersion: "0.1.3",
+                                                                   currentVersion: "0.1.4",
+                                                                   isDeveloperBuild: false),
+               "the first launch after an update checks the icon once")
+        expect(!StatusItemPlacementSupport.isFirstLaunchAfterUpdate(previousVersion: "0.1.4",
+                                                                    currentVersion: "0.1.4",
+                                                                    isDeveloperBuild: false),
+               "relaunching the same version does not")
+        expect(!StatusItemPlacementSupport.isFirstLaunchAfterUpdate(previousVersion: "0.2.0",
+                                                                    currentVersion: "0.1.4",
+                                                                    isDeveloperBuild: false),
+               "going back to an older build does not")
+        expect(!StatusItemPlacementSupport.isFirstLaunchAfterUpdate(previousVersion: "0.1.3",
+                                                                    currentVersion: "0.1.4",
+                                                                    isDeveloperBuild: true),
+               "a developer build never disturbs the real app's arranged spot")
+        expect(!StatusItemPlacementSupport.isFirstLaunchAfterUpdate(previousVersion: nil,
+                                                                    currentVersion: "0.1.4",
+                                                                    isDeveloperBuild: false)
+               && !StatusItemPlacementSupport.isFirstLaunchAfterUpdate(previousVersion: "not a version",
+                                                                       currentVersion: "0.1.4",
+                                                                       isDeveloperBuild: false),
+               "a missing or unreadable previous version is not an update")
+        expect(StatusItemPlacementSupport.isFirstLaunchAfterUpdate(previousVersion: "0.1.4-beta.1",
+                                                                   currentVersion: "0.1.4",
+                                                                   isDeveloperBuild: false),
+               "leaving a prerelease for its release counts as an update")
+        let postUpdateCode = stripCommentLines((statusAnchorAppDelegateSource
+            .components(separatedBy: "private func verifyPostUpdateStatusItem(").last ?? "")
+            .components(separatedBy: "\n    }").first ?? "")
+        expect(postUpdateCode.contains("recreateStatusItem()")
+               && !postUpdateCode.contains("resetStatusItemPlacementIdentity()"),
+               "the post-update recovery rebuilds the item but keeps its saved position")
+        expect(!postUpdateCode.contains("NSAlert") && !postUpdateCode.contains("runModal"),
+               "the post-update recovery never interrupts the person with an alert")
+
         // The panel keeps its top edge and its center while its content resizes.
         let panelArea = CGRect(x: 0, y: 0, width: 1470, height: 932)
         let shortPanel = StatusItemAnchorSupport.pinnedPanelFrame(size: CGSize(width: 332, height: 375),

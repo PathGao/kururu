@@ -333,6 +333,19 @@ enum StatusItemPlacementSupport {
         clearAllRememberedState(of: nextName, in: defaults)
     }
 
+    /// Whether this launch is the first one on a newer official version, the
+    /// only launch that earns the bounded post-update placement check. An
+    /// ordinary relaunch, a downgrade and a developer build must never
+    /// disturb an arranged menu bar.
+    static func isFirstLaunchAfterUpdate(previousVersion: String?,
+                                         currentVersion: String,
+                                         isDeveloperBuild: Bool) -> Bool {
+        guard !isDeveloperBuild, let previousVersion,
+              let previous = UpdateServiceSupport.SemanticVersion(raw: previousVersion),
+              let current = UpdateServiceSupport.SemanticVersion(raw: currentVersion) else { return false }
+        return current > previous
+    }
+
     /// While macOS is still settling a newborn status window, recovery must
     /// keep waiting instead of escalating to an identity reset or the
     /// "still hidden" alert (#1394).
