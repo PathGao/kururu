@@ -16782,13 +16782,12 @@ struct MetricsTests {
             encoding: .utf8)) ?? ""
         expect(!captureServiceSource.contains("replaceSelection"),
                "the capture service does not cancel and recreate selection controllers when changing modes")
-        // The preview appears unasked for, so presenting it must not take the
-        // keyboard away from whatever the person is typing into. Its shortcuts
-        // read a local monitor, which is delivered nothing until the panel is
-        // key. Presenting stays silent and hover takes nothing either; a click
-        // hands the keyboard over in the panel's sendEvent because hosted
-        // SwiftUI content answers presses that never reach mouseDown. Comments
-        // are stripped so prose naming the API cannot answer for the code.
+        // The preview's shortcuts read a local monitor, which is delivered
+        // nothing until the panel is key, so presenting takes the keyboard
+        // once the panel is on screen. Hover takes nothing; a click hands the
+        // keyboard back in the panel's sendEvent because hosted SwiftUI
+        // content answers presses that never reach mouseDown. Comments are
+        // stripped so prose naming the API cannot answer for the code.
         let quickPreviewSource = (try? String(
             contentsOfFile: "Sources/Vorssaint/Services/QuickTools/ScreenshotQuickPreviewController.swift",
             encoding: .utf8)) ?? ""
@@ -16802,14 +16801,21 @@ struct MetricsTests {
             .dropFirst().first?.components(separatedBy: "private func").first ?? ""
         expect(presentBody.contains("orderFrontRegardless()"),
                "the screenshot preview is presented without activating the app")
-        // A click is the hand-off, and it is read in sendEvent because the
+        // A click is the hand-back, and it is read in sendEvent because the
         // hosted SwiftUI content answers presses that never reach mouseDown.
         let panelBody = quickPreviewCode.components(separatedBy: "class ScreenshotQuickPreviewPanel")
             .dropFirst().first?.components(separatedBy: "\n}").first ?? ""
+        // Keying before ordering front goes red: a panel that is not yet on
+        // screen cannot become key.
+        let presentLines = presentBody.components(separatedBy: "\n")
+        let orderFrontLine = presentLines.firstIndex { $0.contains("orderFrontRegardless()") } ?? -1
+        let makeKeyLine = presentLines.firstIndex { $0.contains("makeKey") } ?? -1
+        expect(orderFrontLine >= 0 && makeKeyLine > orderFrontLine,
+               "presenting the screenshot preview takes key focus once the panel is on screen")
         let makeKeyCount = quickPreviewCode.components(separatedBy: "makeKey").count - 1
         let panelMakeKeyCount = panelBody.components(separatedBy: "makeKey").count - 1
-        expect(makeKeyCount == panelMakeKeyCount && panelMakeKeyCount >= 1,
-               "presentation and hover never take key focus; only the panel's own click hand-off may")
+        expect(makeKeyCount == panelMakeKeyCount + 1 && panelMakeKeyCount >= 1,
+               "hover never takes key focus; only presentation and the panel's own click hand-back may")
         expect(panelBody.contains("sendEvent") && panelBody.contains("leftMouseDown")
                 && panelBody.contains("makeKey") && panelBody.contains("super.sendEvent"),
                "clicking the screenshot preview takes key focus and still delivers every preview button")
