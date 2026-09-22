@@ -541,6 +541,7 @@ enum DefaultsKey {
     static let screenshotOpenEditorDirectly = "screenshotOpenEditorDirectly"
     static let screenshotCopyToClipboard = "screenshotCopyToClipboard"
     static let screenshotPreviewPosition = "screenshotPreviewPosition"
+    static let screenshotPreviewTakesFocus = "screenshotPreviewTakesFocus"
     static let screenshotSharingEnabled = "screenshotSharingEnabled"
     // Retired upload preferences remain named only for migration and backup filtering.
     static let screenshotSharingDeveloperEndpoint = "screenshotSharingDeveloperEndpoint"
@@ -1271,6 +1272,7 @@ enum Defaults {
         DefaultsKey.screenshotOpenEditorDirectly: false,
         DefaultsKey.screenshotCopyToClipboard: false,
         DefaultsKey.screenshotPreviewPosition: ScreenshotSupport.QuickPreviewPosition.automatic.rawValue,
+        DefaultsKey.screenshotPreviewTakesFocus: true,
         DefaultsKey.panelUtilityScreenshot: true,
     ]
 

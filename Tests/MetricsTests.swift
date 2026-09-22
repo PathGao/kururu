@@ -16795,10 +16795,11 @@ struct MetricsTests {
                "the capture service does not cancel and recreate selection controllers when changing modes")
         // The preview's shortcuts read a local monitor, which is delivered
         // nothing until the panel is key, so presenting takes the keyboard
-        // once the panel is on screen. Hover takes nothing; a click hands the
-        // keyboard back in the panel's sendEvent because hosted SwiftUI
-        // content answers presses that never reach mouseDown. Comments are
-        // stripped so prose naming the API cannot answer for the code.
+        // once the panel is on screen, behind the preference that hands that
+        // trade back. Hover takes nothing; a click hands the keyboard over in
+        // the panel's sendEvent because hosted SwiftUI content answers presses
+        // that never reach mouseDown. Comments are stripped so prose naming
+        // the API cannot answer for the code.
         let quickPreviewSource = (try? String(
             contentsOfFile: "Sources/Vorssaint/Services/QuickTools/ScreenshotQuickPreviewController.swift",
             encoding: .utf8)) ?? ""
@@ -16812,21 +16813,23 @@ struct MetricsTests {
             .dropFirst().first?.components(separatedBy: "private func").first ?? ""
         expect(presentBody.contains("orderFrontRegardless()"),
                "the screenshot preview is presented without activating the app")
-        // A click is the hand-back, and it is read in sendEvent because the
+        // A click is the hand-off, and it is read in sendEvent because the
         // hosted SwiftUI content answers presses that never reach mouseDown.
         let panelBody = quickPreviewCode.components(separatedBy: "class ScreenshotQuickPreviewPanel")
             .dropFirst().first?.components(separatedBy: "\n}").first ?? ""
-        // Keying before ordering front goes red: a panel that is not yet on
-        // screen cannot become key.
+        // The preference keys the panel only after it is on screen, and the
+        // line above the call is the preference check itself, so dropping the
+        // guard or keying before ordering front both go red.
         let presentLines = presentBody.components(separatedBy: "\n")
         let orderFrontLine = presentLines.firstIndex { $0.contains("orderFrontRegardless()") } ?? -1
         let makeKeyLine = presentLines.firstIndex { $0.contains("makeKey") } ?? -1
-        expect(orderFrontLine >= 0 && makeKeyLine > orderFrontLine,
-               "presenting the screenshot preview takes key focus once the panel is on screen")
+        expect(orderFrontLine >= 0 && makeKeyLine > orderFrontLine
+                && presentLines[makeKeyLine - 1].contains("screenshotPreviewTakesFocus"),
+               "presenting the screenshot preview takes key focus only behind the preference, once on screen")
         let makeKeyCount = quickPreviewCode.components(separatedBy: "makeKey").count - 1
         let panelMakeKeyCount = panelBody.components(separatedBy: "makeKey").count - 1
         expect(makeKeyCount == panelMakeKeyCount + 1 && panelMakeKeyCount >= 1,
-               "hover never takes key focus; only presentation and the panel's own click hand-back may")
+               "hover never takes key focus; only the preferred presentation and the click hand-off may")
         expect(panelBody.contains("sendEvent") && panelBody.contains("leftMouseDown")
                 && panelBody.contains("makeKey") && panelBody.contains("super.sendEvent"),
                "clicking the screenshot preview takes key focus and still delivers every preview button")
@@ -17630,6 +17633,8 @@ struct MetricsTests {
                "screenshot number shortcuts ship enabled")
         expect(Defaults.registeredDefaults[DefaultsKey.screenshotPreviewPosition] as? String == "",
                "screenshot preview placement preserves the existing automatic behavior by default")
+        expect(Defaults.registeredDefaults[DefaultsKey.screenshotPreviewTakesFocus] as? Bool == true,
+               "the screenshot preview takes the keyboard as it appears by default, so its shortcuts work at once; leaving it is the opt-out")
         expect(Defaults.registeredDefaults[DefaultsKey.screenshotSharingEnabled] == nil,
                "retired screenshot links have no registered availability preference")
         expect(Defaults.registeredDefaults[DefaultsKey.screenshotToolOrder] as? String
