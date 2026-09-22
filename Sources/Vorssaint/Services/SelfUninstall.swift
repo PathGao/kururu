@@ -132,6 +132,7 @@ enum SelfUninstall {
         MouseNavigationService.shared.suspend()
         MouseButtonShortcutService.shared.suspend()
         WindowMaximizer.shared.stop()
+        WindowLayoutService.shared.suspend()
         AppSwitcher.shared.suspend()
         DockPreviewService.shared.stop()
         BrightnessService.shared.suspendInputTaps()

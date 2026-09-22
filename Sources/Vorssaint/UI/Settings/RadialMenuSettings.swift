@@ -88,7 +88,9 @@ struct RadialMenuSettings: View {
             if enabled, RadialMenuSupport.needsAccessibility(profiles), !permissions.accessibility {
                 SettingsSection {
                     PermissionRow(kind: .accessibility)
-                    Text(text.permissionCaption)
+                    Text(RadialMenuSupport.usesWindowLayout(currentProfileItems)
+                         ? FeatureStrings.windowLayout(l10n.language).missingPermission
+                         : text.permissionCaption)
                         .font(SettingsTypography.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -703,6 +705,7 @@ private struct RadialItemRow: View {
         case .shortcut: return text.kindShortcut
         case .tool: return text.kindTool
         case .systemAction: return text.kindSystemAction
+        case .windowLayout: return FeatureStrings.windowLayout(L10n.shared.language).title
         case .media: return text.kindMedia
         case .submenu: return text.kindSubmenu
         }
@@ -879,6 +882,10 @@ private struct RadialItemEditor: View {
                         Text(text.kindTool).tag(RadialMenuItem.Kind.tool)
                     }
                     Text(text.kindSystemAction).tag(RadialMenuItem.Kind.systemAction)
+                    if AppFeature.windowLayout.isAvailable {
+                        Text(AppFeature.windowLayout.name(l10n.s, language: l10n.language))
+                            .tag(RadialMenuItem.Kind.windowLayout)
+                    }
                     Text(text.kindMedia).tag(RadialMenuItem.Kind.media)
                     if allowsSubmenu {
                         Text(text.kindSubmenu).tag(RadialMenuItem.Kind.submenu)
@@ -961,6 +968,7 @@ private struct RadialItemEditor: View {
             switch kind {
             case .tool: item.payload = availableTools.first?.rawValue ?? ""
             case .systemAction: item.payload = QuickToggleAction.darkMode.rawValue
+            case .windowLayout: item.payload = WindowLayoutAction.leftHalf.rawValue
             case .media: item.payload = RadialMenuMediaKey.playPause.rawValue
             default: item.payload = ""
             }
@@ -1066,6 +1074,14 @@ private struct RadialItemEditor: View {
             Picker(text.kindSystemAction, selection: $item.payload) {
                 ForEach(QuickToggleAction.allCases) { action in
                     Label(action.title, systemImage: action.symbolName)
+                        .tag(action.rawValue)
+                }
+            }
+        case .windowLayout:
+            let windowText = FeatureStrings.windowLayout(l10n.language)
+            Picker(windowText.title, selection: $item.payload) {
+                ForEach(WindowLayoutAction.allCases) { action in
+                    Label(action.title(windowText), systemImage: action.symbolName)
                         .tag(action.rawValue)
                 }
             }

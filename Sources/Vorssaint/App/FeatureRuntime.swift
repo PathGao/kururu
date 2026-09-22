@@ -216,6 +216,10 @@ final class FeatureRuntime: ObservableObject {
         .dockPreview: { DockPreviewService.shared.syncWithPreferences() },
         .dockClick: { DockClickService.shared.syncWithPreferences() },
         .windowMaximizer: { WindowMaximizer.shared.syncWithPreferences() },
+        .windowLayout: {
+            WindowUseTracker.shared.syncWithFeatures()
+            WindowLayoutService.shared.syncWithPreferences()
+        },
         .autoQuit: { AutoQuitService.shared.syncWithPreferences() },
         .scrollInverter: { ScrollInverter.shared.syncWithPreferences() },
         .scrollHorizontal: { ScrollInverter.shared.syncWithPreferences() },

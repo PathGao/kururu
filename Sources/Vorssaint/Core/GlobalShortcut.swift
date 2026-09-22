@@ -120,6 +120,42 @@ struct GlobalShortcut: Equatable, Hashable {
                                                  modifiers: [.control, .option, .command])
     static let shelfDefault = GlobalShortcut(keyCode: Int64(kVK_ANSI_D),
                                              modifiers: [.control, .option, .command])
+    static let windowLayoutLeftDefault = GlobalShortcut(keyCode: Int64(kVK_LeftArrow),
+                                                        modifiers: [.control, .option])
+    static let windowLayoutRightDefault = GlobalShortcut(keyCode: Int64(kVK_RightArrow),
+                                                         modifiers: [.control, .option])
+    static let windowLayoutTopDefault = GlobalShortcut(keyCode: Int64(kVK_UpArrow),
+                                                       modifiers: [.control, .option])
+    static let windowLayoutBottomDefault = GlobalShortcut(keyCode: Int64(kVK_DownArrow),
+                                                          modifiers: [.control, .option])
+    static let windowLayoutTopLeftDefault = GlobalShortcut(keyCode: Int64(kVK_ANSI_U),
+                                                           modifiers: [.control, .option])
+    static let windowLayoutTopRightDefault = GlobalShortcut(keyCode: Int64(kVK_ANSI_I),
+                                                            modifiers: [.control, .option])
+    static let windowLayoutBottomLeftDefault = GlobalShortcut(keyCode: Int64(kVK_ANSI_J),
+                                                              modifiers: [.control, .option])
+    static let windowLayoutBottomRightDefault = GlobalShortcut(keyCode: Int64(kVK_ANSI_K),
+                                                               modifiers: [.control, .option])
+    static let windowLayoutMaximizeDefault = GlobalShortcut(keyCode: Int64(kVK_Return),
+                                                            modifiers: [.control, .option])
+    static let windowLayoutCenterDefault = GlobalShortcut(keyCode: Int64(kVK_ANSI_C),
+                                                          modifiers: [.control, .option])
+    static let windowLayoutRestoreDefault = GlobalShortcut(keyCode: Int64(kVK_ANSI_R),
+                                                           modifiers: [.control, .option])
+    static let windowLayoutLeftThirdDefault = GlobalShortcut(keyCode: Int64(kVK_ANSI_D),
+                                                             modifiers: [.control, .option])
+    static let windowLayoutCenterThirdDefault = GlobalShortcut(keyCode: Int64(kVK_ANSI_F),
+                                                               modifiers: [.control, .option])
+    static let windowLayoutRightThirdDefault = GlobalShortcut(keyCode: Int64(kVK_ANSI_G),
+                                                              modifiers: [.control, .option])
+    static let windowLayoutLeftTwoThirdsDefault = GlobalShortcut(keyCode: Int64(kVK_ANSI_E),
+                                                                 modifiers: [.control, .option])
+    static let windowLayoutRightTwoThirdsDefault = GlobalShortcut(keyCode: Int64(kVK_ANSI_T),
+                                                                  modifiers: [.control, .option])
+    static let windowLayoutNextDisplayDefault = GlobalShortcut(keyCode: Int64(kVK_RightArrow),
+                                                               modifiers: [.control, .option, .command])
+    static let windowDirectionalDefault = GlobalShortcut(keyCode: Int64(kVK_Space),
+                                                         modifiers: [.control, .option])
     static let switcherDefault = GlobalShortcut(keyCode: Int64(kVK_Tab),
                                                 modifiers: [.command])
     static let switcherWindowDefault = GlobalShortcut(keyCode: Int64(kVK_ANSI_Grave),
@@ -896,7 +932,10 @@ enum GlobalShortcutRole: CaseIterable, Identifiable {
     /// plain `FeatureRuntime.sync` of this same list.
     static var featuresToSilenceWhileRecording: [AppFeature] {
         var seen: Set<AppFeature> = []
-        let features = allCases.compactMap { seen.insert($0.feature).inserted ? $0.feature : nil }
+        var features = allCases.compactMap { seen.insert($0.feature).inserted ? $0.feature : nil }
+        // Window layout keeps one shortcut per action instead of a role, so it
+        // is the one holder of global keys the list above cannot reach.
+        if seen.insert(.windowLayout).inserted { features.append(.windowLayout) }
         return features
     }
 

@@ -8,7 +8,7 @@ import Foundation
 /// below and the unit tests can reason about pages without pulling UI in.
 enum SettingsPage: Hashable {
     case features, menuBarIcon, menuBarPanel, monitor
-    case keepAwake, brightness, bluetoothSleep, cleaningMode, mouse, trackpad, switcher, dock, keyboard, cutPaste, windowBehavior, cleaner, uninstaller, homebrew, environment, media, clipboard, urlCleaner, shelf, screenshot, radialMenu, commandBar, mixer, micMute, musicBlock, scratchpad, killProcess, cameraPreview
+    case keepAwake, brightness, bluetoothSleep, cleaningMode, mouse, trackpad, switcher, dock, windowLayout, keyboard, cutPaste, windowBehavior, cleaner, uninstaller, homebrew, environment, media, clipboard, urlCleaner, shelf, screenshot, radialMenu, commandBar, mixer, micMute, musicBlock, scratchpad, killProcess, cameraPreview
     case shortcuts, advanced, about, releaseNotes
 }
 
@@ -22,6 +22,7 @@ extension SettingsPage: CaseIterable {
         case .monitor: return s.tabMonitor
         case .switcher: return AppFeature.switcher.name(s, language: language)
         case .dock: return s.tabDock
+        case .windowLayout: return AppFeature.windowLayout.name(s, language: language)
         case .windowBehavior: return s.tabWindowBehavior
         case .mouse: return s.tabMouse
         case .trackpad: return s.tabTrackpad
@@ -214,6 +215,7 @@ extension AppFeature {
         case .dockClick: return FeatureSettingsDestination(.dock, sectionAnchor: .dockClick)
         case .windowMaximizer, .autoQuit, .quitWindowProtection:
             return FeatureSettingsDestination(.windowBehavior)
+        case .windowLayout: return FeatureSettingsDestination(.windowLayout)
 
         case .scrollInverter, .scrollHorizontal:
             return FeatureSettingsDestination(.mouse, sectionAnchor: .scrollDirection)
@@ -316,6 +318,7 @@ enum FeatureVisibilitySupport {
         case .switcher: return [.switcher]
         case .dock: return [.dockPreview, .dockClick]
         case .windowBehavior: return [.windowMaximizer, .autoQuit, .quitWindowProtection]
+        case .windowLayout: return [.windowLayout]
         case .clipboard: return [.clipboardHistory, .pastePlain]
         case .urlCleaner: return [.urlCleaner]
         case .cutPaste: return [.finderCutPaste, .finderRename]

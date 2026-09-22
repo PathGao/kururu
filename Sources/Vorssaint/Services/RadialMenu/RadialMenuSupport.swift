@@ -128,7 +128,7 @@ private struct RadialMenuProfileButton: Decodable {
 
 /// Curated starter presets when creating new profiles.
 enum RadialMenuProfilePreset: String, CaseIterable, Identifiable {
-    case general, media, tools, blank
+    case general, media, tools, windowLayout, blank
 
     var id: String { rawValue }
 
@@ -137,6 +137,7 @@ enum RadialMenuProfilePreset: String, CaseIterable, Identifiable {
         case .general: return strings.presetGeneral
         case .media: return strings.presetMedia
         case .tools: return strings.presetTools
+        case .windowLayout: return strings.presetWindowLayout
         case .blank: return strings.presetBlank
         }
     }
@@ -146,6 +147,7 @@ enum RadialMenuProfilePreset: String, CaseIterable, Identifiable {
         case .general: return .accent
         case .media: return .purple
         case .tools: return .cyan
+        case .windowLayout: return .orange
         case .blank: return .graphite
         }
     }
@@ -170,6 +172,14 @@ enum RadialMenuProfilePreset: String, CaseIterable, Identifiable {
                 RadialMenuItem(kind: .tool, payload: RadialMenuTool.micMute.rawValue),
                 RadialMenuItem(kind: .tool, payload: RadialMenuTool.scratchpad.rawValue),
             ]
+        case .windowLayout:
+            return [
+                RadialMenuItem(kind: .windowLayout, payload: WindowLayoutAction.maximize.rawValue),
+                RadialMenuItem(kind: .windowLayout, payload: WindowLayoutAction.rightHalf.rawValue),
+                RadialMenuItem(kind: .windowLayout, payload: WindowLayoutAction.bottomHalf.rawValue),
+                RadialMenuItem(kind: .windowLayout, payload: WindowLayoutAction.leftHalf.rawValue),
+                RadialMenuItem(kind: .windowLayout, payload: WindowLayoutAction.topHalf.rawValue),
+            ]
         case .blank:
             return []
         }
@@ -190,11 +200,11 @@ enum RadialMenuProfilePreset: String, CaseIterable, Identifiable {
 }
 
 /// One action on the wheel. `payload` carries the target: an app or file path,
-/// a link, tool or media identifier, or a shortcut storage value. Submenus
-/// keep their actions in `children`.
+/// a link, tool, media or window-layout identifier, or a shortcut storage
+/// value. Submenus keep their actions in `children`.
 struct RadialMenuItem: Codable, Identifiable, Equatable {
     enum Kind: String, Codable, CaseIterable {
-        case app, file, url, shortcut, tool, media, submenu
+        case app, file, url, shortcut, tool, windowLayout, media, submenu
         // Saved wheels wrote this one before the quick panel went away.
         case systemAction = "quickToggle"
     }
@@ -219,6 +229,10 @@ struct RadialMenuItem: Codable, Identifiable, Equatable {
         kind == .systemAction ? QuickToggleAction(rawValue: payload) : nil
     }
 
+    var windowLayoutAction: WindowLayoutAction? {
+        kind == .windowLayout ? WindowLayoutAction(rawValue: payload) : nil
+    }
+
     /// The symbol drawn when the user picked none. App and file items prefer
     /// their real file icons in the UI; these are the fallbacks.
     var defaultSymbolName: String {
@@ -229,6 +243,7 @@ struct RadialMenuItem: Codable, Identifiable, Equatable {
         case .shortcut: return "command"
         case .tool: return tool?.symbolName ?? "wrench.and.screwdriver"
         case .systemAction: return systemAction?.symbolName ?? "togglepower"
+        case .windowLayout: return windowLayoutAction?.symbolName ?? AppFeature.windowLayout.symbolName
         case .media:
             switch mediaKey {
             case .previousTrack: return "backward.fill"
@@ -597,6 +612,7 @@ enum RadialMenuSupport {
         case .shortcut: return GlobalShortcut(storageValue: item.payload) != nil
         case .tool: return item.tool != nil
         case .systemAction: return item.systemAction != nil
+        case .windowLayout: return item.windowLayoutAction != nil
         case .media: return item.mediaKey != nil
         case .submenu: return true
         }
@@ -697,7 +713,7 @@ enum RadialMenuSupport {
     static func needsAccessibility(_ items: [RadialMenuItem]) -> Bool {
         items.contains { item in
             switch item.kind {
-            case .shortcut: return true
+            case .shortcut, .windowLayout: return true
             case .media: return item.mediaKey?.auxKeyType != nil
             case .submenu: return needsAccessibility(item.children)
             default: return false
@@ -804,6 +820,13 @@ enum RadialMenuSupport {
         items.contains { item in
             item.mediaKey == .nowPlaying
                 || (item.kind == .submenu && containsNowPlaying(item.children))
+        }
+    }
+
+    static func usesWindowLayout(_ items: [RadialMenuItem]) -> Bool {
+        items.contains { item in
+            item.kind == .windowLayout
+                || (item.kind == .submenu && usesWindowLayout(item.children))
         }
     }
 }

@@ -34,6 +34,9 @@ struct ShortcutsSettings: View {
     private var visibleGroups: [FeatureGroup] {
         FeatureGroup.allCases.filter { group in
             availableRoles.contains { $0.group == group }
+                // Window layout keeps one shortcut per action instead of a
+                // role, so it has to open its group on its own.
+                || (group == .windowsDesktop && AppFeature.windowLayout.isAvailable)
         }
     }
 
@@ -64,6 +67,8 @@ struct ShortcutsSettings: View {
                     ForEach(featuresWithShortcuts(in: group), id: \.self) { feature in
                         if feature == .screenshot {
                             captureGroupRows
+                        } else if feature == .windowLayout {
+                            windowLayoutGroupRows
                         } else {
                             featureRows(feature, in: group)
                         }
@@ -103,6 +108,9 @@ struct ShortcutsSettings: View {
             // other capture tools render inside it instead of on their own.
             if feature == .screenshot { return group == .capture && !captureRoles.isEmpty }
             if GlobalShortcutRole.captureFeatures.contains(feature) { return false }
+            if feature == .windowLayout {
+                return group == .windowsDesktop && feature.isAvailable
+            }
             return availableRoles.contains { $0.feature == feature && $0.group == group }
         }
     }
@@ -121,6 +129,33 @@ struct ShortcutsSettings: View {
         if expandedFeatures[.capture, default: []].contains(.screenshot) {
             ForEach(roles) { role in
                 roleRow(role, showsFeatureContext: false)
+                    .disclosureIndent()
+            }
+        }
+    }
+
+    /// Window layout's shortcuts live on its own actions rather than roles,
+    /// so the group is built from the action list instead of `availableRoles`.
+    @ViewBuilder
+    private var windowLayoutGroupRows: some View {
+        let layoutText = FeatureStrings.windowLayout(l10n.language)
+        let shortcutsEnabled = UserDefaults.standard.bool(
+            forKey: DefaultsKey.windowLayoutShortcutsEnabled)
+        disclosureHeader(
+            title: AppFeature.windowLayout.name(l10n.s, language: l10n.language),
+            symbolName: AppFeature.windowLayout.symbolName,
+            isActive: shortcutsEnabled
+                && WindowLayoutAction.shortcutActions.contains { $0.savedShortcut != nil },
+            count: WindowLayoutAction.shortcutActions.count,
+            isExpanded: expansionBinding(for: .windowLayout, in: .windowsDesktop))
+        if expandedFeatures[.windowsDesktop, default: []].contains(.windowLayout) {
+            ForEach(WindowLayoutAction.shortcutActions) { action in
+                WindowLayoutActionRow(action: action,
+                                      title: action.title(layoutText),
+                                      symbol: action.symbolName,
+                                      applyEnabled: false,
+                                      shortcutEnabled: shortcutsEnabled,
+                                      showsApply: false)
                     .disclosureIndent()
             }
         }

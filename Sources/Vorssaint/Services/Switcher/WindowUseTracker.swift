@@ -120,7 +120,7 @@ final class WindowUseTracker {
     /// The history feeds the switcher and Window Layout's "every app" actions;
     /// with both features off in the hub, nothing observes anything.
     func syncWithFeatures() {
-        if AppFeature.switcher.isAvailable {
+        if AppFeature.switcher.isAvailable || AppFeature.windowLayout.isAvailable {
             start()
         } else {
             stop()

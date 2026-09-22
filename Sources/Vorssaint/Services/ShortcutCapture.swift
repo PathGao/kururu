@@ -26,6 +26,7 @@ enum ShortcutCapture {
         // recording would churn the system keyboard path (issue #275).
         AppSwitcher.shared.setCapturingShortcut(true)
         HotkeyManager.shared.setEnabled(false)
+        WindowLayoutService.shared.suspendShortcuts()
         ShelfService.shared.suspendShortcut()
         ClipboardHistoryService.shared.suspendShortcut()
         SoundOutputSwitcher.shared.suspendShortcut()

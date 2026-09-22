@@ -366,6 +366,7 @@ struct RadialMenuVisualCanvas: View {
         case .shortcut: return text.kindShortcut
         case .tool: return text.kindTool
         case .systemAction: return text.kindSystemAction
+        case .windowLayout: return FeatureStrings.windowLayout(L10n.shared.language).title
         case .media: return text.kindMedia
         case .submenu: return text.kindSubmenu
         }

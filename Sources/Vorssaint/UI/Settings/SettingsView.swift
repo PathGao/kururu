@@ -389,6 +389,7 @@ struct SettingsView: View {
         case .dock: DockSettings()
         case .keyboard: KeyboardSettings()
         case .cutPaste: CutPasteSettings()
+        case .windowLayout: WindowLayoutSettings()
         case .windowBehavior: WindowBehaviorSettings()
         case .uninstaller: UninstallerView()
         case .killProcess: KillProcessView()

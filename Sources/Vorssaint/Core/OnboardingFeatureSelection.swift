@@ -75,6 +75,7 @@ enum OnboardingFeatureSelection {
         case .quitWindowProtection: return DefaultsKey.quitProtectionQuitEnabled
         case .textSnippets: return DefaultsKey.snippetLibraryEnabled
         case .dockClick: return DefaultsKey.dockClickMinimize
+        case .windowLayout: return DefaultsKey.windowLayoutShortcutsEnabled
         default: return feature.enabledKeys.count == 1 ? feature.enabledKeys[0] : nil
         }
     }
