@@ -137,7 +137,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
             .removeDuplicates()
             .receive(on: DispatchQueue.main)
             .sink { _ in
-                FeatureRuntime.shared.permissionChanged(.accessibility)
+                FeatureRuntime.shared.sync([
+                    .scrollInverter, .focusFollowsMouse, .smoothScroll, .mouseNavigation, .switcher,
+                    .dockPreview, .finderCutPaste, .finderRename, .autoQuit, .dockClick,
+                    .middleClick, .windowMaximizer, .keyboardDebounce,
+                    .textSnippets, .brightness, .radialMenu, .mouseButtonShortcuts,
+                    .mouseClickDebounce, .superKey, .quitWindowProtection, .mixer,
+                ])
             }
             .store(in: &cancellables)
 
@@ -145,7 +151,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
             .removeDuplicates()
             .receive(on: DispatchQueue.main)
             .sink { _ in
-                FeatureRuntime.shared.permissionChanged(.screenRecording)
+                FeatureRuntime.shared.sync([.dockPreview, .colorPicker, .screenOCR,
+                                            .screenshot, .screenRecorder])
             }
             .store(in: &cancellables)
 
@@ -246,8 +253,51 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
         isTerminating = true
         // Quitting properly means the start worked, whenever it happened.
         endStartupWatch()
+        if AppFeature.brightness.isAvailable {
+            BrightnessService.shared.restoreDisplaysBeforeTermination()
+        }
         ProcessUsageService.shared.stopNetworkMonitoring(force: true)
-        FeatureRuntime.shared.terminate()
+        URLCleanerService.shared.stop()
+        FocusFollowsMouseService.shared.stop()
+        WindowMaximizer.shared.stop()
+        KeyboardDebounceService.shared.suspend()
+        MouseClickDebounceService.shared.suspend()
+        TextSnippetService.shared.suspend()
+        // Takes the Super key mapping back out before the process goes away.
+        SuperKeyService.shared.suspend()
+        // Dock's app and window switcher hotkeys persist after quit.
+        AppSwitcher.shared.suspend()
+        MouseButtonShortcutService.shared.suspend()
+        MiddleClickService.shared.suspend()
+        ScrollInverter.shared.suspend()
+        SmoothScrollService.shared.suspend()
+        if AppFeature.mouseAcceleration.isAvailable
+            || MouseAccelerationRecovery.hasPendingEntries() {
+            MouseAccelerationService.shared.stop()
+        }
+        MouseNavigationService.shared.suspend()
+        DockPreviewService.shared.stop()
+        ScreenCaptureService.shared.suspend()
+        MediaService.shared.cancel()
+        SoundOutputSwitcher.shared.stop()
+        PreciseVolumeRollerService.shared.stop()
+        AppVolumeMixer.shared.stopAll()
+        FanControlService.restoreBeforeTerminationIfNeeded()
+        // Puts the system input back if a microphone was chosen here: the
+        // app's audio settings must not outlive the app.
+        AudioInputDeviceManager.shared.stop()
+        // Drops any environment check still in flight, so its Homebrew child
+        // process does not outlive the app.
+        MainActor.assumeIsolated { EnvironmentUpdateChecker.shared.cancel() }
+        // Flushes any scratchpad edit still inside the save debounce.
+        ScratchpadService.shared.suspend()
+        // The clipboard history persists through an async pipeline; the last
+        // mutation (often a Clear) must land before the process dies.
+        if AppFeature.clipboardHistory.isAvailable {
+            ClipboardHistoryService.shared.flushBeforeTermination()
+        }
+        ShelfService.shared.flushBeforeTermination()
+        KeepAwakeManager.shared.deactivate(reason: .quit)
     }
 
     /// The lifeline when the menu bar icon goes missing. Opening the app again
