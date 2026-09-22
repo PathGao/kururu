@@ -19,6 +19,7 @@ struct BrightnessFeatureStrings {
     var lastDisplayCaption: String = "At least one display must stay on."
     var switchUnavailable: String = "Display switching is unavailable on this Mac."
     var switchFailed: String = "Could not change this display."
+    var openLidToEnable: String = "Open the lid to turn on the built-in display."
     var brightnessWriteFailed: String = "Could not adjust brightness. Try again."
     var softwareDimmingNote: String = "Software dimming adjusts the picture; the display backlight stays unchanged."
     var brightnessReadbackNote: String = "Current brightness could not be read. Showing the last recorded value; it may be out of date."
@@ -70,6 +71,7 @@ extension BrightnessFeatureStrings {
         lastDisplayCaption: "Pelo menos uma tela deve continuar ligada.",
         switchUnavailable: "Não é possível ligar ou desligar telas neste Mac.",
         switchFailed: "Não foi possível alterar esta tela.",
+        openLidToEnable: "Abra a tampa para ligar a tela integrada.",
         keysToggle: "Teclas de brilho seguem o ponteiro",
         keysCaption: "As teclas de brilho do teclado mudam a tela onde o ponteiro está.",
         osdToggle: "Mostrar brilho ao ajustar",
@@ -94,6 +96,7 @@ extension BrightnessFeatureStrings {
         lastDisplayCaption: "En az bir ekran açık kalmalıdır.",
         switchUnavailable: "Bu Mac’te ekran açma ve kapatma kullanılamıyor.",
         switchFailed: "Bu ekran değiştirilemedi.",
+        openLidToEnable: "Yerleşik ekranı açmak için kapağı açın.",
         keysToggle: "Parlaklık tuşları imleci izler",
         keysCaption: "Klavyedeki parlaklık tuşları imlecin bulunduğu ekranı değiştirir.",
         osdToggle: "Parlaklık ayarlanırken göster",
@@ -118,6 +121,7 @@ extension BrightnessFeatureStrings {
         lastDisplayCaption: "Хотя бы один экран должен оставаться включённым.",
         switchUnavailable: "Управление включением экранов недоступно на этом Mac.",
         switchFailed: "Не удалось изменить состояние экрана.",
+        openLidToEnable: "Откройте крышку, чтобы включить встроенный экран.",
         keysToggle: "Клавиши яркости следуют за указателем",
         keysCaption: "Клавиши яркости на клавиатуре меняют экран, на котором находится указатель.",
         osdToggle: "Показывать яркость при регулировке",
@@ -142,6 +146,7 @@ extension BrightnessFeatureStrings {
         lastDisplayCaption: "Al menos una pantalla debe permanecer encendida.",
         switchUnavailable: "El encendido de pantallas no está disponible en este Mac.",
         switchFailed: "No se pudo cambiar esta pantalla.",
+        openLidToEnable: "Abre la tapa para encender la pantalla integrada.",
         brightnessWriteFailed: "No se pudo ajustar el brillo. Inténtalo de nuevo.",
         softwareDimmingNote: "La atenuación por software ajusta la imagen; la retroiluminación no cambia.",
         brightnessReadbackNote: "No se pudo leer el brillo actual. Se muestra el último valor registrado; puede estar desactualizado.",
@@ -170,6 +175,7 @@ extension BrightnessFeatureStrings {
         lastDisplayCaption: "Mindestens ein Display muss eingeschaltet bleiben.",
         switchUnavailable: "Die Displaysteuerung ist auf diesem Mac nicht verfügbar.",
         switchFailed: "Dieses Display konnte nicht geändert werden.",
+        openLidToEnable: "Öffne den Deckel, um das integrierte Display einzuschalten.",
         brightnessWriteFailed: "Die Helligkeit konnte nicht geändert werden. Erneut versuchen.",
         softwareDimmingNote: "Software-Dimmen verändert das Bild; die Hintergrundbeleuchtung bleibt unverändert.",
         brightnessReadbackNote: "Die aktuelle Helligkeit konnte nicht gelesen werden. Der letzte erfasste Wert wird angezeigt und kann veraltet sein.",
@@ -198,6 +204,7 @@ extension BrightnessFeatureStrings {
         lastDisplayCaption: "Au moins un écran doit rester allumé.",
         switchUnavailable: "Le contrôle d’alimentation des écrans n’est pas disponible sur ce Mac.",
         switchFailed: "Impossible de modifier cet écran.",
+        openLidToEnable: "Ouvrez le couvercle pour allumer l’écran intégré.",
         brightnessWriteFailed: "Impossible de régler la luminosité. Réessayez.",
         softwareDimmingNote: "L’atténuation logicielle agit sur l’image ; le rétroéclairage reste inchangé.",
         brightnessReadbackNote: "La luminosité actuelle n’a pas pu être lue. La dernière valeur enregistrée est affichée et peut être périmée.",
@@ -226,6 +233,7 @@ extension BrightnessFeatureStrings {
         lastDisplayCaption: "Almeno uno schermo deve rimanere acceso.",
         switchUnavailable: "Il controllo di accensione degli schermi non è disponibile su questo Mac.",
         switchFailed: "Non è stato possibile modificare questo schermo.",
+        openLidToEnable: "Apri il coperchio per accendere lo schermo integrato.",
         keysToggle: "I tasti di luminosità seguono il puntatore",
         keysCaption: "I tasti di luminosità della tastiera regolano lo schermo dove si trova il puntatore.",
         osdToggle: "Mostra la luminosità durante la regolazione",
@@ -250,6 +258,7 @@ extension BrightnessFeatureStrings {
         lastDisplayCaption: "少なくとも1台のディスプレイをオンのままにしてください。",
         switchUnavailable: "このMacではディスプレイの切り替えを利用できません。",
         switchFailed: "このディスプレイを切り替えられませんでした。",
+        openLidToEnable: "内蔵ディスプレイをオンにするには、蓋を開いてください。",
         brightnessWriteFailed: "明るさを変更できませんでした。再試行してください。",
         softwareDimmingNote: "ソフトウェアで映像を暗くします。ディスプレイのバックライトは変わりません。",
         brightnessReadbackNote: "現在の明るさを読み取れませんでした。前回の記録値を表示しているため、実際の明るさと異なる場合があります。",
@@ -278,6 +287,7 @@ extension BrightnessFeatureStrings {
         lastDisplayCaption: "최소 한 대의 디스플레이는 켜져 있어야 합니다.",
         switchUnavailable: "이 Mac에서는 디스플레이 전원 제어를 사용할 수 없습니다.",
         switchFailed: "이 디스플레이를 변경할 수 없습니다.",
+        openLidToEnable: "내장 디스플레이를 켜려면 덮개를 여세요.",
         keysToggle: "밝기 키가 포인터를 따라감",
         keysCaption: "키보드의 밝기 키로 포인터가 있는 디스플레이를 조절합니다.",
         osdToggle: "밝기 조절 시 표시",
@@ -302,6 +312,7 @@ extension BrightnessFeatureStrings {
         lastDisplayCaption: "至少要保留一台显示器开启。",
         switchUnavailable: "此 Mac 不支持显示器开关。",
         switchFailed: "无法更改这台显示器。",
+        openLidToEnable: "请打开 Mac 盖子后再启用内置屏幕。",
         brightnessWriteFailed: "无法调整亮度，请重试。",
         softwareDimmingNote: "软件调暗只调整画面，显示器背光保持不变。",
         brightnessReadbackNote: "本次未能读取当前亮度，显示上次记录值，可能已过时。",
@@ -330,6 +341,7 @@ extension BrightnessFeatureStrings {
         lastDisplayCaption: "至少要保留一台顯示器開啟。",
         switchUnavailable: "此 Mac 不支援顯示器開關。",
         switchFailed: "無法更改這台顯示器。",
+        openLidToEnable: "請打開 Mac 上蓋後再啟用內建螢幕。",
         keysToggle: "亮度鍵跟隨指標",
         keysCaption: "鍵盤上的亮度鍵調整指標所在的顯示器。",
         osdToggle: "調整亮度時顯示百分比",
@@ -354,6 +366,7 @@ extension BrightnessFeatureStrings {
         lastDisplayCaption: "至少要保留一台顯示器開啟。",
         switchUnavailable: "此 Mac 不支援顯示器開關。",
         switchFailed: "無法更改這部顯示器。",
+        openLidToEnable: "請打開 Mac 上蓋後再啟用內置顯示器。",
         keysToggle: "亮度鍵跟隨指標",
         keysCaption: "鍵盤上的亮度鍵調整指標所在的顯示器。",
         osdToggle: "調整亮度時顯示百分比",

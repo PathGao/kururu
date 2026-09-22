@@ -62,11 +62,11 @@ final class ClipboardHistoryService: ObservableObject {
     /// blocked main thread stalls every event tap with it, so typing freezes
     /// system wide (issue #189). The shared access lane also keeps the URL
     /// cleaner from touching AppKit's mutable pasteboard cache concurrently.
-    private var captureInFlight = false
-    /// Each capture attempt carries a token so a read that wedged behind a
-    /// password prompt can be abandoned without a stale completion (or a stuck
-    /// in-flight flag) ever disabling history for good.
-    private var captureGeneration = 0
+    private var captureState = ClipboardHistoryCaptureState()
+    /// Keep at most one history write queued or executing, even after its
+    /// caller timed out. A blocked provider cannot accumulate user actions.
+    private var copyInFlight = false
+    private static let pasteboardTimeout: TimeInterval = 5
     private var panel: NSPanel?
     private var keyMonitor: Any?
     private var localClickMonitor: Any?
@@ -168,27 +168,34 @@ final class ClipboardHistoryService: ObservableObject {
     /// Puts the entries on the general pasteboard through the shared lane and
     /// reports on the main queue. The caller never waits: a lane wedged behind
     /// an app that promised pasteboard content and stopped answering delays
-    /// the copy instead of freezing the app (issue #887).
+    /// the copy instead of freezing the app (issue #887). Failure includes an
+    /// expired request. The lane stays serialized and admission stays occupied
+    /// until the underlying operation actually ends, so a stalled provider
+    /// cannot accumulate user actions.
     private func writeToPasteboard(_ list: [ClipboardHistoryEntry],
                                    completion: @escaping (Bool) -> Void) {
-        guard let write = Self.plannedWrite(for: list) else {
+        guard !copyInFlight, let write = Self.plannedWrite(for: list) else {
             completion(false)
             return
         }
-        GeneralPasteboardAccess.shared.async({ () -> (Int, Bool) in
-            let pasteboard = NSPasteboard.general
-            pasteboard.clearContents()
-            let success = write(pasteboard)
-            return (pasteboard.changeCount, success)
-        }, then: { [weak self] result in
-            let (changeCount, success) = result
+        copyInFlight = true
+        GeneralPasteboardAccess.shared.async(timeout: Self.pasteboardTimeout, { isExpired in
+            write.write(to: NSPasteboard.general, isExpired: isExpired)
+        }, then: { result in
+            completion(result?.succeeded == true)
+        }, didFinish: { [weak self] result in
+            guard let self else { return }
+            self.copyInFlight = false
             // lastChangeCount stays owned by the main queue, where the capture
             // poll compares against it. Assigning it on the lane would let a
             // copy's own change count land after the poll had already read the
             // old one, and history would record the app's own write as a new
-            // copy by the user.
-            if let self { self.lastChangeCount = max(self.lastChangeCount, changeCount) }
-            completion(success)
+            // copy by the user. Consume our mutation even when result delivery
+            // already expired; this also excludes a partial write whose
+            // required format failed.
+            if let result {
+                self.lastChangeCount = max(self.lastChangeCount, result.changeCount)
+            }
         })
     }
 
@@ -199,27 +206,23 @@ final class ClipboardHistoryService: ObservableObject {
     /// write may need — RTFD attachments, TIFF rendering — on the main thread
     /// it has always run on; only the pasteboard calls move to the lane.
     private static func plannedWrite(for list: [ClipboardHistoryEntry])
-        -> ((NSPasteboard) -> Bool)? {
+        -> ClipboardHistoryWrite? {
         if list.count == 1, let entry = list.first {
             switch entry.kind {
             case .text:
-                return { $0.setString(entry.text, forType: .string) }
+                return .text(entry.text)
             case .image:
                 guard let name = entry.imageFile,
                       let data = ClipboardImageStore.imageData(named: name) else { return nil }
                 // TIFF alongside PNG: some paste targets only take TIFF.
                 let tiff = NSBitmapImageRep(data: data)?.tiffRepresentation
-                return { pasteboard in
-                    let success = pasteboard.setData(data, forType: .png)
-                    if let tiff { _ = pasteboard.setData(tiff, forType: .tiff) }
-                    return success
-                }
+                return .image(png: data, tiff: tiff)
             case .files:
                 let urls = entry.filePaths
                     .map { URL(fileURLWithPath: $0) }
                     .filter { FileManager.default.fileExists(atPath: $0.path) }
                 guard !urls.isEmpty, urls.count == entry.filePaths.count else { return nil }
-                return { $0.writeObjects(urls as [NSURL]) }
+                return .files(urls as [NSURL])
             }
         }
 
@@ -231,17 +234,13 @@ final class ClipboardHistoryService: ObservableObject {
             let urls = paths.map { URL(fileURLWithPath: $0) }
                 .filter { FileManager.default.fileExists(atPath: $0.path) }
             guard !urls.isEmpty, urls.count == paths.count else { return nil }
-            return { $0.writeObjects(urls as [NSURL]) }
+            return .files(urls as [NSURL])
         case let .text(combined):
-            return { $0.setString(combined, forType: .string) }
+            return .text(combined)
         case let .rich(parts):
             guard let rich = richBatchAttributedString(parts) else { return nil }
             let plain = ClipboardHistoryBatch.richPlainText(parts)
-            return { pasteboard in
-                let success = pasteboard.writeObjects([rich])
-                if !plain.isEmpty { _ = pasteboard.setString(plain, forType: .string) }
-                return success
-            }
+            return .rich(rich, plain: plain)
         case nil:
             guard let first = list.first else { return nil }
             return plannedWrite(for: [first])
@@ -645,7 +644,8 @@ final class ClipboardHistoryService: ObservableObject {
         self.timer = timer
         isRunning = true
         ClipboardIgnoredApps.shared.setHistoryRunning(true)
-        baselinePasteboard()
+        captureState.restart()
+        captureIfChanged()
     }
 
     private func stop() {
@@ -653,8 +653,7 @@ final class ClipboardHistoryService: ObservableObject {
         timer = nil
         isRunning = false
         ClipboardIgnoredApps.shared.setHistoryRunning(false)
-        captureGeneration &+= 1
-        captureInFlight = false
+        captureState.invalidate()
     }
 
     /// What the background pasteboard read hands back to the main thread.
@@ -664,72 +663,62 @@ final class ClipboardHistoryService: ObservableObject {
         case text(String)
     }
 
-    /// Establishes the starting change count on the same background lane used
-    /// by later reads. Existing clipboard content is not added just because
-    /// history was enabled, matching the previous synchronous baseline.
-    private func baselinePasteboard() {
-        guard !captureInFlight else { return }
-        captureInFlight = true
-        captureGeneration &+= 1
-        let generation = captureGeneration
-        scheduleCaptureTimeout(generation: generation)
-        GeneralPasteboardAccess.shared.async { [weak self] in
-            let changeCount = NSPasteboard.general.changeCount
-            DispatchQueue.main.async {
-                guard let self, self.captureGeneration == generation else { return }
-                self.captureInFlight = false
-                guard self.isRunning else { return }
-                self.lastChangeCount = max(self.lastChangeCount, changeCount)
-            }
-        }
-    }
-
-    private func scheduleCaptureTimeout(generation: Int) {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in
-            guard let self, self.captureGeneration == generation, self.captureInFlight else { return }
-            self.captureInFlight = false
-        }
-    }
-
+    /// Only ever one read in flight: while a password prompt holds the
+    /// pasteboard server, a read can take seconds, and letting ticks pile up
+    /// would spawn a thread each time. A read whose result expired is dropped,
+    /// but its slot stays occupied until the queued work really ends, so an
+    /// abandoned read can never be answered by a stale change count.
     private func captureIfChanged() {
-        // Only ever one read in flight: while a password prompt holds the
-        // pasteboard server, a read can take seconds, and letting ticks pile
-        // up would spawn a thread each time.
-        guard !captureInFlight else { return }
+        guard isRunning, let generation = captureState.begin() else { return }
+        // On start (including stop/start during a blocked read), establish a
+        // fresh baseline before capturing. Existing clipboard content is not
+        // added just because history was enabled, and old completions cannot
+        // consume the baseline.
+        let baseline = captureState.needsBaseline
         let sinceChangeCount = lastChangeCount
         let includeImagesFiles = UserDefaults.standard.bool(
             forKey: DefaultsKey.clipboardHistoryIncludeImagesFiles)
-        captureInFlight = true
-        captureGeneration &+= 1
-        let generation = captureGeneration
-        // If the read wedges (a pasteboard server stuck behind a lingering
-        // password prompt), free the flag so later copies are still recorded;
-        // the abandoned read is ignored by its stale generation when it ends.
-        scheduleCaptureTimeout(generation: generation)
-        GeneralPasteboardAccess.shared.async { [weak self] in
+        GeneralPasteboardAccess.shared.async(timeout: Self.pasteboardTimeout, { isExpired
+            -> (changeCount: Int, content: CapturedContent?)? in
             let changeCount = NSPasteboard.general.changeCount
-            let content: CapturedContent? = changeCount != sinceChangeCount
+            guard !isExpired() else { return nil }
+            let content: CapturedContent? = !baseline && changeCount != sinceChangeCount
                 ? Self.readPasteboard(includeImagesFiles: includeImagesFiles)
                 : nil
-            DispatchQueue.main.async {
-                guard let self, self.captureGeneration == generation else { return }
-                self.captureInFlight = false
-                // Asked once per check and before anything can return early,
-                // so the window it answers for always ends here: whether a
-                // listed app could be the one that copied since the last look.
-                let excludedSource = ClipboardIgnoredApps.shared.excludedSourceSinceLastCheck()
-                // Strictly forward: never re-capture a change that
-                // ignoreNextChange() consumed while the read was running.
-                guard changeCount > self.lastChangeCount else { return }
-                self.lastChangeCount = changeCount
-                guard self.isRunning, !excludedSource, let content else { return }
-                switch content {
-                case .files(let paths): self.promoteFiles(paths)
-                case .image(let image): self.promoteImage(image)
-                case .text(let text): self.promote(text)
-                }
+            return (changeCount, content)
+        }, then: { [weak self] result in
+            guard let self else { return }
+            guard let result else {
+                // A deadline invalidates immediately, not at the next poll.
+                // The actual in-flight slot is held until didFinish below.
+                self.captureState.expire(generation)
+                return
             }
-        }
+            guard self.isRunning, self.captureState.accepts(generation) else { return }
+            if baseline {
+                self.lastChangeCount = max(self.lastChangeCount, result.changeCount)
+                self.captureState.didBaseline()
+                return
+            }
+            // Asked once per check and before anything can return early, so
+            // the window it answers for always ends here: whether a listed app
+            // could be the one that copied since the last look. Exclusion is
+            // preserved over the whole time since the previous accepted check,
+            // including any read that expired in between.
+            let excludedSource = ClipboardIgnoredApps.shared.excludedSourceSinceLastCheck()
+            // Strictly forward: never re-capture a change that
+            // ignoreNextChange() consumed while the read was running.
+            guard result.changeCount > self.lastChangeCount else { return }
+            self.lastChangeCount = result.changeCount
+            guard !excludedSource, let content = result.content else { return }
+            switch content {
+            case .files(let paths): self.promoteFiles(paths)
+            case .image(let image): self.promoteImage(image)
+            case .text(let text): self.promote(text)
+            }
+        }, didFinish: { [weak self] _ in
+            self?.captureState.finish()
+        })
     }
 
     /// Runs on the shared pasteboard lane: everything in here may block behind

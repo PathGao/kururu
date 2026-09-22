@@ -88,6 +88,7 @@ final class BrightnessService: ObservableObject {
         case unavailable
         case lastActive
         case failed
+        case closedLid
     }
 
     private struct Route {
@@ -261,7 +262,18 @@ final class BrightnessService: ObservableObject {
     /// A disabled display leaves even CoreGraphics' online list. Keep its
     /// last row so the panel still offers the button that brings it back.
     private var managedDisabledDisplays: [CGDirectDisplayID: BrightnessDisplay] = [:]
+    /// Enables the closed lid denied, retried when the lid opens.
+    private var deferredRestoration = BrightnessSupport.DeferredDisplayRestoration()
+    private var lidNotificationPort: IONotificationPortRef?
+    private var lidNotification: io_object_t = 0
     private var running = false
+    /// Permission reset removes only the two Accessibility event taps. The
+    /// display routes, disabled-display journal and gamma state stay live so
+    /// revoking permission cannot undo a user's current brightness setup.
+    private var inputTapsSuspended = false
+    private func tapsAreSuspended() -> Bool {
+        keyThreadLock.withLock { inputTapsSuspended }
+    }
     private var keyboardLightLevel: Float?
     private var lastKeyboardLightLevel: Float = BrightnessSupport.defaultKeyboardLightLevel
     private var keyboardLightBridge: KeyboardLightBridge? { Self.sharedKeyboardLightBridge }
@@ -430,6 +442,10 @@ final class BrightnessService: ObservableObject {
         refresh()
     }
 
+    /// The reset guard is deliberately left intact here: a preference or
+    /// feature-state change during the asynchronous permission teardown must
+    /// not bring the taps back. The reset owner releases it explicitly
+    /// through `resumeInputTaps()`.
     func stop() {
         guard running else { return }
         running = false
@@ -665,9 +681,19 @@ final class BrightnessService: ObservableObject {
             }
         }
         if !enabled { Self.rememberDisplaySwitchedOff(display.id) }
-        guard Self.configureDisplay(display.id, enabled: enabled) else {
+        let result = Self.configureDisplay(display.id, enabled: enabled)
+        guard result == .success else {
             if !enabled { Self.forgetDisplaySwitchedOff(display.id) }
-            finishDisplayToggle(id: display.id, enabled: enabled, failure: .failed, generation: generation)
+            if result == .closedLid {
+                // The panel tells the person to open the lid, so opening it
+                // has to finish what the tap asked for.
+                deferredRestoration.keep(display.id)
+                deferredRestoration.record(display.id, result: .closedLid)
+                syncLidObserver()
+            }
+            finishDisplayToggle(id: display.id, enabled: enabled,
+                                failure: result == .closedLid ? .closedLid : .failed,
+                                generation: generation)
             return
         }
 
@@ -695,13 +721,15 @@ final class BrightnessService: ObservableObject {
         // (issue #647). Running here on the main thread is what keeps that from
         // happening today, and the thread this runs on is not something the
         // lock should have to depend on.
+        deferredRestoration.record(display.id, result: .success)
+        syncLidObserver()
         if enabled { Self.forgetDisplaySwitchedOff(display.id) }
         finishDisplayToggle(id: display.id, enabled: enabled, failure: nil, generation: generation)
     }
 
     private func finishDisplayToggle(id: CGDirectDisplayID, enabled: Bool,
                                      failure: DisplayControlFailure?, generation: Int) {
-        DispatchQueue.main.async { [weak self] in
+        let finish = { [weak self] in
             guard let self, self.running, self.lifecycleGeneration == generation else { return }
             self.pendingDisplayIDs.remove(id)
             self.displayControlFailure = failure
@@ -711,6 +739,9 @@ final class BrightnessService: ObservableObject {
                 self.refresh()
             }
         }
+        // Publish a main-thread transaction before queued lid recovery can
+        // succeed, otherwise its old failure could overwrite that success.
+        if Thread.isMainThread { finish() } else { DispatchQueue.main.async(execute: finish) }
     }
 
     /// The active list can include virtual devices with no picture a person
@@ -734,20 +765,92 @@ final class BrightnessService: ObservableObject {
     /// the display list, and neither side can finish, so the app freezes with
     /// nothing left that can end it (issue #747). A caller on the wrong
     /// thread is refused and logged rather than allowed to hang.
-    private static func configureDisplay(_ id: CGDirectDisplayID, enabled: Bool) -> Bool {
+    ///
+    /// Switching the built-in panel back on while the lid is closed would wake
+    /// a screen nobody can see, so that one case is refused and remembered.
+    private static func configureDisplay(
+        _ id: CGDirectDisplayID, enabled: Bool
+    ) -> BrightnessSupport.DisplayConfigurationResult {
         guard Thread.isMainThread else {
             log.error("refused to reconfigure display \(id) off the main thread")
-            return false
+            return .failed
         }
-        guard let configure = DisplayConfigurationBridge.configureEnabled else { return false }
+        guard let configure = DisplayConfigurationBridge.configureEnabled else { return .failed }
+        guard BrightnessSupport.canConfigureDisplay(
+            enabled: enabled, isBuiltIn: CGDisplayIsBuiltin(id) != 0,
+            lidClosed: enabled ? lidClosed() : nil) else { return .closedLid }
         var reference: CGDisplayConfigRef?
         guard CGBeginDisplayConfiguration(&reference) == .success,
-              let configuration = reference else { return false }
+              let configuration = reference else { return .failed }
         guard configure(configuration, id, enabled) == 0 else {
             CGCancelDisplayConfiguration(configuration)
-            return false
+            return .failed
         }
-        return CGCompleteDisplayConfiguration(configuration, .forAppOnly) == .success
+        return CGCompleteDisplayConfiguration(configuration, .forAppOnly) == .success ? .success : .failed
+    }
+
+    private static func lidClosed() -> Bool? {
+        let service = IOServiceGetMatchingService(kIOMainPortDefault,
+                                                  IOServiceMatching("IOPMrootDomain"))
+        guard service != 0 else { return nil }
+        defer { IOObjectRelease(service) }
+        return IORegistryEntryCreateCFProperty(service, "AppleClamshellState" as CFString,
+                                               kCFAllocatorDefault, 0)?.takeRetainedValue() as? Bool
+    }
+
+    /// These requests outlive the brightness feature, but never the app.
+    @discardableResult
+    private func restoreDisplay(_ id: CGDirectDisplayID) -> BrightnessSupport.DisplayConfigurationResult {
+        let result = Self.configureDisplay(id, enabled: true)
+        deferredRestoration.record(id, result: result)
+        syncLidObserver()
+        if result == .success { displayControlFailure = nil }
+        return result
+    }
+
+    private func syncLidObserver() {
+        if deferredRestoration.ids.isEmpty {
+            if lidNotification != 0 { IOObjectRelease(lidNotification) }
+            lidNotification = 0
+            if let lidNotificationPort { IONotificationPortDestroy(lidNotificationPort) }
+            lidNotificationPort = nil
+            return
+        }
+        guard lidNotificationPort == nil else { return }
+        let root = IOServiceGetMatchingService(kIOMainPortDefault,
+                                               IOServiceMatching("IOPMrootDomain"))
+        guard root != 0 else { return }
+        defer { IOObjectRelease(root) }
+        guard let port = IONotificationPortCreate(kIOMainPortDefault) else { return }
+        let result = IOServiceAddInterestNotification(
+            port, root, kIOGeneralInterest, { context, _, _, _ in
+                guard let context else { return }
+                let service = Unmanaged<BrightnessService>.fromOpaque(context).takeUnretainedValue()
+                // Root-domain general interest includes clamshell changes. Read
+                // the current property outside the callback before configuring.
+                DispatchQueue.main.async { [weak service] in service?.restoreDeferredDisplays() }
+            }, Unmanaged.passUnretained(self).toOpaque(), &lidNotification)
+        guard result == KERN_SUCCESS else {
+            IONotificationPortDestroy(port)
+            Self.log.error("could not observe deferred display restoration: \(result)")
+            return
+        }
+        lidNotificationPort = port
+        IONotificationPortSetDispatchQueue(port, DispatchQueue.main)
+        // Subscribe before rechecking: the lid may have opened since denial.
+        DispatchQueue.main.async { [weak self] in self?.restoreDeferredDisplays() }
+    }
+
+    private func restoreDeferredDisplays() {
+        for id in deferredRestoration.candidates(lidClosed: Self.lidClosed()) {
+            guard restoreDisplay(id) == .success else { continue }
+            stateLock.lock()
+            managedDisabledIDs.remove(id)
+            managedDisabledDisplays.removeValue(forKey: id)
+            stateLock.unlock()
+            Self.forgetDisplaySwitchedOff(id)
+            refresh(force: true)
+        }
     }
 
     private static func activeDisplayIDs() -> Set<CGDirectDisplayID> {
@@ -787,8 +890,9 @@ final class BrightnessService: ObservableObject {
         let snapshots = managedDisabledDisplays
         stateLock.unlock()
         for id in ids {
-            guard let snapshot = snapshots[id], matchesToggleTarget(snapshot),
-                  Self.configureDisplay(id, enabled: true) else { continue }
+            guard let snapshot = snapshots[id], matchesToggleTarget(snapshot) else { continue }
+            deferredRestoration.keep(id)
+            guard restoreDisplay(id) == .success else { continue }
             stateLock.lock()
             managedDisabledIDs.remove(id)
             managedDisabledDisplays.removeValue(forKey: id)
@@ -847,7 +951,8 @@ final class BrightnessService: ObservableObject {
             // imported, so anything that is not a display number is skipped
             // rather than converted.
             guard let displayID = CGDirectDisplayID(exactly: id) else { continue }
-            guard Self.configureDisplay(displayID, enabled: true) else { continue }
+            deferredRestoration.keep(displayID)
+            guard restoreDisplay(displayID) == .success else { continue }
             Self.forgetDisplaySwitchedOff(displayID)
         }
     }
@@ -855,6 +960,7 @@ final class BrightnessService: ObservableObject {
     // MARK: - Brightness keys (follow the pointer)
 
     private func syncKeyTap() {
+        guard !tapsAreSuspended() else { return }
         let defaults = UserDefaults.standard
         let wantsKeyRouting = defaults.bool(forKey: DefaultsKey.brightnessKeysEnabled)
         let wantsBrightnessOSD = defaults.bool(
@@ -883,7 +989,7 @@ final class BrightnessService: ObservableObject {
     }
 
     private func installKeyTap() {
-        guard keyTap == nil else { return }
+        guard !tapsAreSuspended(), keyTap == nil else { return }
         let systemDefined = CGEventType(rawValue: CleaningSystemKeyEvent.systemDefinedEventTypeRawValue)!
         let callback: CGEventTapCallBack = { _, type, event, userInfo in
             guard let userInfo else { return Unmanaged.passUnretained(event) }
@@ -917,8 +1023,29 @@ final class BrightnessService: ObservableObject {
 
     // MARK: - Brightness keys on other keyboards
 
+    /// Stops only the media-key and ordinary-function-key event taps before a
+    /// permission reset. This intentionally leaves display routes, observers,
+    /// OSD state, disabled displays and gamma curves untouched. The guard
+    /// keeps session/rebuild callbacks from bringing either tap back while
+    /// the reset is in progress. MUST run on the main thread.
+    func suspendInputTaps() {
+        keyThreadLock.withLock { inputTapsSuspended = true }
+        removeKeyTap()
+        removeFunctionKeyTap()
+    }
+
+    /// Ends the reset-only guard after TCC work has completed (or an
+    /// uninstall aborts before TCC is touched), then lets the normal
+    /// preference and permission checks decide whether to reinstall the taps.
+    /// MUST run on the main thread.
+    func resumeInputTaps() {
+        keyThreadLock.withLock { inputTapsSuspended = false }
+        syncKeyTap()
+    }
+
     private func installFunctionKeyTap() {
         let thread = keyThreadLock.withLock { () -> Thread? in
+            guard !inputTapsSuspended else { return nil }
             if functionKeyThread != nil {
                 if shouldStopFunctionKeyThread { pendingFunctionKeyRestart = true }
                 return nil
@@ -1019,12 +1146,23 @@ final class BrightnessService: ObservableObject {
     /// server and the route from behind the state lock.
     private func routeFunctionKey(type: CGEventType, event: CGEvent) -> Unmanaged<CGEvent>? {
         if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
-            let tap = keyThreadLock.withLock { shouldStopFunctionKeyThread ? nil : functionKeyTap }
-            if SessionActivity.shared.isActive, AXIsProcessTrusted(), let tap {
+            let shouldSync = keyThreadLock.withLock { () -> Bool in
+                guard SessionActivity.shared.isActive, AXIsProcessTrusted(),
+                      !shouldStopFunctionKeyThread, let tap = functionKeyTap else {
+                    return true
+                }
+                guard !inputTapsSuspended else { return false }
+                // Keep the lock through the enable so a main-thread suspend
+                // cannot disable the tap and then lose a race to re-enable it.
                 CGEvent.tapEnable(tap: tap, enable: true)
-            } else {
+                return false
+            }
+            if shouldSync {
                 DispatchQueue.main.async { [weak self] in self?.syncKeyTap() }
             }
+            return Unmanaged.passUnretained(event)
+        }
+        guard !tapsAreSuspended() else {
             return Unmanaged.passUnretained(event)
         }
         guard type == .keyDown || type == .keyUp else {
@@ -1188,6 +1326,7 @@ final class BrightnessService: ObservableObject {
     /// option is on, otherwise replacing only the system target's overlay.
     /// Both halves are swallowed so the system never performs the same step.
     private func handleKeyEvent(type: CGEventType, event: CGEvent) -> Unmanaged<CGEvent>? {
+        guard !tapsAreSuspended() else { return Unmanaged.passUnretained(event) }
         if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
             if SessionActivity.shared.isActive, AXIsProcessTrusted(), let keyTap {
                 CGEvent.tapEnable(tap: keyTap, enable: true)
@@ -1342,11 +1481,21 @@ final class BrightnessService: ObservableObject {
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
             var restored: CGDirectDisplayID?
-            for id in candidates where Self.configureDisplay(id, enabled: true) {
-                restored = id
-                break
+            var failure: DisplayControlFailure = .closedLid
+            for id in candidates {
+                let result = Self.configureDisplay(id, enabled: true)
+                self.deferredRestoration.recordHeadless(id, result: result)
+                self.syncLidObserver()
+                if result == .success {
+                    self.displayControlFailure = nil
+                    restored = id
+                    break
+                }
+                if result == .failed { failure = .failed }
             }
             if let restored {
+                self.deferredRestoration.cancelHeadless()
+                self.syncLidObserver()
                 self.stateLock.lock()
                 self.managedDisabledIDs.remove(restored)
                 self.managedDisabledDisplays.removeValue(forKey: restored)
@@ -1357,7 +1506,7 @@ final class BrightnessService: ObservableObject {
                 Self.log.error("could not restore a display after the active display set became empty")
             }
             self.pendingDisplayIDs.subtract(candidates)
-            self.displayControlFailure = restored == nil ? .failed : nil
+            self.displayControlFailure = restored == nil ? failure : nil
             self.refresh(force: true)
         }
         return true

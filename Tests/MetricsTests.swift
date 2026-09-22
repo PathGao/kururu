@@ -805,6 +805,12 @@ struct MetricsTests {
                     "org.nspasteboard.ConcealedType",
                     "the secret mark keeps the exact name the apps that write it use")
 
+        ClipboardHistoryWriteTests.run { expect($0, $1) }
+        ClipboardHistoryAccessTests.run { expect($0, $1) }
+
+        ClipboardHistoryWriteTests.run { expect($0, $1) }
+        ClipboardHistoryAccessTests.run { expect($0, $1) }
+
         let pasteboardAccess = GeneralPasteboardAccess(label: "Vorssaint.Tests.PasteboardAccess")
         let pasteboardGroup = DispatchGroup()
         let pasteboardStateLock = NSLock()
@@ -3293,6 +3299,116 @@ struct MetricsTests {
                     bundleIdentifier: nil,
                     appRules: ["com.example.notes": .hidden]),
                "only the hidden rule removes an identified app's real windows")
+
+        // MARK: The visible cap spends its slots across apps
+        expect(SwitcherSupport.visibleSelectionIndices(appPIDs: [7, 7, 9], limit: 5) == [0, 1, 2],
+               "a list that fits under the cap keeps every entry")
+        expect(SwitcherSupport.visibleSelectionIndices(appPIDs: [], limit: 5).isEmpty
+               && SwitcherSupport.visibleSelectionIndices(appPIDs: [7, 9], limit: 0).isEmpty,
+               "an empty list or a cap of nothing selects nothing")
+        // The shape that made whole applications disappear: one browser with
+        // many windows ahead of every other app in the use order.
+        let crowdedPIDs = Array(repeating: pid_t(101), count: 18) + [202, 303, 404, 505]
+        let crowdedSurvivors = SwitcherSupport.visibleSelectionIndices(appPIDs: crowdedPIDs, limit: 6)
+        expect(Set(crowdedSurvivors.map { crowdedPIDs[$0] }) == [101, 202, 303, 404, 505],
+               "an app with many windows never pushes another running app off the list")
+        expect(crowdedSurvivors.count == 6, "the cap still spends every slot it has")
+        expect(crowdedSurvivors == crowdedSurvivors.sorted(),
+               "survivors keep the use order they came in, so the toggle target stays put")
+        expect(crowdedSurvivors.first == 0, "the window the user is looking at stays first")
+        expect(crowdedSurvivors.filter { crowdedPIDs[$0] == 101 } == [0, 1],
+               "slots left over after every app is represented go to the most recent windows")
+        // More apps than slots: the apps compete with each other, in order.
+        let manyApps = (1...10).map { pid_t($0 * 11) }
+        expect(SwitcherSupport.visibleSelectionIndices(appPIDs: manyApps, limit: 4) == [0, 1, 2, 3],
+               "with more apps than slots the least recently used apps are the ones that drop")
+        // An app that appears again further down does not claim a second slot
+        // before an app that has none yet.
+        let interleavedPIDs: [pid_t] = [1, 2, 1, 3, 1, 4]
+        expect(SwitcherSupport.visibleSelectionIndices(appPIDs: interleavedPIDs, limit: 4) == [0, 1, 3, 5],
+               "each app is represented once before any app is represented twice")
+        // Dock previews and the preview refresh ask for one app's windows, where
+        // the selection has to stay exactly what it always was.
+        expect(SwitcherSupport.visibleSelectionIndices(appPIDs: Array(repeating: pid_t(7), count: 20),
+                                                       limit: 12) == Array(0..<12),
+               "a single app's own window list is capped from the front, as before")
+        // With every slot claimed by an app of its own, the window before the
+        // current one must still be there, or a quick flick in the grid layout
+        // opens another app instead of returning to it.
+        let appsFillEverySlot: [pid_t] = [1, 1] + (2...60).map { pid_t($0) }
+        let fullListSurvivors = SwitcherSupport.visibleSelectionIndices(appPIDs: appsFillEverySlot, limit: 48)
+        expect(Array(fullListSurvivors.prefix(2)) == [0, 1],
+               "the window before the current one survives a list where every slot goes to an app")
+        expect(fullListSurvivors.count == 48 && fullListSurvivors == fullListSurvivors.sorted(),
+               "keeping the toggle target still spends the cap exactly and keeps the use order")
+        // The window shortcut shows the front app alone, so other apps must not
+        // take places in its list.
+        let frontAppWindows = (1...24).map { index in
+            SwitcherItem.window(id: CGWindowID(1000 + index), title: "w\(index)", appName: "Front",
+                                pid: 1, isOnScreen: true, frame: .zero)
+        }
+        let otherAppWindows = (2...27).map { pid in
+            SwitcherItem.window(id: CGWindowID(2000 + pid), title: "o\(pid)", appName: "Other",
+                                pid: pid_t(pid), isOnScreen: true, frame: .zero)
+        }
+        let windowScopeItems = frontAppWindows + otherAppWindows
+        expect(SwitcherSupport.visibleSelectionIndices(items: windowScopeItems,
+                                                       limit: 48, frontmostPID: 1) == Array(0..<24),
+               "the window shortcut keeps every window of the front app when other apps are running")
+        let unscopedSurvivors = SwitcherSupport.visibleSelectionIndices(items: windowScopeItems,
+                                                                        limit: 48, frontmostPID: nil)
+        expect(unscopedSurvivors.filter { windowScopeItems[$0].pid == 1 }.count < 24
+               && Set(unscopedSurvivors.map { windowScopeItems[$0].pid }).count == 27,
+               "the all-apps list still spreads its slots so every app stays reachable")
+        // The keyboard can belong to a helper process that renders the app's
+        // window; the scope resolves it to the app the same way the session does.
+        let helperOwnedWindow = SwitcherItem.window(id: 3001, title: "h", appName: "Front",
+                                                    pid: 1, windowOwnerPID: 91, isOnScreen: true, frame: .zero)
+        expect(SwitcherSupport.visibleSelectionIndices(items: [helperOwnedWindow] + otherAppWindows,
+                                                       limit: 48, frontmostPID: 91) == [0],
+               "a window-scoped list follows a helper-owned front window to its app")
+        // A newly focused window can still hold an older rank while the focus
+        // watcher catches up, so the source is resolved before the cap runs and
+        // promoted to the front of the list it caps.
+        let staleRankCandidates = Array(windowScopeItems.reversed())
+        let freshFocusID = frontAppWindows.last!.windowID!
+        let freshSource = SwitcherSupport.sessionSourceItem(frontmostPID: 1,
+                                                            focusedWindowID: freshFocusID,
+                                                            items: staleRankCandidates)
+        let preparedFocusItems = SwitcherSupport.orderedForSession(staleRankCandidates,
+                                                                   currentID: freshSource?.id)
+        let visibleFocusItems = SwitcherSupport.visibleSelectionIndices(
+            items: preparedFocusItems, limit: 48, frontmostPID: nil).map { preparedFocusItems[$0] }
+        expect(visibleFocusItems.first?.windowID == freshFocusID,
+               "a crowded list keeps the actual current window even when its history rank is old")
+        expect(visibleFocusItems.count == 48 && Set(visibleFocusItems.map(\.pid)).count == 27,
+               "retaining the actual source still shares the bounded list across other apps")
+        let scopedFocusItems = SwitcherSupport.visibleSelectionIndices(
+            items: preparedFocusItems, limit: 48, frontmostPID: 1).map { preparedFocusItems[$0] }
+        expect(scopedFocusItems.count == 24 && scopedFocusItems.first?.windowID == freshFocusID,
+               "source correction and the app's own window budget work together")
+        expect(SwitcherSupport.orderedForSession(staleRankCandidates, currentID: nil) == staleRankCandidates
+               && SwitcherSupport.orderedForSession(staleRankCandidates, currentID: "missing") == staleRankCandidates,
+               "an unavailable or removed source leaves the legitimate candidate order unchanged")
+        // Comments are stripped, so the note explaining the order cannot stand
+        // in for the calls that implement it.
+        let switcherEnumeratorCode = ((try? String(
+            contentsOfFile: "Sources/Vorssaint/Services/Switcher/WindowEnumerator.swift",
+            encoding: .utf8)) ?? "")
+            .components(separatedBy: "\n")
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+            .joined(separator: "\n")
+        let enumeratorSourceResolution = switcherEnumeratorCode.range(of: "resolveSource?(sourceCandidates)")
+        let enumeratorSourcePromotion = switcherEnumeratorCode.range(
+            of: "SwitcherSupport.orderedForSession(ordered, currentID: source?.id)")
+        let enumeratorEntryCap = switcherEnumeratorCode.range(of: "limit: maximumCount")
+        expect(enumeratorSourceResolution != nil && enumeratorSourcePromotion != nil
+               && enumeratorEntryCap != nil
+               && enumeratorSourceResolution!.lowerBound < enumeratorSourcePromotion!.lowerBound
+               && enumeratorSourcePromotion!.lowerBound < enumeratorEntryCap!.lowerBound,
+               "the enumerator resolves and promotes the session source before it caps the list")
+        expect(!switcherEnumeratorCode.contains("ordered.prefix(maximumCount)"),
+               "the visible cap no longer takes a plain leading slice of the list")
 
         expect(WindowUseOrder.promoting(target: 7, previous: 3, in: [3, 5, 7]) == [7, 3, 5],
                "committing to a window puts it first and the one left behind second")
@@ -10732,6 +10848,77 @@ struct MetricsTests {
                "App Switcher activates only the selected window when a window target exists")
         expect(SwitcherSupport.shouldActivateAllWindows(targetsSpecificWindow: false),
                "App Switcher can activate the full app for app-only entries")
+        // App-level activation raises an app's other windows even without
+        // activateAllWindows, so a plan scoped to one window has to ask the
+        // window server for that window alone.
+        let windowActivationPlan = SwitcherSupport.activationPlan(targetsSpecificWindow: true)
+        let appActivationPlan = SwitcherSupport.activationPlan(targetsSpecificWindow: false)
+        expect(SwitcherSupport.appActivationRoute(plan: windowActivationPlan, windowID: 77)
+               == .exactWindow(77),
+               "a window-scoped selection is routed to that exact window")
+        expect(SwitcherSupport.appActivationRoute(plan: windowActivationPlan, windowID: nil)
+               == .wholeApp,
+               "a window-scoped plan without a window still has to activate the app")
+        expect(SwitcherSupport.appActivationRoute(plan: appActivationPlan, windowID: 77)
+               == .wholeApp,
+               "explicit app selection still brings all its windows forward")
+        // Comments are stripped first, so the note explaining the route cannot
+        // stand in for the calls that implement it.
+        let activationActivatorCode = ((try? String(
+            contentsOfFile: "Sources/Vorssaint/Services/Switcher/WindowActivator.swift",
+            encoding: .utf8)) ?? "")
+            .components(separatedBy: "\n")
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+            .joined(separator: "\n")
+        let activateAppBody: String = {
+            guard let start = activationActivatorCode.range(of: "private static func activateApp(") else { return "" }
+            let rest = activationActivatorCode[start.upperBound...]
+            let end = rest.range(of: "private static func ")?.lowerBound ?? rest.endIndex
+            return String(rest[..<end])
+        }()
+        expect(activateAppBody.contains("SwitcherSupport.appActivationRoute(plan: plan, windowID: windowID)")
+               && activateAppBody.contains("SpaceWindowBridge.frontWindow(windowID, ownerPID: ownerPID)")
+               && activateAppBody.contains("focusWindow(windowID: windowID, pid: ownerPID, makeAppFrontmost: false)"),
+               "a window-scoped selection fronts that window instead of activating the app")
+        expect(activateAppBody.contains("activateAppCooperatively(app, allWindows: plan.activateAllWindows)"),
+               "a window the window server or Accessibility could not take falls back to app activation")
+        expect(activateAppBody.contains("if ownerPID != app.processIdentifier"),
+               "an accessory window owner still gets its regular host's menu bar")
+        // Every selection path goes through the routed activation; none may
+        // keep the old pair that activated the app and then raised a window.
+        expect(!activationActivatorCode.contains("activateApp(app, allWindows:")
+               && !activationActivatorCode.contains("makeAppFrontmost: activationPlan.makeAppFrontmostAfterActivation"),
+               "no activation path still activates the whole app before raising one window")
+        // A raise Accessibility refused must not read as success, or the
+        // fallback never runs.
+        expect(activationActivatorCode.contains("let raised = AXUIElementPerformAction(axWindow, kAXRaiseAction as CFString)")
+               && activationActivatorCode.contains("return raised == .success"),
+               "the Accessibility raise reports whether it was actually delivered")
+        let activationBridgeCode = ((try? String(
+            contentsOfFile: "Sources/Vorssaint/Services/Switcher/SpaceWindowBridge.swift",
+            encoding: .utf8)) ?? "")
+            .components(separatedBy: "\n")
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+            .joined(separator: "\n")
+        expect(activationBridgeCode.contains("static func frontWindow(_ windowID: CGWindowID, ownerPID: pid_t) -> Bool")
+               && activationBridgeCode.contains("return down == .success && up == .success"),
+               "the window server request reports whether both halves of the click were taken")
+        expect(activationBridgeCode.contains("guard let setFrontProcess, let processForPID, let postEventRecord else { return false }"),
+               "a missing transport cannot claim the window was fronted")
+        // The press and release that make the window key must name the window
+        // and carry no location. A point near the frame's corner hits the
+        // invisible resize border, and the repeated focus pass then finished a
+        // resize that dragged the window's top-left corner to the screen's own
+        // — on every switch, once this became the route for every selection.
+        expect(activationBridgeCode.contains("for offset in 0x20..<0x30 { record[offset] = 0xff }"),
+               "the key-making click fills its location bytes with ones, so it points nowhere")
+        expect(!activationBridgeCode.contains("CGPoint(x: -1, y: -1)")
+               && !activationBridgeCode.contains("record.replaceSubrange(0x20"),
+               "no location near the window's corner is written into the click record")
+        expect(activationBridgeCode.contains("record.replaceSubrange(0x3c..<0x3c + $0.count, with: $0)")
+               && activationBridgeCode.contains("record[0x08] = 0x01")
+               && activationBridgeCode.contains("record[0x08] = 0x02"),
+               "the click still names the window and is a press followed by a release")
         expect(SwitcherSupport.shouldRestoreSourceAfterTargetMinimize(targetPID: 10,
                                                                       sourcePID: 20,
                                                                       frontmostPID: 10,
@@ -10930,6 +11117,82 @@ struct MetricsTests {
                                                          targetStartedMinimized: true,
                                                          ownPID: 99),
                "App Switcher does not restore a minimized target after the user moves to another app")
+        // #1578: the guard only reads Accessibility once the cheap
+        // window-server list shows the app gained something, so both lists
+        // must be taken in the same scope. The on-screen list lags a newly
+        // opened window, and comparing it against an all-windows snapshot
+        // reported nothing new in exactly the race the guard exists for.
+        // Comments are stripped first, so the one explaining that lag cannot
+        // satisfy the check.
+        let focusActivatorCode = ((try? String(
+            contentsOfFile: "Sources/Vorssaint/Services/Switcher/WindowActivator.swift",
+            encoding: .utf8)) ?? "")
+            .components(separatedBy: "\n")
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+            .joined(separator: "\n")
+        let focusWindowScopes = focusActivatorCode
+            .components(separatedBy: "windowIDs(ownerPID:")
+            .dropFirst()
+            .compactMap { $0.components(separatedBy: ")").first }
+            .filter { $0.contains("options: .") }
+        expect(focusWindowScopes.count >= 2 && focusWindowScopes.allSatisfy { $0.contains(".optionAll") },
+               "the retry's live window list is gathered in the same scope as the snapshot it is compared against")
+        // A switch away from a fullscreen app reaches its target through a hop,
+        // whose arrival pulses raise it for up to a second. They must ask the
+        // same guard before raising, or Command-N in the app just reached is
+        // covered by the target on the next pulse.
+        let hopFocusBody: String = {
+            guard let start = focusActivatorCode.range(of: "static func focusAfterSpaceHop(") else { return "" }
+            let rest = focusActivatorCode[start.upperBound...]
+            let end = rest.range(of: "static func ")?.lowerBound ?? rest.endIndex
+            return String(rest[..<end])
+        }()
+        let hopFocusGuard = hopFocusBody.range(of: "shouldContinueFocusRetry(")
+        // Whatever the pass uses to bring the window forward, the guard comes
+        // first. Naming one of those calls would pin today's spelling and go
+        // red on a refactor that broke nothing.
+        let hopFocusRaise = ["prepareWindowForActivation(", "activateApp(", "focusWindow("]
+            .compactMap { hopFocusBody.range(of: $0)?.lowerBound }
+            .min()
+        expect(hopFocusGuard != nil && hopFocusRaise != nil && hopFocusGuard!.lowerBound < hopFocusRaise!,
+               "the hop's arrival pass consults the retry guard before it raises the target")
+        expect(hopFocusBody.contains("ignoresForeground: true"),
+               "the hop's arrival pass asks the guard in the mode that ignores who is in front")
+        let spaceHopFocusCode = ((try? String(
+            contentsOfFile: "Sources/Vorssaint/Services/Switcher/SpaceHop.swift",
+            encoding: .utf8)) ?? "")
+            .components(separatedBy: "\n")
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+            .joined(separator: "\n")
+        expect(spaceHopFocusCode.contains("state: self.focusState")
+               && spaceHopFocusCode.contains("knownWindowIDs: WindowActivator.focusSnapshot(ownerPID:"),
+               "a hop snapshots the app's windows when it begins and hands that state to every pulse")
+        // A hop across two or more desktops arrives with whatever tops each
+        // desktop it passed in front. Reading that as "the user moved on"
+        // would leave the window they picked behind that app, so a hop's pass
+        // judges the app's own focus instead.
+        expect(SwitcherSupport.shouldContinueFocusRetry(targetPID: 10,
+                                                        sourcePID: 20,
+                                                        frontmostPID: 30,
+                                                        targetIsMinimized: false,
+                                                        targetStartedMinimized: false,
+                                                        knownWindowIDs: [101],
+                                                        targetAppWindowIDs: [101],
+                                                        targetAppFocusedWindowID: 101,
+                                                        ignoresForeground: true,
+                                                        ownPID: 99),
+               "a hop still raises its target when another desktop's app arrived in front")
+        expect(!SwitcherSupport.shouldContinueFocusRetry(targetPID: 10,
+                                                         sourcePID: 20,
+                                                         frontmostPID: 30,
+                                                         targetIsMinimized: false,
+                                                         targetStartedMinimized: false,
+                                                         knownWindowIDs: [101],
+                                                         targetAppWindowIDs: [101, 777],
+                                                         targetAppFocusedWindowID: 777,
+                                                         ignoresForeground: true,
+                                                         ownPID: 99),
+               "a hop still gives up once the app itself moved to a window it opened later")
         expect(SwitcherSupport.shouldContinueAppActivationRetry(targetPID: 10,
                                                                 sourcePID: 20,
                                                                 frontmostPID: 20,
@@ -14828,6 +15091,45 @@ struct MetricsTests {
                "a brightness change made during discovery survives the final probe")
         expect(BrightnessSupport.brightnessAfterRebuild(probed: 0.3, pending: nil) == 0.3,
                "a rebuild keeps the monitor reading when no change is waiting")
+        expect(!BrightnessSupport.canConfigureDisplay(enabled: true, isBuiltIn: true,
+                                                      lidClosed: true),
+               "a closed lid prevents enabling the built-in display")
+        for lidClosed: Bool? in [true, false, nil] {
+            expect(BrightnessSupport.canConfigureDisplay(enabled: true, isBuiltIn: false,
+                                                         lidClosed: lidClosed),
+                   "external display enables ignore lid state")
+            for isBuiltIn in [true, false] {
+                expect(BrightnessSupport.canConfigureDisplay(enabled: false, isBuiltIn: isBuiltIn,
+                                                             lidClosed: lidClosed),
+                       "display disables ignore lid state")
+            }
+        }
+        for lidClosed: Bool? in [false, nil] {
+            expect(BrightnessSupport.canConfigureDisplay(enabled: true, isBuiltIn: true,
+                                                         lidClosed: lidClosed),
+                   "an open or unavailable lid reading preserves built-in restoration")
+        }
+        // A denied enable waits for the lid; a success clears it, and a
+        // candidate only the headless recovery queued is dropped once another
+        // display comes back, while a tap or a restore-all keeps its own.
+        var deferredRestoration = BrightnessSupport.DeferredDisplayRestoration()
+        deferredRestoration.record(7, result: .closedLid)
+        expect(deferredRestoration.ids == [7], "a lid-denied enable is remembered")
+        expect(deferredRestoration.candidates(lidClosed: true).isEmpty,
+               "a still-closed lid retries nothing")
+        expect(deferredRestoration.candidates(lidClosed: false) == [7],
+               "opening the lid retries the denied enable")
+        expect(deferredRestoration.candidates(lidClosed: false).isEmpty,
+               "an already-open lid does not retry again")
+        deferredRestoration.record(7, result: .success)
+        expect(deferredRestoration.ids.isEmpty, "a successful restore clears the request")
+        var headlessRestoration = BrightnessSupport.DeferredDisplayRestoration()
+        headlessRestoration.keep(1)
+        headlessRestoration.recordHeadless(1, result: .closedLid)
+        headlessRestoration.recordHeadless(2, result: .closedLid)
+        headlessRestoration.cancelHeadless()
+        expect(headlessRestoration.ids == [1],
+               "a headless-only candidate is dropped while a kept request survives")
         expect(BrightnessSupport.canDisableDisplay(drawableDisplayIDs: [1, 3], target: 3),
                "one display can be disabled while another remains active")
         expect(!BrightnessSupport.canDisableDisplay(drawableDisplayIDs: [1], target: 1),
@@ -14870,6 +15172,15 @@ struct MetricsTests {
         expect((beforeDisplayConfiguration.components(separatedBy: "func ").last ?? "")
                 .contains("Thread.isMainThread"),
                "the display reconfiguration transaction refuses to start off the main thread")
+        let displayConfigurationEntry = (beforeDisplayConfiguration
+            .components(separatedBy: "func ").last ?? "")
+            .replacingOccurrences(of: #"(?s)/\*.*?\*/|//[^\n]*"#, with: "",
+                                  options: .regularExpression)
+        expect(displayConfigurationEntry.range(of: #"\bBrightnessSupport\s*\.\s*canConfigureDisplay\s*\("#,
+                                               options: .regularExpression) != nil
+               && displayConfigurationEntry.range(of: #"\bCGDisplayIsBuiltin\s*\("#,
+                                                  options: .regularExpression) != nil,
+               "the shared transaction checks the live built-in and lid state before beginning")
 
         // A `UserDefaults` write posts `didChangeNotification`, and the
         // observers registered with `queue: .main` make that post wait for the
@@ -23720,6 +24031,35 @@ struct MetricsTests {
                "in-app uninstall aborts unless fans and normal sleep are restored before removal")
         expect(uninstallScriptSource.contains("SleepDisabled"),
                "script uninstall reads the sleep setting back for itself")
+        // Every service that keeps a session-level head-insert tap alive has
+        // to be in `suspendInputInterceptors`: one still live when
+        // Accessibility is revoked is the freeze the teardown exists to
+        // prevent. Quit protection and text snippets each keep one, and
+        // BrightnessService keeps both a system-defined media tap and a
+        // function-key tap that sees every key press. Only those taps come
+        // down: display routes and gamma state must survive the reset.
+        let brightnessTapSource = (try? String(
+            contentsOfFile: "Sources/Vorssaint/Services/Display/BrightnessService.swift",
+            encoding: .utf8)) ?? ""
+        let brightnessTapMethod = brightnessTapSource
+            .components(separatedBy: "    func suspendInputTaps()").dropFirst().first?
+            .components(separatedBy: "    private func installFunctionKeyTap").first ?? ""
+        let brightnessTapCode = stripCommentLines(brightnessTapMethod)
+        expect(selfUninstallSource.contains("TextSnippetService.shared.suspend()")
+                && selfUninstallSource.contains("QuitProtectionService.shared.suspend()")
+                && selfUninstallSource.contains("BrightnessService.shared.suspendInputTaps()")
+                && selfUninstallSource.contains("BrightnessService.shared.resumeInputTaps()")
+                && brightnessTapCode.contains("inputTapsSuspended = true")
+                && brightnessTapCode.contains("removeKeyTap()")
+                && brightnessTapCode.contains("removeFunctionKeyTap()")
+                && !brightnessTapCode.contains("restoreManagedDisplays")
+                && !brightnessTapCode.contains("restoreAllGamma"),
+               "the permission teardown stops every persistent keyboard tap")
+        let quitProtectionSource = (try? String(
+            contentsOfFile: "Sources/Vorssaint/Services/QuitProtection/QuitProtectionService.swift",
+            encoding: .utf8)) ?? ""
+        expect(quitProtectionSource.contains("func suspend()"),
+               "quit protection exposes the teardown the permission reset calls")
 
         // MARK: Detached command reruns (counted last, so a late rerun still fails)
         // The `||` form reran the whole installer — as root — on every non-zero

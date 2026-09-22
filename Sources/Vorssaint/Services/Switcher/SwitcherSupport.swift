@@ -18,6 +18,14 @@ struct SwitcherActivationPlan: Equatable {
     let restoreSourceWhenTargetMinimizes: Bool
 }
 
+/// How the owning app is brought forward. App-level activation can raise
+/// sibling windows even without activateAllWindows, so a plan
+/// scoped to one window asks the window server to front that window alone.
+enum SwitcherAppActivationRoute: Equatable {
+    case exactWindow(CGWindowID)
+    case wholeApp
+}
+
 /// Shared by the bounded focus passes on the main thread. Once a pass sees
 /// a newer user action, the remaining passes cannot reclaim the old target.
 final class SwitcherWindowFocusRetryState {
@@ -46,6 +54,7 @@ final class SwitcherWindowFocusRetryState {
                         targetMinimizedState: Bool?,
                         targetAppWindowIDs: @autoclosure () -> Set<CGWindowID>,
                         targetAppFocusedWindowID: @autoclosure () -> CGWindowID?,
+                        ignoresForeground: Bool = false,
                         ownPID: pid_t = ProcessInfo.processInfo.processIdentifier) -> Bool {
         guard isActive else { return false }
         isActive = SwitcherSupport.shouldContinueFocusRetry(
@@ -58,6 +67,7 @@ final class SwitcherWindowFocusRetryState {
             knownWindowIDs: knownWindowIDs,
             targetAppWindowIDs: targetAppWindowIDs(),
             targetAppFocusedWindowID: targetAppFocusedWindowID(),
+            ignoresForeground: ignoresForeground,
             ownPID: ownPID
         )
         observe(targetMinimizedState: targetMinimizedState)
@@ -532,6 +542,20 @@ enum SwitcherSupport {
             ?? candidates.first(where: { $0.windowID == nil })
     }
 
+    /// Puts the window the user is looking at first. The enumerator already
+    /// ordered everything else by how recently it was used, so the entry right
+    /// after the current one is the window they came from — this only has to
+    /// make sure the current one leads, even in the moment right after a
+    /// switch, when the window server has not caught up yet. Fresh focus can
+    /// lead the independent use history, so only a source that survived the
+    /// visibility rules is promoted; a source on another display stays out.
+    static func orderedForSession(_ items: [SwitcherItem], currentID: String?) -> [SwitcherItem] {
+        guard let currentID, let index = items.firstIndex(where: { $0.id == currentID }) else { return items }
+        var ordered = items
+        ordered.insert(ordered.remove(at: index), at: 0)
+        return ordered
+    }
+
     /// A focused-window Accessibility query is useful unless exactly one
     /// visible window already identifies the session source. With no visible
     /// windows, AX can still identify a minimized source window.
@@ -554,6 +578,64 @@ enum SwitcherSupport {
     static func frontmostAppWindows(allItems: [SwitcherItem], frontmostPID: pid_t) -> [SwitcherItem] {
         let appPID = appPID(forFrontmost: frontmostPID, items: allItems)
         return allItems.filter { $0.pid == appPID }
+    }
+
+    /// Picks the entries that survive the visible cap, by index into `appPIDs`
+    /// (the owning app of each entry, in the order the switcher will show them).
+    ///
+    /// The cap counts entries, not applications, so taking the first `limit` of
+    /// them let a single app with many windows push whole other applications
+    /// off the end: the switcher then looked like those apps were not running
+    /// at all, and the only way to bring one back was to raise it by other
+    /// means so its window rose in the use order.
+    ///
+    /// Every app now gets its most recently used entry first, in app order, and
+    /// only the slots left over are filled with further entries. With more apps
+    /// than slots the apps compete with each other instead of one app's windows
+    /// crowding the rest out.
+    ///
+    /// The incoming order is preserved: index 0 is the window the user is
+    /// looking at and index 1 the toggle target, so the survivors must not be
+    /// resorted into app groups.
+    static func visibleSelectionIndices(appPIDs: [pid_t], limit: Int) -> [Int] {
+        guard limit > 0 else { return [] }
+        guard appPIDs.count > limit else { return Array(appPIDs.indices) }
+        var chosen = Set<Int>()
+        var representedApps = Set<pid_t>()
+        // The window in front and the one before it lead the use order, and a
+        // quick flick of the shortcut goes straight from the first to the
+        // second. They stay whatever else a full list has to give up, as they
+        // did under the plain leading slice, even when both belong to one app
+        // and every other slot is needed for an app of its own.
+        for index in appPIDs.indices.prefix(min(2, limit)) {
+            chosen.insert(index)
+            representedApps.insert(appPIDs[index])
+        }
+        for (index, pid) in appPIDs.enumerated() {
+            guard chosen.count < limit else { break }
+            guard representedApps.insert(pid).inserted else { continue }
+            chosen.insert(index)
+        }
+        for index in appPIDs.indices {
+            guard chosen.count < limit else { break }
+            chosen.insert(index)
+        }
+        return chosen.sorted()
+    }
+
+    /// The entries a session keeps once its list is capped, by index into
+    /// `items`. A session scoped to the front app's windows shows that app
+    /// alone, so it caps that app's own list: other apps must not take places
+    /// in a list that never shows them. `frontmostPID` is the process that
+    /// owns the keyboard, resolved to its app the same way the session does.
+    static func visibleSelectionIndices(items: [SwitcherItem],
+                                        limit: Int,
+                                        frontmostPID: pid_t?) -> [Int] {
+        guard let frontmostPID else {
+            return visibleSelectionIndices(appPIDs: items.map(\.pid), limit: limit)
+        }
+        let appPID = appPID(forFrontmost: frontmostPID, items: items)
+        return Array(items.indices.filter { items[$0].pid == appPID }.prefix(max(0, limit)))
     }
 
     /// Where a window-scoped session starts. The foreground window sits first,
@@ -1132,6 +1214,14 @@ enum SwitcherSupport {
         activationPlan(targetsSpecificWindow: targetsSpecificWindow).activateAllWindows
     }
 
+    static func appActivationRoute(plan: SwitcherActivationPlan,
+                                   windowID: CGWindowID?) -> SwitcherAppActivationRoute {
+        if !plan.activateAllWindows, let windowID {
+            return .exactWindow(windowID)
+        }
+        return .wholeApp
+    }
+
     static func shouldRestoreSourceAfterTargetMinimize(targetPID: pid_t,
                                                        sourcePID: pid_t?,
                                                        frontmostPID: pid_t?,
@@ -1209,12 +1299,20 @@ enum SwitcherSupport {
                                          knownWindowIDs: Set<CGWindowID> = [],
                                          targetAppWindowIDs: @autoclosure () -> Set<CGWindowID> = [],
                                          targetAppFocusedWindowID: @autoclosure () -> CGWindowID? = nil,
+                                         ignoresForeground: Bool = false,
                                          ownPID: pid_t = ProcessInfo.processInfo.processIdentifier) -> Bool {
         guard !targetIsMinimized
                 || (targetStartedMinimized && !targetWasObservedRestored)
         else { return false }
         let initialFrontmostPID = frontmostPID()
-        if let sourcePID, let initialFrontmostPID,
+        // A hop travels across desktops, and the system fronts whatever sits
+        // on top of each one it passes. Which app is in front while that runs
+        // says nothing about where the user wants to be, and reading it as
+        // "they moved on" leaves the window they picked behind that app. Such
+        // a pass gives up for the one signal that does carry intent: the app
+        // moved to a window it opened after the switch.
+        if !ignoresForeground,
+           let sourcePID, let initialFrontmostPID,
            initialFrontmostPID != targetPID && initialFrontmostPID != sourcePID && initialFrontmostPID != ownPID {
             return false
         }
@@ -1222,13 +1320,13 @@ enum SwitcherSupport {
         // may sit above a real window. Only query Accessibility when this app
         // is active and the cheap window-server list contains something new.
         // An unavailable focus reading preserves the previous retry behavior.
-        guard initialFrontmostPID == targetPID,
+        guard ignoresForeground || initialFrontmostPID == targetPID,
               !knownWindowIDs.isEmpty,
               !targetAppWindowIDs().isSubset(of: knownWindowIDs) else { return true }
         let focusedWindowID = targetAppFocusedWindowID()
         // Accessibility can wait on the other process. Do not act on the old
         // foreground observation if the user left the app during that wait.
-        guard frontmostPID() == targetPID else { return false }
+        if !ignoresForeground, frontmostPID() != targetPID { return false }
         guard let focusedWindowID else { return true }
         return knownWindowIDs.contains(focusedWindowID)
     }
