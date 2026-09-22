@@ -104,7 +104,7 @@ struct WindowBehaviorSettings: View {
         let currentScope = QuitProtectionSupport.scopeFor(scope.wrappedValue)
         let currentModifier = QuitProtectionSupport.extraModifierFor(extraModifier.wrappedValue)
 
-        VStack(alignment: .leading, spacing: SettingsVisualStyle.current.contentSpacing) {
+        VStack(alignment: .leading, spacing: SettingsMetrics.contentSpacing) {
             Text(shortcut.symbol).font(SettingsTypography.sectionTitle)
                 .accessibilityAddTraits(.isHeader)
             SettingsToggleWithCaption(title: strings.enabled,

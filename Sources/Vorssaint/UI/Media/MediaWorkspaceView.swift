@@ -256,14 +256,14 @@ struct MediaWorkspaceView: View {
     }
 
     private var content: some View {
-        VStack(alignment: .leading, spacing: compact ? 9 : SettingsVisualStyle.current.sectionSpacing) {
+        VStack(alignment: .leading, spacing: compact ? 9 : SettingsMetrics.sectionSpacing) {
             fileCard
                 .disabled(isRunning)
             if compact {
                 optionsCard.disabled(isRunning)
                 actionRow
             } else {
-                VStack(alignment: .leading, spacing: SettingsVisualStyle.current.contentSpacing) {
+                VStack(alignment: .leading, spacing: SettingsMetrics.contentSpacing) {
                     optionsCard.disabled(isRunning)
                     Divider()
                     actionRow

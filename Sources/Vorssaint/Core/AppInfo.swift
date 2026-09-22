@@ -5,9 +5,7 @@ import Foundation
 
 /// Static identity of the app, shared by UI, notifications and tooling.
 enum AppInfo {
-    static let name: String = VisualReviewConfiguration.current != nil
-        ? (Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String ?? ProductIdentity.name)
-        : ProductIdentity.name
+    static let name: String = ProductIdentity.name
     static let copyright = "© 2026 Vorssaint"
     static let websiteURL = ProductIdentity.repositoryURL
     static let repositoryURL = ProductIdentity.repositoryURL

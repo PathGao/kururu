@@ -25,7 +25,7 @@ struct HomebrewSettings: View {
     var body: some View {
         VStack(spacing: 0) {
             pageHeader
-                .padding(.horizontal, SettingsVisualStyle.current.pageInset)
+                .padding(.horizontal, SettingsMetrics.pageInset)
                 .padding(.vertical, 12)
             content
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)

@@ -44,7 +44,7 @@ struct SettingsSection<Header: View, Content: View, Footer: View>: View {
     }
 
     private var sectionContent: some View {
-        VStack(alignment: .leading, spacing: SettingsVisualStyle.current.contentSpacing) {
+        VStack(alignment: .leading, spacing: SettingsMetrics.contentSpacing) {
             content
                 .font(SettingsTypography.body)
                 .buttonStyle(.bordered)
@@ -53,28 +53,13 @@ struct SettingsSection<Header: View, Content: View, Footer: View>: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    @ViewBuilder
     private var groupedSection: some View {
-        if SettingsVisualStyle.current == .columns, Header.self != EmptyView.self {
-            ViewThatFits(in: .horizontal) {
-                HStack(alignment: .top, spacing: 24) {
-                    sectionHeader.frame(width: 132, alignment: .leading)
-                        .fixedSize(horizontal: false, vertical: true)
-                    sectionContent.frame(minWidth: 320).settingsSurface()
-                }
-                VStack(alignment: .leading, spacing: 14) {
-                    sectionHeader
-                    sectionContent.settingsSurface()
-                }
-            }
-        } else {
-            VStack(alignment: .leading, spacing: SettingsVisualStyle.current == .compact ? 10 : 14) {
-                if Header.self != EmptyView.self { sectionHeader }
-                sectionContent
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .settingsSurface()
+        VStack(alignment: .leading, spacing: 14) {
+            if Header.self != EmptyView.self { sectionHeader }
+            sectionContent
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .settingsSurface()
     }
 
 }

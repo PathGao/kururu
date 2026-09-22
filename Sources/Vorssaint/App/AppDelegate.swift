@@ -173,11 +173,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
         let skipStartupWindows = startupOfPreviousRunDidNotFinish
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
-            if VisualReviewConfiguration.current != nil {
-                SettingsRouter.shared.page = .clipboard
-                self.openSettingsWindow()
-                return
-            }
             if !defaults.bool(forKey: DefaultsKey.hasOnboarded) {
                 guard !skipStartupWindows else { return }
                 self.showOnboarding(mode: .full)
@@ -1398,7 +1393,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
             window.delegate = self
             settingsWindow = window
         }
-        settingsWindow?.title = VisualReviewConfiguration.current != nil ? AppInfo.name : L10n.shared.s.settingsTitle
+        settingsWindow?.title = L10n.shared.s.settingsTitle
         if let window = settingsWindow {
             positionSettingsWindow(window, force: createdWindow)
         }
@@ -1445,12 +1440,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
     private func positionSettingsWindow(_ window: NSWindow, force: Bool) {
         window.contentView?.layoutSubtreeIfNeeded()
         let popoverWindow = popover.isShown ? popover.contentViewController?.view.window : nil
-        let reviewScreen = VisualReviewConfiguration.current == nil ? nil : NSScreen.screens.first { screen in
-            guard let id = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber else { return false }
-            return CGDisplayIsBuiltin(id.uint32Value) != 0
-        }
-        let visible = (force ? reviewScreen : nil)?.visibleFrame
-            ?? (popoverWindow?.screen ?? window.screen)?.visibleFrame ?? NSScreen.pointerVisibleFrame
+        let visible = (popoverWindow?.screen ?? window.screen)?.visibleFrame ?? NSScreen.pointerVisibleFrame
         let margin: CGFloat = 40
         let availableWidth = max(1, visible.width - margin)
         let availableHeight = max(1, visible.height - margin)

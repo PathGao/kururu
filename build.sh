@@ -390,7 +390,6 @@ if (( TEST )); then
         Sources/Vorssaint/Core/BuildCapabilityPolicy.swift \
         Sources/Vorssaint/Core/ProductIdentityBoundarySupport.swift \
         Sources/Vorssaint/Core/AppInfo.swift \
-        Sources/Vorssaint/Core/VisualReviewConfiguration.swift \
         Sources/Vorssaint/Core/GlobalShortcut.swift \
         Sources/Vorssaint/Core/BrightnessShortcutStrings.swift \
         Sources/Vorssaint/Core/HomebrewHierarchyStrings.swift \

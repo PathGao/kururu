@@ -3,16 +3,6 @@ import Foundation
 
 enum ProductIdentityBoundaryTests {
     static func run(_ expect: (Bool, String) -> Void) {
-        for (id, variant, expected) in [
-            ("com.pathgao.kururu.visual.b.ux.dev", "B", "B" as String?),
-            ("com.pathgao.kururu.visual.b.dev", "B", "B"),
-            ("com.pathgao.kururu.visual.b.ux.dev", "A", nil),
-            (ProductIdentity.developmentBundleID, "B", nil),
-            (ProductIdentity.releaseBundleID, "B", nil)
-        ] {
-            expect(VisualReviewConfiguration.variant(bundleID: id, value: variant) == expected,
-                   "preview setup accepts only the matching isolated identity: \(id)/\(variant)")
-        }
         expect(DockClickSupport.isOwnBundleIdentifier(ProductIdentity.releaseBundleID), "release kururu is protected from its Dock interception")
         expect(DockClickSupport.isOwnBundleIdentifier(ProductIdentity.developmentBundleID), "developer kururu is protected from its Dock interception")
         expect(!DockClickSupport.isOwnBundleIdentifier("com.vorssaint.utils"), "upstream release is not classified as this product")

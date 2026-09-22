@@ -107,8 +107,8 @@ struct CleanerView: View {
             if !compact {
                 fullScheduleCard
                     .frame(maxWidth: 760)
-                    .padding(.horizontal, SettingsVisualStyle.current.pageInset)
-                    .padding(.bottom, SettingsVisualStyle.current.pageInset)
+                    .padding(.horizontal, SettingsMetrics.pageInset)
+                    .padding(.bottom, SettingsMetrics.pageInset)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
         }

@@ -139,12 +139,8 @@ private struct PanelCardModifier: ViewModifier {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.colorSchemeContrast) private var contrast
 
-    @ViewBuilder
     func body(content: Content) -> some View {
-        if SettingsVisualStyle.isPreview {
-            content.settingsSurface()
-        } else {
-            content
+        content
             .padding(12)
             .background {
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -156,7 +152,6 @@ private struct PanelCardModifier: ViewModifier {
                         .strokeBorder(PanelSurface.border(for: colorScheme), lineWidth: 1)
                 }
             }
-        }
     }
 }
 

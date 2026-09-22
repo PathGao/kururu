@@ -39,7 +39,7 @@ struct EnvironmentSettings: View {
     var body: some View {
         VStack(spacing: 0) {
             header
-                .padding(.horizontal, SettingsVisualStyle.current.pageInset)
+                .padding(.horizontal, SettingsMetrics.pageInset)
                 .padding(.vertical, 12)
             SettingsForm {
                 if tab == 0 {

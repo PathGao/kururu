@@ -53,7 +53,7 @@ struct SettingsView: View {
 
         NavigationSplitView {
             sidebar(searchResults: searchResults)
-                .navigationSplitViewColumnWidth(min: 205, ideal: SettingsVisualStyle.current == .compact ? 210 : 230, max: 280)
+                .navigationSplitViewColumnWidth(min: 205, ideal: 230, max: 280)
         } detail: {
             // NavigationSplitView's detail slot sometimes queries its content
             // for an unconstrained ideal size (settling the divider, or on a
@@ -67,24 +67,23 @@ struct SettingsView: View {
             GeometryReader { geometry in
                 VStack(alignment: .leading, spacing: 0) {
                     Text(router.page.title(l10n.s, language: l10n.language))
-                        .font(SettingsVisualStyle.current.titleFont)
+                        .font(SettingsMetrics.titleFont)
                         .accessibilityAddTraits(.isHeader)
-                        .padding(.horizontal, SettingsVisualStyle.current.pageInset)
-                        .padding(.top, SettingsVisualStyle.current == .compact ? 18 : 28)
+                        .padding(.horizontal, SettingsMetrics.pageInset)
+                        .padding(.top, 28)
                         .padding(.bottom, 12)
                     detail
                         .font(PanelTypography.body)
-                        .environment(\.defaultMinListRowHeight, SettingsVisualStyle.current == .compact ? 32 : 40)
+                        .environment(\.defaultMinListRowHeight, 40)
                         .settingsSectionFocus(for: router.page)
                         .scrollContentBackground(.hidden)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
                 .frame(width: geometry.size.width, height: geometry.size.height, alignment: .top)
-                .background(SettingsVisualStyle.current.canvas(colorScheme))
+                .background(SettingsMetrics.canvas(colorScheme))
             }
         }
         .navigationSplitViewStyle(.balanced)
-        .tint(SettingsVisualStyle.preview?.accent)
         .frame(minWidth: 772, maxWidth: .infinity, minHeight: 528, maxHeight: .infinity)
         .onChange(of: searchResults, initial: true) { previous, current in
             updateSearchSelection(previous: previous, current: current)
