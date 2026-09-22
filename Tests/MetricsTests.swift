@@ -4044,6 +4044,66 @@ struct MetricsTests {
         expect(statusHitTestCode.contains(statusFrameCall) && statusHitTestCode.contains("return false"),
                "status-item hit testing rejects an untrustworthy frame")
 
+        // An unexpected close is only undone for a click the window server
+        // delivered to this panel: `NSApp.currentEvent` can outlive its own
+        // dispatch, so a stale or unrelated event must never reopen the panel
+        // (and must never leave it reopening itself in a loop).
+        func panelEvent(_ type: NSEvent.EventType = .leftMouseDown,
+                        window: Int = 71,
+                        location: CGPoint = CGPoint(x: 100, y: 100),
+                        timestamp: TimeInterval = 1000) -> NSEvent? {
+            if type == .keyDown || type == .keyUp || type == .flagsChanged {
+                return NSEvent.keyEvent(with: type, location: location, modifierFlags: [],
+                                        timestamp: timestamp, windowNumber: window, context: nil,
+                                        characters: "", charactersIgnoringModifiers: "",
+                                        isARepeat: false, keyCode: 53)
+            }
+            return NSEvent.mouseEvent(with: type, location: location, modifierFlags: [],
+                                      timestamp: timestamp, windowNumber: window, context: nil,
+                                      eventNumber: 1, clickCount: 1, pressure: 1)
+        }
+        func reopens(_ event: NSEvent?,
+                     closedByApp: Bool = false,
+                     lastFrame: CGRect? = CGRect(x: 600, y: 400, width: 332, height: 650),
+                     windowNumber: Int? = 71,
+                     sinceLastReopen: TimeInterval = 30,
+                     uptime: TimeInterval = 1000) -> Bool {
+            StatusItemAnchorSupport.shouldReopenPanel(closedByApp: closedByApp, lastFrame: lastFrame,
+                                                      panelWindowNumber: windowNumber, event: event,
+                                                      secondsSinceLastReopen: sinceLastReopen,
+                                                      uptime: uptime)
+        }
+        for phase in [NSEvent.EventType.leftMouseDown, .leftMouseUp, .rightMouseDown, .rightMouseUp] {
+            expect(reopens(panelEvent(phase)),
+                   "a fresh click phase \(phase.rawValue) on the panel recovers the close")
+        }
+        expect(!reopens(panelEvent(), closedByApp: true),
+               "a close the app asked for is never undone")
+        expect(!reopens(panelEvent(), sinceLastReopen: StatusItemAnchorSupport.panelReopenCooldown),
+               "a second recovery inside the cooldown is refused, so the panel cannot loop")
+        expect(!reopens(nil), "no current event is no evidence of a click")
+        expect(!reopens(panelEvent(window: 72)),
+               "a click delivered to another window does not recover this panel")
+        expect(!reopens(panelEvent(timestamp: 999)) && !reopens(panelEvent(timestamp: 1001)),
+               "an event older than the grace, or stamped in the future, is not a fresh click")
+        expect(!reopens(panelEvent(location: CGPoint(x: -1, y: 10)))
+               && !reopens(panelEvent(location: CGPoint(x: 100, y: 700))),
+               "a click outside the panel's last visible bounds does not recover it")
+        expect(!reopens(panelEvent(.mouseMoved)) && !reopens(panelEvent(.keyDown))
+               && !reopens(panelEvent(.keyUp)) && !reopens(panelEvent(.flagsChanged)),
+               "pointer movement and keyboard events are not clicks on the panel")
+        expect(!reopens(panelEvent(), lastFrame: nil) && !reopens(panelEvent(), windowNumber: nil)
+               && !reopens(panelEvent(window: 0), windowNumber: 0),
+               "a panel with no remembered geometry or window number cannot be matched")
+        // The point of the fix: the recovered panel is shown against the anchor
+        // it already had, not re-resolved from a status item frame that has
+        // since gone stale. That owner is an AppKit type, so pin it by shape.
+        let foreignCloseCode = stripCommentLines((statusAnchorAppDelegateSource
+            .components(separatedBy: "private func reopenPanelAfterForeignClose(").last ?? "")
+            .components(separatedBy: "\n    }").first ?? "")
+        expect(foreignCloseCode.contains("restoring: anchor"),
+               "an unexpected close reopens the panel at its preserved anchor")
+
         // The panel keeps its top edge and its center while its content resizes.
         let panelArea = CGRect(x: 0, y: 0, width: 1470, height: 932)
         let shortPanel = StatusItemAnchorSupport.pinnedPanelFrame(size: CGSize(width: 332, height: 375),
