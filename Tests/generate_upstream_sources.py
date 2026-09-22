@@ -106,6 +106,17 @@ def main():
           + "}\nextension SwitcherActivationTests.Bridge {\n"
           + declaration("Sources/Vorssaint/Services/Switcher/SpaceWindowBridge.swift",
                         "    static func frontWindow(") + "}\n")
+    brightness = "Sources/Vorssaint/Services/Display/BrightnessService.swift"
+    write("DisplayRestoration.swift", "import CoreGraphics\nimport Foundation\n"
+          + "extension DisplayRestorationTests {\nfinal class BrightnessService: Fixture {\n"
+          + declaration(brightness, "    enum DisplayControlFailure:")
+          + "".join(declaration(brightness, prefix).replace("private ", "", 1) for prefix in [
+              "    private static func configureDisplay(", "    private func restoreDisplay(",
+              "    private func syncLidObserver()", "    private func restoreDeferredDisplays()",
+              "    private func restoreManagedDisplays()", "    func restoreDisplaysLeftOff()",
+              "    private func commitDisplayToggle(", "    private func finishDisplayToggle(",
+              "    private func restoreManagedDisplayIfHeadless("])
+          + "}\n}\n")
     shelf = "Sources/Vorssaint/Services/Shelf/ShelfService.swift"
     write("ShelfDropRouting.swift", "import AppKit\nextension ShelfDropRoutingContract {\n"
           + "final class ShelfService: ShelfState {\nstatic var shared = ShelfService()\n"

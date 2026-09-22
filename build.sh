@@ -568,6 +568,7 @@ if (( TEST )); then
         Tests/CleanerEligibilityTests.swift \
         Tests/SwitcherScrollTests.swift \
         Tests/SwitcherActivationTests.swift \
+        Tests/DisplayRestorationTests.swift \
         Tests/ScreenshotSelectionRefreshTests.swift \
         Tests/RecorderSampleTimingTests.swift \
         Tests/RecorderWriterTests.swift \
