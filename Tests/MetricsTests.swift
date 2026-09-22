@@ -805,6 +805,9 @@ struct MetricsTests {
                     "org.nspasteboard.ConcealedType",
                     "the secret mark keeps the exact name the apps that write it use")
 
+        ClipboardHistoryWriteTests.run { expect($0, $1) }
+        ClipboardHistoryAccessTests.run { expect($0, $1) }
+
         let pasteboardAccess = GeneralPasteboardAccess(label: "Vorssaint.Tests.PasteboardAccess")
         let pasteboardGroup = DispatchGroup()
         let pasteboardStateLock = NSLock()
@@ -14895,6 +14898,45 @@ struct MetricsTests {
                "a brightness change made during discovery survives the final probe")
         expect(BrightnessSupport.brightnessAfterRebuild(probed: 0.3, pending: nil) == 0.3,
                "a rebuild keeps the monitor reading when no change is waiting")
+        expect(!BrightnessSupport.canConfigureDisplay(enabled: true, isBuiltIn: true,
+                                                      lidClosed: true),
+               "a closed lid prevents enabling the built-in display")
+        for lidClosed: Bool? in [true, false, nil] {
+            expect(BrightnessSupport.canConfigureDisplay(enabled: true, isBuiltIn: false,
+                                                         lidClosed: lidClosed),
+                   "external display enables ignore lid state")
+            for isBuiltIn in [true, false] {
+                expect(BrightnessSupport.canConfigureDisplay(enabled: false, isBuiltIn: isBuiltIn,
+                                                             lidClosed: lidClosed),
+                       "display disables ignore lid state")
+            }
+        }
+        for lidClosed: Bool? in [false, nil] {
+            expect(BrightnessSupport.canConfigureDisplay(enabled: true, isBuiltIn: true,
+                                                         lidClosed: lidClosed),
+                   "an open or unavailable lid reading preserves built-in restoration")
+        }
+        // A denied enable waits for the lid; a success clears it, and a
+        // candidate only the headless recovery queued is dropped once another
+        // display comes back, while a tap or a restore-all keeps its own.
+        var deferredRestoration = BrightnessSupport.DeferredDisplayRestoration()
+        deferredRestoration.record(7, result: .closedLid)
+        expect(deferredRestoration.ids == [7], "a lid-denied enable is remembered")
+        expect(deferredRestoration.candidates(lidClosed: true).isEmpty,
+               "a still-closed lid retries nothing")
+        expect(deferredRestoration.candidates(lidClosed: false) == [7],
+               "opening the lid retries the denied enable")
+        expect(deferredRestoration.candidates(lidClosed: false).isEmpty,
+               "an already-open lid does not retry again")
+        deferredRestoration.record(7, result: .success)
+        expect(deferredRestoration.ids.isEmpty, "a successful restore clears the request")
+        var headlessRestoration = BrightnessSupport.DeferredDisplayRestoration()
+        headlessRestoration.keep(1)
+        headlessRestoration.recordHeadless(1, result: .closedLid)
+        headlessRestoration.recordHeadless(2, result: .closedLid)
+        headlessRestoration.cancelHeadless()
+        expect(headlessRestoration.ids == [1],
+               "a headless-only candidate is dropped while a kept request survives")
         expect(BrightnessSupport.canDisableDisplay(drawableDisplayIDs: [1, 3], target: 3),
                "one display can be disabled while another remains active")
         expect(!BrightnessSupport.canDisableDisplay(drawableDisplayIDs: [1], target: 1),
@@ -14937,6 +14979,15 @@ struct MetricsTests {
         expect((beforeDisplayConfiguration.components(separatedBy: "func ").last ?? "")
                 .contains("Thread.isMainThread"),
                "the display reconfiguration transaction refuses to start off the main thread")
+        let displayConfigurationEntry = (beforeDisplayConfiguration
+            .components(separatedBy: "func ").last ?? "")
+            .replacingOccurrences(of: #"(?s)/\*.*?\*/|//[^\n]*"#, with: "",
+                                  options: .regularExpression)
+        expect(displayConfigurationEntry.range(of: #"\bBrightnessSupport\s*\.\s*canConfigureDisplay\s*\("#,
+                                               options: .regularExpression) != nil
+               && displayConfigurationEntry.range(of: #"\bCGDisplayIsBuiltin\s*\("#,
+                                                  options: .regularExpression) != nil,
+               "the shared transaction checks the live built-in and lid state before beginning")
 
         // A `UserDefaults` write posts `didChangeNotification`, and the
         // observers registered with `queue: .main` make that post wait for the

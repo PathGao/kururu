@@ -149,6 +149,7 @@ func displayControlFailureText(_ failure: BrightnessService.DisplayControlFailur
     case .unavailable: return strings.switchUnavailable
     case .lastActive: return strings.lastDisplayCaption
     case .failed: return strings.switchFailed
+    case .closedLid: return strings.openLidToEnable
     }
 }
 
