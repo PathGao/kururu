@@ -91,7 +91,6 @@ struct MetricsTests {
             ("DisplayBrightnessShortcutTests", { DisplayBrightnessShortcutTests.run { suite.expect($0, $1) } }),
             ("BrightnessModuleMigrationTests", { BrightnessModuleMigrationTests.run { suite.expect($0, $1) } }),
             ("MixerSwitchMigrationTests", { MixerSwitchMigrationTests.run { suite.expect($0, $1) } }),
-            ("FeatureLifecycleTests", { FeatureLifecycleTests.run { suite.expect($0, $1) } }),
             ("ShelfImportStoreTests", { ShelfImportStoreTests.run { suite.expect($0, $1) } }),
             ("CommandBarExecutorTests", { CommandBarExecutorTests.run { suite.expect($0, $1) } }),
             ("MediaPDFTests", { MediaPDFTests.run { suite.expect($0, $1) } }),
@@ -1253,8 +1252,7 @@ struct MetricsTests {
             contentsOfFile: "Sources/Vorssaint/App/FeatureRuntime.swift",
             encoding: .utf8)) ?? ""
         expect(featureRuntimeSource.contains(
-            ".init(members: [.mouseClickDebounce], permissions: [.accessibility], synchronize:"
-        ) && featureRuntimeSource.contains("MouseClickDebounceService.shared.syncWithPreferences()"
+            ".mouseClickDebounce: { MouseClickDebounceService.shared.syncWithPreferences() }"
         ), "the Features hub owns the click debounce runtime lifecycle")
 
         expect(ScrollWheelSupport.isMouseWheel(
@@ -16683,8 +16681,7 @@ struct MetricsTests {
                 && recentCaptureServiceSource.contains(
                     "hotkey.onPress = { [weak self] in self?.showHistoryWindow() }")
                 && featureRuntimeSource.components(separatedBy:
-                    "RecentCaptureService.shared.syncWithPreferences()").count == 2
-                && featureRuntimeSource.contains("members: [.screenshot, .screenRecorder]"),
+                    "RecentCaptureService.shared.syncWithPreferences()").count == 3,
                "the history shortcut opens its window and follows both capture producers")
         expect(!ScreenshotSupport.captureAvailabilityChanged(
                     activeTools: [.screenshot, .recording],
@@ -23535,14 +23532,12 @@ struct MetricsTests {
         let mouseTapAppDelegateSource = (try? String(
             contentsOfFile: "Sources/Vorssaint/App/AppDelegate.swift",
             encoding: .utf8)) ?? ""
-        expect(featureRuntimeSource.contains("MouseButtonShortcutService.shared.suspend()")
-                && mouseTapAppDelegateSource.contains("FeatureRuntime.shared.terminate()"),
+        expect(mouseTapAppDelegateSource.contains("MouseButtonShortcutService.shared.suspend()"),
                "normal termination releases mouse-button tap state instead of waiting for a future Up")
         let accessibilitySink = mouseTapAppDelegateSource
             .components(separatedBy: "Permissions.shared.$accessibility")
             .dropFirst().first?.components(separatedBy: "Permissions.shared.$screenRecording").first ?? ""
-        expect(accessibilitySink.contains("permissionChanged(.accessibility)")
-                && featureRuntimeSource.contains("members: [.quitWindowProtection], permissions: [.accessibility]"),
+        expect(accessibilitySink.contains(".quitWindowProtection"),
                "granting Accessibility starts quit protection without a relaunch")
         let smoothSchedulerSource = (try? String(
             contentsOfFile: "Sources/Vorssaint/Services/SmoothScrollService.swift",

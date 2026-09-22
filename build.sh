@@ -334,12 +334,10 @@ if (( TEST )); then
         Tests/DisplayBrightnessShortcutTests.swift \
         Tests/BrightnessModuleMigrationTests.swift \
         Tests/MixerSwitchMigrationTests.swift \
-        Tests/FeatureLifecycleTests.swift \
         Tests/ShelfImportStoreTests.swift \
         Tests/CommandBarExecutorTests.swift \
         Sources/Vorssaint/Services/Shelf/ShelfImportStore.swift \
         Sources/Vorssaint/Services/CommandBar/CommandBarExecutor.swift \
-        Sources/Vorssaint/App/FeatureLifecycle.swift \
         Sources/Vorssaint/Core/CommandBarStrings.swift \
         Sources/Vorssaint/Core/FeedbackStrings.swift \
         Sources/Vorssaint/Core/FeedbackDraftSupport.swift \
