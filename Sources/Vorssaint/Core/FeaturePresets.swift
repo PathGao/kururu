@@ -24,14 +24,6 @@ enum FeaturePreset: String, CaseIterable, Identifiable {
         }
     }
 
-    /// Review bundles expose supported pages without bypassing hardware admission.
-    static func prepareVisualReviewAvailability(in defaults: UserDefaults, supportedUnits: Set<FeatureUnit>) {
-        guard VisualReviewConfiguration.current != nil else { return }
-        for unit in FeatureUnit.allCases {
-            defaults.set(supportedUnits.contains(unit), forKey: unit.availabilityKey)
-        }
-    }
-
     /// The units the preset keeps installed. Their members arrive with
     /// whatever switches and enable keys they already had.
     var units: Set<FeatureUnit> {

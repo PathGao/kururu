@@ -9,7 +9,6 @@ if CommandLine.arguments.contains("--selftest") {
 
 SuperKeyMappingGuard.runIfRequestedAndExit()
 Defaults.register()
-VisualReviewStartup.prepare()
 MouseAccelerationGuard.runIfRequestedAndExit()
 MouseAccelerationService.recoverPendingAtLaunch()
 

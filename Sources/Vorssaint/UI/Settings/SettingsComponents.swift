@@ -10,57 +10,19 @@ enum SettingsTypography {
     static let smallIcon = Font.callout
 }
 
-/// Review bundles select a layout without changing the user's installed app or palette.
-enum SettingsVisualStyle: String, CaseIterable {
-    case paper = "A", cards = "B", columns = "C", compact = "D"
+/// Shared metrics for settings pages, so headers, sections and cards line up.
+enum SettingsMetrics {
+    static let pageInset: CGFloat = 24
+    static let sectionSpacing: CGFloat = 16
+    static let contentSpacing: CGFloat = 16
+    static let rowInset: CGFloat = 12
+    static let cornerRadius: CGFloat = 16
+    static let titleFont = Font.system(size: 24, weight: .semibold)
 
-    static var preview: Self? { VisualReviewConfiguration.current.flatMap(Self.init(rawValue:)) }
-    static var isPreview: Bool { preview != nil }
-    static var current: Self { preview ?? .cards }
-    var name: String {
-        switch self {
-        case .paper: return "留白"
-        case .cards: return "分组"
-        case .columns: return "双栏"
-        case .compact: return "紧凑"
-        }
-    }
-    var englishName: String {
-        switch self {
-        case .paper: return "Air"
-        case .cards: return "Cards"
-        case .columns: return "Columns"
-        case .compact: return "Compact"
-        }
-    }
-    var pageInset: CGFloat { self == .paper ? 32 : self == .compact ? 20 : 24 }
-    var sectionSpacing: CGFloat { self == .paper ? 32 : self == .compact ? 14 : 16 }
-    var contentSpacing: CGFloat { self == .compact ? 10 : self == .paper ? 20 : 16 }
-    var rowInset: CGFloat { self == .compact ? 8 : 12 }
-    var cornerRadius: CGFloat { self == .cards ? 16 : self == .columns ? 12 : 8 }
-    var titleFont: Font { .system(size: self == .paper ? 29 : self == .compact ? 22 : 24, weight: .semibold) }
-    var accent: Color {
-        guard Self.isPreview else { return .accentColor }
-        switch self {
-        case .paper: return Color(red: 0.16, green: 0.40, blue: 0.43)
-        case .cards: return Color(red: 0.31, green: 0.34, blue: 0.75)
-        case .columns: return Color(red: 0.22, green: 0.43, blue: 0.67)
-        case .compact: return Color(red: 0.45, green: 0.34, blue: 0.56)
-        }
-    }
-    @ViewBuilder
-    func canvas(_ scheme: ColorScheme) -> some View {
-        if !Self.isPreview || scheme == .dark {
-            Color(nsColor: .windowBackgroundColor)
-                .overlay(Color.primary.opacity(scheme == .light ? 0.04 : 0))
-        } else {
-            switch self {
-            case .paper: Color(red: 0.985, green: 0.982, blue: 0.972)
-            case .cards: Color(red: 0.949, green: 0.954, blue: 0.971)
-            case .columns: Color(nsColor: .textBackgroundColor)
-            case .compact: Color(nsColor: .windowBackgroundColor)
-            }
-        }
+    /// The page background behind every settings detail view.
+    static func canvas(_ scheme: ColorScheme) -> some View {
+        Color(nsColor: .windowBackgroundColor)
+            .overlay(Color.primary.opacity(scheme == .light ? 0.04 : 0))
     }
 }
 
@@ -101,20 +63,19 @@ private struct SettingsSurfaceModifier: ViewModifier {
     let item: Bool
     @Environment(\.colorScheme) private var scheme
     @Environment(\.colorSchemeContrast) private var contrast
-    private var style: SettingsVisualStyle { .current }
 
     func body(content: Content) -> some View {
         content
-            .padding(item ? style.rowInset : style == .paper ? 0 : 16)
+            .padding(item ? SettingsMetrics.rowInset : 16)
             .background {
-                if !item && style != .paper {
-                    RoundedRectangle(cornerRadius: style.cornerRadius, style: .continuous)
-                        .fill(style == .cards ? (scheme == .dark ? Color.white.opacity(0.055) : Color(nsColor: .controlBackgroundColor)) : Color.primary.opacity(scheme == .dark ? 0.045 : 0.025))
+                if !item {
+                    RoundedRectangle(cornerRadius: SettingsMetrics.cornerRadius, style: .continuous)
+                        .fill(scheme == .dark ? Color.white.opacity(0.055) : Color(nsColor: .controlBackgroundColor))
                 }
             }
             .overlay {
-                if !item && style != .paper {
-                    RoundedRectangle(cornerRadius: style.cornerRadius, style: .continuous)
+                if !item {
+                    RoundedRectangle(cornerRadius: SettingsMetrics.cornerRadius, style: .continuous)
                         .strokeBorder(Color.primary.opacity(contrast == .increased ? 0.35 : 0.06),
                                       lineWidth: contrast == .increased ? 1 : 0.5)
                 }
@@ -140,7 +101,7 @@ struct SettingsSymbol: View {
     let systemImage: String
     @Environment(\.isEnabled) private var isEnabled
     var body: some View {
-        let accent = isEnabled ? SettingsVisualStyle.current.accent : Color.secondary
+        let accent = isEnabled ? Color.accentColor : Color.secondary
         Image(systemName: systemImage)
             .font(.system(.title3, weight: .medium))
             .symbolRenderingMode(.hierarchical)
