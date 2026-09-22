@@ -134,6 +134,45 @@ def main():
           + "extension SystemShortcutTakeoverContract {\n" + service + relaunch
           + "final class QuickToolHotkey: QuickToolHotkeyState {\n"
           + declaration(hotkey, "    func sync(") + declaration(hotkey, "    func unregister()") + "}\n}\n")
+    keep_awake = "Sources/Vorssaint/Services/KeepAwakeManager.swift"
+    keep_awake_methods = [
+        "    func refreshPasswordlessStatus(",
+        "    private func activate(minutes:",
+        "    func deactivate(reason:",
+        "    private func applyClamshellPreference(",
+        "    private func prepareClamshellPreference(",
+        "    private func finishClamshellSetup(",
+        "    private func markClamshellSetupFailed(",
+        "    private func enableClamshell(",
+        "    private func disableClamshell(",
+        "    func recoverIfNeeded(",
+        "    private func finishRecovery(",
+        "    private var clamshellNeedsRestore:",
+        "    private func finishClamshellRestore(",
+    ]
+    write("KeepAwakeClamshell.swift", "import Foundation\n\nextension KeepAwakeClamshellContract {\n"
+          + "final class Service {\n"
+          + "var isActive = false\nvar sessionPausedForScreenLock = false\nvar clamshellActive = false\n"
+          + "var isTerminating = false\nvar clamshellEnablePending = false\nvar clamshellRestorePending = false\n"
+          + "var clamshellOperationGeneration = 0\nvar clamshellSetupID: UUID?\n"
+          + "var clamshellSetupInProgress = false\nvar clamshellSetupFailed = false\n"
+          + "var clamshellSetupRetried = false\nvar passwordlessClamshell = true\n"
+          + "var recoveryCompleted = false\nvar screenLocked = false\nvar assertionsHeld = false\n"
+          + "var endTimer: Timer?\nvar endDate: Date?\nvar sessionTrigger: SessionTrigger?\n"
+          + "var activeAutomationConditions = Set<KeepAwakeAutomationCondition>()\n"
+          + "var onSessionEnded: ((EndReason) -> Void)?\n"
+          + declaration(keep_awake, "    @Published var clamshellPreferred:").replace("@Published ", "", 1)
+          + "init() { clamshellPreferred = true }\n"
+          + "func syncScreenLockMonitoring() {}\nfunc applyAssertions() { assertionsHeld = true }\n"
+          + "func releaseAssertions() { assertionsHeld = false }\nfunc scheduleEnd(at date: Date) {}\n"
+          + "func startBatteryWatch() {}\nfunc stopBatteryWatch() {}\nfunc syncMouseJiggleTimer() {}\n"
+          + "func stopMouseJiggleTimer() {}\nfunc stopAutomationMonitoring() {}\nfunc syncWithPreferences() {}\n"
+          + "".join(declaration(keep_awake, prefix).replace("private ", "", 1) for prefix in keep_awake_methods)
+          + "}\n}\n"
+          + "extension KeepAwakeClamshellContract.Sudoers {\n"
+          + declaration("Sources/Vorssaint/Services/ShellSupport.swift", "    static func isConfigured()")
+          + declaration("Sources/Vorssaint/Services/ShellSupport.swift", "    static func restoreSleepWithAuthorization(")
+          + "}\n")
 
 if __name__ == "__main__":
     main()

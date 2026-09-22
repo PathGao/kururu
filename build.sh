@@ -582,6 +582,7 @@ if (( TEST )); then
         Tests/KeepAwakeCatalogTests.swift \
         Tests/WindowLayoutFeatureTests.swift \
         Tests/SystemShortcutTakeoverTests.swift \
+        Tests/KeepAwakeClamshellTests.swift \
         build/generated-tests/*.swift \
     )
     TEST_OUTPUT_FILE_MAP="$TEST_OBJECT_DIR/output-file-map.json"
