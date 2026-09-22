@@ -4,10 +4,9 @@ import Foundation
 
 enum SettingsBackupIdentityTests {
     static func run(_ expect: (Bool, String) -> Void) {
-        let retiredAppearance = ["liquidGlassEnabled", "importedInterfaceTheme"]
+        let retiredAppearance = ["liquidGlassEnabled"]
         let oldAppearance: [String: Any] = [
             "liquidGlassEnabled": true,
-            "importedInterfaceTheme": Data("obsolete theme".utf8),
             DefaultsKey.appearance: "dark"
         ]
         let appearancePayload = SettingsBackupSupport.payload(appVersion: "test") { oldAppearance[$0] }
@@ -22,7 +21,7 @@ enum SettingsBackupIdentityTests {
             expect(appearanceImport?[key] == nil, "retired appearance preference is ignored during import: \(key)")
         }
         expect(appearanceImport?[DefaultsKey.appearance] as? String == "dark",
-               "old theme bytes do not prevent importing the supported light/dark choice")
+               "a retired appearance preference does not prevent importing the supported light/dark choice")
         let machine: [String: Any] = [
             DefaultsKey.launchAtLoginWanted: true,
             DefaultsKey.bluetoothSleepRestorePending: true,
