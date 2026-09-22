@@ -53,6 +53,7 @@ struct FeatureHubStrings {
     var explainAudioCapture: String = "Lets the mixer adjust each app’s volume and screen recordings include the Mac’s sound."
     // One-line feature descriptions
     var descSwitcher: String = "Switch apps and windows with previews"
+    var descWindowLayout: String = "Arrange windows with shortcuts or edge snapping, then adjust them by dragging"
     var descDockPreview: String = "Window previews when hovering the Dock"
     var descDockClick: String = "Click a Dock icon to minimize or cycle windows"
     var descWindowMaximizer: String = "The green button maximizes instead of full screen"
@@ -1034,6 +1035,7 @@ extension FeatureHubStrings {
         explainAutomationTerminal: "让 Homebrew 命令在终端中打开。",
         explainAudioCapture: "让混音器调整每个 App 的音量，并让屏幕录制包含 Mac 的声音。",
         descSwitcher: "带预览地切换 App 和窗口",
+        descWindowLayout: "用快捷键或屏幕边缘贴靠排列窗口，也可拖动移动和调整大小",
         descDockPreview: "悬停 Dock 时显示窗口预览",
         descDockClick: "点按 Dock 图标以最小化或切换窗口",
         descWindowMaximizer: "绿色按钮改为最大化而非全屏",

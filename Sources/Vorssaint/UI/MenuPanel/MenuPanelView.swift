@@ -482,7 +482,7 @@ enum UtilityPanelItem: String, PanelOrderItem, Identifiable {
     // Case order IS the default panel order (PanelLayout.itemOrder falls back
     // to allCases). Screenshot leads in 3.1.13; existing orders that predate it
     // are migrated once without disturbing the rest of the user's layout.
-    case screenshot, micMute, cleaner, media, clipboard,
+    case screenshot, micMute, cleaner, media, clipboard, windowLayout,
          uninstaller, cleanURL, cleaning, screenOCR, colorPicker, scratchpad,
          commandBar, screenRecorder, cameraPreview
 
@@ -496,6 +496,7 @@ enum UtilityPanelItem: String, PanelOrderItem, Identifiable {
         case .cleaner: return .cleaner
         case .media: return .mediaTools
         case .clipboard: return .clipboardHistory
+        case .windowLayout: return .windowLayout
         case .uninstaller: return .uninstaller
         case .cleanURL: return .urlCleaner
         case .cleaning: return .cleaningMode
@@ -517,6 +518,7 @@ enum UtilityPanelItem: String, PanelOrderItem, Identifiable {
         case .cleaner: return DefaultsKey.panelUtilityCleaner
         case .media: return DefaultsKey.panelUtilityMedia
         case .clipboard: return DefaultsKey.panelUtilityClipboard
+        case .windowLayout: return DefaultsKey.panelUtilityWindowLayout
         case .uninstaller: return DefaultsKey.panelUtilityUninstaller
         case .cleanURL: return DefaultsKey.panelUtilityURLCleaner
         case .cleaning: return DefaultsKey.panelUtilityCleaning
@@ -539,6 +541,7 @@ struct UtilitiesSection: View {
     @State private var showURLCleaner = false
     @State private var showMediaPanel = false
     @State private var showClipboardPanel = false
+    @State private var showWindowLayoutPanel = false
     @State private var showRecentCapturesPanel = false
     @AppStorage(DefaultsKey.panelUtilityCleaning) private var showCleaning = true
     @AppStorage(DefaultsKey.panelUtilityURLCleaner) private var showCleanURL = true
@@ -546,6 +549,7 @@ struct UtilitiesSection: View {
     @AppStorage(DefaultsKey.panelUtilityCleaner) private var showCleanerAction = true
     @AppStorage(DefaultsKey.panelUtilityMedia) private var showMedia = true
     @AppStorage(DefaultsKey.panelUtilityClipboard) private var showClipboard = true
+    @AppStorage(DefaultsKey.panelUtilityWindowLayout) private var showWindowLayout = true
     @AppStorage(DefaultsKey.panelUtilityScreenOCR) private var showScreenOCR = true
     @AppStorage(DefaultsKey.panelUtilityScreenshot) private var showScreenshot = true
     @AppStorage(DefaultsKey.panelUtilityMicMute) private var showMicMute = true
@@ -594,6 +598,11 @@ struct UtilitiesSection: View {
                     PanelInteractionState.shared.viewKeepsPopoverOpen = false
                     showRecentCapturesPanel = false
                 }
+            } else if showWindowLayoutPanel {
+                PanelWindowLayoutView {
+                    PanelInteractionState.shared.viewKeepsPopoverOpen = false
+                    showWindowLayoutPanel = false
+                }
             } else {
                 VStack(alignment: .leading, spacing: 8) {
                     ForEach(items(editing: editing)) { item in
@@ -632,6 +641,7 @@ struct UtilitiesSection: View {
         if showMediaPanel { return .media }
         if showClipboardPanel { return .clipboard }
         if showRecentCapturesPanel { return .screenshot }
+        if showWindowLayoutPanel { return .windowLayout }
         return nil
     }
 
@@ -641,6 +651,7 @@ struct UtilitiesSection: View {
     private var isHostingUtility: Bool {
         showUninstaller || showCleanerPanel || showURLCleaner
             || showMediaPanel || showClipboardPanel || showRecentCapturesPanel
+            || showWindowLayoutPanel
     }
 
     /// Every hosted tool intentionally spans interaction with apps and windows
@@ -686,6 +697,7 @@ struct UtilitiesSection: View {
         switch item {
         case .media: return showMedia
         case .clipboard: return showClipboard
+        case .windowLayout: return showWindowLayout
         case .uninstaller: return showUninstallerAction
         case .cleaner: return showCleanerAction
         case .cleanURL: return showCleanURL
@@ -726,6 +738,16 @@ struct UtilitiesSection: View {
                                 shortcutHint: shortcutHint(.clipboard),
                                 action: {
                                     showClipboardPanel = true
+                                })
+        case .windowLayout:
+            UtilityActionButton(title: AppFeature.windowLayout.name(l10n.s, language: l10n.language),
+                                caption: FeatureStrings.windowLayout(l10n.language).caption,
+                                systemImage: "rectangle.3.group",
+                                isEditing: editing,
+                                showsDragHandle: true,
+                                visibility: $showWindowLayout,
+                                action: {
+                                    showWindowLayoutPanel = true
                                 })
         case .uninstaller:
             UtilityActionButton(title: AppFeature.uninstaller.name(l10n.s, language: l10n.language),
@@ -955,6 +977,7 @@ struct UtilitiesSection: View {
         utilityOrderRaw = ""
         showMedia = true
         showClipboard = true
+        showWindowLayout = true
         showUninstallerAction = true
         showCleanerAction = true
         showCleanURL = true

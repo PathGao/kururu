@@ -557,6 +557,7 @@ extension AppFeature {
     func hubDescription(_ hub: FeatureHubStrings) -> String {
         switch self {
         case .switcher: return hub.descSwitcher
+        case .windowLayout: return hub.descWindowLayout
         case .dockPreview: return hub.descDockPreview
         case .dockClick: return hub.descDockClick
         case .windowMaximizer: return hub.descWindowMaximizer

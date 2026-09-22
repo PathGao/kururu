@@ -31,7 +31,7 @@ enum FeaturePreset: String, CaseIterable, Identifiable {
         case .essential:
             return [.mixer, .keepAwake, .monitor]
         case .windows:
-            return [.switcher, .dock, .windowBehavior]
+            return [.switcher, .dock, .windowLayout, .windowBehavior]
         case .battery:
             // The monitor alone: nothing that listens to input events.
             return [.monitor]
@@ -119,6 +119,15 @@ extension AppFeature {
             return .keyboard
         case .textSnippets, .autoQuit:
             return .inputs
+        case .windowLayout:
+            let edgeSnapRuns = UserDefaults.standard.bool(forKey: DefaultsKey.windowEdgeSnapEnabled)
+                && !WindowEdgeSnapZone.enabledZones(
+                    from: UserDefaults.standard.string(
+                        forKey: DefaultsKey.windowEdgeSnapDisabledZones)
+                ).isEmpty
+            return UserDefaults.standard.bool(forKey: DefaultsKey.windowGestureEnabled)
+                || edgeSnapRuns
+                ? .pointer : .idle
         case .radialMenu:
             // With a side button configured the trigger is a mouse tap;
             // shortcut-only costs nothing at rest.

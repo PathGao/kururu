@@ -14,7 +14,7 @@ import Foundation
 /// keys are never touched.
 enum AppFeature: String, CaseIterable {
     // Windows and desktop
-    case switcher, dockPreview, dockClick, windowMaximizer, autoQuit
+    case switcher, dockPreview, dockClick, windowMaximizer, windowLayout, autoQuit
     // Input and control; quitWindowProtection is windows and desktop
     case scrollInverter, scrollHorizontal, focusFollowsMouse, smoothScroll, mouseAcceleration, mouseNavigation, mouseButtonShortcuts, middleClick,
          mouseClickDebounce, keyboardDebounce, textSnippets, superKey, quitWindowProtection
@@ -41,7 +41,7 @@ enum AppFeature: String, CaseIterable {
 /// they were. The raw value is persisted inside the availability key, so
 /// cases can be added but never renamed.
 enum FeatureUnit: String, CaseIterable {
-    case switcher, dock, windowBehavior
+    case switcher, dock, windowLayout, windowBehavior
     case mouse, trackpad, keyboard
     case clipboard, cutPaste, shelf
     case mixer, micMute, musicBlock, keepAwake, brightness, bluetoothSleep, cleaningMode
@@ -84,6 +84,7 @@ extension AppFeature {
         switch self {
         case .switcher: return .switcher
         case .dockPreview, .dockClick: return .dock
+        case .windowLayout: return .windowLayout
         case .windowMaximizer, .autoQuit, .quitWindowProtection: return .windowBehavior
         case .scrollInverter, .scrollHorizontal, .focusFollowsMouse, .smoothScroll, .mouseAcceleration,
              .mouseNavigation, .mouseButtonShortcuts, .mouseClickDebounce:
@@ -199,6 +200,7 @@ extension FeatureUnit {
         switch self {
         case .switcher: return .switcher
         case .dock: return .dock
+        case .windowLayout: return .windowLayout
 
         case .windowBehavior: return .windowBehavior
         case .mouse: return .mouse
@@ -299,7 +301,7 @@ extension AppFeature {
         case .monitorCPU, .monitorGPU, .monitorMemory, .monitorNetwork, .monitorDisk, .monitorPower,
              .fanControl:
             return .monitor
-        case .switcher, .dockPreview, .dockClick, .windowMaximizer, .autoQuit,
+        case .switcher, .dockPreview, .dockClick, .windowMaximizer, .windowLayout, .autoQuit,
              .quitWindowProtection:
             return .windowsDesktop
         case .scrollInverter, .scrollHorizontal, .focusFollowsMouse, .smoothScroll, .mouseAcceleration,
@@ -329,6 +331,7 @@ extension AppFeature {
         case .dockPreview: return "dock.rectangle"
         case .dockClick: return "dock.arrow.down.rectangle"
         case .windowMaximizer: return "arrow.up.left.and.arrow.down.right"
+        case .windowLayout: return "rectangle.3.group"
         case .autoQuit: return "xmark.rectangle"
         case .scrollInverter: return "arrow.up.arrow.down"
         case .scrollHorizontal: return "arrow.triangle.swap"
@@ -402,6 +405,9 @@ extension AppFeature {
                                  DefaultsKey.dockClickHide,
                                  DefaultsKey.dockClickCycleWindows]
         case .windowMaximizer: return [DefaultsKey.windowMaximizeEnabled]
+        case .windowLayout: return [DefaultsKey.windowLayoutShortcutsEnabled,
+                                    DefaultsKey.windowGestureEnabled,
+                                    DefaultsKey.windowEdgeSnapEnabled]
         case .autoQuit: return [DefaultsKey.autoQuitEnabled]
         case .scrollInverter: return [DefaultsKey.scrollInverterEnabled,
                                       DefaultsKey.scrollInverterHorizontalEnabled]
@@ -452,7 +458,7 @@ extension AppFeature {
         case .scrollInverter, .scrollHorizontal, .focusFollowsMouse, .smoothScroll, .mouseNavigation,
              .mouseButtonShortcuts, .middleClick,
              .keyboardDebounce, .textSnippets, .superKey, .mouseClickDebounce,
-             .dockClick, .windowMaximizer,
+             .dockClick, .windowMaximizer, .windowLayout,
              .autoQuit, .quitWindowProtection, .cleaningMode, .pastePlain, .radialMenu:
             return [.accessibility]
         // The bar reads other apps' menus and windows and types at the caret,
@@ -619,6 +625,7 @@ extension AppFeature {
         case .dockPreview: return FeatureStrings.dockPreview(language).pageTitle
         case .dockClick: return FeatureStrings.dockClick(language).pageTitle
         case .windowMaximizer: return s.windowMaximizeName
+        case .windowLayout: return FeatureStrings.windowLayout(language).title
         case .autoQuit: return s.autoQuitName
         case .quitWindowProtection: return FeatureStrings.quitProtection(language).name
         case .scrollInverter: return s.invertMouseScroll
