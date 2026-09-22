@@ -13682,6 +13682,11 @@ struct MetricsTests {
                 && !FanControlPolicy.targetRPMMatches(target: 1_205, expected: 1_200)
                 && !FanControlPolicy.targetRPMMatches(target: .nan, expected: 1_200),
                "fan target verification allows a narrow tolerance and rejects stale or malformed targets")
+        expect(FanControlPolicy.forceTestSatisfied(keyExists: false, writeSucceeded: false)
+                && FanControlPolicy.forceTestSatisfied(keyExists: false, writeSucceeded: true)
+                && FanControlPolicy.forceTestSatisfied(keyExists: true, writeSucceeded: true)
+                && !FanControlPolicy.forceTestSatisfied(keyExists: true, writeSucceeded: false),
+               "the manual-mode fallback needs the force-test override only where the Mac exposes it")
 
         let defaultCurve = FanControlConfiguration.defaultCurve
         expect(FanControlPolicy.validConfiguration(.manual(level: 0))
