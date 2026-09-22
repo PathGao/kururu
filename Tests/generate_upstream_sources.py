@@ -96,6 +96,27 @@ def main():
                     .replace("private func", "func", 1).replace("UserDefaults.standard", "ReviewDefaults.current")
                     for prefix in refresh_methods)
           + "}\n")
+    activator = "Sources/Vorssaint/Services/Switcher/WindowActivator.swift"
+    write("SwitcherActivationBodies.swift", "import AppKit\nimport ApplicationServices\n"
+          + "extension SwitcherActivationTests.Activator {\n"
+          + "".join(declaration(activator, prefix).replace("private static", "static", 1)
+                    for prefix in ["    private static func activateApp(",
+                                   "    private static func activateAppCooperatively(",
+                                   "    private static func activateSource("])
+          + "}\nextension SwitcherActivationTests.Bridge {\n"
+          + declaration("Sources/Vorssaint/Services/Switcher/SpaceWindowBridge.swift",
+                        "    static func frontWindow(") + "}\n")
+    brightness = "Sources/Vorssaint/Services/Display/BrightnessService.swift"
+    write("DisplayRestoration.swift", "import CoreGraphics\nimport Foundation\n"
+          + "extension DisplayRestorationTests {\nfinal class BrightnessService: Fixture {\n"
+          + declaration(brightness, "    enum DisplayControlFailure:")
+          + "".join(declaration(brightness, prefix).replace("private ", "", 1) for prefix in [
+              "    private static func configureDisplay(", "    private func restoreDisplay(",
+              "    private func syncLidObserver()", "    private func restoreDeferredDisplays()",
+              "    private func restoreManagedDisplays()", "    func restoreDisplaysLeftOff()",
+              "    private func commitDisplayToggle(", "    private func finishDisplayToggle(",
+              "    private func restoreManagedDisplayIfHeadless("])
+          + "}\n}\n")
     shelf = "Sources/Vorssaint/Services/Shelf/ShelfService.swift"
     write("ShelfDropRouting.swift", "import AppKit\nextension ShelfDropRoutingContract {\n"
           + "final class ShelfService: ShelfState {\nstatic var shared = ShelfService()\n"

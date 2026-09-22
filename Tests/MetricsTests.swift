@@ -120,6 +120,8 @@ struct MetricsTests {
             }),
             ("CleanerEligibilityTests", { CleanerEligibilityTests.run(suite) }),
             ("SwitcherScrollContract", { SwitcherScrollContract.run(suite) }),
+            ("SwitcherActivationTests", { SwitcherActivationTests.run(suite) }),
+            ("DisplayRestorationTests", { DisplayRestorationTests.run(suite) }),
             ("ScreenshotSelectionRefreshContract", { ScreenshotSelectionRefreshContract.run(suite) }),
             ("RecorderSampleTimingTests", { RecorderSampleTimingTests.run(expect: { suite.expect($0, $1) }) }),
             ("RecorderWriterTests", { RecorderWriterTests.run(expect: { suite.expect($0, $1) }) }),
