@@ -663,7 +663,7 @@ final class CommandBarService: ObservableObject {
                     && !hidden.contains($0.stableKey)
             }
         case .killProcess:
-            return FeatureUnit.monitor.isAvailable
+            return AppFeature.killProcess.isAvailable
         case .quitApps, .answers, .calculator, .selection, .files:
             return false
         }

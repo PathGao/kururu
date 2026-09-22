@@ -91,7 +91,8 @@ final class FeatureRuntime: ObservableObject {
 
     /// Flipping availability runs every member's binding immediately: off
     /// tears every resource down on the spot, on restores whatever switch and
-    /// enabled state each member had (their own keys are never touched).
+    /// enabled state each member had. The one exception is a one-member unit
+    /// with nothing on, which gets its first action so the install does something.
     func setAvailable(_ unit: FeatureUnit, _ available: Bool) {
         guard mayFlip(unit, to: available) else { return }
         let defaults = UserDefaults.standard
