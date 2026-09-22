@@ -484,6 +484,7 @@ final class RadialMenuService: ObservableObject {
         items.compactMap { item in
             var item = item
             if let tool = item.tool, !tool.isRunnable() { return nil }
+            if item.kind == .windowLayout, !AppFeature.windowLayout.isAvailable { return nil }
             if item.kind == .submenu {
                 item.children = availableItems(item.children)
                 if item.children.isEmpty { return nil }
@@ -758,6 +759,8 @@ final class RadialMenuService: ObservableObject {
             if let tool = item.tool { run(tool) }
         case .systemAction:
             if let action = item.systemAction { run(action) }
+        case .windowLayout:
+            if let action = item.windowLayoutAction { run(action) }
         case .submenu:
             break
         }
@@ -782,6 +785,15 @@ final class RadialMenuService: ObservableObject {
             case .cleaningMode: CleaningModeManager.shared.activate()
             case .keepAwake: KeepAwakeManager.shared.toggle()
             }
+        }
+    }
+
+    private func run(_ action: WindowLayoutAction) {
+        guard AppFeature.windowLayout.isAvailable, ensureAccessibilityPermission() else { return }
+        // Let the non-activating wheel disappear before resolving the window
+        // that was active behind it, matching the delay used by visual tools.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            if case .failure = WindowLayoutService.shared.apply(action) { NSSound.beep() }
         }
     }
 

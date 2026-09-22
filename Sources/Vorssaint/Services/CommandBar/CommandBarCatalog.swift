@@ -626,6 +626,34 @@ enum CommandBarCatalog {
                 run: { _ in cleanClipboardURL() }))
         }
 
+        if AppFeature.windowLayout.isAvailable {
+            let layoutText = FeatureStrings.windowLayout(language)
+            let layoutArea = area(.windowLayout)
+            let axTrouble = accessibilityTrouble()
+            for action in WindowLayoutAction.allCases {
+                // The two ways of taking the whole screen answer to each
+                // other's names: someone typing "full screen" means either.
+                var keywords = layoutText.title
+                if action == .maximize { keywords += " " + layoutText.fullScreen }
+                if action == .fullScreen { keywords += " " + layoutText.maximize }
+                entries.append(CommandBarEntry(
+                    id: "action.layout.\(action.rawValue)",
+                    title: action.title(layoutText),
+                    subtitle: layoutArea,
+                    keywords: keywords,
+                    icon: .symbol(action.symbolName),
+                    shortcut: action.savedShortcut,
+                    trouble: axTrouble,
+                    run: { _ in
+                        afterBeat {
+                            if case .failure = WindowLayoutService.shared.apply(action) {
+                                NSSound.beep()
+                            }
+                        }
+                    }))
+            }
+        }
+
         if AppFeature.cleaner.isAvailable {
             entries.append(CommandBarEntry(
                 id: "action.cleaner",

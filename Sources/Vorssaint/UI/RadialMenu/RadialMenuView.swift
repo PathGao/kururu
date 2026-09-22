@@ -444,6 +444,11 @@ extension RadialMenuItem {
             return tool.feature.name(L10n.shared.s, language: L10n.shared.language)
         case .systemAction:
             return systemAction?.title ?? text.kindSystemAction
+        case .windowLayout:
+            guard let windowLayoutAction else {
+                return FeatureStrings.windowLayout(L10n.shared.language).title
+            }
+            return windowLayoutAction.title(FeatureStrings.windowLayout(L10n.shared.language))
         case .media:
             switch mediaKey {
             case .playPause: return text.mediaPlayPause

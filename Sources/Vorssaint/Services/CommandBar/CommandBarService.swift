@@ -493,6 +493,10 @@ final class CommandBarService: ObservableObject {
         if shortcut.conflictsWithSystemShortcut {
             return String(format: strings.shortcutConflictFormat, "macOS")
         }
+        if AppFeature.windowLayout.isAvailable,
+           let title = WindowLayoutService.shared.shortcutConflictTitle(shortcut) {
+            return String(format: strings.shortcutConflictFormat, title)
+        }
         return nil
     }
 
@@ -638,7 +642,8 @@ final class CommandBarService: ObservableObject {
             // decides when.
             return true
         case .windows:
-            return AppFeature.switcher.isAvailable && Permissions.shared.accessibility
+            return (AppFeature.switcher.isAvailable || AppFeature.windowLayout.isAvailable)
+                && Permissions.shared.accessibility
         case .menus:
             return Permissions.shared.accessibility
                 && NSWorkspace.shared.frontmostApplication?.bundleIdentifier
@@ -2608,7 +2613,8 @@ final class CommandBarService: ObservableObject {
         // through AX when the window server withholds them, so asking for
         // Screen Recording here would demand the heaviest permission on the
         // Mac for nothing.
-        let allowed = AppFeature.switcher.isAvailable && Permissions.shared.accessibility
+        let allowed = (AppFeature.switcher.isAvailable || AppFeature.windowLayout.isAvailable)
+            && Permissions.shared.accessibility
         guard allowed else {
             // Any reason to stop offering windows clears the ones already
             // listed: a revoked permission or a feature switched off must not

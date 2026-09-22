@@ -395,6 +395,14 @@ struct ShortcutPreferenceRow: View {
             errorText = String(format: l10n.s.shortcutConflictFormat, "macOS")
             return
         }
+        // Window layout keeps one shortcut per action instead of a role, so
+        // the role check above cannot see it. Every role row is recorded
+        // through here, so one check covers all of them.
+        if AppFeature.windowLayout.isAvailable,
+           let conflict = WindowLayoutService.shared.shortcutConflictTitle(shortcut) {
+            errorText = String(format: l10n.s.shortcutConflictFormat, conflict)
+            return
+        }
         if let conflict = additionalConflict(shortcut) {
             errorText = String(format: l10n.s.shortcutConflictFormat, conflict)
             return

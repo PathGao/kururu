@@ -75,6 +75,7 @@ struct RadialMenuFeatureStrings {
     var presetGeneral: String = "General"
     var presetMedia: String = "Media"
     var presetTools: String = "Tools"
+    var presetWindowLayout: String = "Window layout"
     var presetBlank: String = "Blank"
     var colorAccent: String = "Accent"
     var colorBlue: String = "Blue"
@@ -1088,6 +1089,7 @@ extension RadialMenuFeatureStrings {
         presetGeneral: "通用",
         presetMedia: "媒体",
         presetTools: "工具",
+        presetWindowLayout: "窗口布局",
         presetBlank: "空白",
         colorAccent: "强调色",
         colorBlue: "蓝色",
