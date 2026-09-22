@@ -106,7 +106,6 @@ final class AppSwitcher: ObservableObject {
     /// Alive only while the Switcher's tap needs layout labels off main.
     private var keyboardLayoutObserver: NSObjectProtocol?
     private var wakeObserver: NSObjectProtocol?
-    private var terminationObserver: NSObjectProtocol?
     private var wakeRetry: DispatchWorkItem?
 
     /// The little state the tap thread needs to route an event without
@@ -166,6 +165,8 @@ final class AppSwitcher: ObservableObject {
     /// the way out.
     private var closingItemIDs: Set<String> = []
     private var commitPendingForClose = false
+    /// Live only while a session is open; see `startObservingTermination`.
+    private var terminationObserver: NSObjectProtocol?
     /// Apps already asked to quit this session, so a repeated Q is ignored
     /// while a window closing through W is not.
     private var quittingPIDs: Set<pid_t> = []
@@ -1334,11 +1335,12 @@ final class AppSwitcher: ObservableObject {
         closeWindow(windows[selectedIndex])
     }
 
-    /// Requests quitting (⌘Tab → Q). Windows stay until termination is
-    /// confirmed, treated like closing ones: still listed, never raised on
-    /// release, gone when macOS reports the app gone, and given back if the app
-    /// is still up after about as long as a closing window gets — an app with
-    /// unsaved work stays alive on its own save sheet.
+    /// Asks the app owning the selected window to quit (⌘Tab → Q) and keeps the
+    /// session open — mirroring the system switcher. The request is not the
+    /// answer: an app with unsaved work stays up on its own save sheet. Its
+    /// windows are treated like closing ones: still listed, never raised on
+    /// release, gone when macOS reports the app gone, and given back if it is
+    /// still running after about as long as a closing window gets.
     private func quitSelectedApp() {
         guard windows.indices.contains(selectedIndex) else { return }
         let item = windows[selectedIndex]
@@ -1373,6 +1375,9 @@ final class AppSwitcher: ObservableObject {
         }
     }
 
+    /// Watches for terminations while a session is open, so a quit the app
+    /// finishes later still updates the grid. The generation ties the observer
+    /// to the session that started it.
     private func startObservingTermination(generation: UInt64) {
         stopObservingTermination()
         terminationObserver = NSWorkspace.shared.notificationCenter.addObserver(

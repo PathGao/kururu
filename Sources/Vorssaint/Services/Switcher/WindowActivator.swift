@@ -494,12 +494,6 @@ enum WindowActivator {
         }
     }
 
-    /// Every window the owner has right now, in the scope the retry guard
-    /// compares against. Taken by a hop at the moment it begins.
-    static func focusSnapshot(ownerPID: pid_t) -> Set<CGWindowID> {
-        windowIDs(ownerPID: ownerPID, options: .optionAll)
-    }
-
     private static func windowIDs(ownerPID: pid_t, options: CGWindowListOption) -> Set<CGWindowID> {
         let raw = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]] ?? []
         return SwitcherSupport.focusRetryWindowIDs(in: raw, ownerPID: ownerPID)
@@ -721,6 +715,12 @@ enum WindowActivator {
         AXUIElementSetAttributeValue(axWindow, kAXMainAttribute as CFString, kCFBooleanTrue)
         AXUIElementSetAttributeValue(axWindow, kAXFocusedAttribute as CFString, kCFBooleanTrue)
         return raised == .success
+    }
+
+    /// Every window the owner has right now, in the scope the retry guard
+    /// compares against. Taken by a hop at the moment it begins.
+    static func focusSnapshot(ownerPID: pid_t) -> Set<CGWindowID> {
+        windowIDs(ownerPID: ownerPID, options: .optionAll)
     }
 
     /// Focus pass run by SpaceHop once the target window's Space became

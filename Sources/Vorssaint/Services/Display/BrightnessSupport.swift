@@ -231,7 +231,6 @@ enum BrightnessSupport {
         }
     }
 
-    /// The built-in panel must not be switched on behind a closed lid.
     static func canConfigureDisplay(enabled: Bool, isBuiltIn: Bool, lidClosed: Bool?) -> Bool {
         !(enabled && isBuiltIn && lidClosed == true)
     }

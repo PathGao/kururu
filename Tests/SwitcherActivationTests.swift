@@ -34,8 +34,7 @@ enum SwitcherActivationTests {
         typealias ActivationHandoff = Handoff
         typealias SpaceWindowBridge = Bridge
         @discardableResult static func prepareWindowForActivation(windowID: CGWindowID, pid: pid_t) -> Bool { true }
-        @discardableResult static func focusWindow(windowID: CGWindowID, pid: pid_t,
-                                                   makeAppFrontmost: Bool = true) -> Bool {
+        @discardableResult static func focusWindow(windowID: CGWindowID, pid: pid_t, makeAppFrontmost: Bool = true) -> Bool {
             events.append("raise:\(windowID):\(pid):\(makeAppFrontmost)")
             return canRaise
         }
@@ -45,11 +44,8 @@ enum SwitcherActivationTests {
         static var setFrontProcess: ((UnsafeMutablePointer<ProcessSerialNumber>, CGWindowID, UInt32) -> CGError)?
         static var postEventRecord: ((UnsafeMutablePointer<ProcessSerialNumber>, UnsafeMutablePointer<UInt8>) -> CGError)?
     }
-    static func reset(raise: Bool = true, front: CGError = .success,
-                      down: CGError = .success, up: CGError = .success) {
-        events = []
-        records = []
-        canRaise = raise
+    static func reset(raise: Bool = true, front: CGError = .success, down: CGError = .success, up: CGError = .success) {
+        events = []; records = []; canRaise = raise
         Bridge.processForPID = { pid, _ in events.append("owner:\(pid)"); return noErr }
         Bridge.setFrontProcess = { _, id, _ in events.append("front:\(id)"); return front }
         Bridge.postEventRecord = { _, bytes in
@@ -58,13 +54,10 @@ enum SwitcherActivationTests {
             return bytes[8] == 1 ? down : up
         }
     }
-
     static func run(_ suite: TestSuite) {
         let app = App(processIdentifier: 20)!
         let windowPlan = SwitcherSupport.activationPlan(targetsSpecificWindow: true)
-        func select(owner: pid_t = 20) {
-            Activator.activateApp(app, plan: windowPlan, windowID: 77, windowOwnerPID: owner)
-        }
+        func select(owner: pid_t = 20) { Activator.activateApp(app, plan: windowPlan, windowID: 77, windowOwnerPID: owner) }
         reset(); select()
         suite.expect(events == ["owner:20", "front:77", "event:1", "event:2", "raise:77:20:false"],
                      "a delivered window selection raises the exact window without activating every sibling")
@@ -79,11 +72,9 @@ enum SwitcherActivationTests {
         }, "the key-making click names the window and points nowhere")
         suite.expect(records.map { $0[0x08] } == [1, 2], "the click is a press followed by a release")
         reset(raise: false); select()
-        suite.expect(events.contains("activate:20:false"),
-                     "a window lost by Accessibility retains cooperative recovery")
+        suite.expect(events.contains("activate:20:false"), "a window lost by Accessibility retains cooperative recovery")
         reset(front: .failure); select()
-        suite.expect(!events.contains("event:1") && events.contains("activate:20:false"),
-                     "a refused front request uses the previous activation path")
+        suite.expect(!events.contains("event:1") && events.contains("activate:20:false"), "a refused front request uses the previous activation path")
         for down in [CGError.success, .failure] {
             for up in [CGError.success, .failure] {
                 reset(down: down, up: up); select()
@@ -93,8 +84,7 @@ enum SwitcherActivationTests {
             }
         }
         reset(); Bridge.postEventRecord = nil; select()
-        suite.expect(!events.contains("front:77") && events.contains("activate:20:false"),
-                     "missing event transport cannot claim success")
+        suite.expect(!events.contains("front:77") && events.contains("activate:20:false"), "missing event transport cannot claim success")
         reset(); Bridge.setFrontProcess = nil; select()
         suite.expect(events.contains("activate:20:false"), "missing front transport recovers")
         reset(); Bridge.processForPID = { _, _ in -1 }; select()
@@ -104,14 +94,11 @@ enum SwitcherActivationTests {
                      "host menus are activated before fronting an accessory owner's window")
         suite.expect(events.last == "raise:77:30:false", "helper window focusing does not replace host activation")
         reset(); _ = Activator.activateSource(pid: 20, windowID: nil, windowOwnerPID: nil)
-        suite.expect(events == ["unhide", "yield:20", "activate:20:false"],
-                     "returning without a saved window does not raise all source windows")
+        suite.expect(events == ["unhide", "yield:20", "activate:20:false"], "returning without a saved window does not raise all source windows")
         reset(); _ = Activator.activateSource(pid: 20, windowID: 77, windowOwnerPID: 20)
-        suite.expect(!events.contains("activate:20:true") && events.contains("front:77"),
-                     "returning to an identified source still selects its window")
+        suite.expect(!events.contains("activate:20:true") && events.contains("front:77"), "returning to an identified source still selects its window")
         reset(); Activator.activateApp(app, plan: SwitcherSupport.activationPlan(targetsSpecificWindow: false))
-        suite.expect(events == ["yield:20", "activate:20:true"],
-                     "explicit app selection still brings all its windows forward")
+        suite.expect(events == ["yield:20", "activate:20:true"], "explicit app selection still brings all its windows forward")
         reset(); let restored = Activator.activateSource(pid: -1, windowID: nil, windowOwnerPID: nil)
         suite.expect(!restored && events.isEmpty, "an exited source cannot receive restoration")
     }

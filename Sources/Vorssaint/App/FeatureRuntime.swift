@@ -286,12 +286,12 @@ final class FeatureRuntime: ObservableObject {
             ScreenRecorderService.shared.syncWithPreferences()
             RecentCaptureService.shared.syncWithPreferences()
         },
+        .cameraPreview: { CameraPreviewService.shared.syncWithPreferences() },
         .radialMenu: { RadialMenuService.shared.syncWithPreferences() },
         .scratchpad: {
             ScratchpadService.shared.syncWithPreferences()
             ShelfService.shared.syncDockedShelf()
         },
-        .cameraPreview: { CameraPreviewService.shared.syncWithPreferences() },
         .commandBar: { CommandBarService.shared.syncWithPreferences() },
         .environment: {
             guard !AppFeature.environment.isAvailable else { return }

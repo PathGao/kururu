@@ -101,7 +101,7 @@ enum UpdateInstallerSupport {
             # app at all. The staging name is hidden: Spotlight recognizes the
             # copy as an app bundle whatever its suffix, and when the swap lands
             # while that copy is still being indexed, the installed app keeps
-            # showing up in search under the staging name.
+            # showing up in search as "Vorssaint.app.update-new".
             STAGE="$DIR/.$NAME.update-new"
             /bin/rm -rf "$STAGE"
             note fail-copy

@@ -112,8 +112,8 @@ def main():
           + declaration(brightness, "    enum DisplayControlFailure:")
           + "".join(declaration(brightness, prefix).replace("private ", "", 1) for prefix in [
               "    private static func configureDisplay(", "    private func restoreDisplay(",
-              "    private func syncLidObserver()", "    private func restoreDeferredDisplays()",
-              "    private func restoreManagedDisplays()", "    func restoreDisplaysLeftOff()",
+              "    private func syncLidObserver(", "    private func restoreDeferredDisplays(",
+              "    private func restoreManagedDisplays(", "    func restoreDisplaysLeftOff(",
               "    private func commitDisplayToggle(", "    private func finishDisplayToggle(",
               "    private func restoreManagedDisplayIfHeadless("])
           + "}\n}\n")

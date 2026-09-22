@@ -4,7 +4,7 @@
 import AppKit
 import SwiftUI
 
-/// Force Quit, embedded as a Settings page: a live, searchable list of
+/// Kill Process, embedded as a Settings page: a live, searchable list of
 /// every running process with kill, force-kill, kill-all, kill-tree, and
 /// restart actions.
 struct KillProcessView: View {

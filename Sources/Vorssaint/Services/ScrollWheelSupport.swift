@@ -21,9 +21,8 @@ enum ScrollHorizontalModifier: String, CaseIterable {
     }
 }
 
-/// Inversion and modifier-held horizontal scrolling share one tap. Resolve
-/// their effective settings once so the raw and smoothed wheel paths honor a
-/// removed member identically.
+/// Both independently installed direction features share one tap. Resolve their
+/// effective settings once so raw and smoothed wheels honor removal identically.
 struct ScrollDirectionPreferences {
     let invertVertical: Bool
     let invertHorizontal: Bool
@@ -101,8 +100,8 @@ enum ScrollWheelSupport {
               event.getIntegerValueField(.scrollWheelEventDeltaAxis2) == 0,
               event.getIntegerValueField(.scrollWheelEventPointDeltaAxis2) == 0,
               event.getDoubleValueField(.scrollWheelEventFixedPtDeltaAxis2) == 0 else { return false }
-        // Our capture overlay uses these same modifiers for its own wheel
-        // gestures. Resolve the target only for a tick we would redirect.
+        // Our capture/editor windows use these same modifiers for their own
+        // wheel gestures. Resolve the target only for a tick we would redirect.
         guard !targetsOwnWindow() else { return false }
 
         // Line writes can rederive pixel fields; restore the captured precision
