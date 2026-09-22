@@ -3298,6 +3298,116 @@ struct MetricsTests {
                     appRules: ["com.example.notes": .hidden]),
                "only the hidden rule removes an identified app's real windows")
 
+        // MARK: The visible cap spends its slots across apps
+        expect(SwitcherSupport.visibleSelectionIndices(appPIDs: [7, 7, 9], limit: 5) == [0, 1, 2],
+               "a list that fits under the cap keeps every entry")
+        expect(SwitcherSupport.visibleSelectionIndices(appPIDs: [], limit: 5).isEmpty
+               && SwitcherSupport.visibleSelectionIndices(appPIDs: [7, 9], limit: 0).isEmpty,
+               "an empty list or a cap of nothing selects nothing")
+        // The shape that made whole applications disappear: one browser with
+        // many windows ahead of every other app in the use order.
+        let crowdedPIDs = Array(repeating: pid_t(101), count: 18) + [202, 303, 404, 505]
+        let crowdedSurvivors = SwitcherSupport.visibleSelectionIndices(appPIDs: crowdedPIDs, limit: 6)
+        expect(Set(crowdedSurvivors.map { crowdedPIDs[$0] }) == [101, 202, 303, 404, 505],
+               "an app with many windows never pushes another running app off the list")
+        expect(crowdedSurvivors.count == 6, "the cap still spends every slot it has")
+        expect(crowdedSurvivors == crowdedSurvivors.sorted(),
+               "survivors keep the use order they came in, so the toggle target stays put")
+        expect(crowdedSurvivors.first == 0, "the window the user is looking at stays first")
+        expect(crowdedSurvivors.filter { crowdedPIDs[$0] == 101 } == [0, 1],
+               "slots left over after every app is represented go to the most recent windows")
+        // More apps than slots: the apps compete with each other, in order.
+        let manyApps = (1...10).map { pid_t($0 * 11) }
+        expect(SwitcherSupport.visibleSelectionIndices(appPIDs: manyApps, limit: 4) == [0, 1, 2, 3],
+               "with more apps than slots the least recently used apps are the ones that drop")
+        // An app that appears again further down does not claim a second slot
+        // before an app that has none yet.
+        let interleavedPIDs: [pid_t] = [1, 2, 1, 3, 1, 4]
+        expect(SwitcherSupport.visibleSelectionIndices(appPIDs: interleavedPIDs, limit: 4) == [0, 1, 3, 5],
+               "each app is represented once before any app is represented twice")
+        // Dock previews and the preview refresh ask for one app's windows, where
+        // the selection has to stay exactly what it always was.
+        expect(SwitcherSupport.visibleSelectionIndices(appPIDs: Array(repeating: pid_t(7), count: 20),
+                                                       limit: 12) == Array(0..<12),
+               "a single app's own window list is capped from the front, as before")
+        // With every slot claimed by an app of its own, the window before the
+        // current one must still be there, or a quick flick in the grid layout
+        // opens another app instead of returning to it.
+        let appsFillEverySlot: [pid_t] = [1, 1] + (2...60).map { pid_t($0) }
+        let fullListSurvivors = SwitcherSupport.visibleSelectionIndices(appPIDs: appsFillEverySlot, limit: 48)
+        expect(Array(fullListSurvivors.prefix(2)) == [0, 1],
+               "the window before the current one survives a list where every slot goes to an app")
+        expect(fullListSurvivors.count == 48 && fullListSurvivors == fullListSurvivors.sorted(),
+               "keeping the toggle target still spends the cap exactly and keeps the use order")
+        // The window shortcut shows the front app alone, so other apps must not
+        // take places in its list.
+        let frontAppWindows = (1...24).map { index in
+            SwitcherItem.window(id: CGWindowID(1000 + index), title: "w\(index)", appName: "Front",
+                                pid: 1, isOnScreen: true, frame: .zero)
+        }
+        let otherAppWindows = (2...27).map { pid in
+            SwitcherItem.window(id: CGWindowID(2000 + pid), title: "o\(pid)", appName: "Other",
+                                pid: pid_t(pid), isOnScreen: true, frame: .zero)
+        }
+        let windowScopeItems = frontAppWindows + otherAppWindows
+        expect(SwitcherSupport.visibleSelectionIndices(items: windowScopeItems,
+                                                       limit: 48, frontmostPID: 1) == Array(0..<24),
+               "the window shortcut keeps every window of the front app when other apps are running")
+        let unscopedSurvivors = SwitcherSupport.visibleSelectionIndices(items: windowScopeItems,
+                                                                        limit: 48, frontmostPID: nil)
+        expect(unscopedSurvivors.filter { windowScopeItems[$0].pid == 1 }.count < 24
+               && Set(unscopedSurvivors.map { windowScopeItems[$0].pid }).count == 27,
+               "the all-apps list still spreads its slots so every app stays reachable")
+        // The keyboard can belong to a helper process that renders the app's
+        // window; the scope resolves it to the app the same way the session does.
+        let helperOwnedWindow = SwitcherItem.window(id: 3001, title: "h", appName: "Front",
+                                                    pid: 1, windowOwnerPID: 91, isOnScreen: true, frame: .zero)
+        expect(SwitcherSupport.visibleSelectionIndices(items: [helperOwnedWindow] + otherAppWindows,
+                                                       limit: 48, frontmostPID: 91) == [0],
+               "a window-scoped list follows a helper-owned front window to its app")
+        // A newly focused window can still hold an older rank while the focus
+        // watcher catches up, so the source is resolved before the cap runs and
+        // promoted to the front of the list it caps.
+        let staleRankCandidates = Array(windowScopeItems.reversed())
+        let freshFocusID = frontAppWindows.last!.windowID!
+        let freshSource = SwitcherSupport.sessionSourceItem(frontmostPID: 1,
+                                                            focusedWindowID: freshFocusID,
+                                                            items: staleRankCandidates)
+        let preparedFocusItems = SwitcherSupport.orderedForSession(staleRankCandidates,
+                                                                   currentID: freshSource?.id)
+        let visibleFocusItems = SwitcherSupport.visibleSelectionIndices(
+            items: preparedFocusItems, limit: 48, frontmostPID: nil).map { preparedFocusItems[$0] }
+        expect(visibleFocusItems.first?.windowID == freshFocusID,
+               "a crowded list keeps the actual current window even when its history rank is old")
+        expect(visibleFocusItems.count == 48 && Set(visibleFocusItems.map(\.pid)).count == 27,
+               "retaining the actual source still shares the bounded list across other apps")
+        let scopedFocusItems = SwitcherSupport.visibleSelectionIndices(
+            items: preparedFocusItems, limit: 48, frontmostPID: 1).map { preparedFocusItems[$0] }
+        expect(scopedFocusItems.count == 24 && scopedFocusItems.first?.windowID == freshFocusID,
+               "source correction and the app's own window budget work together")
+        expect(SwitcherSupport.orderedForSession(staleRankCandidates, currentID: nil) == staleRankCandidates
+               && SwitcherSupport.orderedForSession(staleRankCandidates, currentID: "missing") == staleRankCandidates,
+               "an unavailable or removed source leaves the legitimate candidate order unchanged")
+        // Comments are stripped, so the note explaining the order cannot stand
+        // in for the calls that implement it.
+        let switcherEnumeratorCode = ((try? String(
+            contentsOfFile: "Sources/Vorssaint/Services/Switcher/WindowEnumerator.swift",
+            encoding: .utf8)) ?? "")
+            .components(separatedBy: "\n")
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+            .joined(separator: "\n")
+        let enumeratorSourceResolution = switcherEnumeratorCode.range(of: "resolveSource?(sourceCandidates)")
+        let enumeratorSourcePromotion = switcherEnumeratorCode.range(
+            of: "SwitcherSupport.orderedForSession(ordered, currentID: source?.id)")
+        let enumeratorEntryCap = switcherEnumeratorCode.range(of: "limit: maximumCount")
+        expect(enumeratorSourceResolution != nil && enumeratorSourcePromotion != nil
+               && enumeratorEntryCap != nil
+               && enumeratorSourceResolution!.lowerBound < enumeratorSourcePromotion!.lowerBound
+               && enumeratorSourcePromotion!.lowerBound < enumeratorEntryCap!.lowerBound,
+               "the enumerator resolves and promotes the session source before it caps the list")
+        expect(!switcherEnumeratorCode.contains("ordered.prefix(maximumCount)"),
+               "the visible cap no longer takes a plain leading slice of the list")
+
         expect(WindowUseOrder.promoting(target: 7, previous: 3, in: [3, 5, 7]) == [7, 3, 5],
                "committing to a window puts it first and the one left behind second")
         expect(WindowUseOrder.promoting(target: nil, previous: 3, in: [5, 3, 9]) == [3, 5, 9],

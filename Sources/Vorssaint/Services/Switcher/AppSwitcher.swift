@@ -889,10 +889,26 @@ final class AppSwitcher: ObservableObject {
                       )
                   })
             else { return }
+            var focusedSourceWindowID: CGWindowID?
             let allWindows = WindowEnumerator.enumerateSwitcherWindows(
                 groupByApp: groupByApp,
                 preservingGroupedWindows: preservesGroupedWindows,
                 snapshot: enumerationSnapshot,
+                scopedToFrontmostPID: requested.scope == .frontmostApp ? reportedFrontPID : nil,
+                resolveSource: { items in
+                    let sourceItems = requested.scope == .frontmostApp
+                        ? SwitcherSupport.frontmostAppWindows(allItems: items, frontmostPID: reportedFrontPID)
+                        : items
+                    guard !sourceItems.isEmpty else { return nil }
+                    focusedSourceWindowID = SwitcherSupport.needsFocusedWindowLookup(
+                        frontmostPID: reportedFrontPID, items: sourceItems)
+                        ? self.focusedWindowID(for: reportedFrontPID,
+                                               accessibilityGranted: enumerationSnapshot.accessibilityGranted)
+                        : nil
+                    return SwitcherSupport.sessionSourceItem(frontmostPID: reportedFrontPID,
+                                                             focusedWindowID: focusedSourceWindowID,
+                                                             items: sourceItems)
+                },
                 isCancelled: { [weak self] in
                     guard let self else { return true }
                     return !self.routeLock.withLock {
@@ -918,14 +934,6 @@ final class AppSwitcher: ObservableObject {
                     allItems: allWindows,
                     frontmostPID: reportedFrontPID)
             }
-            let needsFocusedWindowLookup = !sessionWindows.isEmpty
-                && SwitcherSupport.needsFocusedWindowLookup(
-                    frontmostPID: reportedFrontPID,
-                    items: sessionWindows)
-            let focusedSourceWindowID = needsFocusedWindowLookup
-                ? self.focusedWindowID(for: reportedFrontPID,
-                                       accessibilityGranted: enumerationSnapshot.accessibilityGranted)
-                : nil
             DispatchQueue.main.async { [weak self] in
                 self?.finishPendingSession(generation: generation,
                                            reportedFrontPID: reportedFrontPID,
@@ -959,7 +967,7 @@ final class AppSwitcher: ObservableObject {
                                                        focusedWindowID: focusedSourceWindowID,
                                                        items: windows)
 
-        let list = orderedForSession(windows, currentID: source?.id)
+        let list = SwitcherSupport.orderedForSession(windows, currentID: source?.id)
         guard let pending = routeLock.withLock({ () -> SwitcherPendingSessionStart? in
             guard SwitcherSupport.isCurrentSessionStart(
                 generation: generation,
@@ -1073,18 +1081,6 @@ final class AppSwitcher: ObservableObject {
         guard ProcessInfo.processInfo.systemUptime < shiftBackChordDeadline else { return false }
         shiftBackChordDeadline = 0
         return true
-    }
-
-    /// Puts the window the user is looking at first. The enumerator already
-    /// ordered everything else by how recently it was used, so the entry right
-    /// after the current one is the window they came from — this only has to
-    /// make sure the current one leads, even in the moment right after a
-    /// switch, when the window server has not caught up yet.
-    private func orderedForSession(_ items: [SwitcherItem], currentID: String?) -> [SwitcherItem] {
-        guard let currentID, let index = items.firstIndex(where: { $0.id == currentID }) else { return items }
-        var ordered = items
-        ordered.insert(ordered.remove(at: index), at: 0)
-        return ordered
     }
 
     private func initialSelectionIndex(in items: [SwitcherItem],
