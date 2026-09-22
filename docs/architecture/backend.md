@@ -19,10 +19,9 @@ These read-only tasks remain separate from user-initiated package mutations.
 
 ## Presentation, execution and storage
 
-- `CommandBarPresentation` owns the panel, focus and input monitors.
-- `CommandBarService` retains discovery, search and ranking.
-- `CommandBarExecutor` captures action input and guards asynchronous destination
-  results against a replaced or dismissed presentation.
+- `CommandBarService` owns the panel, input monitors, discovery, search,
+  ranking and execution. `CommandBarDestinationRequests` guards asynchronous
+  destination results against a replaced or dismissed presentation.
 - `ShelfImportStore` owns staged imports, security-scoped access, reference
   validation and transaction disposal. `ShelfService` retains live revisions
   and publication. Existing atomic persistence and rollback remain in use.

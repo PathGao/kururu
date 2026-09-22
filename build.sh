@@ -337,9 +337,7 @@ if (( TEST )); then
         Tests/BrightnessModuleMigrationTests.swift \
         Tests/MixerSwitchMigrationTests.swift \
         Tests/ShelfImportStoreTests.swift \
-        Tests/CommandBarExecutorTests.swift \
         Sources/Vorssaint/Services/Shelf/ShelfImportStore.swift \
-        Sources/Vorssaint/Services/CommandBar/CommandBarExecutor.swift \
         Sources/Vorssaint/Core/CommandBarStrings.swift \
         Sources/Vorssaint/Core/FeedbackStrings.swift \
         Sources/Vorssaint/Core/FeedbackDraftSupport.swift \
