@@ -165,13 +165,8 @@ final class ClipboardHistoryService: ObservableObject {
         }
     }
 
-    /// Puts the entries on the general pasteboard through the shared lane and
-    /// reports on the main queue. The caller never waits: a lane wedged behind
-    /// an app that promised pasteboard content and stopped answering delays
-    /// the copy instead of freezing the app (issue #887). Failure includes an
-    /// expired request. The lane stays serialized and admission stays occupied
-    /// until the underlying operation actually ends, so a stalled provider
-    /// cannot accumulate user actions.
+    /// Failure includes an expired request. The lane remains serialized and
+    /// admission stays occupied until the underlying operation actually ends.
     private func writeToPasteboard(_ list: [ClipboardHistoryEntry],
                                    completion: @escaping (Bool) -> Void) {
         guard !copyInFlight, let write = Self.plannedWrite(for: list) else {
@@ -186,13 +181,8 @@ final class ClipboardHistoryService: ObservableObject {
         }, didFinish: { [weak self] result in
             guard let self else { return }
             self.copyInFlight = false
-            // lastChangeCount stays owned by the main queue, where the capture
-            // poll compares against it. Assigning it on the lane would let a
-            // copy's own change count land after the poll had already read the
-            // old one, and history would record the app's own write as a new
-            // copy by the user. Consume our mutation even when result delivery
-            // already expired; this also excludes a partial write whose
-            // required format failed.
+            // Consume our mutation even if result delivery already expired.
+            // This also excludes a partial write whose required format failed.
             if let result {
                 self.lastChangeCount = max(self.lastChangeCount, result.changeCount)
             }
@@ -663,17 +653,10 @@ final class ClipboardHistoryService: ObservableObject {
         case text(String)
     }
 
-    /// Only ever one read in flight: while a password prompt holds the
-    /// pasteboard server, a read can take seconds, and letting ticks pile up
-    /// would spawn a thread each time. A read whose result expired is dropped,
-    /// but its slot stays occupied until the queued work really ends, so an
-    /// abandoned read can never be answered by a stale change count.
     private func captureIfChanged() {
         guard isRunning, let generation = captureState.begin() else { return }
         // On start (including stop/start during a blocked read), establish a
-        // fresh baseline before capturing. Existing clipboard content is not
-        // added just because history was enabled, and old completions cannot
-        // consume the baseline.
+        // fresh baseline before capturing. Old completions cannot consume it.
         let baseline = captureState.needsBaseline
         let sinceChangeCount = lastChangeCount
         let includeImagesFiles = UserDefaults.standard.bool(
@@ -700,14 +683,9 @@ final class ClipboardHistoryService: ObservableObject {
                 self.captureState.didBaseline()
                 return
             }
-            // Asked once per check and before anything can return early, so
-            // the window it answers for always ends here: whether a listed app
-            // could be the one that copied since the last look. Exclusion is
-            // preserved over the whole time since the previous accepted check,
-            // including any read that expired in between.
+            // Preserve exclusion over the whole time since the previous
+            // accepted check, including any read that expired in between.
             let excludedSource = ClipboardIgnoredApps.shared.excludedSourceSinceLastCheck()
-            // Strictly forward: never re-capture a change that
-            // ignoreNextChange() consumed while the read was running.
             guard result.changeCount > self.lastChangeCount else { return }
             self.lastChangeCount = result.changeCount
             guard !excludedSource, let content = result.content else { return }

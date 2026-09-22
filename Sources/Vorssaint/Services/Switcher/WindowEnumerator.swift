@@ -96,9 +96,6 @@ enum WindowEnumerator {
 
     /// `scopedToFrontmostPID` is set for a session that shows only the front
     /// app's windows; the cap then spends its slots on that app alone.
-    /// `resolveSource` is asked for the session's current window before the
-    /// cap runs, so a fresh focus reading can still correct a use history that
-    /// has not caught up, and the window it names is never truncated away.
     static func enumerateSwitcherWindows(groupByApp: Bool,
                                          preservingGroupedWindows: Bool,
                                          snapshot: Snapshot,
@@ -518,9 +515,9 @@ enum WindowEnumerator {
         var result = ordered
         if ordered.count > maximumCount {
             // One entry per app first, then the remaining slots: an app with
-            // many windows must never push another app off the list entirely.
-            // A session scoped to the front app caps that app's own windows
-            // instead.
+            // many windows must never push another app off the list entirely
+            // (issue #172). A session scoped to the front app caps that app's
+            // own windows instead.
             result = SwitcherSupport
                 .visibleSelectionIndices(items: ordered, limit: maximumCount,
                                          frontmostPID: scopedToFrontmostPID)

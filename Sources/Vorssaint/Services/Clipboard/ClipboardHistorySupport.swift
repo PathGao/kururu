@@ -247,7 +247,7 @@ enum ClipboardHistoryEditing {
         let ordered = entries.filter(\.isPinned) + entries.filter { !$0.isPinned }
         var retained: [ClipboardHistoryEntry] = []
         var encodedEntries: [Data] = []
-        var encodedSize = 2
+        var encodedSize = 2 // Opening and closing brackets.
 
         for entry in ordered {
             guard let encoded = try? encoder.encode(entry) else { return nil }

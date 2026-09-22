@@ -3,8 +3,7 @@
 
 import Foundation
 
-/// Strings for ending a process, shared by the Force Quit page, the Command
-/// Bar rows and the monitor's own rows. Same contract as the other
+/// Strings for the Kill Process feature. Same contract as the other
 /// FeatureStrings structs: memberwise init in declaration order, one static
 /// per language, all in this file.
 struct KillProcessFeatureStrings {

@@ -87,7 +87,7 @@ enum DisplayRestorationTests {
     }
 
     class Fixture {
-        static let log = Logger(subsystem: "kururu.tests", category: "restoration")
+        static let log = Logger(subsystem: "vorssaint.tests", category: "restoration")
         var deferredRestoration = BrightnessSupport.DeferredDisplayRestoration()
         var lidNotificationPort: IONotificationPortRef?
         var lidNotification: io_object_t = 0
@@ -364,12 +364,12 @@ enum DisplayRestorationTests {
         DispatchQueue.main.drain()
         suite.expect(service.deferredRestoration.ids.isEmpty && service.managedDisabledIDs == [1]
                      && UserDefaults.standard.stored == [1] && Hardware.destroyedPorts == 1,
-                     "later external headless success cancels only the internal headless request")
+                     "later external headless success cancels only the internal headless request: ids=\(service.deferredRestoration.ids) managed=\(service.managedDisabledIDs) stored=\(UserDefaults.standard.stored) destroyed=\(Hardware.destroyedPorts)")
         Hardware.lid = false
         service.restoreDeferredDisplays()
         DispatchQueue.main.drain()
         suite.expect(Hardware.transactions == 2 && UserDefaults.standard.stored == [1],
-                     "opening after cancellation does not enable the internal display")
+                     "opening after cancellation does not enable the internal display: transactions=\(Hardware.transactions) stored=\(UserDefaults.standard.stored)")
 
         service = make()
         service.managedDisabledIDs = [1, 2]

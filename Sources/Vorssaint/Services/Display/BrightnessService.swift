@@ -126,6 +126,9 @@ final class BrightnessService: ObservableObject {
         visibleRefreshTimer?.tolerance = 0.5
     }
 
+    private var deferredRestoration = BrightnessSupport.DeferredDisplayRestoration()
+    private var lidNotificationPort: IONotificationPortRef?
+    private var lidNotification: io_object_t = 0
     private var screenObserver: NSObjectProtocol?
     private var rebuildDebounce: DispatchWorkItem?
     private var wakeObservers: [NSObjectProtocol] = []
@@ -262,10 +265,6 @@ final class BrightnessService: ObservableObject {
     /// A disabled display leaves even CoreGraphics' online list. Keep its
     /// last row so the panel still offers the button that brings it back.
     private var managedDisabledDisplays: [CGDirectDisplayID: BrightnessDisplay] = [:]
-    /// Enables the closed lid denied, retried when the lid opens.
-    private var deferredRestoration = BrightnessSupport.DeferredDisplayRestoration()
-    private var lidNotificationPort: IONotificationPortRef?
-    private var lidNotification: io_object_t = 0
     private var running = false
     /// Permission reset removes only the two Accessibility event taps. The
     /// display routes, disabled-display journal and gamma state stay live so
@@ -442,11 +441,10 @@ final class BrightnessService: ObservableObject {
         refresh()
     }
 
-    /// The reset guard is deliberately left intact here: a preference or
-    /// feature-state change during the asynchronous permission teardown must
-    /// not bring the taps back. The reset owner releases it explicitly
-    /// through `resumeInputTaps()`.
     func stop() {
+        // Keep the reset guard intact while preferences or feature state
+        // changes during the asynchronous permission teardown. The reset
+        // owner releases it explicitly through resumeInputTaps().
         guard running else { return }
         running = false
         updateVisibleRefresh()
@@ -765,9 +763,6 @@ final class BrightnessService: ObservableObject {
     /// the display list, and neither side can finish, so the app freezes with
     /// nothing left that can end it (issue #747). A caller on the wrong
     /// thread is refused and logged rather than allowed to hang.
-    ///
-    /// Switching the built-in panel back on while the lid is closed would wake
-    /// a screen nobody can see, so that one case is refused and remembered.
     private static func configureDisplay(
         _ id: CGDirectDisplayID, enabled: Bool
     ) -> BrightnessSupport.DisplayConfigurationResult {
@@ -795,11 +790,10 @@ final class BrightnessService: ObservableObject {
         guard service != 0 else { return nil }
         defer { IOObjectRelease(service) }
         return IORegistryEntryCreateCFProperty(service, "AppleClamshellState" as CFString,
-                                               kCFAllocatorDefault, 0)?.takeRetainedValue() as? Bool
+                                              kCFAllocatorDefault, 0)?.takeRetainedValue() as? Bool
     }
 
     /// These requests outlive the brightness feature, but never the app.
-    @discardableResult
     private func restoreDisplay(_ id: CGDirectDisplayID) -> BrightnessSupport.DisplayConfigurationResult {
         let result = Self.configureDisplay(id, enabled: true)
         deferredRestoration.record(id, result: result)
@@ -1486,8 +1480,8 @@ final class BrightnessService: ObservableObject {
                 let result = Self.configureDisplay(id, enabled: true)
                 self.deferredRestoration.recordHeadless(id, result: result)
                 self.syncLidObserver()
+                if result == .success { self.displayControlFailure = nil }
                 if result == .success {
-                    self.displayControlFailure = nil
                     restored = id
                     break
                 }

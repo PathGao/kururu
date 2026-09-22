@@ -170,6 +170,8 @@ final class CommandBarService: ObservableObject {
     /// title is what app-choice learning should remember.
     private var queryBeforeCompletion: String?
     private var completedQuery: String?
+    /// The last thing typed, kept only in memory so reopening can offer it.
+    private var lastQuery = ""
     /// Where the pointer sat when the bar opened. A row under a pointer that
     /// has not moved must not steal the selection from the keyboard.
     private var lastPointerLocation = NSPoint.zero
@@ -397,6 +399,10 @@ final class CommandBarService: ObservableObject {
             killProcessEntries = []
             indexEntries()
         }
+        // What was typed is remembered for the next opening, where the first
+        // keystroke replaces it. It never reaches disk: the promise is that
+        // nothing typed here is saved, and memory is not saving.
+        lastQuery = query
         query = ""
         presentationLifecycle.hide()
         clearIndex()
@@ -663,7 +669,7 @@ final class CommandBarService: ObservableObject {
                     && !hidden.contains($0.stableKey)
             }
         case .killProcess:
-            return FeatureUnit.monitor.isAvailable
+            return AppFeature.killProcess.isAvailable
         case .quitApps, .answers, .calculator, .selection, .files:
             return false
         }

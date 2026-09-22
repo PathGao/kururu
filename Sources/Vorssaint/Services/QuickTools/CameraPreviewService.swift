@@ -21,8 +21,6 @@ final class CameraPreviewService: ObservableObject {
     @Published private(set) var state: PreviewState = .idle
     @Published private(set) var devices: [AVCaptureDevice] = []
     @Published private(set) var selectedDeviceID: String?
-    /// A permission answer that lands after the panel has gone belongs to a
-    /// session nobody is waiting for any more.
     private var captureGeneration = UUID()
     private var sessionRequest: CameraPreviewRequest?
     private var sessionObservers: [NSObjectProtocol] = []
@@ -80,8 +78,8 @@ final class CameraPreviewService: ObservableObject {
     }
 
     func show() {
-        guard AppFeature.cameraPreview.isAvailable, SessionActivity.shared.isActive,
-              !isVisible else { return }
+        guard AppFeature.cameraPreview.isAvailable, SessionActivity.shared.isActive else { return }
+        guard !isVisible else { return }
         let panel = ensurePanel()
         installMonitors(for: panel)
         position(panel)
@@ -158,9 +156,6 @@ final class CameraPreviewService: ObservableObject {
         let request = CameraPreviewRequest()
         sessionRequest = request
         self.session = session
-        // A camera taken over by a meeting app, or a Continuity phone that
-        // walks away, stops the session without changing the device list.
-        // Without this the panel would keep showing a frozen last frame.
         for name in [AVCaptureSession.runtimeErrorNotification, AVCaptureSession.wasInterruptedNotification] {
             sessionObservers.append(NotificationCenter.default.addObserver(forName: name, object: session,
                 queue: .main) { [weak self] _ in
@@ -387,8 +382,7 @@ final class CameraPreviewService: ObservableObject {
             guard let self, let panel, panel.isVisible, self.dismissesOnOutsideInteraction else { return }
             if event.windowNumber != panel.windowNumber, !Self.mouseIsInside(panel),
                // Every key on the Accessibility Keyboard is a click outside this
-               // panel. Dismissing on those makes the panel impossible to use
-               // from that keyboard.
+               // panel. Dismissing on those makes the panel impossible to type into.
                !AssistiveKeyboard.ownsCocoaPoint(NSEvent.mouseLocation) {
                 self.hide()
             }

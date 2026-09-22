@@ -28,9 +28,9 @@ struct KillProcessEntry: Identifiable, Equatable {
 
 /// Lists every running process (via `ps`, the same source
 /// `ProcessUsageService` uses for the resource breakdown) and kills,
-/// force-kills, restarts, or tears down whole process trees. Backs the Force
-/// Quit settings page, the Command Bar's process rows and the monitor's own
-/// rows, which share this service's cache instead of shelling out twice.
+/// force-kills, restarts, or tears down whole process trees. Backs both the
+/// Kill Process settings page and its Command Bar rows, which share this
+/// service's cache instead of shelling out twice.
 final class KillProcessService: ObservableObject {
     static let shared = KillProcessService()
 
@@ -419,8 +419,8 @@ final class KillProcessService: ObservableObject {
     }
 
     static func currentStartTime(pid: pid_t,
-                                         expectedParent: pid_t? = nil,
-                                         expectedPath: String? = nil) -> UInt64? {
+                                 expectedParent: pid_t? = nil,
+                                 expectedPath: String? = nil) -> UInt64? {
         var info = proc_bsdinfo()
         let size = Int32(MemoryLayout<proc_bsdinfo>.size)
         guard proc_pidinfo(pid, PROC_PIDTBSDINFO, 0, &info, size) == size else { return nil }

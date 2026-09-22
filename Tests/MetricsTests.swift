@@ -14925,6 +14925,17 @@ struct MetricsTests {
             let code = stripCommentLines((try? String(contentsOfFile: path, encoding: .utf8)) ?? "")
             expect(code.contains(needle), "\(path) gates ending a process on the hub feature")
         }
+        let processChipGate = stripCommentLines((try? String(
+            contentsOfFile: "Sources/Vorssaint/Services/CommandBar/CommandBarService.swift", encoding: .utf8)) ?? "")
+            .components(separatedBy: "func categoryHasContent(").dropFirst().first?
+            .components(separatedBy: "case .killProcess:").dropFirst().first?
+            .components(separatedBy: "case ").first ?? ""
+        expect(processChipGate.contains("return AppFeature.killProcess.isAvailable"),
+               "the command bar offers the process chip only while Kill Process is installed")
+        expect(!FeatureStrings.screenshot(.enUS).previewFocusCaption.isEmpty
+                && ((try? String(contentsOfFile: "Sources/Vorssaint/UI/Settings/ScreenshotSettings.swift",
+                                 encoding: .utf8)) ?? "").contains("caption: strings.previewFocusCaption"),
+               "the preview focus toggle explains that the previous app loses the keyboard")
 
         for language in AppLanguage.allCases {
             let superKeyValues = Mirror(reflecting: FeatureStrings.superKey(language)).children
@@ -17419,13 +17430,14 @@ struct MetricsTests {
             encoding: .utf8)) ?? ""
         expect(!captureServiceSource.contains("replaceSelection"),
                "the capture service does not cancel and recreate selection controllers when changing modes")
-        // The preview's shortcuts read a local monitor, which is delivered
-        // nothing until the panel is key, so presenting takes the keyboard
-        // once the panel is on screen, behind the preference that hands that
-        // trade back. Hover takes nothing; a click hands the keyboard over in
-        // the panel's sendEvent because hosted SwiftUI content answers presses
-        // that never reach mouseDown. Comments are stripped so prose naming
-        // the API cannot answer for the code.
+        // The preview appears unasked for, so presenting it must not take the
+        // keyboard away from whatever the person is typing into. Its shortcuts
+        // read a local monitor, which is delivered nothing until the panel is
+        // key. Presenting stays silent unless the person opted in, and hover
+        // takes nothing either; a click hands the keyboard over in the panel's
+        // sendEvent because hosted SwiftUI content answers presses that never
+        // reach mouseDown. Comments are stripped so prose naming the API
+        // cannot answer for the code.
         let quickPreviewSource = (try? String(
             contentsOfFile: "Sources/Vorssaint/Services/QuickTools/ScreenshotQuickPreviewController.swift",
             encoding: .utf8)) ?? ""
@@ -17451,11 +17463,11 @@ struct MetricsTests {
         let makeKeyLine = presentLines.firstIndex { $0.contains("makeKey") } ?? -1
         expect(orderFrontLine >= 0 && makeKeyLine > orderFrontLine
                 && presentLines[makeKeyLine - 1].contains("screenshotPreviewTakesFocus"),
-               "presenting the screenshot preview takes key focus only behind the preference, once on screen")
+               "presenting the screenshot preview takes key focus only behind the preference, once the panel is on screen")
         let makeKeyCount = quickPreviewCode.components(separatedBy: "makeKey").count - 1
         let panelMakeKeyCount = panelBody.components(separatedBy: "makeKey").count - 1
         expect(makeKeyCount == panelMakeKeyCount + 1 && panelMakeKeyCount >= 1,
-               "hover never takes key focus; only the preferred presentation and the click hand-off may")
+               "hover never takes key focus; only the preferred presentation and the panel's own click hand-off may")
         expect(panelBody.contains("sendEvent") && panelBody.contains("leftMouseDown")
                 && panelBody.contains("makeKey") && panelBody.contains("super.sendEvent"),
                "clicking the screenshot preview takes key focus and still delivers every preview button")
@@ -24251,6 +24263,8 @@ struct MetricsTests {
             .dropFirst().first?.components(separatedBy: "Permissions.shared.$screenRecording").first ?? ""
         expect(accessibilitySink.contains(".quitWindowProtection"),
                "granting Accessibility starts quit protection without a relaunch")
+        expect(accessibilitySink.contains(".scrollHorizontal"),
+               "granting Accessibility starts horizontal scrolling without a relaunch")
         let smoothSchedulerSource = (try? String(
             contentsOfFile: "Sources/Vorssaint/Services/SmoothScrollService.swift",
             encoding: .utf8)) ?? ""
@@ -24315,6 +24329,8 @@ struct MetricsTests {
                                                 encoding: .utf8)) ?? ""
         expect(!selfUninstallSource.isEmpty && !uninstallScriptSource.isEmpty,
                "uninstall sources read back for uninstallation alignment check")
+        expect(selfUninstallSource.contains("CameraPreviewService.shared.suspend()"),
+               "resetting permissions closes the camera preview before revoking camera access")
         let queryHabitSupportSource = (try? String(
             contentsOfFile: "Sources/Vorssaint/Services/CommandBar/CommandBarSupport.swift",
             encoding: .utf8)) ?? ""

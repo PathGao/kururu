@@ -129,7 +129,8 @@ struct ScreenshotCaptureSettings: View {
                 Toggle(strings.pointerToggle, isOn: $includePointer)
                 Toggle(strings.lastRegionToggle, isOn: $showLastRegion)
                 previewPositionRow
-                Toggle(strings.previewFocusToggle, isOn: $previewTakesFocus)
+                SettingsToggleWithCaption(title: strings.previewFocusToggle,
+                                          caption: strings.previewFocusCaption, isOn: $previewTakesFocus)
                 DisclosureGroup {
                     Toggle(strings.loupeStartsOnToggle, isOn: $loupeStartsOn)
                     Toggle(strings.loupeRememberZoomToggle, isOn: $rememberLoupeZoom)
