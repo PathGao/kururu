@@ -131,6 +131,8 @@ struct MetricsTests {
             ("UpstreamPolicyTests", { UpstreamPolicyTests.run { suite.expect($0, $1) } }),
             ("ShelfPromiseCleanupTests", { ShelfPromiseCleanupTests.run { suite.expect($0, $1) } }),
             ("KeepAwakeCatalogContract", { KeepAwakeCatalogContract.run(suite) }),
+            ("WindowLayoutFeatureTests", { WindowLayoutFeatureTests.run(suite) }),
+            ("WindowLayoutGestureTests", { WindowLayoutFeatureTests.gestures(suite) }),
         ]
         let names = groups.map(\.0) + ["MetricsTests"]
         var selected = Set<String>()
@@ -13788,11 +13790,11 @@ struct MetricsTests {
 
         // MARK: Features hub catalog
 
-        expect(AppFeature.allCases.count == 53, "feature catalog has 53 features")
+        expect(AppFeature.allCases.count == 54, "feature catalog has 54 features")
         expect(Set(AppFeature.allCases.map(\.rawValue)).count == AppFeature.allCases.count,
                "feature ids are unique")
         expect(AppFeature.allCases.map(\.rawValue) == [
-            "switcher", "dockPreview", "dockClick", "windowMaximizer", "autoQuit",
+            "switcher", "dockPreview", "dockClick", "windowMaximizer", "windowLayout", "autoQuit",
             "scrollInverter", "scrollHorizontal", "focusFollowsMouse", "smoothScroll", "mouseAcceleration", "mouseNavigation", "mouseButtonShortcuts", "middleClick",
             "mouseClickDebounce", "keyboardDebounce", "textSnippets", "superKey", "quitWindowProtection",
             "clipboardHistory", "pastePlain", "finderCutPaste", "finderRename", "shelf", "urlCleaner",
@@ -14986,7 +14988,7 @@ struct MetricsTests {
                    "feedback character format keeps its placeholder (\(language.rawValue))")
             let radialMenuValues = Mirror(reflecting: FeatureStrings.radialMenu(language)).children
                 .compactMap { $0.value as? String }
-            expect(radialMenuValues.count == 96 && radialMenuValues.allSatisfy { !$0.isEmpty },
+            expect(radialMenuValues.count == 97 && radialMenuValues.allSatisfy { !$0.isEmpty },
                    "every radial menu string is set for \(language.rawValue)")
             expect(radialMenuValues.allSatisfy { !$0.contains("—") },
                    "no em-dash in visible radial menu strings (\(language.rawValue))")
@@ -16347,10 +16349,10 @@ struct MetricsTests {
                "radial menu color titles localize properly")
 
         let allPresets = RadialMenuProfilePreset.allCases
-        expect(allPresets.count == 4
-                && Set(allPresets.map(\.rawValue)).count == 4
+        expect(allPresets.count == 5
+                && Set(allPresets.map(\.rawValue)).count == 5
                 && allPresets.allSatisfy { $0.id == $0.rawValue },
-               "four distinct radial profile presets")
+               "five distinct radial profile presets")
         expect(RadialMenuProfilePreset.general.makeItems().count == 6
                 && RadialMenuProfilePreset.media.makeItems().count == 4
                 && RadialMenuProfilePreset.tools.makeItems().count == 6
@@ -24136,6 +24138,7 @@ struct MetricsTests {
                          "Sources/Vorssaint/Services/MiddleClick/MiddleClickService.swift",
                          "Sources/Vorssaint/Services/QuitProtection/QuitProtectionService.swift",
                          "Sources/Vorssaint/Services/RadialMenu/RadialMenuService.swift",
+                         "Sources/Vorssaint/Services/WindowLayout/WindowLayoutService.swift",
                          "Sources/Vorssaint/Services/WindowMaximizer.swift",
                          "Sources/Vorssaint/Services/Finder/FinderCutPaste.swift",
                          "Sources/Vorssaint/Services/Finder/FinderRenameService.swift",
@@ -24767,7 +24770,7 @@ struct MetricsTests {
         let taxonomy: [(FeatureGroup, Set<AppFeature>)] = [
             (.monitor, [.monitorCPU, .monitorGPU, .monitorMemory, .monitorNetwork, .monitorDisk,
                         .monitorPower, .fanControl]),
-            (.windowsDesktop, [.switcher, .dockPreview, .dockClick, .windowMaximizer,
+            (.windowsDesktop, [.switcher, .dockPreview, .dockClick, .windowMaximizer, .windowLayout,
                                .autoQuit, .quitWindowProtection]),
             (.inputDevices, [.scrollInverter, .scrollHorizontal, .focusFollowsMouse, .smoothScroll,
                              .mouseAcceleration, .mouseNavigation, .mouseButtonShortcuts, .middleClick,
@@ -24987,7 +24990,7 @@ struct MetricsTests {
         // Feature names and sidebar titles remain paired across accessors.
         let featureNamesEnUS = [
             "App switcher", "Dock Preview", "Dock clicks", "Green button maximizes windows",
-            "Quit on close", "Invert mouse scrolling", "Scroll sideways while holding a key",
+            "Window layout", "Quit on close", "Invert mouse scrolling", "Scroll sideways while holding a key",
             "Focus follows mouse", "Smooth scrolling",
             "Disable mouse acceleration", "Side buttons", "Mouse button shortcuts", "Middle click",
             "Extra click filter", "Debounce", "Text snippets", "Super key",
@@ -25001,7 +25004,7 @@ struct MetricsTests {
             "GPU", "Memory", "Network", "Disks", "Power", "Fan Control"
         ]
         let featureNamesZhHans = [
-            "窗口切换器", "Dock 窗口预览", "Dock 点按", "绿色按钮改为最大化", "关闭时退出", "反转鼠标滚动", "按住按键横向滚动", "悬停聚焦", "平滑滚动",
+            "窗口切换器", "Dock 窗口预览", "Dock 点按", "绿色按钮改为最大化", "窗口布局", "关闭时退出", "反转鼠标滚动", "按住按键横向滚动", "悬停聚焦", "平滑滚动",
             "关闭鼠标加速", "侧键", "鼠标按键快捷键", "三指中键", "点击防抖", "按键防抖", "文本片段", "超级键", "退出与关闭保护", "剪贴板",
             "粘贴为纯文本", "剪切和粘贴", "重命名快捷键", "暂存架", "清理 URL", "音量混音器", "输出切换器", "静音麦克风",
             "App 启动拦截", "保持唤醒", "显示器", "睡眠时的蓝牙", "颜色吸管", "拷贝屏幕文字", "清洁模式",
@@ -25012,7 +25015,7 @@ struct MetricsTests {
         let pageTitlesEnUS = [
             "Features", "Menu bar icon", "Menu bar panel", "Monitor", "Keep awake", "Displays", "Bluetooth on sleep", "Cleaning Mode",
             "Mouse", "Trackpad", "App switcher",
-            "Dock", "Keyboard", "Finder shortcuts",
+            "Dock", "Window layout", "Keyboard", "Finder shortcuts",
             "Window behaviour", "Cleaner", "Uninstaller",
             "Homebrew", "Global environment", "Media", "Clipboard", "Clean URL", "Shelf",
             "Screen capture", "Radial menu", "Command Bar",
@@ -25021,7 +25024,7 @@ struct MetricsTests {
             "Keyboard shortcuts", "General & appearance", "About", "What’s New"
         ]
         let pageTitlesZhHans = [
-            "功能", "菜单栏图标", "菜单栏面板", "监控", "保持唤醒", "显示器", "睡眠时的蓝牙", "清洁模式", "鼠标", "触控板", "窗口切换器", "Dock", "键盘", "访达快捷键",
+            "功能", "菜单栏图标", "菜单栏面板", "监控", "保持唤醒", "显示器", "睡眠时的蓝牙", "清洁模式", "鼠标", "触控板", "窗口切换器", "Dock", "窗口布局", "键盘", "访达快捷键",
             "窗口行为", "清理", "卸载器", "Homebrew", "全局环境", "媒体", "剪贴板", "清理 URL",
             "暂存架", "屏幕捕捉", "径向菜单", "命令栏", "音量混音器", "静音麦克风", "App 启动拦截",
             "便条", "结束进程", "相机预览",
@@ -25402,7 +25405,7 @@ struct MetricsTests {
         let unitsByGroup: [(FeatureGroup, [FeatureUnit])] = [
             (.monitor, [.monitor]),
             (.focusEnergy, [.keepAwake, .brightness, .bluetoothSleep, .cleaningMode]),
-            (.windowsDesktop, [.switcher, .dock, .windowBehavior]),
+            (.windowsDesktop, [.switcher, .dock, .windowLayout, .windowBehavior]),
             (.inputDevices, [.mouse, .trackpad, .keyboard]),
             (.globalEntry, [.radialMenu, .commandBar]),
             (.clipboardFiles, [.clipboard, .cutPaste, .shelf, .scratchpad]),
@@ -25933,24 +25936,29 @@ struct MetricsTests {
 
         // MARK: - cut-window
 
-        // Window layout is gone whole: no service directory, no page, no
-        // panel view, and no identifier left anywhere in the sources.
-        let windowLayoutSourceMentions = ((FileManager.default
-            .enumerator(atPath: "Sources/Vorssaint")?.allObjects as? [String]) ?? [])
-            .filter { $0.hasSuffix(".swift") }
-            .reduce(into: 0) { total, file in
-                let code = codeLines("Sources/Vorssaint/" + file)
-                total += occurrences("WindowLayout", code) + occurrences("windowLayout", code)
-            }
-        expect(windowLayoutSourceMentions == 0,
-               "no source names window layout any more, found \(windowLayoutSourceMentions)")
-        let removedWindowLayoutPaths = [
-            "Sources/Vorssaint/Services/WindowLayout",
-            "Sources/Vorssaint/UI/Settings/WindowLayoutSettings.swift",
-            "Sources/Vorssaint/UI/MenuPanel/PanelWindowLayoutView.swift",
-        ]
-        expect(removedWindowLayoutPaths.allSatisfy { !FileManager.default.fileExists(atPath: $0) },
-               "the window layout service, page and panel view are deleted")
+        // Window layout is back from upstream: the service, its page and the
+        // panel view are all present again.
+        expect(["Sources/Vorssaint/Services/WindowLayout/WindowLayoutService.swift",
+                "Sources/Vorssaint/Services/WindowLayout/WindowLayoutSupport.swift",
+                "Sources/Vorssaint/Services/WindowLayout/WindowGestureSupport.swift",
+                "Sources/Vorssaint/UI/Settings/WindowLayoutSettings.swift",
+                "Sources/Vorssaint/UI/MenuPanel/PanelWindowLayoutView.swift",
+                "Sources/Vorssaint/UI/WindowGestureControls.swift"].allSatisfy {
+                    FileManager.default.fileExists(atPath: $0)
+                },
+               "the window layout service, page and panel view are restored")
+        // The runtime owns its lifecycle through the bindings dictionary, and
+        // AppDelegate re-syncs it when Accessibility lands and suspends it on quit.
+        let windowLayoutRuntimeCode = stripCommentLines((try? String(
+            contentsOfFile: "Sources/Vorssaint/App/FeatureRuntime.swift", encoding: .utf8)) ?? "")
+        let windowLayoutAppCode = stripCommentLines((try? String(
+            contentsOfFile: "Sources/Vorssaint/App/AppDelegate.swift", encoding: .utf8)) ?? "")
+        expect(windowLayoutRuntimeCode.contains(
+                    ".windowLayout: {\n            WindowUseTracker.shared.syncWithFeatures()\n"
+                    + "            WindowLayoutService.shared.syncWithPreferences()\n        },")
+                && windowLayoutAppCode.contains("WindowLayoutService.shared.suspend()")
+                && windowLayoutAppCode.contains(".middleClick, .windowMaximizer, .keyboardDebounce, .windowLayout,"),
+               "window layout is synced by the hub, re-synced on Accessibility and suspended on quit")
 
         // Maximize windows and quit/close protection share one unit and one
         // page, because both change what a standard window control does.
@@ -26093,14 +26101,15 @@ struct MetricsTests {
             urlDefaults.removePersistentDomain(forName: urlSuite)
         }
 
-        // A wheel saved with a window layout slice loads without it, and
+        // A wheel saved with a window layout slice loads with it again, and
         // without losing the slices around it.
         let savedWheelJSON = """
         [{"kind":"media","payload":"playPause"},{"kind":"windowLayout","payload":"leftHalf"}]
         """
         let loadedWheel = RadialMenuSupport.decode(Data(savedWheelJSON.utf8))
-        expect(loadedWheel.count == 1 && loadedWheel[0].mediaKey == .playPause,
-               "a saved window layout slice is dropped on load, got \(loadedWheel.count) slices")
+        expect(loadedWheel.count == 2 && loadedWheel[0].mediaKey == .playPause
+                && loadedWheel[1].windowLayoutAction == .leftHalf,
+               "a saved window layout slice survives a load, got \(loadedWheel.count) slices")
 
         let previousLanguage = L10n.shared.language
         for language in AppLanguage.allCases {

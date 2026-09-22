@@ -398,6 +398,7 @@ if (( TEST )); then
         Sources/Vorssaint/Core/Localization.swift \
         Sources/Vorssaint/Core/Localizations/Strings+*.swift \
         Sources/Vorssaint/Core/FeatureStrings.swift \
+        Sources/Vorssaint/Core/WindowLayoutStrings.swift \
         Sources/Vorssaint/Core/KillProcessStrings.swift \
         Sources/Vorssaint/Core/CameraPreviewStrings.swift \
         Sources/Vorssaint/Core/WhatsAppDownloadStrings.swift \
@@ -531,6 +532,9 @@ if (( TEST )); then
         Sources/Vorssaint/Services/Metrics/MaxCapacityProbe.swift \
         Sources/Vorssaint/Services/Metrics/TemperatureSensorSelector.swift \
         Sources/Vorssaint/Services/Metrics/SustainedAlertGate.swift \
+        Sources/Vorssaint/Services/WindowLayout/WindowLayoutSupport.swift \
+        Sources/Vorssaint/Services/WindowLayout/WindowGestureSupport.swift \
+        Sources/Vorssaint/Core/WindowDirectionalStrings.swift \
         Sources/Vorssaint/Services/CleaningMode/CleaningUnlockCounter.swift \
         Sources/Vorssaint/Services/Display/BrightnessSupport.swift \
         Sources/Vorssaint/Services/Cleaner/CleanerSupport.swift \
@@ -576,6 +580,7 @@ if (( TEST )); then
         Tests/ShelfFilePromiseTests.swift \
         Tests/ShelfDropRoutingTests.swift \
         Tests/KeepAwakeCatalogTests.swift \
+        Tests/WindowLayoutFeatureTests.swift \
         build/generated-tests/*.swift \
     )
     TEST_OUTPUT_FILE_MAP="$TEST_OBJECT_DIR/output-file-map.json"
