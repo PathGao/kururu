@@ -118,6 +118,7 @@ struct MetricsTests {
             ("PlainTextEditorLifecycleTests", {
                 MainActor.assumeIsolated { PlainTextEditorLifecycleTests.run { suite.expect($0, $1) } }
             }),
+            ("ScrollHorizontalModifierTests", { ScrollHorizontalModifierTests.run(suite) }),
             ("CleanerEligibilityTests", { CleanerEligibilityTests.run(suite) }),
             ("SwitcherScrollContract", { SwitcherScrollContract.run(suite) }),
             ("SwitcherActivationTests", { SwitcherActivationTests.run(suite) }),
@@ -13777,12 +13778,12 @@ struct MetricsTests {
 
         // MARK: Features hub catalog
 
-        expect(AppFeature.allCases.count == 50, "feature catalog has 50 features")
+        expect(AppFeature.allCases.count == 51, "feature catalog has 51 features")
         expect(Set(AppFeature.allCases.map(\.rawValue)).count == AppFeature.allCases.count,
                "feature ids are unique")
         expect(AppFeature.allCases.map(\.rawValue) == [
             "switcher", "dockPreview", "dockClick", "windowMaximizer", "autoQuit",
-            "scrollInverter", "focusFollowsMouse", "smoothScroll", "mouseAcceleration", "mouseNavigation", "mouseButtonShortcuts", "middleClick",
+            "scrollInverter", "scrollHorizontal", "focusFollowsMouse", "smoothScroll", "mouseAcceleration", "mouseNavigation", "mouseButtonShortcuts", "middleClick",
             "mouseClickDebounce", "keyboardDebounce", "textSnippets", "superKey", "quitWindowProtection",
             "clipboardHistory", "pastePlain", "finderCutPaste", "finderRename", "shelf", "urlCleaner",
             "mixer", "soundOutputSwitcher", "micMute", "musicBlock",
@@ -24638,9 +24639,9 @@ struct MetricsTests {
                         .monitorPower, .fanControl]),
             (.windowsDesktop, [.switcher, .dockPreview, .dockClick, .windowMaximizer,
                                .autoQuit, .quitWindowProtection]),
-            (.inputDevices, [.scrollInverter, .focusFollowsMouse, .smoothScroll, .mouseAcceleration,
-                             .mouseNavigation, .mouseButtonShortcuts, .middleClick, .mouseClickDebounce,
-                             .keyboardDebounce, .textSnippets, .superKey]),
+            (.inputDevices, [.scrollInverter, .scrollHorizontal, .focusFollowsMouse, .smoothScroll,
+                             .mouseAcceleration, .mouseNavigation, .mouseButtonShortcuts, .middleClick,
+                             .mouseClickDebounce, .keyboardDebounce, .textSnippets, .superKey]),
             (.globalEntry, [.commandBar, .radialMenu]),
             (.clipboardFiles, [.clipboardHistory, .pastePlain, .finderCutPaste, .finderRename, .shelf,
                                .urlCleaner, .scratchpad]),
@@ -24855,7 +24856,8 @@ struct MetricsTests {
         // Feature names and sidebar titles remain paired across accessors.
         let featureNamesEnUS = [
             "App switcher", "Dock Preview", "Dock clicks", "Green button maximizes windows",
-            "Quit on close", "Invert mouse scrolling", "Focus follows mouse", "Smooth scrolling",
+            "Quit on close", "Invert mouse scrolling", "Scroll sideways while holding a key",
+            "Focus follows mouse", "Smooth scrolling",
             "Disable mouse acceleration", "Side buttons", "Mouse button shortcuts", "Middle click",
             "Extra click filter", "Debounce", "Text snippets", "Super key",
             "Quit & close protection", "Clipboard", "Paste as plain text", "Cut & paste",
@@ -24867,7 +24869,7 @@ struct MetricsTests {
             "GPU", "Memory", "Network", "Disks", "Power", "Fan Control"
         ]
         let featureNamesZhHans = [
-            "窗口切换器", "Dock 窗口预览", "Dock 点按", "绿色按钮改为最大化", "关闭时退出", "反转鼠标滚动", "悬停聚焦", "平滑滚动",
+            "窗口切换器", "Dock 窗口预览", "Dock 点按", "绿色按钮改为最大化", "关闭时退出", "反转鼠标滚动", "按住按键横向滚动", "悬停聚焦", "平滑滚动",
             "关闭鼠标加速", "侧键", "鼠标按键快捷键", "三指中键", "点击防抖", "按键防抖", "文本片段", "超级键", "退出与关闭保护", "剪贴板",
             "粘贴为纯文本", "剪切和粘贴", "重命名快捷键", "暂存架", "清理 URL", "音量混音器", "输出切换器", "静音麦克风",
             "App 启动拦截", "保持唤醒", "显示器", "睡眠时的蓝牙", "颜色吸管", "拷贝屏幕文字", "清洁模式",
@@ -25238,9 +25240,9 @@ struct MetricsTests {
         expect(FeatureVisibilitySupport.features(for: .trackpad) == [.middleClick],
                "the trackpad page is gated by middle click alone, got \(FeatureVisibilitySupport.features(for: .trackpad))")
         expect(FeatureVisibilitySupport.features(for: .mouse)
-                == [.scrollInverter, .focusFollowsMouse, .smoothScroll, .mouseAcceleration, .mouseNavigation,
-                    .mouseButtonShortcuts, .mouseClickDebounce],
-               "the mouse page keeps its seven pointer features, got \(FeatureVisibilitySupport.features(for: .mouse))")
+                == [.scrollInverter, .scrollHorizontal, .focusFollowsMouse, .smoothScroll, .mouseAcceleration,
+                    .mouseNavigation, .mouseButtonShortcuts, .mouseClickDebounce],
+               "the mouse page keeps its eight pointer features, got \(FeatureVisibilitySupport.features(for: .mouse))")
         let trackpadSettingsViewCode = storageCode("Sources/Vorssaint/UI/Settings/SettingsView.swift")
         let mouseSettingsBody = trackpadSettingsViewCode.components(separatedBy: "struct MouseSettings: View {").last?
             .components(separatedBy: "\nstruct ").first ?? ""

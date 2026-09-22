@@ -213,7 +213,7 @@ extension AppFeature {
         case .windowMaximizer, .autoQuit, .quitWindowProtection:
             return FeatureSettingsDestination(.windowBehavior)
 
-        case .scrollInverter:
+        case .scrollInverter, .scrollHorizontal:
             return FeatureSettingsDestination(.mouse, sectionAnchor: .scrollDirection)
         case .focusFollowsMouse:
             return FeatureSettingsDestination(.mouse, sectionAnchor: .focusFollowsMouse)
@@ -306,7 +306,7 @@ enum FeatureVisibilitySupport {
         case .bluetoothSleep: return [.bluetoothSleep]
         case .cleaningMode: return [.cleaningMode]
         case .monitor: return monitorFeatures
-        case .mouse: return [.scrollInverter, .focusFollowsMouse, .smoothScroll, .mouseAcceleration, .mouseNavigation, .mouseButtonShortcuts,
+        case .mouse: return [.scrollInverter, .scrollHorizontal, .focusFollowsMouse, .smoothScroll, .mouseAcceleration, .mouseNavigation, .mouseButtonShortcuts,
                              .mouseClickDebounce]
         case .trackpad: return [.middleClick]
         case .switcher: return [.switcher]

@@ -517,6 +517,9 @@ struct MouseSettings: View {
     @ObservedObject private var mouseNavigation = MouseNavigationService.shared
     @AppStorage(DefaultsKey.scrollInverterEnabled) private var invertVertical = false
     @AppStorage(DefaultsKey.scrollInverterHorizontalEnabled) private var invertHorizontal = false
+    @AppStorage(DefaultsKey.scrollHorizontalEnabled) private var horizontalScrollEnabled = false
+    @AppStorage(DefaultsKey.scrollHorizontalModifier) private var horizontalScrollModifier =
+        ScrollHorizontalModifier.command
     @AppStorage(DefaultsKey.focusFollowsMouseEnabled) private var focusFollowsMouseEnabled = false
     @AppStorage(DefaultsKey.focusFollowsMouseDelay) private var focusFollowsMouseDelay =
         FocusFollowsMouseSupport.defaultDelayMilliseconds
@@ -538,6 +541,7 @@ struct MouseSettings: View {
     }
 
     var body: some View {
+        let modifierStrings = FeatureStrings.quitProtection(l10n.language)
         SettingsForm {
             if AppFeature.scrollInverter.isAvailable {
                 SettingsSection(l10n.s.scrollSection) {
@@ -553,6 +557,22 @@ struct MouseSettings: View {
                                 if scrollDirectionEnabled { permissions.requestAccessibility() }
                             }
                         SettingsCaptionText(l10n.s.scrollTrackpadNote)
+                    }
+                    if AppFeature.scrollHorizontal.isAvailable {
+                        VStack(alignment: .leading, spacing: 4) {
+                            FeatureSwitchRow(feature: .scrollHorizontal)
+                            SettingsCaptionText(l10n.s.scrollHorizontalCaption)
+                        }
+                        Group {
+                            Picker(l10n.s.scrollHorizontalModifierLabel,
+                                   selection: $horizontalScrollModifier) {
+                                Text("\(modifierStrings.shiftKey) (⇧)").tag(ScrollHorizontalModifier.shift)
+                                Text("\(modifierStrings.optionKey) (⌥)").tag(ScrollHorizontalModifier.option)
+                                Text("\(modifierStrings.controlKey) (⌃)").tag(ScrollHorizontalModifier.control)
+                                Text("\(l10n.s.scrollHorizontalCommandKey) (⌘)").tag(ScrollHorizontalModifier.command)
+                            }
+                        }
+                        .disabled(!horizontalScrollEnabled)
                     }
                     if scrollDirectionEnabled, inverter.isRunning {
                         HStack(spacing: 6) {
@@ -744,7 +764,7 @@ struct MouseSettings: View {
     /// Only features that are on AND still available can ask for the
     /// permission note; a hub-disabled one no longer needs anything.
     private var accessibilityNoteVisible: Bool {
-        let anyEngaged = (scrollDirectionEnabled && AppFeature.scrollInverter.isAvailable)
+        let anyEngaged = scrollDirectionEnabled
             || (focusFollowsMouseEnabled && AppFeature.focusFollowsMouse.isAvailable)
             || (smoothScrollEnabled && AppFeature.smoothScroll.isAvailable)
             || (mouseNavigationEnabled && AppFeature.mouseNavigation.isAvailable)
@@ -754,8 +774,10 @@ struct MouseSettings: View {
         return anyEngaged && !permissions.accessibility
     }
 
+    /// Either direction feature engaged: they share one tap and one permission.
     private var scrollDirectionEnabled: Bool {
-        invertVertical || invertHorizontal
+        (AppFeature.scrollInverter.isAvailable && (invertVertical || invertHorizontal))
+            || (AppFeature.scrollHorizontal.isAvailable && horizontalScrollEnabled)
     }
 
     private func setScrollPreset(step: Int, response: Int) {
