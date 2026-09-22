@@ -123,6 +123,17 @@ def main():
           + declaration(shelf, "    func acceptDrop(pasteboard:")
           + declaration(shelf, "    func accept(draggingInfo:")
           + "}\n}\n")
+    takeover = "Sources/Vorssaint/Services/SystemShortcutTakeover.swift"
+    service = declaration(takeover, "enum SystemShortcutTakeover {").replace("private static", "static")
+    # A relaunch re-runs every stored initializer, read from the same source.
+    stored = re.findall(r"(?ms)^    static var (\w+): [^=\n]+?(?: = (.*?))?\n(?=    \S|\n)", service)
+    relaunch = "static func relaunch() {\n" + "".join(
+        f"SystemShortcutTakeover.{name} = {value or 'nil'}\n" for name, value in stored) + "}\n"
+    hotkey = "Sources/Vorssaint/Services/QuickTools/QuickToolHotkey.swift"
+    write("SystemShortcutTakeoverBodies.swift", "import CoreGraphics\nimport Foundation\n"
+          + "extension SystemShortcutTakeoverContract {\n" + service + relaunch
+          + "final class QuickToolHotkey: QuickToolHotkeyState {\n"
+          + declaration(hotkey, "    func sync(") + declaration(hotkey, "    func unregister()") + "}\n}\n")
 
 if __name__ == "__main__":
     main()

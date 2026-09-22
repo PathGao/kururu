@@ -115,7 +115,8 @@ final class ScreenshotService: ObservableObject {
             fallback: .screenshotFullScreenDefault)
         fullScreenShortcutRegistrationFailed = !fullScreenHotkey.sync(
             enabled: fullScreenEnabled,
-            shortcut: fullScreenShortcut)
+            shortcut: fullScreenShortcut,
+            storageKey: DefaultsKey.screenshotFullScreenShortcut)
         let lastCaptureEnabled = defaults.bool(
             forKey: DefaultsKey.screenshotLastCaptureShortcutEnabled)
         let lastCaptureShortcut = GlobalShortcut.saved(
@@ -123,7 +124,8 @@ final class ScreenshotService: ObservableObject {
             fallback: .screenshotLastCaptureDefault)
         lastCaptureShortcutRegistrationFailed = !lastCaptureHotkey.sync(
             enabled: lastCaptureEnabled,
-            shortcut: lastCaptureShortcut)
+            shortcut: lastCaptureShortcut,
+            storageKey: DefaultsKey.screenshotLastCaptureShortcut)
         let clipboardEnabled = defaults.bool(
             forKey: DefaultsKey.screenshotClipboardShortcutEnabled)
         let clipboardShortcut = GlobalShortcut.saved(
@@ -131,7 +133,8 @@ final class ScreenshotService: ObservableObject {
             fallback: .screenshotClipboardDefault)
         clipboardShortcutRegistrationFailed = !clipboardHotkey.sync(
             enabled: clipboardEnabled,
-            shortcut: clipboardShortcut)
+            shortcut: clipboardShortcut,
+            storageKey: DefaultsKey.screenshotClipboardShortcut)
         if !lastCaptureEnabled {
             ScreenshotLastCaptureStore.clear()
         }

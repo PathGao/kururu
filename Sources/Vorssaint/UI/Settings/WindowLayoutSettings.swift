@@ -329,6 +329,7 @@ struct WindowLayoutActionRow: View {
     @AppStorage private var rawValue: String
     @State private var errorText: String?
     @State private var isRecording = false
+    @State private var pendingTakeOver: GlobalShortcut?
 
     init(action: WindowLayoutAction,
          title: String,
@@ -363,18 +364,20 @@ struct WindowLayoutActionRow: View {
                     Label(title, systemImage: symbol)
                 }
                 Spacer()
-                ShortcutRecorderButton(shortcut: shortcut
+                ShortcutRecorderButton(shortcut: pendingTakeOver
+                                           ?? shortcut
                                            ?? action.defaultShortcut
                                            ?? .windowLayoutLeftDefault,
                                        isEnabled: shortcutEnabled,
                                        waitingTitle: l10n.s.shortcutPressKeys,
-                                       emptyTitle: shortcut == nil ? l10n.s.shortcutNone : nil,
+                                       emptyTitle: pendingTakeOver == nil && shortcut == nil ? l10n.s.shortcutNone : nil,
                                        clearAction: clear,
                                        notCapturedAction: { errorText = l10n.s.shortcutNotCaptured },
                                        recordingChanged: { recording in
                                            isRecording = recording
                                            if recording {
                                                errorText = nil
+                                               pendingTakeOver = nil
                                            }
                                        },
                                        invalidAction: { errorText = l10n.s.shortcutInvalid },
@@ -396,6 +399,8 @@ struct WindowLayoutActionRow: View {
                     rawValue = action.defaultShortcut?.storageValue
                         ?? WindowLayoutAction.clearedShortcutStorageValue
                     errorText = nil
+                    pendingTakeOver = nil
+                    SystemShortcutTakeover.setTakeOver(action.shortcutKey, false)
                     WindowLayoutService.shared.syncWithPreferences()
                 }
                 .disabled(!shortcutEnabled || shortcut == action.defaultShortcut)
@@ -409,6 +414,21 @@ struct WindowLayoutActionRow: View {
                     .font(SettingsTypography.caption)
                     .foregroundStyle(.secondary)
             }
+            if let pendingTakeOver {
+                SystemShortcutTakeOverOffer(
+                    shortcut: pendingTakeOver,
+                    onAccept: {
+                        rawValue = pendingTakeOver.storageValue
+                        SystemShortcutTakeover.setTakeOver(action.shortcutKey, true)
+                        self.pendingTakeOver = nil
+                        WindowLayoutService.shared.syncWithPreferences()
+                    },
+                    onDismiss: {
+                        self.pendingTakeOver = nil
+                        errorText = String(format: l10n.s.shortcutConflictFormat, "macOS")
+                    }
+                )
+            }
         }
         .onChange(of: l10n.language) { _, _ in errorText = nil }
     }
@@ -421,6 +441,8 @@ struct WindowLayoutActionRow: View {
     private func clear() {
         rawValue = WindowLayoutAction.clearedShortcutStorageValue
         errorText = nil
+        pendingTakeOver = nil
+        SystemShortcutTakeover.setTakeOver(action.shortcutKey, false)
         WindowLayoutService.shared.syncWithPreferences()
     }
 
@@ -435,12 +457,22 @@ struct WindowLayoutActionRow: View {
             errorText = String(format: l10n.s.shortcutConflictFormat, conflict)
             return
         }
-        if shortcut.conflictsWithSystemShortcut {
-            errorText = String(format: l10n.s.shortcutConflictFormat, "macOS")
+        // The offer is the last word on a combination: every other check has
+        // already passed, so accepting it writes exactly what a save writes.
+        switch SystemShortcutTakeoverSupport.recorderDecision(
+            shortcut: shortcut,
+            conflictsWithMacOS: SystemShortcutTakeover.conflictsWithMacOS(shortcut),
+            takenOver: SystemShortcutTakeover.isTakenOver(action.shortcutKey),
+            current: GlobalShortcut(storageValue: rawValue)) {
+        case .offer:
+            pendingTakeOver = shortcut
+            errorText = nil
             return
+        case .save(let clearTakeOver):
+            rawValue = shortcut.storageValue
+            errorText = nil
+            if clearTakeOver { SystemShortcutTakeover.setTakeOver(action.shortcutKey, false) }
         }
-        rawValue = shortcut.storageValue
-        errorText = nil
         WindowLayoutService.shared.syncWithPreferences()
     }
 }

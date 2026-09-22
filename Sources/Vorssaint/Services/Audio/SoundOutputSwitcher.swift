@@ -98,6 +98,7 @@ final class SoundOutputSwitcher: ObservableObject {
             hotKeyRef = ref
             registeredShortcut = shortcut
             registrationFailed = false
+            SystemShortcutTakeover.claim(DefaultsKey.soundOutputSwitcherShortcut, shortcut: shortcut)
         } else {
             hotKeyRef = nil
             registeredShortcut = nil
@@ -113,6 +114,7 @@ final class SoundOutputSwitcher: ObservableObject {
     private func unregisterHotkey() {
         if let hotKeyRef {
             UnregisterEventHotKey(hotKeyRef)
+            SystemShortcutTakeover.release(DefaultsKey.soundOutputSwitcherShortcut)
         }
         hotKeyRef = nil
         registeredShortcut = nil
