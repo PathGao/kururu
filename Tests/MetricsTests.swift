@@ -10901,6 +10901,20 @@ struct MetricsTests {
                "the window server request reports whether both halves of the click were taken")
         expect(activationBridgeCode.contains("guard let setFrontProcess, let processForPID, let postEventRecord else { return false }"),
                "a missing transport cannot claim the window was fronted")
+        // The press and release that make the window key must name the window
+        // and carry no location. A point near the frame's corner hits the
+        // invisible resize border, and the repeated focus pass then finished a
+        // resize that dragged the window's top-left corner to the screen's own
+        // — on every switch, once this became the route for every selection.
+        expect(activationBridgeCode.contains("for offset in 0x20..<0x30 { record[offset] = 0xff }"),
+               "the key-making click fills its location bytes with ones, so it points nowhere")
+        expect(!activationBridgeCode.contains("CGPoint(x: -1, y: -1)")
+               && !activationBridgeCode.contains("record.replaceSubrange(0x20"),
+               "no location near the window's corner is written into the click record")
+        expect(activationBridgeCode.contains("record.replaceSubrange(0x3c..<0x3c + $0.count, with: $0)")
+               && activationBridgeCode.contains("record[0x08] = 0x01")
+               && activationBridgeCode.contains("record[0x08] = 0x02"),
+               "the click still names the window and is a press followed by a release")
         expect(SwitcherSupport.shouldRestoreSourceAfterTargetMinimize(targetPID: 10,
                                                                       sourcePID: 20,
                                                                       frontmostPID: 10,
