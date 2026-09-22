@@ -567,6 +567,7 @@ if (( TEST )); then
         Tests/ShelfPromiseCleanupTests.swift \
         Tests/CleanerEligibilityTests.swift \
         Tests/SwitcherScrollTests.swift \
+        Tests/SwitcherActivationTests.swift \
         Tests/ScreenshotSelectionRefreshTests.swift \
         Tests/RecorderSampleTimingTests.swift \
         Tests/RecorderWriterTests.swift \
