@@ -10844,6 +10844,63 @@ struct MetricsTests {
                "App Switcher activates only the selected window when a window target exists")
         expect(SwitcherSupport.shouldActivateAllWindows(targetsSpecificWindow: false),
                "App Switcher can activate the full app for app-only entries")
+        // App-level activation raises an app's other windows even without
+        // activateAllWindows, so a plan scoped to one window has to ask the
+        // window server for that window alone.
+        let windowActivationPlan = SwitcherSupport.activationPlan(targetsSpecificWindow: true)
+        let appActivationPlan = SwitcherSupport.activationPlan(targetsSpecificWindow: false)
+        expect(SwitcherSupport.appActivationRoute(plan: windowActivationPlan, windowID: 77)
+               == .exactWindow(77),
+               "a window-scoped selection is routed to that exact window")
+        expect(SwitcherSupport.appActivationRoute(plan: windowActivationPlan, windowID: nil)
+               == .wholeApp,
+               "a window-scoped plan without a window still has to activate the app")
+        expect(SwitcherSupport.appActivationRoute(plan: appActivationPlan, windowID: 77)
+               == .wholeApp,
+               "explicit app selection still brings all its windows forward")
+        // Comments are stripped first, so the note explaining the route cannot
+        // stand in for the calls that implement it.
+        let activationActivatorCode = ((try? String(
+            contentsOfFile: "Sources/Vorssaint/Services/Switcher/WindowActivator.swift",
+            encoding: .utf8)) ?? "")
+            .components(separatedBy: "\n")
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+            .joined(separator: "\n")
+        let activateAppBody: String = {
+            guard let start = activationActivatorCode.range(of: "private static func activateApp(") else { return "" }
+            let rest = activationActivatorCode[start.upperBound...]
+            let end = rest.range(of: "private static func ")?.lowerBound ?? rest.endIndex
+            return String(rest[..<end])
+        }()
+        expect(activateAppBody.contains("SwitcherSupport.appActivationRoute(plan: plan, windowID: windowID)")
+               && activateAppBody.contains("SpaceWindowBridge.frontWindow(windowID, ownerPID: ownerPID)")
+               && activateAppBody.contains("focusWindow(windowID: windowID, pid: ownerPID, makeAppFrontmost: false)"),
+               "a window-scoped selection fronts that window instead of activating the app")
+        expect(activateAppBody.contains("activateAppCooperatively(app, allWindows: plan.activateAllWindows)"),
+               "a window the window server or Accessibility could not take falls back to app activation")
+        expect(activateAppBody.contains("if ownerPID != app.processIdentifier"),
+               "an accessory window owner still gets its regular host's menu bar")
+        // Every selection path goes through the routed activation; none may
+        // keep the old pair that activated the app and then raised a window.
+        expect(!activationActivatorCode.contains("activateApp(app, allWindows:")
+               && !activationActivatorCode.contains("makeAppFrontmost: activationPlan.makeAppFrontmostAfterActivation"),
+               "no activation path still activates the whole app before raising one window")
+        // A raise Accessibility refused must not read as success, or the
+        // fallback never runs.
+        expect(activationActivatorCode.contains("let raised = AXUIElementPerformAction(axWindow, kAXRaiseAction as CFString)")
+               && activationActivatorCode.contains("return raised == .success"),
+               "the Accessibility raise reports whether it was actually delivered")
+        let activationBridgeCode = ((try? String(
+            contentsOfFile: "Sources/Vorssaint/Services/Switcher/SpaceWindowBridge.swift",
+            encoding: .utf8)) ?? "")
+            .components(separatedBy: "\n")
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+            .joined(separator: "\n")
+        expect(activationBridgeCode.contains("static func frontWindow(_ windowID: CGWindowID, ownerPID: pid_t) -> Bool")
+               && activationBridgeCode.contains("return down == .success && up == .success"),
+               "the window server request reports whether both halves of the click were taken")
+        expect(activationBridgeCode.contains("guard let setFrontProcess, let processForPID, let postEventRecord else { return false }"),
+               "a missing transport cannot claim the window was fronted")
         expect(SwitcherSupport.shouldRestoreSourceAfterTargetMinimize(targetPID: 10,
                                                                       sourcePID: 20,
                                                                       frontmostPID: 10,
