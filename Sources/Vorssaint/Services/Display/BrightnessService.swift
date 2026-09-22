@@ -267,6 +267,13 @@ final class BrightnessService: ObservableObject {
     private var lidNotificationPort: IONotificationPortRef?
     private var lidNotification: io_object_t = 0
     private var running = false
+    /// Permission reset removes only the two Accessibility event taps. The
+    /// display routes, disabled-display journal and gamma state stay live so
+    /// revoking permission cannot undo a user's current brightness setup.
+    private var inputTapsSuspended = false
+    private func tapsAreSuspended() -> Bool {
+        keyThreadLock.withLock { inputTapsSuspended }
+    }
     private var keyboardLightLevel: Float?
     private var lastKeyboardLightLevel: Float = BrightnessSupport.defaultKeyboardLightLevel
     private var keyboardLightBridge: KeyboardLightBridge? { Self.sharedKeyboardLightBridge }
@@ -435,6 +442,10 @@ final class BrightnessService: ObservableObject {
         refresh()
     }
 
+    /// The reset guard is deliberately left intact here: a preference or
+    /// feature-state change during the asynchronous permission teardown must
+    /// not bring the taps back. The reset owner releases it explicitly
+    /// through `resumeInputTaps()`.
     func stop() {
         guard running else { return }
         running = false
@@ -949,6 +960,7 @@ final class BrightnessService: ObservableObject {
     // MARK: - Brightness keys (follow the pointer)
 
     private func syncKeyTap() {
+        guard !tapsAreSuspended() else { return }
         let defaults = UserDefaults.standard
         let wantsKeyRouting = defaults.bool(forKey: DefaultsKey.brightnessKeysEnabled)
         let wantsBrightnessOSD = defaults.bool(
@@ -977,7 +989,7 @@ final class BrightnessService: ObservableObject {
     }
 
     private func installKeyTap() {
-        guard keyTap == nil else { return }
+        guard !tapsAreSuspended(), keyTap == nil else { return }
         let systemDefined = CGEventType(rawValue: CleaningSystemKeyEvent.systemDefinedEventTypeRawValue)!
         let callback: CGEventTapCallBack = { _, type, event, userInfo in
             guard let userInfo else { return Unmanaged.passUnretained(event) }
@@ -1011,8 +1023,29 @@ final class BrightnessService: ObservableObject {
 
     // MARK: - Brightness keys on other keyboards
 
+    /// Stops only the media-key and ordinary-function-key event taps before a
+    /// permission reset. This intentionally leaves display routes, observers,
+    /// OSD state, disabled displays and gamma curves untouched. The guard
+    /// keeps session/rebuild callbacks from bringing either tap back while
+    /// the reset is in progress. MUST run on the main thread.
+    func suspendInputTaps() {
+        keyThreadLock.withLock { inputTapsSuspended = true }
+        removeKeyTap()
+        removeFunctionKeyTap()
+    }
+
+    /// Ends the reset-only guard after TCC work has completed (or an
+    /// uninstall aborts before TCC is touched), then lets the normal
+    /// preference and permission checks decide whether to reinstall the taps.
+    /// MUST run on the main thread.
+    func resumeInputTaps() {
+        keyThreadLock.withLock { inputTapsSuspended = false }
+        syncKeyTap()
+    }
+
     private func installFunctionKeyTap() {
         let thread = keyThreadLock.withLock { () -> Thread? in
+            guard !inputTapsSuspended else { return nil }
             if functionKeyThread != nil {
                 if shouldStopFunctionKeyThread { pendingFunctionKeyRestart = true }
                 return nil
@@ -1113,12 +1146,23 @@ final class BrightnessService: ObservableObject {
     /// server and the route from behind the state lock.
     private func routeFunctionKey(type: CGEventType, event: CGEvent) -> Unmanaged<CGEvent>? {
         if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
-            let tap = keyThreadLock.withLock { shouldStopFunctionKeyThread ? nil : functionKeyTap }
-            if SessionActivity.shared.isActive, AXIsProcessTrusted(), let tap {
+            let shouldSync = keyThreadLock.withLock { () -> Bool in
+                guard SessionActivity.shared.isActive, AXIsProcessTrusted(),
+                      !shouldStopFunctionKeyThread, let tap = functionKeyTap else {
+                    return true
+                }
+                guard !inputTapsSuspended else { return false }
+                // Keep the lock through the enable so a main-thread suspend
+                // cannot disable the tap and then lose a race to re-enable it.
                 CGEvent.tapEnable(tap: tap, enable: true)
-            } else {
+                return false
+            }
+            if shouldSync {
                 DispatchQueue.main.async { [weak self] in self?.syncKeyTap() }
             }
+            return Unmanaged.passUnretained(event)
+        }
+        guard !tapsAreSuspended() else {
             return Unmanaged.passUnretained(event)
         }
         guard type == .keyDown || type == .keyUp else {
@@ -1282,6 +1326,7 @@ final class BrightnessService: ObservableObject {
     /// option is on, otherwise replacing only the system target's overlay.
     /// Both halves are swallowed so the system never performs the same step.
     private func handleKeyEvent(type: CGEventType, event: CGEvent) -> Unmanaged<CGEvent>? {
+        guard !tapsAreSuspended() else { return Unmanaged.passUnretained(event) }
         if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
             if SessionActivity.shared.isActive, AXIsProcessTrusted(), let keyTap {
                 CGEvent.tapEnable(tap: keyTap, enable: true)

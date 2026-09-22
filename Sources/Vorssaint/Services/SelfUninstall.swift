@@ -41,7 +41,10 @@ enum SelfUninstall {
                     removeRule: removeSudoersRuleIfPresent,
                     reset: resetTCC
                 ) { result in
-                    DispatchQueue.main.async { completion(result) }
+                    DispatchQueue.main.async {
+                        BrightnessService.shared.resumeInputTaps()
+                        completion(result)
+                    }
                 }
             }
         }
@@ -56,6 +59,7 @@ enum SelfUninstall {
         }
         DispatchQueue.main.async {
             guard suspendInputInterceptors() else {
+                BrightnessService.shared.resumeInputTaps()
                 onFailure(.preparation)
                 return
             }
@@ -68,7 +72,10 @@ enum SelfUninstall {
                     guard result == .completed else {
                         let failure: Failure = result == .ruleRemovalFailed ? .rule
                             : result == .resetFailed ? .permissions : .preparation
-                        DispatchQueue.main.async { onFailure(failure) }
+                        DispatchQueue.main.async {
+                            BrightnessService.shared.resumeInputTaps()
+                            onFailure(failure)
+                        }
                         return
                     }
                     let helper: UninstallHandoff
@@ -127,6 +134,7 @@ enum SelfUninstall {
         WindowMaximizer.shared.stop()
         AppSwitcher.shared.suspend()
         DockPreviewService.shared.stop()
+        BrightnessService.shared.suspendInputTaps()
         AutoQuitService.shared.suspend()
         FinderCutPaste.shared.suspend()
         FinderRenameService.shared.suspend()
@@ -137,8 +145,10 @@ enum SelfUninstall {
         SuperKeyService.shared.suspend()
         DockClickService.shared.suspend()
         MiddleClickService.shared.suspend()
+        QuitProtectionService.shared.suspend()
         PastePlainService.shared.suspend()
         SnippetLibraryService.shared.suspend()
+        TextSnippetService.shared.suspend()
         ScreenCaptureService.shared.suspend()
         RecentCaptureService.shared.suspend()
         ScreenTextService.shared.suspend()

@@ -23781,6 +23781,35 @@ struct MetricsTests {
                "in-app uninstall aborts unless fans and normal sleep are restored before removal")
         expect(uninstallScriptSource.contains("SleepDisabled"),
                "script uninstall reads the sleep setting back for itself")
+        // Every service that keeps a session-level head-insert tap alive has
+        // to be in `suspendInputInterceptors`: one still live when
+        // Accessibility is revoked is the freeze the teardown exists to
+        // prevent. Quit protection and text snippets each keep one, and
+        // BrightnessService keeps both a system-defined media tap and a
+        // function-key tap that sees every key press. Only those taps come
+        // down: display routes and gamma state must survive the reset.
+        let brightnessTapSource = (try? String(
+            contentsOfFile: "Sources/Vorssaint/Services/Display/BrightnessService.swift",
+            encoding: .utf8)) ?? ""
+        let brightnessTapMethod = brightnessTapSource
+            .components(separatedBy: "    func suspendInputTaps()").dropFirst().first?
+            .components(separatedBy: "    private func installFunctionKeyTap").first ?? ""
+        let brightnessTapCode = stripCommentLines(brightnessTapMethod)
+        expect(selfUninstallSource.contains("TextSnippetService.shared.suspend()")
+                && selfUninstallSource.contains("QuitProtectionService.shared.suspend()")
+                && selfUninstallSource.contains("BrightnessService.shared.suspendInputTaps()")
+                && selfUninstallSource.contains("BrightnessService.shared.resumeInputTaps()")
+                && brightnessTapCode.contains("inputTapsSuspended = true")
+                && brightnessTapCode.contains("removeKeyTap()")
+                && brightnessTapCode.contains("removeFunctionKeyTap()")
+                && !brightnessTapCode.contains("restoreManagedDisplays")
+                && !brightnessTapCode.contains("restoreAllGamma"),
+               "the permission teardown stops every persistent keyboard tap")
+        let quitProtectionSource = (try? String(
+            contentsOfFile: "Sources/Vorssaint/Services/QuitProtection/QuitProtectionService.swift",
+            encoding: .utf8)) ?? ""
+        expect(quitProtectionSource.contains("func suspend()"),
+               "quit protection exposes the teardown the permission reset calls")
 
         // MARK: Detached command reruns (counted last, so a late rerun still fails)
         // The `||` form reran the whole installer — as root — on every non-zero
