@@ -290,6 +290,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
         // Drops any environment check still in flight, so its Homebrew child
         // process does not outlive the app.
         MainActor.assumeIsolated { EnvironmentUpdateChecker.shared.cancel() }
+        // Closes the mirror and unregisters its hotkey; the capture session
+        // must not hold the camera past quit.
+        CameraPreviewService.shared.suspend()
         // Flushes any scratchpad edit still inside the save debounce.
         ScratchpadService.shared.suspend()
         // The clipboard history persists through an async pipeline; the last

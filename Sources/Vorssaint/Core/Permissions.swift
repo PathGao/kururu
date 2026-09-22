@@ -26,12 +26,19 @@ final class Permissions: ObservableObject {
     /// Optional microphone access, used only while a recording that asked for
     /// it is active.
     @Published private(set) var microphone: MicrophonePermissionState = .unknown
+    /// Camera access for the preview mirror. The status read is free, so it
+    /// rides the same refresh() moments as the rest.
+    @Published private(set) var camera: CameraPermissionState = .unknown
 
     enum NotificationPermissionState {
         case granted, denied, undetermined, unknown
     }
 
     enum MicrophonePermissionState {
+        case granted, denied, undetermined, unknown
+    }
+
+    enum CameraPermissionState {
         case granted, denied, undetermined, unknown
     }
 
@@ -117,6 +124,7 @@ final class Permissions: ObservableObject {
         refreshActivePermissions()
         refreshNotificationPermission()
         refreshMicrophonePermission()
+        refreshCameraPermission()
         // Checking Full Disk Access means asking the system about protected
         // folders, and every refused answer costs time. Doing that where the
         // app is starting up holds back the menu bar icon, so it moves off
@@ -126,6 +134,19 @@ final class Permissions: ObservableObject {
             DispatchQueue.main.async {
                 if self.fullDiskAccess != granted { self.fullDiskAccess = granted }
             }
+        }
+    }
+
+    private func refreshCameraPermission() {
+        let state: CameraPermissionState
+        switch AVCaptureDevice.authorizationStatus(for: .video) {
+        case .authorized: state = .granted
+        case .denied, .restricted: state = .denied
+        case .notDetermined: state = .undetermined
+        @unknown default: state = .unknown
+        }
+        DispatchQueue.main.async {
+            if self.camera != state { self.camera = state }
         }
     }
 
@@ -311,6 +332,12 @@ final class Permissions: ObservableObject {
         }
     }
 
+    func requestCamera() {
+        AVCaptureDevice.requestAccess(for: .video) { [weak self] _ in
+            DispatchQueue.main.async { self?.refresh() }
+        }
+    }
+
     func requestMicrophone(completion: ((Bool) -> Void)? = nil) {
         AVCaptureDevice.requestAccess(for: .audio) { [weak self] granted in
             DispatchQueue.main.async {
@@ -318,6 +345,10 @@ final class Permissions: ObservableObject {
                 completion?(granted)
             }
         }
+    }
+
+    func openCameraSettings() {
+        open(pane: "Privacy_Camera")
     }
 
     func openMicrophoneSettings() {

@@ -399,6 +399,7 @@ if (( TEST )); then
         Sources/Vorssaint/Core/Localizations/Strings+*.swift \
         Sources/Vorssaint/Core/FeatureStrings.swift \
         Sources/Vorssaint/Core/KillProcessStrings.swift \
+        Sources/Vorssaint/Core/CameraPreviewStrings.swift \
         Sources/Vorssaint/Core/WhatsAppDownloadStrings.swift \
         Sources/Vorssaint/Core/WhatsAppOrganizerStrings.swift \
         Sources/Vorssaint/Core/ReleaseNotes.swift \

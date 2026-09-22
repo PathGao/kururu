@@ -286,6 +286,7 @@ final class FeatureRuntime: ObservableObject {
             ScratchpadService.shared.syncWithPreferences()
             ShelfService.shared.syncDockedShelf()
         },
+        .cameraPreview: { CameraPreviewService.shared.syncWithPreferences() },
         .commandBar: { CommandBarService.shared.syncWithPreferences() },
         .environment: {
             guard !AppFeature.environment.isAvailable else { return }

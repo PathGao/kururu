@@ -102,11 +102,10 @@ enum SettingsDirectory {
             ]),
             (hub.groupMonitor, [
                 SettingsDirectoryItem(page: .monitor, s: s, language: language, icon: "chart.line.uptrend.xyaxis",
-                                       keywords: [FeatureStrings.killProcess(language).pageTitle,
-                                                  FeatureStrings.killProcess(language).forceKillButton],
                                        featureKeywords: [
                                         (.monitorMemory, [s.monitorMemoryPressureDot]),
                                         (.fanControl, [FeatureStrings.fanControl(language).menuBarTitle]),
+                                        (.killProcess, [FeatureStrings.killProcess(language).forceKillButton]),
                                        ]),
             ]),
             (hub.groupFocusEnergy, [
@@ -252,6 +251,11 @@ enum SettingsDirectory {
                                       keywords: ["PDF", "GIF", "PNG", "JPEG", "convert", "resize", "watermark",
                                                  "rename", "profile", "fit", "fill", "crop",
                                                  s.mediaStartConvertPDF, s.ocrName]),
+                SettingsDirectoryItem(page: .cameraPreview, s: s, language: language,
+                                      icon: AppFeature.cameraPreview.symbolName,
+                                      keywords: [FeatureStrings.cameraPreview(language).openButton,
+                                                 FeatureStrings.cameraPreview(language).cameraMenuLabel,
+                                                 FeatureStrings.cameraPreview(language).permName]),
             ]),
             (hub.groupSoundDevices, [
                 SettingsDirectoryItem(page: .mixer, s: s, language: language,
@@ -284,6 +288,12 @@ enum SettingsDirectory {
                 SettingsDirectoryItem(page: .homebrew, s: s, language: language, icon: "shippingbox"),
                 SettingsDirectoryItem(page: .environment, s: s, language: language, icon: "terminal"),
                 SettingsDirectoryItem(page: .uninstaller, s: s, language: language, icon: "trash"),
+                SettingsDirectoryItem(page: .killProcess, s: s, language: language,
+                                      icon: AppFeature.killProcess.symbolName,
+                                      keywords: [FeatureStrings.killProcess(language).forceKillButton,
+                                                 FeatureStrings.killProcess(language).killTreeButton,
+                                                 FeatureStrings.killProcess(language).restartButton,
+                                                 FeatureStrings.killProcess(language).groupToggle]),
             ]),
             (AppInfo.name, [
                 SettingsDirectoryItem(page: .advanced, s: s, language: language, icon: "wrench.and.screwdriver",

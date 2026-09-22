@@ -58,6 +58,8 @@
 	<string>__APP_NAME__ uses each app's audio to adjust its volume in the mixer and to include the Mac's sound in the screen recordings you start. Nothing leaves your Mac.</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>__APP_NAME__ uses Bluetooth only to read the battery level of connected peripherals. Nothing leaves your Mac.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>__APP_NAME__ shows your camera only in the preview window you open, so you can check how you look before a call. Nothing is recorded or leaves your Mac.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>__APP_NAME__ records your microphone only when you turn it on for a screen recording. The audio stays on your Mac.</string>
 	<key>NSDownloadsFolderUsageDescription</key>

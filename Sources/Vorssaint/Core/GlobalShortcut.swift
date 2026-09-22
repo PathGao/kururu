@@ -165,6 +165,9 @@ struct GlobalShortcut: Equatable, Hashable {
     // Space for the wheel, on the same free control-option-command layer.
     static let radialMenuDefault = GlobalShortcut(keyCode: Int64(kVK_Space),
                                                   modifiers: [.control, .option, .command])
+    // W for webcam, on the same free control-option-command layer.
+    static let cameraPreviewDefault = GlobalShortcut(keyCode: Int64(kVK_ANSI_W),
+                                                     modifiers: [.control, .option, .command])
     // N for notes, on the same free control-option-command layer.
     static let scratchpadDefault = GlobalShortcut(keyCode: Int64(kVK_ANSI_N),
                                                   modifiers: [.control, .option, .command])
@@ -629,6 +632,7 @@ enum GlobalShortcutRole: CaseIterable, Identifiable {
     case screenshotClipboard
     case radialMenu
     case scratchpad
+    case cameraPreview
     case snippetLibrary
     case commandBar
     case screenRecorder
@@ -659,6 +663,7 @@ enum GlobalShortcutRole: CaseIterable, Identifiable {
         case .screenshotClipboard: return DefaultsKey.screenshotClipboardShortcut
         case .radialMenu: return DefaultsKey.radialMenuShortcut
         case .scratchpad: return DefaultsKey.scratchpadShortcut
+        case .cameraPreview: return DefaultsKey.cameraPreviewShortcut
         case .snippetLibrary: return DefaultsKey.snippetLibraryShortcut
         case .commandBar: return DefaultsKey.commandBarShortcut
         case .screenRecorder: return DefaultsKey.recorderShortcut
@@ -689,6 +694,7 @@ enum GlobalShortcutRole: CaseIterable, Identifiable {
         case .screenshotClipboard: return .screenshotClipboardDefault
         case .radialMenu: return .radialMenuDefault
         case .scratchpad: return .scratchpadDefault
+        case .cameraPreview: return .cameraPreviewDefault
         case .snippetLibrary: return .snippetLibraryDefault
         case .commandBar: return .commandBarDefault
         case .screenRecorder: return .screenRecorderDefault
@@ -757,6 +763,7 @@ enum GlobalShortcutRole: CaseIterable, Identifiable {
             return FeatureStrings.screenshot(L10n.shared.language).editClipboardImage
         case .radialMenu: return FeatureStrings.radialMenu(L10n.shared.language).pageTitle
         case .scratchpad: return FeatureStrings.scratchpad(L10n.shared.language).pageTitle
+        case .cameraPreview: return FeatureStrings.cameraPreview(L10n.shared.language).pageTitle
         case .snippetLibrary: return FeatureStrings.snippets(L10n.shared.language).libraryTitle
         case .commandBar: return FeatureStrings.commandBar(L10n.shared.language).pageTitle
         case .screenRecorder: return FeatureStrings.recorder(L10n.shared.language).pageTitle
@@ -814,6 +821,7 @@ enum GlobalShortcutRole: CaseIterable, Identifiable {
         case .screenshotClipboard: return [DefaultsKey.screenshotClipboardShortcutEnabled]
         case .radialMenu: return [DefaultsKey.radialMenuEnabled]
         case .scratchpad: return [DefaultsKey.scratchpadShortcutEnabled]
+        case .cameraPreview: return [DefaultsKey.cameraPreviewShortcutEnabled]
         case .snippetLibrary: return [DefaultsKey.snippetLibraryEnabled]
         case .commandBar: return [DefaultsKey.commandBarShortcutEnabled]
         case .screenRecorder: return [DefaultsKey.recorderShortcutEnabled]
@@ -844,6 +852,7 @@ enum GlobalShortcutRole: CaseIterable, Identifiable {
             return .screenshot
         case .radialMenu: return .radialMenu
         case .scratchpad: return .scratchpad
+        case .cameraPreview: return .cameraPreview
         case .snippetLibrary: return .textSnippets
         case .commandBar: return .commandBar
         case .screenRecorder: return .screenRecorder

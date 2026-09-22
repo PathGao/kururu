@@ -28,9 +28,9 @@ struct KillProcessEntry: Identifiable, Equatable {
 
 /// Lists every running process (via `ps`, the same source
 /// `ProcessUsageService` uses for the resource breakdown) and kills,
-/// force-kills, restarts, or tears down whole process trees. Backs the
-/// Command Bar's process rows and the monitor's Force Quit, which share this
-/// service's cache instead of shelling out twice.
+/// force-kills, restarts, or tears down whole process trees. Backs the Force
+/// Quit settings page, the Command Bar's process rows and the monitor's own
+/// rows, which share this service's cache instead of shelling out twice.
 final class KillProcessService: ObservableObject {
     static let shared = KillProcessService()
 
@@ -53,11 +53,16 @@ final class KillProcessService: ObservableObject {
     }
 
     @Published private(set) var entries: [KillProcessEntry] = []
-    /// Ordering and grouping of the list the Command Bar shows. Restored
-    /// from a settings backup; no surface changes them today.
-    private let sortBy: SortBy
-    private let sortAscending: Bool
-    private let groupRelated: Bool
+    @Published var query: String = ""
+    @Published private(set) var sortBy: SortBy
+    @Published private(set) var sortAscending: Bool
+    @Published private(set) var groupRelated: Bool
+    @Published private(set) var isRefreshing = false
+    /// True once a `ps` snapshot has completed successfully at least once, so
+    /// the view can tell "still loading for the first time" apart from
+    /// "search matched nothing" - both look like an empty `entries` array
+    /// otherwise.
+    @Published private(set) var hasLoadedOnce = false
 
     private let cacheLock = NSLock()
     private var lastRefresh: TimeInterval = 0
@@ -99,6 +104,36 @@ final class KillProcessService: ObservableObject {
         }
     }
 
+    /// `sortedEntries` narrowed by the page's search field. A bare number is
+    /// only ever a PID, never a substring of one.
+    var filteredEntries: [KillProcessEntry] {
+        let needle = query.trimmingCharacters(in: .whitespaces).lowercased()
+        guard !needle.isEmpty else { return sortedEntries }
+        return sortedEntries.filter {
+            $0.name.lowercased().contains(needle) || String($0.pid) == needle
+        }
+    }
+
+    /// Column-header sorting: clicking the active column flips direction,
+    /// clicking a different one switches to it at that column's natural
+    /// default direction (highest-first for CPU/memory/PID, A-Z for name).
+    func toggleSort(_ value: SortBy) {
+        if sortBy == value {
+            sortAscending.toggle()
+        } else {
+            sortBy = value
+            sortAscending = value == .name
+        }
+        UserDefaults.standard.set(sortBy.rawValue, forKey: DefaultsKey.killProcessSortBy)
+        UserDefaults.standard.set(sortAscending, forKey: DefaultsKey.killProcessSortAscending)
+    }
+
+    func setGroupRelated(_ value: Bool) {
+        groupRelated = value
+        UserDefaults.standard.set(value, forKey: DefaultsKey.killProcessGroupRelated)
+        refresh(force: true)
+    }
+
     /// Refreshes the process list off the main thread and republishes on the
     /// main thread. `force` bypasses the freshness cache, so a kill's
     /// reconciling refresh and an explicit tap of the refresh button always
@@ -121,6 +156,7 @@ final class KillProcessService: ObservableObject {
             return
         }
 
+        isRefreshing = true
         let grouped = groupRelated
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             let rows = Self.snapshot(grouped: grouped)
@@ -132,7 +168,11 @@ final class KillProcessService: ObservableObject {
                 // A failed or empty `ps` call (transient - a timeout under
                 // load, a hiccup) must never wipe a list that was already
                 // showing good data; only a genuine snapshot replaces it.
-                if let rows { self.entries = rows }
+                if let rows {
+                    self.entries = rows
+                    self.hasLoadedOnce = true
+                }
+                self.isRefreshing = false
                 self.cacheLock.lock()
                 self.lastRefresh = ProcessInfo.processInfo.systemUptime
                 self.cacheLock.unlock()

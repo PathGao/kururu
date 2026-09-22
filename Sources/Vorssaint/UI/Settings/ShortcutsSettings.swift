@@ -296,6 +296,7 @@ private extension GlobalShortcutRole {
         case .recentCaptures: return RecentCaptureService.shared.$shortcutRegistrationFailed.eraseToAnyPublisher()
         case .radialMenu: return RadialMenuService.shared.$registrationFailed.eraseToAnyPublisher()
         case .scratchpad: return ScratchpadService.shared.$shortcutRegistrationFailed.eraseToAnyPublisher()
+        case .cameraPreview: return CameraPreviewService.shared.$shortcutRegistrationFailed.eraseToAnyPublisher()
         case .snippetLibrary: return SnippetLibraryService.shared.$shortcutRegistrationFailed.eraseToAnyPublisher()
         case .commandBar: return CommandBarService.shared.$shortcutRegistrationFailed.eraseToAnyPublisher()
         case .keyboardBrightnessDecrease, .keyboardBrightnessIncrease:

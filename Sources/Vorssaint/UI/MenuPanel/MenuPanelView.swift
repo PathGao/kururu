@@ -484,7 +484,7 @@ enum UtilityPanelItem: String, PanelOrderItem, Identifiable {
     // are migrated once without disturbing the rest of the user's layout.
     case screenshot, micMute, cleaner, media, clipboard,
          uninstaller, cleanURL, cleaning, screenOCR, colorPicker, scratchpad,
-         commandBar, screenRecorder
+         commandBar, screenRecorder, cameraPreview
 
     var id: String { rawValue }
 
@@ -505,6 +505,7 @@ enum UtilityPanelItem: String, PanelOrderItem, Identifiable {
         case .screenRecorder: return .screenRecorder
         case .scratchpad: return .scratchpad
         case .commandBar: return .commandBar
+        case .cameraPreview: return .cameraPreview
         }
     }
 
@@ -522,6 +523,7 @@ enum UtilityPanelItem: String, PanelOrderItem, Identifiable {
         case .screenOCR: return DefaultsKey.panelUtilityScreenOCR
         case .colorPicker: return DefaultsKey.panelUtilityColorPicker
         case .scratchpad: return DefaultsKey.panelUtilityScratchpad
+        case .cameraPreview: return DefaultsKey.panelUtilityCameraPreview
         case .commandBar: return DefaultsKey.panelUtilityCommandBar
         case .screenRecorder: return DefaultsKey.panelUtilityScreenRecorder
         }
@@ -549,6 +551,7 @@ struct UtilitiesSection: View {
     @AppStorage(DefaultsKey.panelUtilityMicMute) private var showMicMute = true
     @AppStorage(DefaultsKey.panelUtilityColorPicker) private var showColorPicker = true
     @AppStorage(DefaultsKey.panelUtilityScratchpad) private var showScratchpad = true
+    @AppStorage(DefaultsKey.panelUtilityCameraPreview) private var showCameraPreview = true
     @AppStorage(DefaultsKey.panelUtilityCommandBar) private var showCommandBar = true
     @AppStorage(DefaultsKey.panelUtilityScreenRecorder) private var showScreenRecorder = true
     @ObservedObject private var recorder = ScreenRecorderService.shared
@@ -669,6 +672,12 @@ struct UtilitiesSection: View {
         }
     }
 
+    private var cameraPreviewCaption: String {
+        permissions.camera == .denied
+            ? "\(l10n.s.permissionRequired): \(FeatureStrings.cameraPreview(l10n.language).permName)"
+            : FeatureStrings.cameraPreview(l10n.language).panelCaption
+    }
+
     private func items(editing: Bool) -> [UtilityPanelItem] {
         orderedItems.filter { $0.feature.isAvailable && (editing || isVisible($0)) }
     }
@@ -684,6 +693,7 @@ struct UtilitiesSection: View {
         case .screenOCR: return showScreenOCR
         case .colorPicker: return showColorPicker
         case .scratchpad: return showScratchpad
+        case .cameraPreview: return showCameraPreview
         case .commandBar: return showCommandBar
         case .micMute: return showMicMute
         case .screenshot: return showScreenshot
@@ -845,6 +855,20 @@ struct UtilitiesSection: View {
                                         ScratchpadService.shared.show()
                                     }
                                 })
+        case .cameraPreview:
+            UtilityActionButton(title: AppFeature.cameraPreview.name(l10n.s, language: l10n.language),
+                                caption: cameraPreviewCaption,
+                                systemImage: AppFeature.cameraPreview.symbolName,
+                                isEditing: editing,
+                                showsDragHandle: true,
+                                visibility: $showCameraPreview,
+                                shortcutHint: shortcutHint(.cameraPreview),
+                                action: {
+                                    appDelegate()?.closePopover()
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                                        CameraPreviewService.shared.show()
+                                    }
+                                })
         case .micMute:
             let micMuteText = FeatureStrings.micMute(l10n.language)
             UtilityActionButton(title: micMuteText.actionTitle(isMuteRequested: micMute.isMuteRequested, result: micMute.lastResult),
@@ -941,6 +965,7 @@ struct UtilitiesSection: View {
         showScratchpad = true
         showMicMute = true
         showCommandBar = true
+        showCameraPreview = true
     }
 
     private func grantAccessibility() {

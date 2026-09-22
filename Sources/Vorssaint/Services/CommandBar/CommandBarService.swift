@@ -2582,7 +2582,7 @@ final class CommandBarService: ObservableObject {
     /// while the bar is open, same lifetime and guard shape as
     /// `loadSelection(for:)`.
     private func loadKillProcessEntries(for id: UUID) {
-        guard FeatureUnit.monitor.isAvailable else { return }
+        guard AppFeature.killProcess.isAvailable else { return }
         guard !killProcessEntriesLoading else { return }
         killProcessEntriesLoading = true
         KillProcessService.shared.refresh { [weak self] in
