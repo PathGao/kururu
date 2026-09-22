@@ -4044,6 +4044,198 @@ struct MetricsTests {
         expect(statusHitTestCode.contains(statusFrameCall) && statusHitTestCode.contains("return false"),
                "status-item hit testing rejects an untrustworthy frame")
 
+        // An unexpected close is only undone for a click the window server
+        // delivered to this panel: `NSApp.currentEvent` can outlive its own
+        // dispatch, so a stale or unrelated event must never reopen the panel
+        // (and must never leave it reopening itself in a loop).
+        func panelEvent(_ type: NSEvent.EventType = .leftMouseDown,
+                        window: Int = 71,
+                        location: CGPoint = CGPoint(x: 100, y: 100),
+                        timestamp: TimeInterval = 1000) -> NSEvent? {
+            if type == .keyDown || type == .keyUp || type == .flagsChanged {
+                return NSEvent.keyEvent(with: type, location: location, modifierFlags: [],
+                                        timestamp: timestamp, windowNumber: window, context: nil,
+                                        characters: "", charactersIgnoringModifiers: "",
+                                        isARepeat: false, keyCode: 53)
+            }
+            return NSEvent.mouseEvent(with: type, location: location, modifierFlags: [],
+                                      timestamp: timestamp, windowNumber: window, context: nil,
+                                      eventNumber: 1, clickCount: 1, pressure: 1)
+        }
+        func reopens(_ event: NSEvent?,
+                     closedByApp: Bool = false,
+                     lastFrame: CGRect? = CGRect(x: 600, y: 400, width: 332, height: 650),
+                     windowNumber: Int? = 71,
+                     sinceLastReopen: TimeInterval = 30,
+                     uptime: TimeInterval = 1000) -> Bool {
+            StatusItemAnchorSupport.shouldReopenPanel(closedByApp: closedByApp, lastFrame: lastFrame,
+                                                      panelWindowNumber: windowNumber, event: event,
+                                                      secondsSinceLastReopen: sinceLastReopen,
+                                                      uptime: uptime)
+        }
+        for phase in [NSEvent.EventType.leftMouseDown, .leftMouseUp, .rightMouseDown, .rightMouseUp] {
+            expect(reopens(panelEvent(phase)),
+                   "a fresh click phase \(phase.rawValue) on the panel recovers the close")
+        }
+        expect(!reopens(panelEvent(), closedByApp: true),
+               "a close the app asked for is never undone")
+        expect(!reopens(panelEvent(), sinceLastReopen: StatusItemAnchorSupport.panelReopenCooldown),
+               "a second recovery inside the cooldown is refused, so the panel cannot loop")
+        expect(!reopens(nil), "no current event is no evidence of a click")
+        expect(!reopens(panelEvent(window: 72)),
+               "a click delivered to another window does not recover this panel")
+        expect(!reopens(panelEvent(timestamp: 999)) && !reopens(panelEvent(timestamp: 1001)),
+               "an event older than the grace, or stamped in the future, is not a fresh click")
+        expect(!reopens(panelEvent(location: CGPoint(x: -1, y: 10)))
+               && !reopens(panelEvent(location: CGPoint(x: 100, y: 700))),
+               "a click outside the panel's last visible bounds does not recover it")
+        expect(!reopens(panelEvent(.mouseMoved)) && !reopens(panelEvent(.keyDown))
+               && !reopens(panelEvent(.keyUp)) && !reopens(panelEvent(.flagsChanged)),
+               "pointer movement and keyboard events are not clicks on the panel")
+        expect(!reopens(panelEvent(), lastFrame: nil) && !reopens(panelEvent(), windowNumber: nil)
+               && !reopens(panelEvent(window: 0), windowNumber: 0),
+               "a panel with no remembered geometry or window number cannot be matched")
+        // The point of the fix: the recovered panel is shown against the anchor
+        // it already had, not re-resolved from a status item frame that has
+        // since gone stale. That owner is an AppKit type, so pin it by shape.
+        let foreignCloseCode = stripCommentLines((statusAnchorAppDelegateSource
+            .components(separatedBy: "private func reopenPanelAfterForeignClose(").last ?? "")
+            .components(separatedBy: "\n    }").first ?? "")
+        expect(foreignCloseCode.contains("restoring: anchor"),
+               "an unexpected close reopens the panel at its preserved anchor")
+
+        // An in-app update can leave the rebuilt item without a slot. Only the
+        // first launch on a newer official version may look, because the check
+        // ends in recreating the item and no ordinary launch should risk that.
+        expect(StatusItemPlacementSupport.isFirstLaunchAfterUpdate(previousVersion: "0.1.3",
+                                                                   currentVersion: "0.1.4",
+                                                                   isDeveloperBuild: false),
+               "the first launch after an update checks the icon once")
+        expect(!StatusItemPlacementSupport.isFirstLaunchAfterUpdate(previousVersion: "0.1.4",
+                                                                    currentVersion: "0.1.4",
+                                                                    isDeveloperBuild: false),
+               "relaunching the same version does not")
+        expect(!StatusItemPlacementSupport.isFirstLaunchAfterUpdate(previousVersion: "0.2.0",
+                                                                    currentVersion: "0.1.4",
+                                                                    isDeveloperBuild: false),
+               "going back to an older build does not")
+        expect(!StatusItemPlacementSupport.isFirstLaunchAfterUpdate(previousVersion: "0.1.3",
+                                                                    currentVersion: "0.1.4",
+                                                                    isDeveloperBuild: true),
+               "a developer build never disturbs the real app's arranged spot")
+        expect(!StatusItemPlacementSupport.isFirstLaunchAfterUpdate(previousVersion: nil,
+                                                                    currentVersion: "0.1.4",
+                                                                    isDeveloperBuild: false)
+               && !StatusItemPlacementSupport.isFirstLaunchAfterUpdate(previousVersion: "not a version",
+                                                                       currentVersion: "0.1.4",
+                                                                       isDeveloperBuild: false),
+               "a missing or unreadable previous version is not an update")
+        expect(StatusItemPlacementSupport.isFirstLaunchAfterUpdate(previousVersion: "0.1.4-beta.1",
+                                                                   currentVersion: "0.1.4",
+                                                                   isDeveloperBuild: false),
+               "leaving a prerelease for its release counts as an update")
+        let postUpdateCode = stripCommentLines((statusAnchorAppDelegateSource
+            .components(separatedBy: "private func verifyPostUpdateStatusItem(").last ?? "")
+            .components(separatedBy: "\n    }").first ?? "")
+        expect(postUpdateCode.contains("recreateStatusItem()")
+               && !postUpdateCode.contains("resetStatusItemPlacementIdentity()"),
+               "the post-update recovery rebuilds the item but keeps its saved position")
+        expect(!postUpdateCode.contains("NSAlert") && !postUpdateCode.contains("runModal"),
+               "the post-update recovery never interrupts the person with an alert")
+
+        // An item macOS never placed is not "on screen" (issue #1394).
+        // Measured on macOS 26 with the app switched off under System Settings
+        // > Menu Bar > "Allow in the Menu Bar": AppKit builds the status window
+        // at the bottom-left origin of the main display and never moves it.
+        // That rectangle intersects the screen, which is all the recovery used
+        // to ask, so it logged "appeared" for an icon nobody could see.
+        let unplacedMain = CGRect(x: 0, y: 0, width: 2304, height: 1296)
+        let unplacedPortrait = CGRect(x: -1080, y: -173, width: 1080, height: 1920)
+        let unplacedScreens = [unplacedMain, unplacedPortrait]
+        let unplacedFrame = CGRect(x: -1, y: -23, width: 38, height: 24)
+        expect(unplacedMain.intersects(unplacedFrame),
+               "the unplaced frame does intersect the main screen, which is why intersection alone passed it")
+        expect(!StatusItemAnchorSupport.isSettlingStatusFrame(unplacedFrame),
+               "the unplaced frame has real size, so the settling grace does not cover it")
+        expect(!StatusItemPlacementSupport.isPlacedStatusFrame(unplacedFrame, screenFrames: unplacedScreens),
+               "a status window parked at the bottom-left origin is not a placed icon")
+        expect(StatusItemPlacementSupport.isPlacedStatusFrame(CGRect(x: 1792, y: 1269, width: 38, height: 24),
+                                                              screenFrames: unplacedScreens),
+               "the same item placed in the main display's menu bar is")
+        expect(StatusItemPlacementSupport.isPlacedStatusFrame(CGRect(x: -900, y: 1710, width: 38, height: 24),
+                                                              screenFrames: unplacedScreens),
+               "a placement in the portrait display's own menu bar counts too")
+        expect(!StatusItemPlacementSupport.isPlacedStatusFrame(CGRect(x: 1792, y: 1269, width: 0, height: 0),
+                                                               screenFrames: unplacedScreens),
+               "a sizeless frame is not a placement")
+        let iconIsOnScreenCode = stripCommentLines((statusAnchorAppDelegateSource
+            .components(separatedBy: "private func iconIsOnScreen() -> Bool {").last ?? "")
+            .components(separatedBy: "\n    }").first ?? "")
+        expect(iconIsOnScreenCode.contains("StatusItemPlacementSupport.isPlacedStatusFrame("),
+               "the recovery judges placement by the menu bar band, not by screen intersection")
+
+        // macOS 26 lets the person switch an app's menu bar items off per app,
+        // and remembers the choice in Control Center's group container. The
+        // app cannot override it, so recovery must recognise it and say so
+        // instead of resetting the item's identity for nothing.
+        func tracked(_ bundleID: String, allowed: Bool?) -> [[String: Any]] {
+            var entry: [String: Any] = ["location": ["bundle": ["_0": bundleID]],
+                                        "menuItemLocations": [["bundle": ["_0": bundleID]]]]
+            if let allowed { entry["isAllowed"] = allowed }
+            return [["bundle": ["_0": bundleID]], entry]
+        }
+        let trackedApplications: [Any] = tracked("com.lowtechguys.Clop", allowed: true)
+            + tracked(ProductIdentity.releaseBundleID, allowed: false)
+            + tracked(ProductIdentity.developmentBundleID, allowed: true)
+            + tracked("com.example.legacy", allowed: nil)
+        expect(MenuBarAllowanceSupport.allowance(forBundleID: ProductIdentity.releaseBundleID,
+                                                 trackedApplications: trackedApplications) == .disallowed,
+               "an app switched off under Allow in the Menu Bar reads as disallowed")
+        expect(MenuBarAllowanceSupport.allowance(forBundleID: ProductIdentity.developmentBundleID,
+                                                 trackedApplications: trackedApplications) == .allowed,
+               "a sibling bundle id with its own entry does not bleed over")
+        expect(MenuBarAllowanceSupport.allowance(forBundleID: "com.example.legacy",
+                                                 trackedApplications: trackedApplications) == .unknown,
+               "an entry without the flag is unknown, never a verdict")
+        expect(MenuBarAllowanceSupport.allowance(forBundleID: "com.example.absent",
+                                                 trackedApplications: trackedApplications) == .unknown,
+               "an app Control Center has never tracked is unknown")
+        expect(MenuBarAllowanceSupport.allowance(forBundleID: ProductIdentity.releaseBundleID,
+                                                 trackedApplications: ["garbage", 3]) == .unknown,
+               "a malformed store is unknown rather than a crash or a verdict")
+        // The on-disk shape: an outer plist whose trackedApplications value is
+        // itself a binary plist, serialized as data.
+        let innerAllowanceData = try? PropertyListSerialization.data(fromPropertyList: trackedApplications,
+                                                                     format: .binary, options: 0)
+        let outerAllowanceData = innerAllowanceData.flatMap {
+            try? PropertyListSerialization.data(fromPropertyList: ["trackedApplications": $0,
+                                                                   "showSpotlight": false],
+                                                format: .binary, options: 0)
+        }
+        expect(outerAllowanceData.map {
+                   MenuBarAllowanceSupport.allowance(forBundleID: ProductIdentity.releaseBundleID,
+                                                     groupContainerPlist: $0)
+               } == .disallowed,
+               "the nested Control Center store decodes down to the per-app verdict")
+        expect(MenuBarAllowanceSupport.allowance(forBundleID: ProductIdentity.releaseBundleID,
+                                                 groupContainerPlist: Data([0x00, 0x01])) == .unknown,
+               "an unreadable store is unknown")
+        let verifyIconCode = stripCommentLines((statusAnchorAppDelegateSource
+            .components(separatedBy: "private func verifyIconReappeared(").last ?? "")
+            .components(separatedBy: "\n    }").first ?? "")
+        expect(verifyIconCode.contains("MenuBarAllowanceSupport.currentAllowance(")
+               && verifyIconCode.contains("menuBarIconDisallowedBody"),
+               "recovery names the Allow in the Menu Bar setting instead of blaming a full bar")
+        let allowanceCheck = verifyIconCode.range(of: "MenuBarAllowanceSupport.currentAllowance(")
+        let identityReset = verifyIconCode.range(of: "resetStatusItemPlacementIdentity()")
+        expect(allowanceCheck != nil && identityReset != nil
+               && allowanceCheck!.lowerBound < identityReset!.lowerBound,
+               "the setting is checked before the identity reset burns the arranged spot")
+        expect(!Strings.enUS.menuBarIconDisallowedBody.isEmpty
+               && !Strings.zhHans.menuBarIconDisallowedBody.isEmpty
+               && Strings.enUS.menuBarIconDisallowedBody.contains("Allow in the Menu Bar"),
+               "the hint names the System Settings switch by its own label")
+
         // The panel keeps its top edge and its center while its content resizes.
         let panelArea = CGRect(x: 0, y: 0, width: 1470, height: 932)
         let shortPanel = StatusItemAnchorSupport.pinnedPanelFrame(size: CGSize(width: 332, height: 375),

@@ -819,6 +819,7 @@ struct Strings {
     var menuBarIconStillHiddenTitle: String = "The icon is still hidden"
     var menuBarIconStillHiddenBody: String = "The icon was rebuilt, but macOS did not give it a visible spot. The menu bar is probably out of room: remove some menu bar icons (or close apps with long menus) and try again."
     var menuBarIconManagerHintFormat: String = "%@ is open and may be keeping the icon in its hidden section. Look for \(AppInfo.name) there, or set %@ to always show \(AppInfo.name)."  // + manager name (twice)
+    var menuBarIconDisallowedBody: String = "macOS is keeping \(AppInfo.name) out of the menu bar. Open System Settings > Menu Bar, find \(AppInfo.name) in the app list and turn on “Allow in the Menu Bar”. The icon appears as soon as the switch is on."
 
     // MARK: Configurable shortcuts
     var shortcutRecording: String = "Press the new shortcut"
