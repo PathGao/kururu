@@ -554,6 +554,7 @@ extension AppFeature {
         case .autoQuit: return hub.descAutoQuit
         case .quitWindowProtection: return FeatureStrings.quitProtection(L10n.shared.language).description
         case .scrollInverter: return hub.descScrollInverter
+        case .scrollHorizontal: return L10n.shared.s.scrollHorizontalCaption
         case .focusFollowsMouse: return L10n.shared.s.focusFollowsMouseCaption
         case .smoothScroll: return hub.descSmoothScroll
         case .mouseAcceleration: return L10n.shared.s.mouseAccelerationCaption
@@ -651,7 +652,7 @@ struct FeatureSwitchRow: View {
     /// The mouse page asked for Accessibility the moment one of these
     /// went on; the other members show a permission row instead.
     private static let asksAccessibility: Set<AppFeature> = [
-        .scrollInverter, .focusFollowsMouse, .smoothScroll, .mouseNavigation,
+        .scrollInverter, .scrollHorizontal, .focusFollowsMouse, .smoothScroll, .mouseNavigation,
         .mouseButtonShortcuts, .mouseClickDebounce,
     ]
 

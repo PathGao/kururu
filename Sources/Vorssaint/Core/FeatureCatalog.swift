@@ -16,7 +16,7 @@ enum AppFeature: String, CaseIterable {
     // Windows and desktop
     case switcher, dockPreview, dockClick, windowMaximizer, autoQuit
     // Input and control; quitWindowProtection is windows and desktop
-    case scrollInverter, focusFollowsMouse, smoothScroll, mouseAcceleration, mouseNavigation, mouseButtonShortcuts, middleClick,
+    case scrollInverter, scrollHorizontal, focusFollowsMouse, smoothScroll, mouseAcceleration, mouseNavigation, mouseButtonShortcuts, middleClick,
          mouseClickDebounce, keyboardDebounce, textSnippets, superKey, quitWindowProtection
     // Clipboard and files
     case clipboardHistory, pastePlain, finderCutPaste, finderRename, shelf, urlCleaner
@@ -85,8 +85,8 @@ extension AppFeature {
         case .switcher: return .switcher
         case .dockPreview, .dockClick: return .dock
         case .windowMaximizer, .autoQuit, .quitWindowProtection: return .windowBehavior
-        case .scrollInverter, .focusFollowsMouse, .smoothScroll, .mouseAcceleration, .mouseNavigation,
-             .mouseButtonShortcuts, .mouseClickDebounce:
+        case .scrollInverter, .scrollHorizontal, .focusFollowsMouse, .smoothScroll, .mouseAcceleration,
+             .mouseNavigation, .mouseButtonShortcuts, .mouseClickDebounce:
             return .mouse
         case .middleClick: return .trackpad
         case .keyboardDebounce, .textSnippets, .superKey: return .keyboard
@@ -298,9 +298,9 @@ extension AppFeature {
         case .switcher, .dockPreview, .dockClick, .windowMaximizer, .autoQuit,
              .quitWindowProtection:
             return .windowsDesktop
-        case .scrollInverter, .focusFollowsMouse, .smoothScroll, .mouseAcceleration, .mouseNavigation,
-             .mouseButtonShortcuts, .middleClick, .mouseClickDebounce, .keyboardDebounce, .textSnippets,
-             .superKey:
+        case .scrollInverter, .scrollHorizontal, .focusFollowsMouse, .smoothScroll, .mouseAcceleration,
+             .mouseNavigation, .mouseButtonShortcuts, .middleClick, .mouseClickDebounce,
+             .keyboardDebounce, .textSnippets, .superKey:
             return .inputDevices
         // Both open on top of anything and hold whatever is installed, so
         // they sit above the features they reach rather than inside them.
@@ -327,6 +327,7 @@ extension AppFeature {
         case .windowMaximizer: return "arrow.up.left.and.arrow.down.right"
         case .autoQuit: return "xmark.rectangle"
         case .scrollInverter: return "arrow.up.arrow.down"
+        case .scrollHorizontal: return "arrow.triangle.swap"
         case .focusFollowsMouse: return "cursorarrow.and.square.on.square.dashed"
         case .smoothScroll: return "cursorarrow.motionlines"
         case .mouseAcceleration: return "cursorarrow.rays"
@@ -396,6 +397,7 @@ extension AppFeature {
         case .autoQuit: return [DefaultsKey.autoQuitEnabled]
         case .scrollInverter: return [DefaultsKey.scrollInverterEnabled,
                                       DefaultsKey.scrollInverterHorizontalEnabled]
+        case .scrollHorizontal: return [DefaultsKey.scrollHorizontalEnabled]
         case .focusFollowsMouse: return [DefaultsKey.focusFollowsMouseEnabled]
         case .smoothScroll: return [DefaultsKey.smoothScrollEnabled]
         case .mouseAcceleration: return [DefaultsKey.mouseAccelerationDisabled]
@@ -439,7 +441,8 @@ extension AppFeature {
         switch self {
         case .mouseAcceleration:
             return []
-        case .scrollInverter, .focusFollowsMouse, .smoothScroll, .mouseNavigation, .mouseButtonShortcuts, .middleClick,
+        case .scrollInverter, .scrollHorizontal, .focusFollowsMouse, .smoothScroll, .mouseNavigation,
+             .mouseButtonShortcuts, .middleClick,
              .keyboardDebounce, .textSnippets, .superKey, .mouseClickDebounce,
              .dockClick, .windowMaximizer,
              .autoQuit, .quitWindowProtection, .cleaningMode, .pastePlain, .radialMenu:
@@ -607,6 +610,7 @@ extension AppFeature {
         case .autoQuit: return s.autoQuitName
         case .quitWindowProtection: return FeatureStrings.quitProtection(language).name
         case .scrollInverter: return s.invertMouseScroll
+        case .scrollHorizontal: return s.scrollHorizontalName
         case .focusFollowsMouse: return s.focusFollowsMouseName
         case .smoothScroll: return s.smoothScrollName
         case .mouseAcceleration: return s.mouseAccelerationName

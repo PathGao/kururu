@@ -176,6 +176,8 @@ enum SettingsDirectory {
                                        featureKeywords: [
                                         (.scrollInverter, [s.invertMouseScroll, s.invertVerticalScroll,
                                                            s.invertHorizontalScroll]),
+                                        (.scrollHorizontal, [s.scrollHorizontalName,
+                                                             s.scrollHorizontalModifierLabel]),
                                         (.focusFollowsMouse, [s.focusFollowsMouseName,
                                                               s.focusFollowsMouseDelay]),
                                         (.smoothScroll, [s.smoothScrollName]),
