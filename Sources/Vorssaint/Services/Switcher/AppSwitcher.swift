@@ -166,6 +166,9 @@ final class AppSwitcher: ObservableObject {
     /// the way out.
     private var closingItemIDs: Set<String> = []
     private var commitPendingForClose = false
+    /// Apps already asked to quit this session, so a repeated Q is ignored
+    /// while a window closing through W is not.
+    private var quittingPIDs: Set<pid_t> = []
 
     // Virtual key codes handled during a session.
     private enum KeyCode {
@@ -1335,18 +1338,42 @@ final class AppSwitcher: ObservableObject {
         closeWindow(windows[selectedIndex])
     }
 
-    /// Requests quitting (⌘Tab → Q). Windows stay until termination is confirmed.
+    /// Requests quitting (⌘Tab → Q). Windows stay until termination is
+    /// confirmed, treated like closing ones: still listed, never raised on
+    /// release, gone when macOS reports the app gone, and given back if the app
+    /// is still up after about as long as a closing window gets — an app with
+    /// unsaved work stays alive on its own save sheet.
     private func quitSelectedApp() {
         guard windows.indices.contains(selectedIndex) else { return }
         let item = windows[selectedIndex]
         let pid = item.pid
         guard let app = NSRunningApplication(processIdentifier: pid),
               app.bundleIdentifier != Defaults.finderBundleIdentifier else { return }
+        guard !quittingPIDs.contains(pid) else { return }
         guard app.terminate() else {
             QuickToolHUD.show(icon: "exclamationmark.triangle",
                               message: String(format: L10n.shared.s.appQuitFailedFormat,
                                               item.appName))
             return
+        }
+        quittingPIDs.insert(pid)
+        // Only what this quit marked is given back; a window W is closing
+        // keeps its own mark.
+        let markedIDs = Set(sessionItems.lazy.filter { $0.pid == pid }.map(\.id))
+            .subtracting(closingItemIDs)
+        closingItemIDs.formUnion(markedIDs)
+        let generation = routeLock.withLock { sessionStartGeneration }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) { [weak self] in
+            guard let self, self.sessionActive,
+                  self.routeLock.withLock({ self.sessionStartGeneration == generation }),
+                  self.quittingPIDs.contains(pid) else { return }
+            if app.isTerminated {
+                self.removeTerminatedApp(pid: pid)
+            } else {
+                self.quittingPIDs.remove(pid)
+                self.closingItemIDs.subtract(markedIDs)
+                self.resumePendingCommitAfterClose()
+            }
         }
     }
 
@@ -1370,6 +1397,7 @@ final class AppSwitcher: ObservableObject {
     }
 
     private func removeTerminatedApp(pid: pid_t) {
+        quittingPIDs.remove(pid)
         guard sessionActive, sessionItems.contains(where: { $0.pid == pid }) else { return }
         let removedIDs = Set(sessionItems.lazy.filter { $0.pid == pid }.map(\.id))
         closingItemIDs.subtract(removedIDs)
@@ -1564,6 +1592,7 @@ final class AppSwitcher: ObservableObject {
         shiftBackNavigationHeld = false
         shiftBackChordDeadline = 0
         closingItemIDs = []
+        quittingPIDs = []
         commitPendingForClose = false
     }
 
