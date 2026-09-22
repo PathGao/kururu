@@ -66,6 +66,7 @@ final class ScreenshotQuickPreviewController {
             dragItem: { [weak self] in
                 guard let self else { return NSItemProvider() }
                 return ScreenshotService.dragItemProvider(image: self.capture.image,
+                                                          scale: self.capture.scale,
                                                           strings: self.strings)
                     ?? NSItemProvider()
             },
@@ -100,6 +101,14 @@ final class ScreenshotQuickPreviewController {
         self.panel = panel
         installKeyMonitor(for: panel)
         panel.orderFrontRegardless()
+        // On by default: the preview's shortcuts read a local monitor, and
+        // that monitor is delivered nothing until the panel is key, so
+        // Command-C and Command-S did nothing until a click. Taking the
+        // keyboard costs the caret in the app being typed into, so the
+        // Settings toggle can hand that trade back to a click.
+        if UserDefaults.standard.bool(forKey: DefaultsKey.screenshotPreviewTakesFocus) {
+            panel.makeKey()
+        }
         // A performed action turns the preview into a short confirmation; a
         // failed one keeps the full stay so the person can still act by hand.
         autoDismissDuration = runDefaultAction(defaultAction) ? 3 : 12
@@ -282,12 +291,13 @@ final class ScreenshotQuickPreviewController {
 private final class ScreenshotQuickPreviewPanel: NSPanel {
     override var canBecomeKey: Bool { true }
 
-    /// The preview shows up unasked for, so presenting it leaves the keyboard
-    /// where it was and a click is what hands it over. Its shortcuts read a
-    /// local monitor, and that monitor is delivered nothing until this panel is
-    /// key. The hand-off sits in `sendEvent` rather than `mouseDown` because
-    /// the hosted SwiftUI content answers a press on a button itself, and a
-    /// window's `mouseDown` never runs for the clicks a view has taken.
+    /// Presenting the preview takes the keyboard unless the person turned
+    /// that off, and a click is what hands it over in either case. Its
+    /// shortcuts read a local monitor, and that monitor is delivered nothing
+    /// until this panel is key. The hand-off sits in `sendEvent` rather than
+    /// `mouseDown` because the hosted SwiftUI content answers a press on a
+    /// button itself, and a window's `mouseDown` never runs for the clicks a
+    /// view has taken.
     override func sendEvent(_ event: NSEvent) {
         if event.type == .leftMouseDown, !isKeyWindow {
             makeKey()

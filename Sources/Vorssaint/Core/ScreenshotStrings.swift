@@ -114,6 +114,7 @@ struct ScreenshotFeatureStrings {
     var previewPositionTopRight: String = "Top right"
     var previewPositionBottomLeft: String = "Bottom left"
     var previewPositionBottomRight: String = "Bottom right"
+    var previewFocusToggle: String = "Focus the preview automatically"
     var hideVorssaintWindowsToggle: String = "Hide \(AppInfo.name) windows"
     var editClipboardImage: String = "Edit clipboard image"
     var clipboardImageMissing: String = "Copy an image first"
@@ -1387,6 +1388,7 @@ extension ScreenshotFeatureStrings {
         previewPositionTopRight: "右上角",
         previewPositionBottomLeft: "左下角",
         previewPositionBottomRight: "右下角",
+        previewFocusToggle: "自动聚焦预览",
         hideVorssaintWindowsToggle: "隐藏 \(AppInfo.name) 窗口",
         editClipboardImage: "编辑已拷贝的图像",
         clipboardImageMissing: "请先拷贝一张图像",

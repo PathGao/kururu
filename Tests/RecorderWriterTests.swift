@@ -11,6 +11,10 @@ enum RecorderWriterTests {
                 try await check(expect: expect)
                 try await check(expect: expect, delayedVideo: true)
                 try await check(expect: expect, delayedVideo: true, capturesAudio: false)
+                try await check(expect: expect, changingMicrophone: true)
+                try await check(expect: expect, delayedVideo: true, changingMicrophone: true)
+                try await check(expect: expect, changingMicrophone: true, microphoneChannels: 4)
+                try await check(expect: expect, changingSystemAudio: true)
             }
             catch { expect(false, "recorder writer fixture failed: \(error)") }
             finished.signal()
@@ -19,7 +23,10 @@ enum RecorderWriterTests {
     }
 
     private static func check(expect: (Bool, String) -> Void,
-                              delayedVideo: Bool = false, capturesAudio: Bool = true) async throws {
+                              delayedVideo: Bool = false, capturesAudio: Bool = true,
+                              changingMicrophone: Bool = false,
+                              microphoneChannels: AVAudioChannelCount = 2,
+                              changingSystemAudio: Bool = false) async throws {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("recorder-sync-\(UUID()).mov")
         defer { try? FileManager.default.removeItem(at: url) }
         let pause = RecorderPauseClock()
@@ -32,7 +39,11 @@ enum RecorderWriterTests {
 
         // The microphone callback arrives first but its capture starts later.
         // Video and system audio must retain their earlier timestamps.
-        writer.append(RecorderSampleTimingTests.audio(count: 480, time: origin + time(0.1)), kind: .microphone)
+        let firstAudio = RecorderSampleTimingTests.audio(count: 480, time: origin + time(0.1))
+        let firstMicrophone = changingMicrophone
+            ? audioSample(firstAudio, interleaved: false, channels: microphoneChannels)
+            : firstAudio
+        writer.append(firstMicrophone, kind: .microphone)
         for index in 0..<100 {
             if index == 50 {
                 pause.pause(at: 100.5)
@@ -48,10 +59,16 @@ enum RecorderWriterTests {
                 precondition(CMBlockBufferFillDataBytes(with: 0x30, blockBuffer: block,
                     offsetIntoDestination: 0, dataLength: 480 * 4) == noErr)
             }
-            writer.append(audio, kind: .systemAudio)
+            let systemAudio = changingSystemAudio
+                ? audioSample(audio, interleaved: index < 50, channels: 2)
+                : audio
+            writer.append(systemAudio, kind: .systemAudio)
             if index > 10 {
+                let captured = changingMicrophone
+                    ? audioSample(audio, interleaved: index >= 50, channels: microphoneChannels)
+                    : audio
                 // Exercise the additional clock-conversion pass the microphone uses.
-                let microphone = RecorderSampleTiming.retimed(audio, to: source + time(400))!
+                let microphone = RecorderSampleTiming.retimed(captured, to: source + time(400))!
                 let converted = RecorderSampleTiming.converted(microphone,
                     from: microphoneClock, to: CMClockGetHostTimeClock())!
                 writer.append(converted, kind: .microphone)
@@ -60,7 +77,9 @@ enum RecorderWriterTests {
             try await Task.sleep(nanoseconds: 10_000_000)
         }
         let finished = await writer.finish(at: origin + time(1.5))
-        expect(finished, "the raw multitrack MOV finishes")
+        expect(finished, changingMicrophone || changingSystemAudio
+            ? "the multitrack MOV survives an audio buffer-layout change across a pause"
+            : "the raw multitrack MOV finishes")
         expect(writer.videoFrameCount == 3, "all three captured video frames are retained")
         guard finished else { return }
         let asset = AVURLAsset(url: url)
@@ -120,6 +139,46 @@ enum RecorderWriterTests {
 
     private static func time(_ seconds: Double) -> CMTime {
         CMTime(seconds: seconds, preferredTimescale: 48_000)
+    }
+
+    /// Emulate a device switching between planar and interleaved PCM. The
+    /// production writer must keep both representations in the same movie.
+    private static func audioSample(_ sample: CMSampleBuffer,
+                                    interleaved: Bool,
+                                    channels: AVAudioChannelCount) -> CMSampleBuffer {
+        let count = AVAudioFrameCount(CMSampleBufferGetNumSamples(sample))
+        var source = [Int16](repeating: 0, count: Int(count) * 2)
+        precondition(CMBlockBufferCopyDataBytes(CMSampleBufferGetDataBuffer(sample)!, atOffset: 0,
+            dataLength: source.count * 2, destination: &source) == noErr)
+        let deviceFormat = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: 48_000,
+            interleaved: interleaved, channelLayout: AVAudioChannelLayout(
+                layoutTag: kAudioChannelLayoutTag_DiscreteInOrder | channels)!)
+        let device = AVAudioPCMBuffer(pcmFormat: deviceFormat, frameCapacity: count)!
+        device.frameLength = count
+        for frame in 0..<Int(count) {
+            for channel in 0..<Int(channels) {
+                let buffer = interleaved ? 0 : channel
+                let index = interleaved ? frame * Int(channels) + channel : frame
+                device.floatChannelData![buffer][index] = Float(source[frame * 2 + channel % 2]) / 32_768
+            }
+        }
+        // A multichannel device need not provide speaker labels.
+        var description: CMAudioFormatDescription?
+        precondition(CMAudioFormatDescriptionCreate(allocator: kCFAllocatorDefault,
+            asbd: deviceFormat.streamDescription, layoutSize: 0, layout: nil,
+            magicCookieSize: 0, magicCookie: nil, extensions: nil, formatDescriptionOut: &description) == noErr)
+        var timing = CMSampleTimingInfo(duration: CMTime(value: 1, timescale: 48_000),
+            presentationTimeStamp: CMSampleBufferGetPresentationTimeStamp(sample), decodeTimeStamp: .invalid)
+        var result: CMSampleBuffer?
+        precondition(CMSampleBufferCreate(allocator: kCFAllocatorDefault, dataBuffer: nil, dataReady: false,
+            makeDataReadyCallback: nil, refcon: nil, formatDescription: description,
+            sampleCount: Int(device.frameLength), sampleTimingEntryCount: 1, sampleTimingArray: &timing,
+            sampleSizeEntryCount: 0, sampleSizeArray: nil, sampleBufferOut: &result) == noErr)
+        precondition(CMSampleBufferSetDataBufferFromAudioBufferList(result!,
+            blockBufferAllocator: kCFAllocatorDefault, blockBufferMemoryAllocator: kCFAllocatorDefault,
+            flags: 0, bufferList: device.audioBufferList) == noErr)
+        precondition(CMSampleBufferSetDataReady(result!) == noErr)
+        return result!
     }
 
     private static func video(at time: CMTime) -> CMSampleBuffer {

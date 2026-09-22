@@ -128,6 +128,7 @@ struct MetricsTests {
             ("ShelfDropRoutingTests", { ShelfDropRoutingTests.run(expect: { suite.expect($0, $1) }) }),
             ("UpstreamPolicyTests", { UpstreamPolicyTests.run { suite.expect($0, $1) } }),
             ("ShelfPromiseCleanupTests", { ShelfPromiseCleanupTests.run { suite.expect($0, $1) } }),
+            ("KeepAwakeCatalogContract", { KeepAwakeCatalogContract.run(suite) }),
         ]
         let names = groups.map(\.0) + ["MetricsTests"]
         var selected = Set<String>()
@@ -1692,6 +1693,9 @@ struct MetricsTests {
         expect(!focusFollowsMouseServiceSource.isEmpty
                 && !focusFollowsMouseServiceSource.contains("AXUIElementCreateSystemWide"),
                "focus follows mouse cannot re-enter its own Accessibility tree through a global hit test")
+        expect(focusFollowsMouseServiceSource.contains(
+                "!SpaceWindowBridge.isParkedOnHiddenSpace(target.windowID)"),
+               "focus follows mouse never hands a window on a hidden Space to the activator, which would travel")
 
         // A wheel that reports continuously already measures in points, and
         // that field is the one to trust; the line field only fills in for a
@@ -8637,6 +8641,8 @@ struct MetricsTests {
                "an elevated install hands the bundle back to the user")
         expect(installerScript.contains("update-old.$PID"),
                "the swap backup name is unique per run so a stale root-owned one never blocks it")
+        expect(installerScript.contains("STAGE=\"$DIR/.$NAME.update-new\""),
+               "the staged copy is hidden so search never lists it under the staging name")
         expect(installerScript.contains("launchctl asuser"),
                "installer script relaunches as the user when running as root")
         expect(installerScript.contains("$RESULT.progress") && installerScript.contains("finalize"),
@@ -13674,6 +13680,11 @@ struct MetricsTests {
                 && !FanControlPolicy.targetRPMMatches(target: 1_205, expected: 1_200)
                 && !FanControlPolicy.targetRPMMatches(target: .nan, expected: 1_200),
                "fan target verification allows a narrow tolerance and rejects stale or malformed targets")
+        expect(FanControlPolicy.forceTestSatisfied(keyExists: false, writeSucceeded: false)
+                && FanControlPolicy.forceTestSatisfied(keyExists: false, writeSucceeded: true)
+                && FanControlPolicy.forceTestSatisfied(keyExists: true, writeSucceeded: true)
+                && !FanControlPolicy.forceTestSatisfied(keyExists: true, writeSucceeded: false),
+               "the manual-mode fallback needs the force-test override only where the Mac exposes it")
 
         let defaultCurve = FanControlConfiguration.defaultCurve
         expect(FanControlPolicy.validConfiguration(.manual(level: 0))
@@ -16779,13 +16790,13 @@ struct MetricsTests {
             encoding: .utf8)) ?? ""
         expect(!captureServiceSource.contains("replaceSelection"),
                "the capture service does not cancel and recreate selection controllers when changing modes")
-        // The preview appears unasked for, so presenting it must not take the
-        // keyboard away from whatever the person is typing into. Its shortcuts
-        // read a local monitor, which is delivered nothing until the panel is
-        // key. Presenting stays silent and hover takes nothing either; a click
-        // hands the keyboard over in the panel's sendEvent because hosted
-        // SwiftUI content answers presses that never reach mouseDown. Comments
-        // are stripped so prose naming the API cannot answer for the code.
+        // The preview's shortcuts read a local monitor, which is delivered
+        // nothing until the panel is key, so presenting takes the keyboard
+        // once the panel is on screen, behind the preference that hands that
+        // trade back. Hover takes nothing; a click hands the keyboard over in
+        // the panel's sendEvent because hosted SwiftUI content answers presses
+        // that never reach mouseDown. Comments are stripped so prose naming
+        // the API cannot answer for the code.
         let quickPreviewSource = (try? String(
             contentsOfFile: "Sources/Vorssaint/Services/QuickTools/ScreenshotQuickPreviewController.swift",
             encoding: .utf8)) ?? ""
@@ -16803,10 +16814,19 @@ struct MetricsTests {
         // hosted SwiftUI content answers presses that never reach mouseDown.
         let panelBody = quickPreviewCode.components(separatedBy: "class ScreenshotQuickPreviewPanel")
             .dropFirst().first?.components(separatedBy: "\n}").first ?? ""
+        // The preference keys the panel only after it is on screen, and the
+        // line above the call is the preference check itself, so dropping the
+        // guard or keying before ordering front both go red.
+        let presentLines = presentBody.components(separatedBy: "\n")
+        let orderFrontLine = presentLines.firstIndex { $0.contains("orderFrontRegardless()") } ?? -1
+        let makeKeyLine = presentLines.firstIndex { $0.contains("makeKey") } ?? -1
+        expect(orderFrontLine >= 0 && makeKeyLine > orderFrontLine
+                && presentLines[makeKeyLine - 1].contains("screenshotPreviewTakesFocus"),
+               "presenting the screenshot preview takes key focus only behind the preference, once on screen")
         let makeKeyCount = quickPreviewCode.components(separatedBy: "makeKey").count - 1
         let panelMakeKeyCount = panelBody.components(separatedBy: "makeKey").count - 1
-        expect(makeKeyCount == panelMakeKeyCount && panelMakeKeyCount >= 1,
-               "presentation and hover never take key focus; only the panel's own click hand-off may")
+        expect(makeKeyCount == panelMakeKeyCount + 1 && panelMakeKeyCount >= 1,
+               "hover never takes key focus; only the preferred presentation and the click hand-off may")
         expect(panelBody.contains("sendEvent") && panelBody.contains("leftMouseDown")
                 && panelBody.contains("makeKey") && panelBody.contains("super.sendEvent"),
                "clicking the screenshot preview takes key focus and still delivers every preview button")
@@ -17190,6 +17210,53 @@ struct MetricsTests {
         expect(ScreenshotSupport.downscaledSize(pixelSize: CGSize(width: 800, height: 600), scale: 1)
                 == CGSize(width: 800, height: 600),
                "a 1x capture never downscales")
+
+        // Every picture the app writes says how big it is on screen, the way
+        // a system screenshot does, so Preview and a paste show a Retina
+        // capture at its own size instead of doubled and softened.
+        func encodedDensity(_ data: Data?) -> (width: Int, dpi: Double)? {
+            guard let data,
+                  let source = CGImageSourceCreateWithData(data as CFData, nil),
+                  let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as NSDictionary?,
+                  let width = properties[kCGImagePropertyPixelWidth] as? NSNumber,
+                  let dpi = properties[kCGImagePropertyDPIWidth] as? NSNumber
+            else { return nil }
+            return (width.intValue, dpi.doubleValue)
+        }
+        let retinaContext = CGContext(data: nil, width: 8, height: 6, bitsPerComponent: 8,
+                                      bytesPerRow: 0, space: CGColorSpaceCreateDeviceRGB(),
+                                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+        retinaContext?.setFillColor(CGColor(gray: 0.5, alpha: 1))
+        retinaContext?.fill(CGRect(x: 0, y: 0, width: 8, height: 6))
+        let retinaCapture = retinaContext?.makeImage()
+        expect(retinaCapture != nil, "a Retina test capture can be drawn")
+        if let retinaCapture {
+            let plain = ScreenshotSupport.BackdropStyle(kind: .none, cornerRadius: 0)
+            let full = ScreenshotRenderer.renderExport(baseImage: retinaCapture, annotations: [],
+                                                       pixelated: nil, scale: 2,
+                                                       annotationShadowsEnabled: false,
+                                                       style: plain, fill: .none,
+                                                       downscaleTo1x: false)
+            expect(full?.scale == 2 && full?.image.width == 8,
+                   "a Retina export keeps its pixels and its density")
+            let halved = ScreenshotRenderer.renderExport(baseImage: retinaCapture, annotations: [],
+                                                         pixelated: nil, scale: 2,
+                                                         annotationShadowsEnabled: false,
+                                                         style: plain, fill: .none,
+                                                         downscaleTo1x: true)
+            expect(halved?.scale == 1 && halved?.image.width == 4,
+                   "the 1x option halves the pixels and reports 1x density")
+            let png = encodedDensity(ScreenshotRenderer.pngData(from: retinaCapture, scale: 2))
+            expect(png?.width == 8 && png?.dpi == 144,
+                   "a Retina PNG carries 144 DPI over every pixel")
+            let tiff = encodedDensity(ScreenshotRenderer.tiffData(from: retinaCapture, scale: 2))
+            expect(tiff?.width == 8 && tiff?.dpi == 144,
+                   "the pasteboard TIFF carries the same density as the PNG")
+            expect(encodedDensity(ScreenshotRenderer.pngData(from: retinaCapture, scale: 1))?.dpi == 72,
+                   "a 1x picture stays at 72 DPI")
+            expect(ScreenshotSupport.captureScale(fromDPI: png?.dpi) == 2,
+                   "the stored density reads back as the capture scale")
+        }
         expect(ScreenshotSupport.backdropPadding(for: CGSize(width: 100, height: 100), factor: 0.5) == 24,
                "backdrop padding keeps a floor for tiny captures")
         expect(ScreenshotSupport.backdropPadding(for: CGSize(width: 4000, height: 4000), factor: 1)
@@ -17563,6 +17630,8 @@ struct MetricsTests {
                "screenshot number shortcuts ship enabled")
         expect(Defaults.registeredDefaults[DefaultsKey.screenshotPreviewPosition] as? String == "",
                "screenshot preview placement preserves the existing automatic behavior by default")
+        expect(Defaults.registeredDefaults[DefaultsKey.screenshotPreviewTakesFocus] as? Bool == true,
+               "the screenshot preview takes the keyboard as it appears by default, so its shortcuts work at once; leaving it is the opt-out")
         expect(Defaults.registeredDefaults[DefaultsKey.screenshotSharingEnabled] == nil,
                "retired screenshot links have no registered availability preference")
         expect(Defaults.registeredDefaults[DefaultsKey.screenshotToolOrder] as? String
@@ -20973,12 +21042,17 @@ struct MetricsTests {
         expect(RecorderSupport.outputSize(source: CGSize(width: 2940, height: 1912), quality: .high)
                 == CGSize(width: 2940, height: 1912),
                "the high preset keeps every pixel")
+        expect(RecorderSupport.outputSize(source: CGSize(width: 2940, height: 1912), quality: .balanced)
+                == CGSize(width: 2940, height: 1912),
+               "the default preset keeps every pixel too, so text stays as sharp as on screen")
         let highRate = RecorderSupport.averageBitRate(width: 2940, height: 1912, fps: 60,
                                                       quality: .high)
+        let balancedRate = RecorderSupport.averageBitRate(width: 2940, height: 1912, fps: 60,
+                                                          quality: .balanced)
         let smallRate = RecorderSupport.averageBitRate(width: 1470, height: 956, fps: 60,
                                                        quality: .small)
-        expect(highRate > smallRate,
-               "a bigger picture at a higher preset asks the encoder for more")
+        expect(highRate > balancedRate && balancedRate > smallRate,
+               "the presets differ by bits, and only the small one by pixels")
         expect(RecorderSupport.averageBitRate(width: 64, height: 64, fps: 30, quality: .small)
                 >= 800_000,
                "even a tiny area gets a usable stream")

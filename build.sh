@@ -477,6 +477,7 @@ if (( TEST )); then
         Sources/Vorssaint/Services/QuickTools/QuickTogglesSupport.swift \
         Sources/Vorssaint/Services/QuickTools/ScreenshotCapturePolicy.swift \
         Sources/Vorssaint/Services/QuickTools/ScreenshotSupport.swift \
+        Sources/Vorssaint/Services/QuickTools/ScreenshotRenderer.swift \
         Sources/Vorssaint/Services/QuickTools/RecentCaptureStore.swift \
         Sources/Vorssaint/Services/QuickTools/ScreenshotSharingSupport.swift \
         Sources/Vorssaint/Services/QuickTools/WindowActivationPolicy.swift \
@@ -568,6 +569,7 @@ if (( TEST )); then
         Tests/RecorderWriterTests.swift \
         Tests/ShelfFilePromiseTests.swift \
         Tests/ShelfDropRoutingTests.swift \
+        Tests/KeepAwakeCatalogTests.swift \
         build/generated-tests/*.swift \
     )
     TEST_OUTPUT_FILE_MAP="$TEST_OBJECT_DIR/output-file-map.json"
