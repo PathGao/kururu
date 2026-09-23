@@ -182,7 +182,9 @@ def main():
     keep_awake = "Sources/Vorssaint/Services/KeepAwakeManager.swift"
     keep_awake_methods = [
         "    func refreshPasswordlessStatus(",
-        "    private func activate(minutes:",
+        "    func activate(minutes:",
+        "    func activate(until",
+        "    private func activate(end:",
         "    func deactivate(reason:",
         "    private func applyClamshellPreference(",
         "    private func prepareClamshellPreference(",
@@ -190,31 +192,35 @@ def main():
         "    private func markClamshellSetupFailed(",
         "    private func enableClamshell(",
         "    private func disableClamshell(",
+        "    private func sleepIfLidAlreadyClosed(",
         "    func recoverIfNeeded(",
         "    private func finishRecovery(",
         "    private var clamshellNeedsRestore:",
         "    private func finishClamshellRestore(",
     ]
-    write("KeepAwakeClamshell.swift", "import Foundation\n\nextension KeepAwakeClamshellContract {\n"
+    write("KeepAwakeLidSleep.swift", "import Foundation\n\nextension KeepAwakeLidSleepContract {\n"
           + "final class Service {\n"
           + "var isActive = false\nvar sessionPausedForScreenLock = false\nvar clamshellActive = false\n"
           + "var isTerminating = false\nvar clamshellEnablePending = false\nvar clamshellRestorePending = false\n"
           + "var clamshellOperationGeneration = 0\nvar clamshellSetupID: UUID?\n"
+          + "var lidSleepGeneration = 0\nvar lidSleepAttemptsRemaining = 0\n"
           + "var clamshellSetupInProgress = false\nvar clamshellSetupFailed = false\n"
           + "var clamshellSetupRetried = false\nvar passwordlessClamshell = true\n"
           + "var recoveryCompleted = false\nvar screenLocked = false\nvar assertionsHeld = false\n"
           + "var endTimer: Timer?\nvar endDate: Date?\nvar sessionTrigger: SessionTrigger?\n"
           + "var activeAutomationConditions = Set<KeepAwakeAutomationCondition>()\n"
-          + "var onSessionEnded: ((EndReason) -> Void)?\n"
+          + "var onSessionEnded: ((EndReason) -> Void)?\nvar automationSuppressedUntilConditionsClear = false\n"
           + declaration(keep_awake, "    @Published var clamshellPreferred:").replace("@Published ", "", 1)
           + "init() { clamshellPreferred = true }\n"
           + "func syncScreenLockMonitoring() {}\nfunc applyAssertions() { assertionsHeld = true }\n"
           + "func releaseAssertions() { assertionsHeld = false }\nfunc scheduleEnd(at date: Date) {}\n"
           + "func startBatteryWatch() {}\nfunc stopBatteryWatch() {}\nfunc syncMouseJiggleTimer() {}\n"
           + "func stopMouseJiggleTimer() {}\nfunc stopAutomationMonitoring() {}\nfunc syncWithPreferences() {}\n"
+          + "static func lidSleepIsAllowed() -> Bool { KeepAwakeAutomationSupport.lidSleepIsAllowed("
+          + "systemAllowsSleep: policy, assertions: assertions) }\n"
           + "".join(declaration(keep_awake, prefix).replace("private ", "", 1) for prefix in keep_awake_methods)
           + "}\n}\n"
-          + "extension KeepAwakeClamshellContract.Sudoers {\n"
+          + "extension KeepAwakeLidSleepContract.Sudoers {\n"
           + declaration("Sources/Vorssaint/Services/ShellSupport.swift", "    static func isConfigured()")
           + declaration("Sources/Vorssaint/Services/ShellSupport.swift", "    static func restoreSleepWithAuthorization(")
           + "}\n")
@@ -239,6 +245,16 @@ def main():
           + declaration(ports, "    private static func snapshot(").replace("private static", "static", 1)
           + declaration(ports, "    private static func startTimes(").replace("private static", "static", 1)
           + "}\n}\n")
+
+    # Same-file extensions can exercise the private AppKit content view without
+    # widening the production interface or presenting an application window.
+    hud = "Sources/Vorssaint/UI/QuitProtection/QuitProtectionHUD.swift"
+    checks = "Tests/Fixtures/QuitProtectionHUDChecks.swift"
+    write("QuitProtectionHUDBodies.swift",
+          f'#sourceLocation(file: {json.dumps(hud)}, line: 1)\n'
+          + (ROOT / hud).read_text() + "\n"
+          + f'#sourceLocation(file: {json.dumps(checks)}, line: 1)\n'
+          + (ROOT / checks).read_text() + "\n#sourceLocation()\n")
 
 if __name__ == "__main__":
     main()

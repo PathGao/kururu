@@ -167,6 +167,7 @@ enum PanelSectionOptions {
             return [.init(title: s.monitorItemNetSpeed, key: DefaultsKey.monitorNetSpeed, graphKey: DefaultsKey.monitorGraphNetwork),
                     .init(title: s.networkApps, key: DefaultsKey.monitorNetApps),
                     .init(title: s.monitorItemNetTotals, key: DefaultsKey.monitorNetTotals),
+                    .init(title: s.networkIPAddresses, key: DefaultsKey.monitorNetAddresses),
                     .init(title: s.monitorItemNetTest, key: DefaultsKey.monitorNetTest)]
         case .disk:
             return [.init(title: s.monitorItemDiskUsage, key: DefaultsKey.monitorDiskUsage),

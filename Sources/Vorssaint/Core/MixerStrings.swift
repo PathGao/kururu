@@ -7,6 +7,11 @@ import Foundation
 struct MixerFeatureStrings {
     var pageTitle: String = "Volume mixer"
     var hideInactiveApps: String = "Hide inactive apps"
+    var pin: String = "Pin to Top"
+    var unpin: String = "Unpin"
+    var moveUp: String = "Move Up"
+    var moveDown: String = "Move Down"
+    var arrange: String = "Hold Command and drag to reorder"
     var empty: String = "Apps that use audio show up here"
     var unavailable: String = "Available on macOS 14.4 and later"
     var permissionBody: String = "To adjust per-app volume, allow “Screen & System Audio Recording” in System Settings. Audio is never recorded."
@@ -391,6 +396,11 @@ extension MixerFeatureStrings {
     static let zhHans = MixerFeatureStrings(
         pageTitle: "音量混音器",
         hideInactiveApps: "隐藏不活跃的 App",
+        pin: "置顶",
+        unpin: "取消置顶",
+        moveUp: "上移",
+        moveDown: "下移",
+        arrange: "按住 Command 并拖移以重新排列",
         empty: "使用音频的 App 会显示在这里",
         unavailable: "需 macOS 14.4 及更高版本",
         permissionBody: "若要调整各 App 的音量，请在“系统设置”中允许“屏幕与系统音频录制”。绝不会录制音频。",

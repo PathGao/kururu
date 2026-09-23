@@ -68,7 +68,7 @@ struct FeatureHubStrings {
     var descFinderCutPaste: String = "Cut and paste files in Finder"
     var descShelf: String = "Drop files on the menu bar to hold them"
     var descURLCleaner: String = "Copied links lose their tracking junk"
-    var descMixer: String = "A volume slider for each app"
+    var descMixer: String = "Per-app volume, pinning and custom order"
     var descSoundOutputSwitcher: String = "Cycle sound outputs with a shortcut"
     var descMicMute: String = "Mute the microphone from anywhere"
     var descMusicBlock: String = "Block selected app launches after media keys"
@@ -1050,7 +1050,7 @@ extension FeatureHubStrings {
         descFinderCutPaste: "在访达中剪切和粘贴文件",
         descShelf: "把文件放到菜单栏上暂存",
         descURLCleaner: "拷贝的链接自动去除跟踪参数",
-        descMixer: "每个 App 独立的音量滑块",
+        descMixer: "各 App 音量、置顶和自定义排序",
         descSoundOutputSwitcher: "用快捷键切换声音输出",
         descMicMute: "随时随地静音麦克风",
         descMusicBlock: "阻止媒体键触发所选 App 启动",

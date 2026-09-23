@@ -37,7 +37,22 @@ enum URLAutomaticCleaningTests {
                    "cleaned plain and URL representations agree")
             expect(!(board.types ?? []).contains(.html) && !(board.types ?? []).contains(.rtf), "stale rich representations removed")
         }
-        let blockedTypes: [NSPasteboard.PasteboardType] = [.png, .tiff, .fileURL, .rtfd, NSPasteboard.PasteboardType("custom.payload")]
+        // A browser's or a messaging app's private note next to the link is
+        // dropped by the rewrite, like the formatted copies above.
+        for note in ["org.chromium.source-url", "com.apple.WebKit.custom-pasteboard-data", "custom.payload"] {
+            install([item(extra: NSPasteboard.PasteboardType(note))])
+            let result = URLAutomaticCleaning.poll(board, sinceChangeCount: -1, rules: .none)
+            expect(result?.cleaned?.url == expected && board.string(forType: .string) == expected,
+                   "a link copied with a private note is cleaned: " + note)
+        }
+        let urlOnly = NSPasteboardItem()
+        urlOnly.setString(original, forType: .URL)
+        install([urlOnly])
+        expect(URLAutomaticCleaning.poll(board, sinceChangeCount: -1, rules: .none)?.cleaned?.url == expected
+               && board.string(forType: .string) == expected,
+               "a link copied only as a URL is cleaned")
+        let blockedTypes: [NSPasteboard.PasteboardType] = [.png, .tiff, .fileURL, .pdf,
+                                                           NSPasteboard.PasteboardType("org.nspasteboard.ConcealedType")]
         for type in blockedTypes {
             install([item(extra: type)])
             let before = snapshot(), count = board.changeCount

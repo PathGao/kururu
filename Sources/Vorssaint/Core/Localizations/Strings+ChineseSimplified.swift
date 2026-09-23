@@ -54,6 +54,8 @@ extension Strings {
         keepAwakeEndsIn: "剩余时间",
         keepAwakeUntilDisabled: "保持启用直到你手动关闭",
         keepAwakeNormalRules: "Mac 遵循正常的能源规则",
+        keepAwakeUntilLabel: "直到",
+        keepAwakeUntilStart: "开始",
         keepAwakeOptions: "选项",
         keepAwakeMouseJiggle: "轻微移动指针",
         keepAwakeMouseJiggleCaption: "会话期间按所选间隔轻微移动指针。",
@@ -534,6 +536,8 @@ extension Strings {
         betaFeatureWarning: "测试版。你可能会遇到一些错误。",
 
         networkSection: "网络",
+        networkIPAddresses: "IP 地址",
+        networkLocalIP: "本地 IPv4",
         networkDownload: "下载",
         networkUpload: "上传",
         networkThisSession: "本次会话",

@@ -417,6 +417,8 @@ if (( TEST )); then
         Sources/Vorssaint/Services/Audio/MusicLaunchSupport.swift \
         Sources/Vorssaint/Services/Bluetooth/BluetoothSleepSupport.swift \
         Sources/Vorssaint/UI/MenuPanel/MixerPercentNativeTextField.swift \
+        Sources/Vorssaint/UI/MenuPanel/MixerAppDragSource.swift \
+        Tests/MixerNativeDragTests.swift \
         Sources/Vorssaint/Services/Audio/BoostLimiter.swift \
         Sources/Vorssaint/Services/Audio/MixerRender.swift \
         Sources/Vorssaint/Services/Audio/PreciseVolumeRollerSupport.swift \
@@ -516,6 +518,8 @@ if (( TEST )); then
         Sources/Vorssaint/Services/ShellSupport.swift \
         Sources/Vorssaint/Services/Metrics/NetworkProcessSupport.swift \
         Sources/Vorssaint/Services/Metrics/NetworkSampler.swift \
+        Sources/Vorssaint/Services/Metrics/NetworkAddressService.swift \
+        Tests/NetworkAddressTests.swift \
         Sources/Vorssaint/Services/Metrics/SpeedTest.swift \
         Sources/Vorssaint/Services/Metrics/PeripheralBatterySupport.swift \
         Sources/Vorssaint/Services/Metrics/DiskSupport.swift \
@@ -593,6 +597,7 @@ if (( TEST )); then
         Tests/KeepAwakeCatalogTests.swift \
         Tests/WindowLayoutFeatureTests.swift \
         Tests/SystemShortcutTakeoverTests.swift \
+        Tests/KeepAwakeLidSleepTests.swift \
         Tests/KeepAwakeClamshellTests.swift \
         Tests/DockAutohideHoldTests.swift \
         Tests/DockPreviewFrameRestorationTests.swift \
@@ -605,6 +610,8 @@ if (( TEST )); then
         Tests/RecorderExportRenderingTests.swift \
         Tests/CapturePortChecks.swift \
         Tests/MediaImageAdvancedOptionsTests.swift \
+        Tests/KeepAwakeUntilTests.swift \
+        Tests/KeepAwakeLidSleepOrderTests.swift \
         build/generated-tests/*.swift \
     )
     TEST_OUTPUT_FILE_MAP="$TEST_OBJECT_DIR/output-file-map.json"

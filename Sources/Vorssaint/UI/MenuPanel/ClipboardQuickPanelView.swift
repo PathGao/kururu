@@ -8,6 +8,7 @@ struct ClipboardQuickPanelView: View {
     @ObservedObject private var history = ClipboardHistoryService.shared
     @FocusState private var searchFocused: Bool
     @State private var hoveredEntryID: UUID?
+    @State private var previewEntryID: UUID?
     @State private var previewIsEditing = false
     @AppStorage(DefaultsKey.clipboardHistoryEnabled) private var captureEnabled = false
 
@@ -22,7 +23,9 @@ struct ClipboardQuickPanelView: View {
     }
 
     private var previewEntry: ClipboardHistoryEntry? {
-        history.selectedQuickEntry
+        ClipboardHistorySelection.previewEntry(preferredID: previewEntryID,
+                                               visibleEntries: filtered,
+                                               selectedEntry: history.selectedQuickEntry)
     }
 
     private var canReorderEntries: Bool {
@@ -68,14 +71,23 @@ struct ClipboardQuickPanelView: View {
         .ignoresSafeArea(.container, edges: .top)
         .onAppear {
             hoveredEntryID = nil
+            previewEntryID = history.selectedQuickEntryID
             DispatchQueue.main.async { searchFocused = true }
         }
         .onDisappear {
             hoveredEntryID = nil
+            previewEntryID = nil
             previewIsEditing = false
+        }
+        .onChange(of: history.quickSelectionIndex) { _, _ in
+            previewEntryID = history.selectedQuickEntryID
+        }
+        .onChange(of: history.quickQuery) { _, _ in
+            previewEntryID = history.selectedQuickEntryID
         }
         .onChange(of: history.quickWindowPresentationID) { _, _ in
             hoveredEntryID = nil
+            previewEntryID = history.selectedQuickEntryID
         }
     }
 
@@ -189,8 +201,10 @@ struct ClipboardQuickPanelView: View {
                               isBatchSelected: history.isQuickBatchSelected(entry),
                               isHovered: hoveredEntryID == entry.id,
                               canReorderEntries: canReorderEntries,
+                              previewIsEditing: previewIsEditing,
                               language: l10n.language,
-                              hoveredEntryID: $hoveredEntryID)
+                              hoveredEntryID: $hoveredEntryID,
+                              previewEntryID: $previewEntryID)
                     .equatable()
                     .id(entry.id)
                 if index < entries.count - 1 {
@@ -273,8 +287,17 @@ private struct QuickEntryRow: View, Equatable {
     let isBatchSelected: Bool
     let isHovered: Bool
     let canReorderEntries: Bool
+    let previewIsEditing: Bool
     let language: AppLanguage
     @Binding var hoveredEntryID: UUID?
+    @Binding var previewEntryID: UUID?
+    /// The pane follows a row only once the pointer has rested on it: while
+    /// rows stream under a still pointer during a scroll, every one of them
+    /// would otherwise redraw the pane, and a long entry costs a frame or two
+    /// each time.
+    @State private var previewFollowTask: Task<Void, Never>?
+    private static let previewFollowDelay: Duration = .milliseconds(120)
+
     private var history: ClipboardHistoryService { .shared }
     private var l10n: L10n { .shared }
     private var text: ClipboardFeatureStrings { FeatureStrings.clipboard(language) }
@@ -288,6 +311,7 @@ private struct QuickEntryRow: View, Equatable {
             && lhs.isBatchSelected == rhs.isBatchSelected
             && lhs.isHovered == rhs.isHovered
             && lhs.canReorderEntries == rhs.canReorderEntries
+            && lhs.previewIsEditing == rhs.previewIsEditing
             && lhs.language == rhs.language
     }
 
@@ -330,6 +354,14 @@ private struct QuickEntryRow: View, Equatable {
             if hovering, NSEvent.mouseLocation == history.keyboardSelectionPointer { return }
             withAnimation(.easeOut(duration: 0.1)) {
                 hoveredEntryID = hovering ? entry.id : (hoveredEntryID == entry.id ? nil : hoveredEntryID)
+            }
+            previewFollowTask?.cancel()
+            guard hovering, !previewIsEditing else { return }
+            let id = entry.id
+            previewFollowTask = Task { @MainActor in
+                try? await Task.sleep(for: Self.previewFollowDelay)
+                guard !Task.isCancelled else { return }
+                previewEntryID = id
             }
         }
         .onTapGesture { activate(entry) }
@@ -474,13 +506,17 @@ private struct QuickEntryRow: View, Equatable {
     }
 
     private func activate(_ entry: ClipboardHistoryEntry) {
+        // Finder muscle memory: ⌘-click and ⇧-click build a selection.
+        // A plain click pastes; on a selected row it pastes the selection.
         let modifiers = NSEvent.modifierFlags.intersection([.command, .shift])
         if modifiers.contains(.command) {
             history.toggleQuickBatchSelection(entry)
         } else if modifiers.contains(.shift) {
             history.extendQuickBatchSelection(to: entry)
+        } else if history.isQuickBatchSelected(entry) {
+            history.copySelectedQuickEntry()
         } else {
-            history.selectQuickEntry(entry)
+            history.copyQuickEntry(entry)
         }
     }
 

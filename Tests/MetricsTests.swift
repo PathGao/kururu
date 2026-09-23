@@ -53,6 +53,7 @@ struct MetricsTests {
             ("EnvironmentConfigurationTests", { EnvironmentConfigurationTests.run { suite.expect($0, $1) } }),
             ("CommandBarActionTests", { CommandBarActionTests.run { suite.expect($0, $1) } }),
             ("CommandBarDestinationTests", { CommandBarDestinationTests.run { suite.expect($0, $1) } }),
+            ("NetworkAddressTests", { NetworkAddressTests.run { suite.expect($0, $1) } }),
             ("CleanerPackageCacheTests", { CleanerPackageCacheTests.run { suite.expect($0, $1) } }),
             ("BrightnessNativeBoundaryTests", { BrightnessNativeBoundaryTests.run { suite.expect($0, $1) } }),
             ("BrightnessPipelineTests", { BrightnessPipelineTests.run { suite.expect($0, $1) } }),
@@ -90,6 +91,7 @@ struct MetricsTests {
             ("DisplayBrightnessShortcutTests", { DisplayBrightnessShortcutTests.run { suite.expect($0, $1) } }),
             ("BrightnessModuleMigrationTests", { BrightnessModuleMigrationTests.run { suite.expect($0, $1) } }),
             ("MixerSwitchMigrationTests", { MixerSwitchMigrationTests.run { suite.expect($0, $1) } }),
+            ("MixerNativeDragTests", { MixerNativeDragTests.run(suite) }),
             ("ShelfImportStoreTests", { ShelfImportStoreTests.run { suite.expect($0, $1) } }),
             ("MediaPDFTests", { MediaPDFTests.run { suite.expect($0, $1) } }),
             ("MediaPDFCompressionTests", { MediaPDFCompressionTests.run { suite.expect($0, $1) } }),
@@ -139,7 +141,6 @@ struct MetricsTests {
             ("WindowLayoutGestureTests", { WindowLayoutFeatureTests.gestures(suite) }),
             ("SystemShortcutTakeoverContract", { SystemShortcutTakeoverContract.run(suite) }),
             ("SystemShortcutTakeoverWiring", { SystemShortcutTakeoverContract.wiring(suite) }),
-            ("KeepAwakeClamshellTests", { KeepAwakeClamshellTests.run(expect: { suite.expect($0, $1) }) }),
             ("PortManagerRefreshTests", { PortManagerRefreshTests.run(suite) }),
             ("CommandBarInputSourceContract", { CommandBarInputSourceContract.run(suite) }),
             ("CommandBarTerminationContract", { CommandBarTerminationContract.run(suite) }),
@@ -150,6 +151,10 @@ struct MetricsTests {
             ("RecorderExportRenderingTests", { RecorderExportRenderingTests.run(suite) }),
             ("CapturePortChecks", { CapturePortChecks.run(suite) }),
             ("MediaImageAdvancedOptionsTests", { MediaImageAdvancedOptionsTests.run(suite) }),
+            ("KeepAwakeLidSleepTests", { KeepAwakeLidSleepTests.run { suite.expect($0, $1) } }),
+            ("KeepAwakeUntilTests", { KeepAwakeUntilTests.run { suite.expect($0, $1) } }),
+            ("KeepAwakeLidSleepOrderTests", { KeepAwakeLidSleepOrderTests.run { suite.expect($0, $1) } }),
+            ("QuitProtectionHUDChecks", { QuitProtectionHUD.progressChecks(suite) }),
         ]
         let names = groups.map(\.0) + ["MetricsTests"]
         var selected = Set<String>()
@@ -665,6 +670,24 @@ struct MetricsTests {
                                                       visibleEntries: [],
                                                       selectedEntry: nil) == nil,
                "clipboard preview clears after removing the final visible entry")
+        // The row's click handler lives in a SwiftUI view; this pins its
+        // plain-click branch to upstream's paste so a restyle cannot turn it
+        // back into select-only.
+        let quickPanelSource = (try? String(
+            contentsOfFile: "Sources/Vorssaint/UI/MenuPanel/ClipboardQuickPanelView.swift",
+            encoding: .utf8)) ?? ""
+        let quickActivate = quickPanelSource.range(of: "    private func activate(_ entry: ClipboardHistoryEntry) {")
+            .map { quickPanelSource[$0.lowerBound...] }
+            .flatMap { body in body.range(of: "\n    }\n").map { body[..<$0.lowerBound] } }
+            .map { $0.split(separator: "\n").filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") } }
+            .map { $0.joined(separator: "\n") } ?? ""
+        expect(quickActivate.hasSuffix("""
+                } else if history.isQuickBatchSelected(entry) {
+                    history.copySelectedQuickEntry()
+                } else {
+                    history.copyQuickEntry(entry)
+                }
+        """), "a plain click pastes the quick panel row, or the selection it belongs to (found \(quickActivate.count) chars)")
         expectEqual(ClipboardHistoryBatch.combinedText(["First", "Second", "Third"]),
                     "First\nSecond\nThird",
                     "clipboard batch joins selected entries as a single paste")
@@ -2388,6 +2411,22 @@ struct MetricsTests {
         ), "the Keep Awake lock guard accepts the session dictionary's numeric bridge")
         expect(!KeepAwakeAutomationSupport.isScreenLocked(sessionDictionary: nil),
                "an unreadable lock state does not strand Keep Awake in a pause")
+        let cal = Calendar.current
+        let now10 = cal.date(from: DateComponents(year: 2026, month: 1, day: 15, hour: 10, minute: 0))!
+        let pick14 = cal.date(from: DateComponents(year: 2026, month: 1, day: 15, hour: 14, minute: 30))!
+        let resolved1 = KeepAwakeAutomationSupport.resolvedUntilDate(picked: pick14, now: now10)
+        expect(cal.component(.hour, from: resolved1) == 14 && cal.component(.day, from: resolved1) == 15,
+               "resolvedUntilDate keeps a time still ahead today on today")
+        let now22 = cal.date(from: DateComponents(year: 2026, month: 1, day: 15, hour: 22, minute: 0))!
+        let pick7 = cal.date(from: DateComponents(year: 2026, month: 1, day: 15, hour: 7, minute: 0))!
+        let resolved2 = KeepAwakeAutomationSupport.resolvedUntilDate(picked: pick7, now: now22)
+        expect(cal.component(.hour, from: resolved2) == 7 && cal.component(.day, from: resolved2) == 16,
+               "resolvedUntilDate rolls a time already past today to tomorrow")
+        let now1030 = cal.date(from: DateComponents(year: 2026, month: 1, day: 15, hour: 10, minute: 30, second: 20))!
+        let resolved3 = KeepAwakeAutomationSupport.resolvedUntilDate(picked: pick14.addingTimeInterval(-4 * 3600), now: now1030)
+        expect(cal.component(.hour, from: resolved3) == 10 && cal.component(.minute, from: resolved3) == 30
+               && cal.component(.day, from: resolved3) == 16,
+               "resolvedUntilDate rolls the minute already under way to tomorrow instead of ending at once")
         let sleepDisabledReport = """
         System-wide power settings:
          SleepDisabled\t\t1
@@ -7033,6 +7072,80 @@ struct MetricsTests {
                                                                        selectedUnavailable: true,
                                                                        shouldApplyPreferred: false),
                "missing preferred input falls back visually without deleting preference")
+        do {
+            let original = ["app.a", "app.b", "app.c", "app.d"]
+            var layout = MixerAppArrangement()
+            expect(layout.ordered(original, identity: { $0 }) == original,
+                   "mixer keeps alphabetical input until the user arranges it")
+            layout.move("app.c", offset: -1, visibleIDs: original)
+            let arranged = ["app.a", "app.c", "app.b", "app.d"]
+            expect(layout.ordered(original, identity: { $0 }) == arranged,
+                   "mixer moves an app to its chosen position")
+            let reopened = MixerAppArrangement(rawValue: layout.rawValue)
+            expect(reopened.ordered(["app.a", "app.b", "app.d"], identity: { $0 }) == ["app.a", "app.b", "app.d"]
+                   && reopened.ordered(original, identity: { $0 }) == arranged,
+                   "closing and reopening an app or mixer preserves its position")
+            layout.move("app.d", offset: -1, visibleIDs: ["app.a", "app.b", "app.d"])
+            expect(layout.ordered(original, identity: { $0 }) == ["app.a", "app.c", "app.d", "app.b"],
+                   "reordering live rows preserves the slot of a closed or hidden app")
+            layout.togglePin("app.b")
+            layout.togglePin("app.d")
+            expect(layout.ordered(original, identity: { $0 }) == ["app.d", "app.b", "app.a", "app.c"],
+                   "pinned apps lead the list while keeping their chosen order")
+            layout.move("app.b", offset: -1, visibleIDs: layout.ordered(original, identity: { $0 }))
+            expect(layout.ordered(original, identity: { $0 }) == ["app.b", "app.d", "app.a", "app.c"],
+                   "pinned apps can be rearranged independently")
+            expect(layout.neighbor(of: "app.d", offset: 1, visibleIDs: ["app.b", "app.d", "app.a", "app.c"]) == nil
+                   && layout.neighbor(of: "app.a", offset: -1, visibleIDs: ["app.b", "app.d", "app.a", "app.c"]) == nil,
+                   "reordering does not cross the pinned boundary")
+            let saved = layout
+            layout.move("missing", offset: -1, visibleIDs: original)
+            expect(layout == saved, "a vanished row cannot overwrite the saved arrangement")
+            layout.togglePin("app.b")
+            expect(!layout.isPinned("app.b") && layout.isPinned("app.d"), "unpinning affects only the chosen app")
+            expect(layout.ordered(original + ["app.e"], identity: { $0 }).last == "app.e",
+                   "new apps follow the remembered order")
+            var dragged = MixerAppArrangement()
+            dragged.move("app.a", to: "app.d", after: true, visibleIDs: original)
+            expect(dragged.ordered(original, identity: { $0 }) == ["app.b", "app.c", "app.d", "app.a"],
+                   "one drag can insert the first app below the last app")
+            dragged.move("app.a", to: "app.b", after: false,
+                         visibleIDs: dragged.ordered(original, identity: { $0 }))
+            expect(dragged.ordered(original, identity: { $0 }) == original,
+                   "one drag can insert an app above the first row")
+            dragged.move("app.d", to: "app.a", after: false, visibleIDs: ["app.a", "app.c", "app.d"])
+            expect(dragged.ordered(original, identity: { $0 }) == ["app.d", "app.b", "app.a", "app.c"],
+                   "a long drag leaves a closed app's remembered slot intact")
+            let beforeInvalidDrop = dragged
+            dragged.move("app.a", to: "missing", after: false, visibleIDs: original)
+            dragged.move("missing", to: "app.a", after: true, visibleIDs: original)
+            dragged.move("app.a", to: "app.a", after: false, visibleIDs: original)
+            expect(dragged == beforeInvalidDrop, "missing or same-row drop targets do not change preferences")
+            dragged.togglePin("app.d")
+            let beforeCrossGroupDrop = dragged
+            dragged.move("app.a", to: "app.d", after: false, visibleIDs: original)
+            expect(dragged == beforeCrossGroupDrop, "dragging does not silently pin or unpin an app")
+            let malformed = MixerAppArrangement(rawValue: "invalid")
+            expect(malformed == MixerAppArrangement(), "invalid saved arrangement falls back safely")
+            let duplicate = MixerAppArrangement(rawValue: #"{"order":["app.b","app.b","","app.a"],"pinned":["app.b","app.b",""]}"#)
+            expect(duplicate.order == ["app.b", "app.a"] && duplicate.pinned == ["app.b"],
+                   "restored arrangement removes duplicate and empty identities")
+            expect(Defaults.registeredDefaults[DefaultsKey.mixerAppArrangement] as? String == ""
+                   && SettingsBackupSupport.exportKeys().contains(DefaultsKey.mixerAppArrangement),
+                   "mixer arrangement is opt-in and included in settings backups")
+            let payload = SettingsBackupSupport.payload(appVersion: "test") { key in
+                key == DefaultsKey.mixerAppArrangement ? saved.rawValue : nil
+            }
+            let data = try? PropertyListSerialization.data(fromPropertyList: payload, format: .xml, options: 0)
+            let plist = data.flatMap { try? PropertyListSerialization.propertyList(from: $0, format: nil) } as? [String: Any]
+            let restored = plist.flatMap { SettingsBackupSupport.sanitizedSettings(from: $0) }
+            let restoredLayout = MixerAppArrangement(rawValue: restored?[DefaultsKey.mixerAppArrangement] as? String ?? "")
+            expect(restoredLayout == saved && restoredLayout.ordered(original, identity: { $0 }) == ["app.b", "app.d", "app.a", "app.c"],
+                   "export and import preserve both pins and positions, including absent apps")
+            expect(!SettingsBackupSupport.valueLooksRight(DefaultsKey.mixerAppArrangement, ["invalid"]),
+                   "backup rejects an arrangement with the wrong storage type")
+        }
+
         expect(MixerRoutingSupport.displayOrderedBefore(name: "Music", id: "com.apple.Music",
                                                         otherName: "Safari", otherID: "com.apple.Safari"),
                "mixer rows order by display name")
@@ -12395,6 +12508,37 @@ struct MetricsTests {
         expectEqual(URLCleaning.clean("https://www.reddit.com/r/swift/comments/abc/?%24deep_link=true&%243p=x&share_id=y&sort=new")?.url ?? "",
                     "https://www.reddit.com/r/swift/comments/abc/?sort=new",
                     "URL cleaner strips Reddit's deep-link tracking in either spelling")
+
+        // The silent rewrite keeps only text and URL, so it runs when nothing
+        // else on the pasteboard would be lost.
+        expect(URLCleaning.canRewritePasteboard(types: ["public.utf8-plain-text", "public.url", "public.url-name",
+                                                        "NSStringPboardType", "NSURLPboardType"]),
+               "a plain link copy can be rewritten")
+        expect(!URLCleaning.canRewritePasteboard(types: []),
+               "an empty pasteboard is left alone")
+        expect(URLCleaning.canRewritePasteboard(types: ["public.utf8-plain-text", "public.html", "public.rtf",
+                                                        "com.apple.flat-rtfd", "public.utf16-external-plain-text"]),
+               "formatted copies of the same link are dropped by the rewrite, not protected")
+        expect(URLCleaning.canRewritePasteboard(types: ["public.utf8-plain-text", "public.url",
+                                                        "org.chromium.source-url", "org.chromium.web-custom-data",
+                                                        "com.apple.WebKit.custom-pasteboard-data",
+                                                        "dyn.ah62d4rv4gu8y6y4grf0gn5xbrzw1gydcr7u1e3cytf2gn"]),
+               "a browser's or a messaging app's private notes about the copy do not block the rewrite")
+        expect(!URLCleaning.canRewritePasteboard(types: ["public.utf8-plain-text", "public.url", "public.tiff", "public.png"]),
+               "a copied picture with its source link as text is left alone")
+        expect(!URLCleaning.canRewritePasteboard(types: ["public.utf8-plain-text", "public.file-url", "NSFilenamesPboardType"])
+                && !URLCleaning.canRewritePasteboard(types: ["public.utf8-plain-text", "NSFilenamesPboardType"])
+                && !URLCleaning.canRewritePasteboard(types: ["public.utf8-plain-text",
+                                                             "com.apple.pasteboard.promised-file-url",
+                                                             "com.apple.pasteboard.promised-file-content-type"]),
+               "a copied or promised file is left alone")
+        expect(!URLCleaning.canRewritePasteboard(types: ["public.utf8-plain-text", "com.adobe.pdf"])
+                && !URLCleaning.canRewritePasteboard(types: ["public.utf8-plain-text", "public.mpeg-4"])
+                && !URLCleaning.canRewritePasteboard(types: ["public.utf8-plain-text", "com.apple.webarchive"]),
+               "a document, a movie or a web archive next to the text is left alone")
+        expect(!URLCleaning.canRewritePasteboard(types: ["public.utf8-plain-text", "org.nspasteboard.ConcealedType"])
+                && !URLCleaning.canRewritePasteboard(types: ["public.utf8-plain-text", "org.nspasteboard.TransientType"]),
+               "a concealed or transient copy is never rewritten")
 
         // MARK: Global environment inspection
 
@@ -25595,16 +25739,18 @@ struct MetricsTests {
             let quitProtection = FeatureStrings.quitProtection(language)
             let quitProtectionValues = Mirror(reflecting: quitProtection).children
                 .compactMap { $0.value as? String }
-            expect(quitProtectionValues.count == 31 && quitProtectionValues.allSatisfy { !$0.isEmpty },
+            expect(quitProtectionValues.count == 34 && quitProtectionValues.allSatisfy { !$0.isEmpty },
                    "every quit protection string is set for \(language.rawValue) (found \(quitProtectionValues.count))")
             expect(quitProtectionValues.allSatisfy { !$0.contains("—") },
                    "no em-dash in quit protection strings (\(language.rawValue))")
-            expectFormat(quitProtection.holdHUDFormat, ["@"],
-                         "\(language.rawValue) quit protection hold HUD format")
-            expectFormat(quitProtection.doubleHUDFormat, ["@"],
-                         "\(language.rawValue) quit protection double HUD format")
-            expectFormat(quitProtection.extraHUDFormat, ["@"],
-                         "\(language.rawValue) quit protection modifier HUD format")
+            for shortcut in QuitProtectionShortcut.allCases {
+                expectFormat(quitProtection.holdHUDFormat(for: shortcut), ["@"],
+                             "\(language.rawValue) \(shortcut.rawValue) protection hold HUD format")
+                expectFormat(quitProtection.doubleHUDFormat(for: shortcut), ["@"],
+                             "\(language.rawValue) \(shortcut.rawValue) protection double HUD format")
+                expectFormat(quitProtection.extraHUDFormat(for: shortcut), ["@"],
+                             "\(language.rawValue) \(shortcut.rawValue) protection modifier HUD format")
+            }
         }
 
         // Loading the saved shelf keeps "nothing saved", "decoded whole",
@@ -26329,7 +26475,7 @@ struct MetricsTests {
             ("dockPreview", 24, AppLanguage.allCases.map { FeatureStrings.dockPreview($0) as Any }),
             ("dockClick", 12, AppLanguage.allCases.map { FeatureStrings.dockClick($0) as Any }),
             ("micMute", 16, AppLanguage.allCases.map { FeatureStrings.micMute($0) as Any }),
-            ("mixer", 35, AppLanguage.allCases.map { FeatureStrings.mixer($0) as Any }),
+            ("mixer", 40, AppLanguage.allCases.map { FeatureStrings.mixer($0) as Any }),
             ("musicBlock", 10, AppLanguage.allCases.map { FeatureStrings.musicBlock($0) as Any }),
             ("soundOutputSwitcher", 7, AppLanguage.allCases.map { FeatureStrings.soundOutputSwitcher($0) as Any }),
             ("windowPreviewExclusions", 10, AppLanguage.allCases.map { FeatureStrings.windowPreviewExclusions($0) as Any })
