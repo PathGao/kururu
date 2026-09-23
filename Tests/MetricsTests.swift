@@ -671,6 +671,24 @@ struct MetricsTests {
                                                       visibleEntries: [],
                                                       selectedEntry: nil) == nil,
                "clipboard preview clears after removing the final visible entry")
+        // The row's click handler lives in a SwiftUI view; this pins its
+        // plain-click branch to upstream's paste so a restyle cannot turn it
+        // back into select-only.
+        let quickPanelSource = (try? String(
+            contentsOfFile: "Sources/Vorssaint/UI/MenuPanel/ClipboardQuickPanelView.swift",
+            encoding: .utf8)) ?? ""
+        let quickActivate = quickPanelSource.range(of: "    private func activate(_ entry: ClipboardHistoryEntry) {")
+            .map { quickPanelSource[$0.lowerBound...] }
+            .flatMap { body in body.range(of: "\n    }\n").map { body[..<$0.lowerBound] } }
+            .map { $0.split(separator: "\n").filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") } }
+            .map { $0.joined(separator: "\n") } ?? ""
+        expect(quickActivate.hasSuffix("""
+                } else if history.isQuickBatchSelected(entry) {
+                    history.copySelectedQuickEntry()
+                } else {
+                    history.copyQuickEntry(entry)
+                }
+        """), "a plain click pastes the quick panel row, or the selection it belongs to (found \(quickActivate.count) chars)")
         expectEqual(ClipboardHistoryBatch.combinedText(["First", "Second", "Third"]),
                     "First\nSecond\nThird",
                     "clipboard batch joins selected entries as a single paste")
