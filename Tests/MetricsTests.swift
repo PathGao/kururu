@@ -13117,6 +13117,10 @@ struct MetricsTests {
                                      encoding: .utf8)) ?? ""
             return organizerFolderPromptKeys.allSatisfy(value.contains)
         }, "every localization explains custom organizer folder access")
+        expect(localizedInfoPlists.allSatisfy { folder in
+            ((try? String(contentsOfFile: "Resources/\(folder)/InfoPlist.strings",
+                          encoding: .utf8)) ?? "").contains("\"NSCameraUsageDescription\"")
+        }, "every localization explains why the preview needs the camera")
         // What the bundle says it speaks and what it ships have to be the same
         // list: a language declared without its folder makes the system offer
         // the app in it and then show every permission prompt in English.

@@ -11,6 +11,7 @@
 "NSMicrophoneUsageDescription" = "__APP_NAME__, mikrofonunuzu yalnızca ekran kaydı için açtığınızda kaydeder. Ses Mac'inizde kalır.";
 
 /* macOS Camera permission prompt. */
+"NSCameraUsageDescription" = "__APP_NAME__, kameranızı yalnızca açtığınız önizleme penceresinde gösterir; böylece aramadan önce nasıl göründüğünüzü kontrol edebilirsiniz. Hiçbir şey kaydedilmez veya Mac'inizden çıkmaz.";
 
 /* macOS Downloads folder permission prompt. */
 "NSDownloadsFolderUsageDescription" = "__APP_NAME__, yalnızca seçtiğiniz doğrulanmış WhatsApp dosyalarını incelemek, düzenlemek veya Çöp Sepeti'ne taşımak için İndirilenler'deki yerel meta verileri denetler.";
