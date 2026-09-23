@@ -8,7 +8,7 @@ enum ScrollHorizontalModifier: String, CaseIterable {
     case shift, option, control, command
 
     init(storageValue: String?) {
-        self = storageValue.flatMap(Self.init(rawValue:)) ?? .command
+        self = storageValue.flatMap(Self.init(rawValue:)) ?? .shift
     }
 
     var flag: CGEventFlags {

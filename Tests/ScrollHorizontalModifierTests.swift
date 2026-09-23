@@ -102,12 +102,17 @@ enum ScrollHorizontalModifierTests {
         suite.expect(fallback.getIntegerValueField(.scrollWheelEventPointDeltaAxis2) == -2,
                      "a point-only wheel redirected before raw fallback retains its distance")
 
-        suite.expect(ScrollHorizontalModifier(storageValue: nil) == .command
-            && ScrollHorizontalModifier(storageValue: "unknown") == .command,
+        suite.expect(ScrollHorizontalModifier(storageValue: nil) == .shift
+            && ScrollHorizontalModifier(storageValue: "unknown") == .shift,
             "missing or invalid modifier settings use the same default as the picker")
         suite.expect(Defaults.registeredDefaults[DefaultsKey.scrollHorizontalModifier] as? String
-            == ScrollHorizontalModifier.command.rawValue,
+            == ScrollHorizontalModifier.shift.rawValue,
             "the registered modifier default matches the storage fallback")
+        let scrollSettingsSource = (try? String(
+            contentsOfFile: "Sources/Vorssaint/UI/Settings/SettingsView.swift", encoding: .utf8)) ?? ""
+        suite.expect(scrollSettingsSource.contains(
+            "private var horizontalScrollModifier =\n        ScrollHorizontalModifier.shift"),
+            "the picker shows the same default the tap uses before anything is stored")
         suite.expect(Defaults.registeredDefaults[DefaultsKey.scrollHorizontalEnabled] as? Bool == false,
                      "existing users retain their current scroll behavior")
         suite.expect(SettingsBackupSupport.exportKeys().isSuperset(of: [

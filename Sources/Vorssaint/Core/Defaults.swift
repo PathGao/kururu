@@ -887,7 +887,7 @@ enum Defaults {
         DefaultsKey.scrollInverterEnabled: false,
         DefaultsKey.scrollInverterHorizontalEnabled: false,
         DefaultsKey.scrollHorizontalEnabled: false,
-        DefaultsKey.scrollHorizontalModifier: ScrollHorizontalModifier.command.rawValue,
+        DefaultsKey.scrollHorizontalModifier: ScrollHorizontalModifier.shift.rawValue,
         DefaultsKey.focusFollowsMouseEnabled: false,
         DefaultsKey.focusFollowsMouseDelay: FocusFollowsMouseSupport.defaultDelayMilliseconds,
         DefaultsKey.smoothScrollEnabled: false,

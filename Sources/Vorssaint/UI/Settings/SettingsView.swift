@@ -523,7 +523,7 @@ struct MouseSettings: View {
     @AppStorage(DefaultsKey.scrollInverterHorizontalEnabled) private var invertHorizontal = false
     @AppStorage(DefaultsKey.scrollHorizontalEnabled) private var horizontalScrollEnabled = false
     @AppStorage(DefaultsKey.scrollHorizontalModifier) private var horizontalScrollModifier =
-        ScrollHorizontalModifier.command
+        ScrollHorizontalModifier.shift
     @AppStorage(DefaultsKey.focusFollowsMouseEnabled) private var focusFollowsMouseEnabled = false
     @AppStorage(DefaultsKey.focusFollowsMouseDelay) private var focusFollowsMouseDelay =
         FocusFollowsMouseSupport.defaultDelayMilliseconds
