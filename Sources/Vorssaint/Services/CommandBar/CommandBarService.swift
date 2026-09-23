@@ -48,11 +48,9 @@ final class CommandBarService: ObservableObject {
                 completedValue: completedQuery,
                 afterChangingTo: query)
             if queryBeforeCompletion == nil { completedQuery = nil }
-            if LocalPortSupport.commandPort(query) == nil { lastPortQuery = nil }
             refreshResults()
         }
     }
-    private var lastPortQuery: Int?
     @Published private(set) var rows: [CommandBarEntry] = []
     @Published private(set) var isShowingSuggestions = false
     /// The heading that belongs above a row, by its position. What was pinned
@@ -1031,32 +1029,6 @@ final class CommandBarService: ObservableObject {
         if index { indexEntries() }
     }
 
-    private func localPortEntries(port: Int) -> [CommandBarEntry] {
-        let service = LocalPortService.shared
-        let strings = LocalPortStrings.text(L10n.shared.language)
-        if lastPortQuery != port {
-            lastPortQuery = port
-            service.refresh { [weak self] in
-                guard let self, LocalPortSupport.commandPort(self.query) != nil else { return }
-                self.refreshResults()
-            }
-        }
-        let matches = service.rows.filter { $0.port == port }
-        var entries = matches.map { row in
-            CommandBarEntry(id: "port.\(row.id)", title: "\(row.transport) \(row.endpoint) · \(row.name ?? strings.restricted)",
-                            subtitle: "PID \(row.pid) · \(strings.title)", icon: .symbol("network"),
-                            countsUsage: false, run: { _ in service.showActions(row) })
-        }
-        let status = service.isLoading ? strings.loading : service.failed ? strings.failed
-            : matches.isEmpty ? strings.empty : strings.scope
-        entries.append(CommandBarEntry(id: "port.refresh", title: strings.refresh + " · \(port)",
-                                       subtitle: status, icon: .symbol("arrow.clockwise"), countsUsage: false,
-                                       keepsBarOpen: true, run: { [weak self] _ in
-            service.refresh { self?.refreshResults() }
-        }))
-        return entries
-    }
-
     private func refreshResults() {
         guard !isTearingDown else { return }
         if presentationLifecycle.isLoadingHome {
@@ -1564,10 +1536,6 @@ final class CommandBarService: ObservableObject {
 
         var counts: [String: Int] = [:]
         var result: [CommandBarEntry] = []
-        if activeCategory == nil, AppFeature.monitorNetwork.isAvailable,
-           isEnabled(.actions), let port = LocalPortSupport.commandPort(trimmed) {
-            result.append(contentsOf: localPortEntries(port: port))
-        }
         if let answer { result.append(answer) }
         if let openURL { result.append(openURL) }
         if let scriptAnswer { result.append(scriptAnswer) }

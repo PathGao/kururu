@@ -44,7 +44,7 @@ Requires **macOS 14 or later** on an **Apple Silicon Mac**. The current release 
 
 ### Monitor your Mac
 
-CPU, GPU, memory, network, disk and power readings, with history graphs for checking changes over time. Inspect battery health and activity, or look up local TCP listening and UDP bound ports when you need to identify a process.
+CPU, GPU, memory, network, disk and power readings, with history graphs for checking changes over time. Inspect battery health and activity. Port Manager lists the TCP ports your processes listen on and, with Kill Process installed, stops them.
 
 ### Windows, Dock and input
 

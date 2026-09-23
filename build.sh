@@ -372,6 +372,9 @@ if (( TEST )); then
         Sources/Vorssaint/Services/QuickTools/ScratchpadStore.swift \
         Sources/Vorssaint/Services/QuickTools/ScratchpadImportSupport.swift \
         Sources/Vorssaint/Services/KillProcess/KillProcessSupport.swift \
+        Sources/Vorssaint/Core/PortManagerStrings.swift \
+        Sources/Vorssaint/Services/PortManager/PortManagerSupport.swift \
+        Tests/PortManagerRefreshTests.swift \
         Sources/Vorssaint/Services/DirectorySize.swift \
         Sources/Vorssaint/Services/Environment/EnvironmentInspector.swift \
         Sources/Vorssaint/Services/Recorder/RecorderSupport.swift \
@@ -519,9 +522,6 @@ if (( TEST )); then
         Tests/MonitorHistoryTests.swift \
         Tests/MusicLaunchBlockerTests.swift \
         Tests/MusicReplacementActionTests.swift \
-        Sources/Vorssaint/Services/Ports/LocalPortSupport.swift \
-        Sources/Vorssaint/Services/Ports/LocalPortScanner.swift \
-        Tests/LocalPortTests.swift \
         Sources/Vorssaint/Services/Cleaner/CleanerPackageCaches.swift \
         Tests/CleanerPackageCacheTests.swift \
         Tests/BrightnessNativeBoundaryTests.swift \

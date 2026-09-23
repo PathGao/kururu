@@ -194,6 +194,13 @@ def main():
                                    "    private func handle(type:",
                                    "    func commit("])
           + "}\n")
+    ports = "Sources/Vorssaint/Services/PortManager/PortManagerService.swift"
+    write("PortManagerRefresh.swift", "import Darwin\nimport Foundation\n"
+          + "extension PortManagerRefreshTests {\nfinal class Service: Fixture {\n"
+          + declaration(ports, "    func refresh(")
+          + declaration(ports, "    private static func snapshot(").replace("private static", "static", 1)
+          + declaration(ports, "    private static func startTimes(").replace("private static", "static", 1)
+          + "}\n}\n")
 
 if __name__ == "__main__":
     main()

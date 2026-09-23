@@ -147,7 +147,7 @@ extension AppFeature {
              .musicBlock, .bluetoothSleep, .keepAwake, .brightness, .colorPicker,
              .screenOCR, .cleaningMode, .mediaTools, .cleaner, .uninstaller, .homebrew, .environment, .screenshot,
              .scratchpad, .commandBar, .screenRecorder, .fanControl, .killProcess,
-             .cameraPreview:
+             .cameraPreview, .portManager:
             return .idle
         }
     }
