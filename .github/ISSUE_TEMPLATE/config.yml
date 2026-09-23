@@ -1,9 +1,0 @@
-blank_issues_enabled: true
-
-contact_links:
-  - name: Troubleshooting Guide
-    about: The usual fixes for permissions, Gatekeeper and a feature that stopped responding.
-    url: https://github.com/PathGao/kururu/blob/main/.github/CONTRIBUTING.md#troubleshooting
-  - name: Security Vulnerability
-    about: Report vulnerabilities privately.
-    url: https://github.com/PathGao/kururu/security/advisories/new

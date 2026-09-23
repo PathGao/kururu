@@ -1,5 +1,0 @@
-module HIDEventSystem [system] {
-    header "include/HIDEventSystem.h"
-    link "IOKit"
-    export *
-}
