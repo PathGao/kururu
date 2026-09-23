@@ -155,6 +155,7 @@ struct MetricsTests {
             ("KeepAwakeLidSleepTests", { KeepAwakeLidSleepTests.run { suite.expect($0, $1) } }),
             ("KeepAwakeUntilTests", { KeepAwakeUntilTests.run { suite.expect($0, $1) } }),
             ("KeepAwakeLidSleepOrderTests", { KeepAwakeLidSleepOrderTests.run { suite.expect($0, $1) } }),
+            ("QuitProtectionHUDChecks", { QuitProtectionHUD.progressChecks(suite) }),
         ]
         let names = groups.map(\.0) + ["MetricsTests"]
         var selected = Set<String>()
@@ -25721,16 +25722,18 @@ struct MetricsTests {
             let quitProtection = FeatureStrings.quitProtection(language)
             let quitProtectionValues = Mirror(reflecting: quitProtection).children
                 .compactMap { $0.value as? String }
-            expect(quitProtectionValues.count == 31 && quitProtectionValues.allSatisfy { !$0.isEmpty },
+            expect(quitProtectionValues.count == 34 && quitProtectionValues.allSatisfy { !$0.isEmpty },
                    "every quit protection string is set for \(language.rawValue) (found \(quitProtectionValues.count))")
             expect(quitProtectionValues.allSatisfy { !$0.contains("—") },
                    "no em-dash in quit protection strings (\(language.rawValue))")
-            expectFormat(quitProtection.holdHUDFormat, ["@"],
-                         "\(language.rawValue) quit protection hold HUD format")
-            expectFormat(quitProtection.doubleHUDFormat, ["@"],
-                         "\(language.rawValue) quit protection double HUD format")
-            expectFormat(quitProtection.extraHUDFormat, ["@"],
-                         "\(language.rawValue) quit protection modifier HUD format")
+            for shortcut in QuitProtectionShortcut.allCases {
+                expectFormat(quitProtection.holdHUDFormat(for: shortcut), ["@"],
+                             "\(language.rawValue) \(shortcut.rawValue) protection hold HUD format")
+                expectFormat(quitProtection.doubleHUDFormat(for: shortcut), ["@"],
+                             "\(language.rawValue) \(shortcut.rawValue) protection double HUD format")
+                expectFormat(quitProtection.extraHUDFormat(for: shortcut), ["@"],
+                             "\(language.rawValue) \(shortcut.rawValue) protection modifier HUD format")
+            }
         }
 
         // Loading the saved shelf keeps "nothing saved", "decoded whole",

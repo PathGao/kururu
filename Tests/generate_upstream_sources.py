@@ -246,6 +246,16 @@ def main():
           + declaration(ports, "    private static func startTimes(").replace("private static", "static", 1)
           + "}\n}\n")
 
+    # Same-file extensions can exercise the private AppKit content view without
+    # widening the production interface or presenting an application window.
+    hud = "Sources/Vorssaint/UI/QuitProtection/QuitProtectionHUD.swift"
+    checks = "Tests/Fixtures/QuitProtectionHUDChecks.swift"
+    write("QuitProtectionHUDBodies.swift",
+          f'#sourceLocation(file: {json.dumps(hud)}, line: 1)\n'
+          + (ROOT / hud).read_text() + "\n"
+          + f'#sourceLocation(file: {json.dumps(checks)}, line: 1)\n'
+          + (ROOT / checks).read_text() + "\n#sourceLocation()\n")
+
 if __name__ == "__main__":
     main()
     # build.sh compiles every file here, so one no longer generated must not linger.
