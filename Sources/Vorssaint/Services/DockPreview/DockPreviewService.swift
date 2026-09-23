@@ -24,9 +24,7 @@ final class DockPreviewService: ObservableObject {
 
     @Published private(set) var isRunning = false
     @Published private(set) var blockedReason: DockPreviewBlockedReason?
-    /// Whether the Dock currently uses auto-hide. Surfaced so the UI can warn
-    /// that this still-beta feature is rougher in that mode (the native Dock
-    /// slides away mid-interaction and no public API can hold it open).
+    /// The user’s auto-hide preference, excluding our temporary session hold.
     @Published private(set) var dockAutohide = false
     @Published private(set) var windows: [SwitcherItem] = []
     @Published private(set) var previews: [CGWindowID: CGImage] = [:]
@@ -41,6 +39,10 @@ final class DockPreviewService: ObservableObject {
     private var runLoopSource: CFRunLoopSource?
     private var settingsTimer: Timer?
     private var dockVisibilityTimer: Timer?
+    private let dockAutohideHold = DockAutohideHold()
+    private var dockHoldObservers: [NSObjectProtocol] = []
+    private var dockHoldInputTap: CFMachPort?
+    private var dockHoldInputSource: CFRunLoopSource?
     private var didReattachForSession = false
     private var reattachGraceFrame: CGRect?
     /// Where the pointer was when the panel moved out from under it. The grace
@@ -52,6 +54,7 @@ final class DockPreviewService: ObservableObject {
     private var lastMoveSampledAt: TimeInterval = 0
     private var pendingMove: DispatchWorkItem?
     private var pendingMovePoint: CGPoint?
+    private var pointerEventGeneration = 0
     private var lastAXMousePoint: CGPoint?
     private var lastAppKitMousePoint: CGPoint?
     private var panel: NSPanel?
@@ -80,6 +83,10 @@ final class DockPreviewService: ObservableObject {
     }
 
     func syncWithPreferences() {
+        if !UserDefaults.standard.bool(forKey: DefaultsKey.dockPreviewKeepDockVisible),
+           dockAutohideHold.isHolding {
+            endSession()
+        }
         let enabled = AppFeature.dockPreview.isAvailable
             && UserDefaults.standard.bool(forKey: DefaultsKey.dockPreviewEnabled)
         cachedPreferences = readDockPreferences()
@@ -249,6 +256,7 @@ final class DockPreviewService: ObservableObject {
         else { return }
 
         isDraggingWindow = true
+        releaseDockAutohideHold()
         cancelPendingHide()
         cancelPendingHover()
         DockPreviewDragGhost.shared.begin(image: image, at: NSEvent.mouseLocation)
@@ -390,8 +398,10 @@ final class DockPreviewService: ObservableObject {
         } else {
             cancelPendingMove()
         }
+        let generation = pointerEventGeneration
         DispatchQueue.main.async { [weak self] in
-            self?.handleOnMain(type: type, axPoint: point)
+            guard let self, self.pointerEventGeneration == generation else { return }
+            self.handleOnMain(type: type, axPoint: point)
         }
         return Unmanaged.passUnretained(event)
     }
@@ -732,6 +742,10 @@ final class DockPreviewService: ObservableObject {
             self.previews[windowID] = image
         }
 
+        if hit.preferences.autohide,
+           UserDefaults.standard.bool(forKey: DefaultsKey.dockPreviewKeepDockVisible) {
+            beginDockAutohideHold()
+        }
         showPanel(for: hit, itemCount: list.count)
     }
 
@@ -747,6 +761,7 @@ final class DockPreviewService: ObservableObject {
         tearDownVisuals()
         isPinned = false
         panel?.orderOut(nil)
+        releaseDockAutohideHold()
     }
 
     /// Clears all per-app panel state while leaving the panel window available
@@ -953,10 +968,86 @@ final class DockPreviewService: ObservableObject {
         panel.contentViewController?.view.layoutSubtreeIfNeeded()
     }
 
-    /// The Dock owns its auto-hide reveal region; another process cannot extend
-    /// it to cover this panel. Once the cursor reaches the panel, watch the
-    /// Dock's real on-screen window and pull the preview to the vacated edge if
-    /// the Dock slides away, so the interaction remains attached and usable.
+    private func beginDockAutohideHold() {
+        guard dockHoldObservers.isEmpty, startDockHoldInputTap() else { return }
+        guard dockAutohideHold.begin() else {
+            stopDockHoldInputTap()
+            return
+        }
+        let workspace = NSWorkspace.shared.notificationCenter
+        let events = [NSWorkspace.activeSpaceDidChangeNotification,
+                      NSWorkspace.willSleepNotification,
+                      NSWorkspace.sessionDidResignActiveNotification]
+        dockHoldObservers = events.map { name in
+            workspace.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                self?.endSession()
+            }
+        }
+    }
+
+    // An active tap returns the original key only AFTER restoring the Dock.
+    // A passive monitor or an async dispatch can restore after a system shortcut
+    // has already changed auto-hide, overwriting the user's new choice.
+    private func startDockHoldInputTap() -> Bool {
+        guard dockHoldInputTap == nil else { return true }
+        guard let tap = CGEvent.tapCreate(
+            tap: .cgSessionEventTap,
+            place: .headInsertEventTap,
+            options: .defaultTap,
+            eventsOfInterest: CGEventMask(1) << CGEventType.keyDown.rawValue,
+            callback: { _, type, event, userInfo in
+                guard let userInfo else { return Unmanaged.passUnretained(event) }
+                let service = Unmanaged<DockPreviewService>.fromOpaque(userInfo).takeUnretainedValue()
+                service.handleDockHoldInput(type: type)
+                return Unmanaged.passUnretained(event)
+            },
+            userInfo: Unmanaged.passUnretained(self).toOpaque()
+        ) else { return false }
+        dockHoldInputTap = tap
+        let source = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
+        dockHoldInputSource = source
+        CFRunLoopAddSource(CFRunLoopGetMain(), source, .commonModes)
+        CGEvent.tapEnable(tap: tap, enable: true)
+        return true
+    }
+
+    private func handleDockHoldInput(type: CGEventType) {
+        guard dockAutohideHold.isHolding else { return }
+        if type == .keyDown || type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
+            // Discard a sampled mouse move that predates the key, so it cannot
+            // reopen the hover immediately after keyboard use ended it.
+            pointerEventGeneration &+= 1
+            cancelPendingMove()
+            endSession()
+        }
+    }
+
+    private func stopDockHoldInputTap() {
+        if let tap = dockHoldInputTap {
+            CGEvent.tapEnable(tap: tap, enable: false)
+            CFMachPortInvalidate(tap)
+        }
+        if let source = dockHoldInputSource {
+            CFRunLoopRemoveSource(CFRunLoopGetMain(), source, .commonModes)
+        }
+        dockHoldInputTap = nil
+        dockHoldInputSource = nil
+    }
+
+    private func releaseDockAutohideHold() {
+        // Restore before invalidating an active input callback: detaching the
+        // tap must never let its key reach the system ahead of this write.
+        dockAutohideHold.end()
+        stopDockHoldInputTap()
+        for observer in dockHoldObservers {
+            NSWorkspace.shared.notificationCenter.removeObserver(observer)
+        }
+        dockHoldObservers.removeAll()
+    }
+
+    /// Keep the original fallback even during an experimental hold: if macOS
+    /// ignores the request or the user re-enables auto-hide, follow the Dock's
+    /// actual visibility rather than leaving the preview floating in mid-air.
     private func startDockVisibilityTimerIfNeeded() {
         guard DockPreviewSupport.shouldStartDockVisibilityTimer(
             hasActiveTimer: dockVisibilityTimer != nil,
@@ -1258,7 +1349,7 @@ final class DockPreviewService: ObservableObject {
         }
         return DockPreviewPreferences.sanitized(
             orientation: domain["orientation"] as? String,
-            autohide: boolValue(domain["autohide"]),
+            autohide: dockAutohideHold.isHolding ? true : boolValue(domain["autohide"]),
             tileSize: doubleValue(domain["tilesize"]),
             magnification: boolValue(domain["magnification"]),
             magnifiedTileSize: doubleValue(domain["largesize"])

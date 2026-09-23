@@ -173,6 +173,14 @@ def main():
           + declaration("Sources/Vorssaint/Services/ShellSupport.swift", "    static func isConfigured()")
           + declaration("Sources/Vorssaint/Services/ShellSupport.swift", "    static func restoreSleepWithAuthorization(")
           + "}\n")
+    dock = "Sources/Vorssaint/Services/DockPreview/DockPreviewService.swift"
+    write("DockAutohideInput.swift", "import CoreGraphics\nimport Foundation\nextension DockAutohideHoldTests.Service {\n"
+          + "".join(declaration(dock, prefix).replace("private func", "func", 1)
+                    for prefix in ["    private func beginDockAutohideHold()",
+                                   "    private func releaseDockAutohideHold()",
+                                   "    private func handleDockHoldInput(type:",
+                                   "    private func handle(type:"])
+          + "}\n")
 
 if __name__ == "__main__":
     main()

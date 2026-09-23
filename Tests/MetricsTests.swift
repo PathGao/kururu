@@ -124,6 +124,7 @@ struct MetricsTests {
             ("SwitcherActivationTests", { SwitcherActivationTests.run(suite) }),
             ("DisplayRestorationTests", { DisplayRestorationTests.run(suite) }),
             ("ScreenshotSelectionRefreshContract", { ScreenshotSelectionRefreshContract.run(suite) }),
+            ("DockAutohideHoldTests", { DockAutohideHoldTests.run(suite) }),
             ("RecorderSampleTimingTests", { RecorderSampleTimingTests.run(expect: { suite.expect($0, $1) }) }),
             ("RecorderWriterTests", { RecorderWriterTests.run(expect: { suite.expect($0, $1) }) }),
             ("ShelfFilePromiseTests", { ShelfFilePromiseTests.run(expect: { suite.expect($0, $1) }) }),
@@ -25415,7 +25416,7 @@ struct MetricsTests {
             expect(value == recorded, "zh-Hans \(name) still reads \(recorded), found \(value)")
         }
         let storageStructs: [(String, Int, [Any])] = [
-            ("dockPreview", 22, AppLanguage.allCases.map { FeatureStrings.dockPreview($0) as Any }),
+            ("dockPreview", 24, AppLanguage.allCases.map { FeatureStrings.dockPreview($0) as Any }),
             ("dockClick", 12, AppLanguage.allCases.map { FeatureStrings.dockClick($0) as Any }),
             ("micMute", 16, AppLanguage.allCases.map { FeatureStrings.micMute($0) as Any }),
             ("mixer", 35, AppLanguage.allCases.map { FeatureStrings.mixer($0) as Any }),
