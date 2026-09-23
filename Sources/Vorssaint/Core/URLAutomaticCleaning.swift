@@ -3,24 +3,13 @@
 
 import AppKit
 
-/// A single copied link may have rich representations. Files and composite copies stay untouched.
+/// A single copied link may have rich representations and an app's private
+/// notes about the copy. Files, pictures and composite copies stay untouched.
 enum URLAutomaticCleaning {
     struct Result {
         let changeCount: Int
         let cleaned: URLCleaning.Result?
     }
-
-    private static let allowedTypes: Set<NSPasteboard.PasteboardType> = [
-        .string, .URL, .html, .rtf,
-        // AppKit exposes these legacy aliases and the RTF plain-text conversion alongside UTIs.
-        NSPasteboard.PasteboardType("Apple HTML pasteboard type"),
-        NSPasteboard.PasteboardType("NeXT Rich Text Format v1.0 pasteboard type"),
-        NSPasteboard.PasteboardType("public.utf16-external-plain-text"),
-        NSPasteboard.PasteboardType("CorePasteboardFlavorType 0x75743136"),
-        NSPasteboard.PasteboardType("public.url-name"),
-        NSPasteboard.PasteboardType("NSStringPboardType"),
-        NSPasteboard.PasteboardType("NSURLPboardType"),
-    ]
 
     static func poll(_ pasteboard: NSPasteboard, sinceChangeCount: Int,
                      rules: URLCleaning.Rules, isCancelled: () -> Bool = { false }) -> Result? {
@@ -30,10 +19,12 @@ enum URLAutomaticCleaning {
         guard count != sinceChangeCount,
               let items = pasteboard.pasteboardItems, items.count == 1,
               let item = items.first,
-              !item.types.isEmpty, Set(item.types).isSubset(of: allowedTypes),
-              let types = pasteboard.types, Set(types).isSubset(of: allowedTypes),
-              let text = item.string(forType: .string),
-              pasteboard.string(forType: .string) == text else { return unchanged() }
+              // The types decide before any content is read: a picture or a
+              // file is never fetched only to be left alone. Some "copy link"
+              // commands put the link on the pasteboard only as a URL, with no
+              // text next to it.
+              URLCleaning.canRewritePasteboard(types: (pasteboard.types ?? []).map(\.rawValue)),
+              let text = item.string(forType: .string) ?? item.string(forType: .URL) else { return unchanged() }
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, trimmed.rangeOfCharacter(from: .whitespacesAndNewlines) == nil,
               let cleaned = URLCleaning.clean(trimmed, rules: rules), cleaned.url != trimmed else { return unchanged() }

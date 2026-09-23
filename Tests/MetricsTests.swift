@@ -12491,6 +12491,37 @@ struct MetricsTests {
                     "https://www.reddit.com/r/swift/comments/abc/?sort=new",
                     "URL cleaner strips Reddit's deep-link tracking in either spelling")
 
+        // The silent rewrite keeps only text and URL, so it runs when nothing
+        // else on the pasteboard would be lost.
+        expect(URLCleaning.canRewritePasteboard(types: ["public.utf8-plain-text", "public.url", "public.url-name",
+                                                        "NSStringPboardType", "NSURLPboardType"]),
+               "a plain link copy can be rewritten")
+        expect(!URLCleaning.canRewritePasteboard(types: []),
+               "an empty pasteboard is left alone")
+        expect(URLCleaning.canRewritePasteboard(types: ["public.utf8-plain-text", "public.html", "public.rtf",
+                                                        "com.apple.flat-rtfd", "public.utf16-external-plain-text"]),
+               "formatted copies of the same link are dropped by the rewrite, not protected")
+        expect(URLCleaning.canRewritePasteboard(types: ["public.utf8-plain-text", "public.url",
+                                                        "org.chromium.source-url", "org.chromium.web-custom-data",
+                                                        "com.apple.WebKit.custom-pasteboard-data",
+                                                        "dyn.ah62d4rv4gu8y6y4grf0gn5xbrzw1gydcr7u1e3cytf2gn"]),
+               "a browser's or a messaging app's private notes about the copy do not block the rewrite")
+        expect(!URLCleaning.canRewritePasteboard(types: ["public.utf8-plain-text", "public.url", "public.tiff", "public.png"]),
+               "a copied picture with its source link as text is left alone")
+        expect(!URLCleaning.canRewritePasteboard(types: ["public.utf8-plain-text", "public.file-url", "NSFilenamesPboardType"])
+                && !URLCleaning.canRewritePasteboard(types: ["public.utf8-plain-text", "NSFilenamesPboardType"])
+                && !URLCleaning.canRewritePasteboard(types: ["public.utf8-plain-text",
+                                                             "com.apple.pasteboard.promised-file-url",
+                                                             "com.apple.pasteboard.promised-file-content-type"]),
+               "a copied or promised file is left alone")
+        expect(!URLCleaning.canRewritePasteboard(types: ["public.utf8-plain-text", "com.adobe.pdf"])
+                && !URLCleaning.canRewritePasteboard(types: ["public.utf8-plain-text", "public.mpeg-4"])
+                && !URLCleaning.canRewritePasteboard(types: ["public.utf8-plain-text", "com.apple.webarchive"]),
+               "a document, a movie or a web archive next to the text is left alone")
+        expect(!URLCleaning.canRewritePasteboard(types: ["public.utf8-plain-text", "org.nspasteboard.ConcealedType"])
+                && !URLCleaning.canRewritePasteboard(types: ["public.utf8-plain-text", "org.nspasteboard.TransientType"]),
+               "a concealed or transient copy is never rewritten")
+
         // MARK: Global environment inspection
 
         expect(EnvironmentInspector.splitPath("/a:/b::/a:/c") == ["/a", "/b", "/c"],
