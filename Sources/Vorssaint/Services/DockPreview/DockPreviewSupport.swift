@@ -17,11 +17,12 @@ enum DockPreviewFrameSupport {
                            y: min(max(original.minY, visibleFrame.minY), visibleFrame.maxY - size.height),
                            width: size.width, height: size.height)
         return [original.intersection(visibleFrame), moved].contains { expected in
-            !expected.isEmpty && current != original
-                && abs(current.minX - expected.minX) <= 2
-                && abs(current.minY - expected.minY) <= 2
-                && abs(current.width - expected.width) <= 2
-                && abs(current.height - expected.height) <= 2
+            guard !expected.isEmpty, current != original else { return false }
+            let matchesX = abs(current.minX - expected.minX) <= 2
+            let matchesY = abs(current.minY - expected.minY) <= 2
+            let matchesWidth = abs(current.width - expected.width) <= 2
+            let matchesHeight = abs(current.height - expected.height) <= 2
+            return matchesX && matchesY && matchesWidth && matchesHeight
         }
     }
 }
