@@ -417,6 +417,8 @@ if (( TEST )); then
         Sources/Vorssaint/Services/Audio/MusicLaunchSupport.swift \
         Sources/Vorssaint/Services/Bluetooth/BluetoothSleepSupport.swift \
         Sources/Vorssaint/UI/MenuPanel/MixerPercentNativeTextField.swift \
+        Sources/Vorssaint/UI/MenuPanel/MixerAppDragSource.swift \
+        Tests/MixerNativeDragTests.swift \
         Sources/Vorssaint/Services/Audio/BoostLimiter.swift \
         Sources/Vorssaint/Services/Audio/MixerRender.swift \
         Sources/Vorssaint/Services/Audio/PreciseVolumeRollerSupport.swift \
