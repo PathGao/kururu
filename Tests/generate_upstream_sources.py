@@ -163,6 +163,7 @@ def main():
                     .replace("private static func", "static func", 1) for prefix in [
                         "    private static func applyBrightness(",
                         "    private static func pointerDisplay("])
+          + "}\n}\n")
     recorder = "Sources/Vorssaint/Services/Recorder/RecorderEditorController.swift"
     write("RecorderZoomAiming.swift", "import Foundation\nimport Combine\n"
           + "extension RecorderZoomAimingTests {\nfinal class Model: State {\n"
