@@ -315,6 +315,7 @@ if (( TEST )); then
         Sources/Vorssaint/Core/SettingsHierarchyStrings.swift \
         Sources/Vorssaint/Core/BackupStrings.swift \
         Sources/Vorssaint/Core/SnippetStrings.swift \
+        Sources/Vorssaint/Core/AlertSoundStrings.swift \
         Sources/Vorssaint/Core/BrightnessStrings.swift \
         Sources/Vorssaint/Core/MediaImageStrings.swift \
         Sources/Vorssaint/Core/SystemActionStrings.swift \

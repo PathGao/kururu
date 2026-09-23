@@ -15958,6 +15958,100 @@ struct MetricsTests {
 
         // MARK: Text snippets engine (issue #201)
 
+        // Driven by synthetic listings rather than this machine's
+        // /System/Library/Sounds, so the assertions mean the same thing on
+        // every macOS the CI runners use.
+        expect(TextSnippetSupport.alertSoundNames(from: ["Tink.aiff", "Basso.aiff"]) == ["Basso", "Tink"],
+               "directory entries become sorted sound names without their extension")
+        expect(TextSnippetSupport.alertSoundNames(from: ["Glass.AIFF"]) == ["Glass"],
+               "an uppercase extension is still recognized")
+        expect(TextSnippetSupport.alertSoundNames(from: ["Readme.txt", "Sub.caf"]).isEmpty == false,
+               "a listing with no aiff falls back rather than emptying the picker")
+        expect(TextSnippetSupport.alertSoundNames(from: ["Readme.txt"])
+                == TextSnippetSupport.fallbackAlertSoundNames,
+               "an unreadable or foreign sounds directory falls back to the known names")
+        expect(TextSnippetSupport.alertSoundNames(from: []) == TextSnippetSupport.fallbackAlertSoundNames,
+               "an empty directory falls back to the known names")
+
+        expect(TextSnippetSupport.resolvedSoundName(stored: "Tink", available: ["Basso", "Tink"]) == "Tink",
+               "a stored sound the system still offers is kept")
+        expect(TextSnippetSupport.resolvedSoundName(stored: "Gone", available: ["Basso", "Tink"]) == "Tink",
+               "a stored sound this Mac no longer has falls back to the default instead of going silent")
+        expect(TextSnippetSupport.resolvedSoundName(stored: nil, available: ["Basso", "Tink"]) == "Tink",
+               "no stored sound uses the default")
+        expect(TextSnippetSupport.resolvedSoundName(stored: "Gone", available: ["Basso"]) == "Basso",
+               "with neither the stored sound nor the default present, the first offered one is used")
+        expect(TextSnippetSupport.resolvedSoundName(stored: "Gone", available: []) == nil,
+               "nothing to play resolves to nothing rather than a name that cannot load")
+
+
+        expect(Defaults.registeredDefaults[DefaultsKey.snippetSoundEnabled] as? Bool == false,
+               "sound on expansion stays off until asked for")
+        expect(Defaults.registeredDefaults[DefaultsKey.snippetSoundName] as? String
+                == Defaults.defaultSnippetSoundName,
+               "the registered default is the shared constant, not a second copy of the name")
+        expect(TextSnippetSupport.fallbackAlertSoundNames.contains(Defaults.defaultSnippetSoundName),
+               "the default sound is one the fallback list offers")
+        expect(FileManager.default.fileExists(
+                atPath: TextSnippetSupport.soundFileURL(for: Defaults.defaultSnippetSoundName).path),
+               "the default sound is played from the file macOS ships for it")
+        expect(Set(TextSnippetSupport.fallbackAlertSoundNames).count
+                == TextSnippetSupport.fallbackAlertSoundNames.count,
+               "no duplicate names in the fallback list")
+
+        expect(AlertSoundStrings.displayName(for: "Tink", language: .enUS) == "Boop",
+               "macOS has shown Tink as Boop in Sound settings since Big Sur")
+        expect(AlertSoundStrings.displayName(for: "Ping", language: .enUS) == "Sonar",
+               "macOS has shown Ping as Sonar in Sound settings since Big Sur")
+        expect(AlertSoundStrings.displayName(for: "Tink", language: .fr) == "Boop",
+               "a supported language other than English gets its own translated name")
+        expect(AlertSoundStrings.displayName(for: "Ping", language: .ru) == "Сонар",
+               "a supported language other than English gets its own translated name")
+        expect(AlertSoundStrings.displayName(for: "Tink", language: .ja) == "Boop",
+               "Apple's own table keeps the English display name for Japanese, Korean and Chinese")
+        expect(AlertSoundStrings.displayName(for: "Custom", language: .enUS) == "Custom",
+               "a name outside the table is shown unchanged rather than dropped")
+        expect(TextSnippetSupport.fallbackAlertSoundNames.allSatisfy {
+                AlertSoundStrings.displayName(for: $0, language: .enUS) != $0
+            },
+               "every shipped alert sound has a display name distinct from its file name")
+
+        expect(AlertSoundStrings.sortedNames(TextSnippetSupport.fallbackAlertSoundNames, language: .enUS)
+                == ["Tink", "Blow", "Pop", "Glass", "Funk", "Hero", "Frog",
+                    "Basso", "Bottle", "Purr", "Morse", "Ping", "Sosumi", "Submarine"],
+               "the picker orders by what each name shows (Boop, Breeze, Bubble, ...), not by the file name")
+        expect(AlertSoundStrings.sortedNames(["Basso", "Tink"], language: .enUS).first == "Tink",
+               "Boop sorts before Mezzo even though the file name Basso sorts before Tink")
+        expect(Set(AlertSoundStrings.sortedNames(TextSnippetSupport.fallbackAlertSoundNames, language: .enUS))
+                == Set(TextSnippetSupport.fallbackAlertSoundNames),
+               "sorting only reorders the list, it never drops or adds a name")
+        // The service wiring has no seam this harness can drive, so its shape
+        // is pinned instead: armed from the preference sync, fired by the
+        // replacement going out on both the typed and the pasted path, and
+        // never handed to the library's insertion (it calls postExpansion
+        // without a cue).
+        let snippetServiceCode = ((try? String(
+            contentsOfFile: "Sources/Vorssaint/Services/Snippets/TextSnippetService.swift",
+            encoding: .utf8)) ?? "")
+            .split(separator: "\n")
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+            .joined(separator: "\n")
+        expect(snippetServiceCode.contains("syncExpansionSound(featureEnabled: enabled)"),
+               "the expansion sound is armed from the same sync that turns snippets on and off")
+        expect(snippetServiceCode.contains("didPostShortcut: { didExpand?() }"),
+               "a pasted expansion sounds only once its paste shortcut goes out")
+        expect(snippetServiceCode.components(separatedBy: "didExpand?()").count - 1 == 2,
+               "the typed and the pasted path each sound once")
+        expect(snippetServiceCode.components(separatedBy: "didExpand: didExpand").count - 1 == 1,
+               "only a typed trigger hands the cue to postExpansion")
+        let snippetSectionsCode = (try? String(
+            contentsOfFile: "Sources/Vorssaint/UI/Settings/TextSnippetsSections.swift",
+            encoding: .utf8)) ?? ""
+        expect(snippetSectionsCode.contains("TextSnippetService.shared.previewExpansionSound()")
+                && snippetSectionsCode.components(
+                    separatedBy: "TextSnippetService.shared.syncExpansionSound()").count - 1 == 2,
+               "the sound toggle and picker re-arm the sound, and a picked sound previews")
+
         expect(TextSnippetSupport.sanitizedTrigger("  ;e mail\n") == ";email", "triggers lose whitespace")
         expect(TextSnippetSupport.bufferAppending(String(repeating: "a", count: 64), typed: "b").count
                 == TextSnippetSupport.bufferLimit,
