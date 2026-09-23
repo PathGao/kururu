@@ -21,6 +21,28 @@ newest release first. The app and release workflow read these version headings.
     - Removed capabilities or compatibility.
 -->
 
+## [0.1.5] - 2026-09-23
+
+This is the final kururu release. The project has ended and will not receive further updates. Please use [Vorssaint](https://github.com/vorssaintapp/vorssaint-utils) instead.
+
+### Added
+- Window Layout, Kill Process, Port Manager and camera preview pages.
+- Sideways scrolling while holding a modifier key.
+- Offer to take over a macOS shortcut while its feature runs.
+- The window switcher can show only windows on the current display.
+- Dock Preview keeps the Dock visible while a preview is open.
+- Screenshot watermarks, arrow styles and faster export.
+- Local IP address, Keep Awake end time and mixer ordering in the menu bar panel.
+- Remove apps from the command bar.
+
+### Changed
+- Kill Process is uninstalled by default.
+- Several defaults now match Vorssaint, including the sideways scrolling key and brightness keys.
+
+### Fixed
+- Upstream fixes for the window switcher, Dock Preview, menu bar icon, display restoration, clipboard, capture and Keep Awake.
+- The camera permission prompt is localized.
+
 ## [0.1.4] - 2026-09-19
 
 ### Changed
