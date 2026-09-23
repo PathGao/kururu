@@ -592,6 +592,7 @@ if (( TEST )); then
         Tests/DockAutohideHoldWiringTests.swift \
         Tests/CommandBarInputSourceTests.swift \
         Tests/BrightnessShortcutTargetTests.swift \
+        Tests/ScreenshotWatermarkTests.swift \
         build/generated-tests/*.swift \
     )
     TEST_OUTPUT_FILE_MAP="$TEST_OBJECT_DIR/output-file-map.json"
