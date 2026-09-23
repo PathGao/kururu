@@ -141,6 +141,8 @@ struct MetricsTests {
             ("SystemShortcutTakeoverWiring", { SystemShortcutTakeoverContract.wiring(suite) }),
             ("KeepAwakeClamshellTests", { KeepAwakeClamshellTests.run(expect: { suite.expect($0, $1) }) }),
             ("PortManagerRefreshTests", { PortManagerRefreshTests.run(suite) }),
+            ("CommandBarInputSourceContract", { CommandBarInputSourceContract.run(suite) }),
+            ("CommandBarTerminationContract", { CommandBarTerminationContract.run(suite) }),
         ]
         let names = groups.map(\.0) + ["MetricsTests"]
         var selected = Set<String>()
@@ -21520,6 +21522,69 @@ struct MetricsTests {
                     > CommandBarPreferences.rankBias(for: .actions),
                "apps lead commands, while a file needs a plainly better match")
 
+        // MARK: Command Bar ASCII layout switch
+
+        let latinSourceID = "com.apple.keylayout.ABC"
+        let russianSourceID = "com.apple.keylayout.RussianWin"
+        let pinyinSourceID = "com.apple.inputmethod.SCIM.Shuangpin"
+        let latinSource = InputSourceSelection.Snapshot(id: latinSourceID, isLayout: true, isASCIICapable: true)
+        let russianSource = InputSourceSelection.Snapshot(id: russianSourceID, isLayout: true, isASCIICapable: false)
+        let pinyinSource = InputSourceSelection.Snapshot(id: pinyinSourceID, isLayout: false, isASCIICapable: false)
+        expect(InputSourceSelection.asciiLayoutID(currentID: russianSourceID, snapshots: [russianSource, latinSource])
+                == latinSourceID,
+               "a non-Latin layout borrows the first enabled ASCII layout")
+        expect(InputSourceSelection.asciiLayoutID(currentID: pinyinSourceID, snapshots: [latinSource, pinyinSource])
+                == latinSourceID,
+               "an input method borrows the enabled ASCII layout")
+        expect(InputSourceSelection.asciiLayoutID(currentID: latinSourceID, snapshots: [latinSource, russianSource]) == nil,
+               "a bar opened on an ASCII layout switches nothing and restores nothing")
+        expect(InputSourceSelection.asciiLayoutID(currentID: russianSourceID, snapshots: [russianSource]) == nil,
+               "with no ASCII layout enabled there is nothing to borrow")
+        expect(InputSourceSelection.asciiLayoutID(currentID: nil, snapshots: [russianSource, latinSource]) == latinSourceID,
+               "an unreadable current source still borrows the ASCII layout")
+        let asciiCapableMethod = InputSourceSelection.Snapshot(
+            id: "com.apple.inputmethod.Kotoeri.RomajiTyping.Roman", isLayout: false, isASCIICapable: true)
+        expect(InputSourceSelection.asciiLayoutID(currentID: asciiCapableMethod.id,
+                                                  snapshots: [asciiCapableMethod, latinSource]) == latinSourceID,
+               "an ASCII-capable input method still moves to a plain layout")
+
+        let commandBarServiceSource = (try? String(
+            contentsOfFile: "Sources/Vorssaint/Services/CommandBar/CommandBarService.swift",
+            encoding: .utf8)) ?? ""
+        expect(commandBarServiceSource.contains("InputSourceSelection.asciiLayoutID"),
+               "the bar borrows the ASCII layout through the shared TIS selection")
+        expect(commandBarServiceSource.contains("restoreSuspendedInputSource"),
+               "closing the bar gives the suspended input source back")
+        let asciiSettingsSource = (try? String(
+            contentsOfFile: "Sources/Vorssaint/UI/Settings/CommandBarSettings.swift",
+            encoding: .utf8)) ?? ""
+        expect(asciiSettingsSource.contains("DefaultsKey.commandBarASCIILayoutEnabled"),
+               "the ASCII layout switch has its own settings row")
+        expect(Defaults.registeredDefaults[DefaultsKey.commandBarASCIILayoutEnabled] as? Bool == false,
+               "the ASCII layout switch ships off: the bar starts on whatever layout is already up")
+        expect(SettingsBackupSupport.exportKeys().contains(DefaultsKey.commandBarASCIILayoutEnabled),
+               "the ASCII layout switch is configuration, so it travels with an exported setup")
+        expect(SettingsBackupSupport.valueLooksRight(DefaultsKey.commandBarASCIILayoutEnabled, true)
+                && !SettingsBackupSupport.valueLooksRight(DefaultsKey.commandBarASCIILayoutEnabled, "yes"),
+               "a restored ASCII layout switch has to be a switch, not text that looks like one")
+        let superKeySource = (try? String(
+            contentsOfFile: "Sources/Vorssaint/Services/SuperKey/SuperKeyService.swift",
+            encoding: .utf8)) ?? ""
+        expect(superKeySource.contains("InputSourceSelection.selectableInputSources()"),
+               "the Super key cycle shares the TIS plumbing instead of its own copy")
+        // The contracts compile the borrow and restore bodies; these pin that
+        // every opening and every close actually reaches them, and that a
+        // quit that skipped applicationShouldTerminate still gives it back.
+        expect(commandBarServiceSource.contains("adoptASCIIInputSource()\n        present(panel)"),
+               "opening the bar borrows the ASCII layout just before the panel orders in")
+        expect(commandBarServiceSource.contains("restoreSuspendedInputSource()\n        removeMonitors()"),
+               "every close path through hide() schedules the layout's return")
+        let asciiAppDelegateSource = (try? String(
+            contentsOfFile: "Sources/Vorssaint/App/AppDelegate.swift", encoding: .utf8)) ?? ""
+        expect(asciiAppDelegateSource.contains(
+                "isTerminating = true\n        CommandBarService.shared.restoreBorrowedInputSource()"),
+               "termination gives a borrowed layout back even without a quit request")
+
         // MARK: The Mac's own Settings panes
         let openablePane: [String: Any] = [
             "EXAppExtensionAttributes": [
@@ -23153,7 +23218,7 @@ struct MetricsTests {
         for language in AppLanguage.allCases {
             let commandBarValues = Mirror(reflecting: FeatureStrings.commandBar(language)).children
                 .compactMap { $0.value as? String }
-            expect(commandBarValues.count == 172 && commandBarValues.allSatisfy { !$0.isEmpty },
+            expect(commandBarValues.count == 174 && commandBarValues.allSatisfy { !$0.isEmpty },
                    "every command bar string is set for \(language.rawValue), found \(commandBarValues.count)")
             expect(commandBarValues.allSatisfy { !$0.contains("—") },
                    "no em-dash in visible command bar strings (\(language.rawValue))")

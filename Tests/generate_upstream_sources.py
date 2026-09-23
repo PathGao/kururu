@@ -141,6 +141,19 @@ def main():
           + "extension SystemShortcutTakeoverContract {\n" + service + relaunch
           + "final class QuickToolHotkey: QuickToolHotkeyState {\n"
           + declaration(hotkey, "    func sync(") + declaration(hotkey, "    func unregister()") + "}\n}\n")
+    write("CommandBarInputSource.swift", "import Foundation\n"
+          + "extension CommandBarInputSourceContract {\nfinal class Service: Fixture {\n"
+          + "".join(declaration("Sources/Vorssaint/Services/CommandBar/CommandBarService.swift", prefix)
+                    .replace("private func", "func", 1) for prefix in [
+                        "    private func adoptASCIIInputSource(",
+                        "    private func restoreSuspendedInputSource(",
+                        "    func restoreBorrowedInputSource(",
+                        "    var hasBorrowedInputSource:"])
+          + "}\n}\n")
+    write("CommandBarTermination.swift", "import AppKit\nimport Foundation\n"
+          + "extension CommandBarTerminationContract {\nfinal class Host: Fixture {\n"
+          + declaration("Sources/Vorssaint/App/AppDelegate.swift", "    func applicationShouldTerminate(")
+          + "}\n}\n")
     keep_awake = "Sources/Vorssaint/Services/KeepAwakeManager.swift"
     keep_awake_methods = [
         "    func refreshPasswordlessStatus(",

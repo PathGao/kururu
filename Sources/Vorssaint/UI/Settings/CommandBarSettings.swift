@@ -10,6 +10,7 @@ struct CommandBarSettings: View {
     @ObservedObject private var secureInput = SecureInputMonitor.shared
     @AppStorage(DefaultsKey.commandBarShortcutEnabled) private var shortcutEnabled = false
     @AppStorage(DefaultsKey.commandBarCompactMode) private var compactMode = false
+    @AppStorage(DefaultsKey.commandBarASCIILayoutEnabled) private var asciiLayoutEnabled = false
     @AppStorage(DefaultsKey.commandBarDisabledSources) private var disabledSources = ""
     @AppStorage(DefaultsKey.commandBarAliases) private var aliasesRaw = ""
     @AppStorage(DefaultsKey.commandBarPins) private var pinsRaw = ""
@@ -23,6 +24,7 @@ struct CommandBarSettings: View {
     @State private var editing: CommandBarLink?
     @State private var ignoreDraft = ""
     @State private var showsFileOptions = false
+    @State private var showsLayoutOptions = false
     @State private var showsAppShortcuts = false
     @State private var didResetRanking = false
 
@@ -94,6 +96,18 @@ struct CommandBarSettings: View {
                 }
                 if secureInput.holder != .off {
                     SecureInputRow()
+                }
+                DisclosureHeaderRow(isExpanded: $showsLayoutOptions) {
+                    Text(FeatureStrings.recorder(l10n.language).moreOptions)
+                    Spacer()
+                }
+                if showsLayoutOptions {
+                    // Like compact mode this needs no callback: the bar reads
+                    // the toggle on every open, so there is no live state to
+                    // sync.
+                    SettingsToggleWithCaption(title: text.asciiLayoutToggle,
+                                              caption: text.asciiLayoutCaption,
+                                              isOn: $asciiLayoutEnabled)
                 }
             } header: {
                 SettingsSectionHeading(title: AppFeature.commandBar.name(l10n.s, language: l10n.language), systemImage: "magnifyingglass")
