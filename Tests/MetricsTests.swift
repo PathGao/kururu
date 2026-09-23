@@ -5612,6 +5612,23 @@ struct MetricsTests {
         expect(Defaults.sanitizedMonitorInterval(7) == 2, "invalid monitor interval falls back to default")
         expect(Defaults.sanitizedKeyboardDebounceWindow(80) == 80,
                "valid debounce window is preserved")
+        expect(Defaults.sanitizedKeyboardDebounceWindow(1) == 1,
+               "sub-5 ms keyboard debounce windows are preserved")
+        expect(Defaults.sanitizedKeyboardDebounceWindow(3) == 3,
+               "magnetic-keyboard debounce windows below 5 ms stay available")
+        // The sanitizer already kept 1 to 4 ms; what made them reachable is
+        // the steppers moving by 1 ms, so pin the step and every stepper on it.
+        expect(Defaults.keyboardDebounceWindowStep == 1, "keyboard debounce steppers move by 1 ms")
+        let debounceSectionsSource = (try? String(
+            contentsOfFile: "Sources/Vorssaint/UI/Settings/KeyboardDebounceSections.swift",
+            encoding: .utf8)) ?? ""
+        let debouncePanelSource = (try? String(
+            contentsOfFile: "Sources/Vorssaint/UI/MenuPanel/MenuPanelView.swift", encoding: .utf8)) ?? ""
+        expect(debounceSectionsSource.components(separatedBy: "step: Defaults.keyboardDebounceWindowStep").count - 1 == 3
+                && debounceSectionsSource.components(separatedBy: "Stepper(").count - 1 == 3
+                && debouncePanelSource.contains(
+                    "in: Defaults.allowedKeyboardDebounceWindowRange,\n                step: Defaults.keyboardDebounceWindowStep)"),
+               "the global, new-key and per-key steppers in Settings and the panel stepper use the shared step")
         expect(Defaults.sanitizedKeyboardDebounceWindow(999) == Defaults.defaultKeyboardDebounceWindowMs,
                "invalid debounce window falls back to default")
         expect(Defaults.sanitizedMenuBarLabelStyle("classic") == "classic", "valid label style is preserved")

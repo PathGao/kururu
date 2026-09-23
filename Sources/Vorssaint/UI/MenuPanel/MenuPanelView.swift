@@ -1801,7 +1801,9 @@ struct QuickControlsSection: View {
     }
 
     private var keyDebounceWindowControl: some View {
-        Stepper(value: keyDebounceWindowBinding, in: Defaults.allowedKeyboardDebounceWindowRange, step: 5) {
+        Stepper(value: keyDebounceWindowBinding,
+                in: Defaults.allowedKeyboardDebounceWindowRange,
+                step: Defaults.keyboardDebounceWindowStep) {
             HStack(spacing: 6) {
                 Text(l10n.s.keyDebounceGlobalWindow)
                     .font(.system(size: 10.5, weight: .medium))
