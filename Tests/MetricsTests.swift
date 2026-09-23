@@ -135,6 +135,7 @@ struct MetricsTests {
             ("WindowLayoutGestureTests", { WindowLayoutFeatureTests.gestures(suite) }),
             ("SystemShortcutTakeoverContract", { SystemShortcutTakeoverContract.run(suite) }),
             ("SystemShortcutTakeoverWiring", { SystemShortcutTakeoverContract.wiring(suite) }),
+            ("KeepAwakeClamshellTests", { KeepAwakeClamshellTests.run(expect: { suite.expect($0, $1) }) }),
         ]
         let names = groups.map(\.0) + ["MetricsTests"]
         var selected = Set<String>()
