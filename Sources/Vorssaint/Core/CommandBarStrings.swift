@@ -179,6 +179,8 @@ struct CommandBarFeatureStrings {
     var destinationUnavailable: String = "The target could not be found or accessed. Check its location or change your search."
     var destinationInvalid: String = "This address is invalid. Check the saved destination."
     var destinationOpenFailed: String = "Could not open this target. Check its location or try again."
+    var asciiLayoutToggle: String = "Switch to an ABC layout while the bar is open"
+    var asciiLayoutCaption: String = "The field types Latin characters whatever layout was active, and the previous layout comes back when the bar closes."
 }
 
 extension FeatureStrings {
@@ -1857,7 +1859,9 @@ extension CommandBarFeatureStrings {
         compactModeCaption: "命令栏打开时不显示建议，输入时才显示结果。",
         destinationUnavailable: "找不到或无法访问该目标。请检查位置或修改搜索。",
         destinationInvalid: "地址无效，请检查保存的目标地址。",
-        destinationOpenFailed: "无法打开该目标。请检查位置或重试。")
+        destinationOpenFailed: "无法打开该目标。请检查位置或重试。",
+        asciiLayoutToggle: "命令栏打开时切换到 ABC 布局",
+        asciiLayoutCaption: "无论当前布局为何，输入栏都会键入拉丁字符；命令栏关闭后恢复原布局。")
 
     static let zhTW = CommandBarFeatureStrings(
         pageTitle: "指令列",

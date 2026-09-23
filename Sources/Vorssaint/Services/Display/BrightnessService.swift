@@ -296,10 +296,10 @@ final class BrightnessService: ObservableObject {
             self?.stepKeyboardLight(direction: 1)
         }
         displayBrightnessDecreaseHotkey.onPress = { [weak self] in
-            self?.stepDisplayUnderPointer(direction: -1)
+            self?.stepDisplayBrightness(delta: -BrightnessSupport.brightnessKeyStep)
         }
         displayBrightnessIncreaseHotkey.onPress = { [weak self] in
-            self?.stepDisplayUnderPointer(direction: 1)
+            self?.stepDisplayBrightness(delta: BrightnessSupport.brightnessKeyStep)
         }
     }
 
@@ -411,28 +411,20 @@ final class BrightnessService: ObservableObject {
             || (enabled && increase != nil && !increaseRegistered)
     }
 
-    func stepDisplayUnderPointer(direction: Int) {
-        guard Thread.isMainThread else {
-            DispatchQueue.main.async { [weak self] in
-                self?.stepDisplayUnderPointer(direction: direction)
-            }
-            return
-        }
-        guard running else { return }
-        let pointer = NSEvent.mouseLocation
-        let pointerID = NSScreen.screens.first(where: { NSMouseInRect(pointer, $0.frame, false) })
-            .flatMap { ($0.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")]
-                as? NSNumber)?.uint32Value }
-        guard let request = BrightnessSupport.commandBrightnessRequest(
-            direction: direction,
-            pointerDisplayID: pointerID,
-            displays: displays.map { ($0.id, $0.isBuiltIn) })
+    private func stepDisplayBrightness(delta: Double) {
+        guard running, AppFeature.brightness.isAvailable, SessionActivity.shared.isActive,
+              UserDefaults.standard.bool(forKey: BrightnessShortcutPreferenceKey.enabled)
         else { return }
-        stateLock.lock()
-        let route = routes[request.displayID]
-        stateLock.unlock()
-        guard let route else { return }
-        step(request.displayID, method: route.method, delta: request.delta,
+        let pointer = NSEvent.mouseLocation
+        let pointerDisplay = NSScreen.screens.first { NSMouseInRect(pointer, $0.frame, false) }
+            .flatMap { ($0.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value }
+        let eligible = Set(displays.filter { $0.isActive && $0.method != nil
+            && !pendingDisplayIDs.contains($0.id) }.map(\.id))
+        guard let id = BrightnessSupport.shortcutDisplay(
+            followsPointer: UserDefaults.standard.bool(forKey: DefaultsKey.brightnessKeysEnabled),
+            pointerDisplay: pointerDisplay, primaryDisplay: CGMainDisplayID(), eligible: eligible),
+              let method = displays.first(where: { $0.id == id })?.method else { return }
+        step(id, method: method, delta: delta,
              showOSD: UserDefaults.standard.bool(forKey: DefaultsKey.brightnessOSDEnabled))
     }
 

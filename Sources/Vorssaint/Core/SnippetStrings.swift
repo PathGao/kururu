@@ -68,6 +68,10 @@ struct SnippetFeatureStrings {
     var dateTimePreviewLabel: String = "Preview"
     var dateTimeConfirmInsert: String = "Insert"
     var dateTimeConfirmUpdate: String = "Update"
+    var soundToggle: String = "Play a sound when a typed trigger expands"
+    var soundCaption: String = "A short system sound plays each time a typed trigger expands."
+    var soundPickerLabel: String = "Sound"
+    var soundUnavailable: String = "Sound unavailable"
 }
 
 extension FeatureStrings {
@@ -732,7 +736,11 @@ extension SnippetFeatureStrings {
         dateTimePatternLabel: "格式",
         dateTimePreviewLabel: "预览",
         dateTimeConfirmInsert: "插入",
-        dateTimeConfirmUpdate: "更新"
+        dateTimeConfirmUpdate: "更新",
+        soundToggle: "输入的触发词展开时播放声音",
+        soundCaption: "每次输入的触发词展开时都会播放一个简短的系统声音。",
+        soundPickerLabel: "声音",
+        soundUnavailable: "声音不可用"
     )
 
     static let zhTW = SnippetFeatureStrings(

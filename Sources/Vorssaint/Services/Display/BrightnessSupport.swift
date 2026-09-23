@@ -389,33 +389,15 @@ enum BrightnessSupport {
         return true
     }
 
+    static func shortcutDisplay(followsPointer: Bool, pointerDisplay: UInt32?,
+                                primaryDisplay: UInt32, eligible: Set<UInt32>) -> UInt32? {
+        let target = followsPointer ? pointerDisplay : primaryDisplay
+        guard let target, eligible.contains(target) else { return nil }
+        return target
+    }
+
     static func steppedBrightness(_ current: Double, delta: Double) -> Double {
         min(max(current + delta, 0), 1)
-    }
-
-    /// Never substitute another screen when the pointed screen is unavailable.
-    static func commandBrightnessTarget(pointerDisplayID: UInt32?,
-                                        displays: [(id: UInt32, isBuiltIn: Bool)]) -> UInt32? {
-        guard let pointerDisplayID else { return nil }
-        return displays.first { $0.id == pointerDisplayID && !$0.isBuiltIn }?.id
-    }
-
-    struct CommandBrightnessRequest: Equatable {
-        let displayID: UInt32
-        let delta: Double
-    }
-
-    static func commandBrightnessRequest(direction: Int,
-                                         pointerDisplayID: UInt32?,
-                                         displays: [(id: UInt32, isBuiltIn: Bool)])
-        -> CommandBrightnessRequest? {
-        guard direction != 0,
-              let displayID = commandBrightnessTarget(
-                pointerDisplayID: pointerDisplayID, displays: displays)
-        else { return nil }
-        return CommandBrightnessRequest(
-            displayID: displayID,
-            delta: direction < 0 ? -brightnessKeyStep : brightnessKeyStep)
     }
 
     /// External system-routed displays need our step when routing or replacing

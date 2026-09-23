@@ -218,7 +218,9 @@ enum SettingsDirectory {
                                         (.keyboardDebounce, [s.keyDebounceName, s.keyDebounceEnable]),
                                         (.textSnippets, [FeatureStrings.snippets(language).pageTitle,
                                                          FeatureStrings.snippets(language).triggerLabel,
-                                                         FeatureStrings.snippets(language).addButton]),
+                                                         FeatureStrings.snippets(language).addButton,
+                                                         FeatureStrings.snippets(language).soundPickerLabel,
+                                                         FeatureStrings.snippets(language).soundToggle]),
                                         (.superKey, [FeatureStrings.superKey(language).pageTitle]
                                             + SuperKeySource.allCases.map {
                                                 FeatureStrings.superKey(language).sourceLabel($0)

@@ -315,6 +315,7 @@ if (( TEST )); then
         Sources/Vorssaint/Core/SettingsHierarchyStrings.swift \
         Sources/Vorssaint/Core/BackupStrings.swift \
         Sources/Vorssaint/Core/SnippetStrings.swift \
+        Sources/Vorssaint/Core/AlertSoundStrings.swift \
         Sources/Vorssaint/Core/BrightnessStrings.swift \
         Sources/Vorssaint/Core/MediaImageStrings.swift \
         Sources/Vorssaint/Core/SystemActionStrings.swift \
@@ -493,6 +494,7 @@ if (( TEST )); then
         Sources/Vorssaint/Services/SuperKey/SuperKeySupport.swift \
         Sources/Vorssaint/Services/SuperKey/SuperKeyMappingGuard.swift \
         Sources/Vorssaint/Core/SuperKeyStrings.swift \
+        Sources/Vorssaint/Core/InputSourceSelection.swift \
         Sources/Vorssaint/Services/SessionActivity.swift \
         Sources/Vorssaint/Services/SessionActivitySupport.swift \
         Sources/Vorssaint/Services/ScrollWheelSupport.swift \
@@ -549,6 +551,7 @@ if (( TEST )); then
         Sources/Vorssaint/Core/UninstallerSelectionSupport.swift \
         Tests/UninstallerSelectionTests.swift \
         Sources/Vorssaint/Services/ManagedDownloads/WhatsAppDownloadSupport.swift \
+        Sources/Vorssaint/Core/SecureInputSupport.swift \
         Sources/Vorssaint/Services/Metrics/CPUCoreUsageSupport.swift \
         Tests/CPUCoreUsageTests.swift \
         Sources/Vorssaint/Services/Metrics/CPUCoreTopologySupport.swift \
@@ -587,6 +590,8 @@ if (( TEST )); then
         Tests/DockAutohideHoldTests.swift \
         Tests/DockPreviewFrameRestorationTests.swift \
         Tests/DockAutohideHoldWiringTests.swift \
+        Tests/CommandBarInputSourceTests.swift \
+        Tests/BrightnessShortcutTargetTests.swift \
         build/generated-tests/*.swift \
     )
     TEST_OUTPUT_FILE_MAP="$TEST_OBJECT_DIR/output-file-map.json"

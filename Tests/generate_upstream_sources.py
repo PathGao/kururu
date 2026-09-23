@@ -141,6 +141,29 @@ def main():
           + "extension SystemShortcutTakeoverContract {\n" + service + relaunch
           + "final class QuickToolHotkey: QuickToolHotkeyState {\n"
           + declaration(hotkey, "    func sync(") + declaration(hotkey, "    func unregister()") + "}\n}\n")
+    write("CommandBarInputSource.swift", "import Foundation\n"
+          + "extension CommandBarInputSourceContract {\nfinal class Service: Fixture {\n"
+          + "".join(declaration("Sources/Vorssaint/Services/CommandBar/CommandBarService.swift", prefix)
+                    .replace("private func", "func", 1) for prefix in [
+                        "    private func adoptASCIIInputSource(",
+                        "    private func restoreSuspendedInputSource(",
+                        "    func restoreBorrowedInputSource(",
+                        "    var hasBorrowedInputSource:"])
+          + "}\n}\n")
+    write("CommandBarTermination.swift", "import AppKit\nimport Foundation\n"
+          + "extension CommandBarTerminationContract {\nfinal class Host: Fixture {\n"
+          + declaration("Sources/Vorssaint/App/AppDelegate.swift", "    func applicationShouldTerminate(")
+          + "}\n}\n")
+    write("BrightnessShortcutTarget.swift", "import AppKit\nimport Foundation\n"
+          + "extension BrightnessShortcutTargetContract {\nfinal class Service: Fixture {\n"
+          + declaration("Sources/Vorssaint/Services/Display/BrightnessService.swift",
+                        "    private func stepDisplayBrightness(").replace("private func", "func", 1)
+          + "}\nfinal class Catalog: CatalogFixture {\n"
+          + "".join(declaration("Sources/Vorssaint/Services/CommandBar/CommandBarCatalog.swift", prefix)
+                    .replace("private static func", "static func", 1) for prefix in [
+                        "    private static func applyBrightness(",
+                        "    private static func pointerDisplay("])
+          + "}\n}\n")
     keep_awake = "Sources/Vorssaint/Services/KeepAwakeManager.swift"
     keep_awake_methods = [
         "    func refreshPasswordlessStatus(",

@@ -1601,22 +1601,14 @@ enum CommandBarCatalog {
         })
     }
 
-    /// Keep the original target across a refresh so moving the pointer cannot
-    /// redirect a command that is already waiting for its display's route.
-    private static func applyBrightness(percent: Int, retried: Bool = false,
-                                        displayID: UInt32? = nil) {
-        let pointerScreen = NSScreen.screens.first { $0.frame.contains(NSEvent.mouseLocation) }
-        let pointerID = (pointerScreen?.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value
-        guard let requestedID = displayID ?? pointerID,
-              CGDisplayIsBuiltin(requestedID) == 0 else {
-            NSSound.beep()
-            return
-        }
+    /// Brightness lands on the display under the pointer, the screen where
+    /// the bar was just used. The routes may need one refresh when the panel
+    /// or Settings never opened this session.
+    private static func applyBrightness(percent: Int, retried: Bool = false) {
         let service = BrightnessService.shared
-        if let target = BrightnessSupport.commandBrightnessTarget(
-            pointerDisplayID: requestedID,
-            displays: service.displays.map { (id: $0.id, isBuiltIn: $0.isBuiltIn) }) {
-            service.setBrightness(Double(percent) / 100, for: target, showOSD: true)
+        let value = Double(percent) / 100
+        if let display = pointerDisplay(in: service.displays) {
+            service.setBrightness(value, for: display.id, showOSD: true)
             return
         }
         guard !retried else {
@@ -1625,7 +1617,17 @@ enum CommandBarCatalog {
         }
         service.refresh()
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
-            applyBrightness(percent: percent, retried: true, displayID: requestedID)
+            applyBrightness(percent: percent, retried: true)
         }
+    }
+
+    private static func pointerDisplay(in displays: [BrightnessDisplay]) -> BrightnessDisplay? {
+        guard !displays.isEmpty else { return nil }
+        let pointerScreen = NSScreen.screens.first { $0.frame.contains(NSEvent.mouseLocation) }
+        if let number = pointerScreen?.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber,
+           let match = displays.first(where: { $0.id == number.uint32Value }) {
+            return match
+        }
+        return displays.first
     }
 }

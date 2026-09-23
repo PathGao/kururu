@@ -303,7 +303,7 @@ struct ShortcutPreferenceRow: View {
         self.additionalConflict = additionalConflict
         self.onChange = onChange
         _rawValue = AppStorage(
-            wrappedValue: role.startsUnassigned ? "" : role.defaultShortcut.storageValue,
+            wrappedValue: role.defaultShortcut.storageValue,
             role.storageKey)
     }
 
@@ -324,7 +324,7 @@ struct ShortcutPreferenceRow: View {
                                                emptyTitle: pendingTakeOver == nil && configuredShortcut == nil
                                                    ? BrightnessShortcutStrings
                                                        .localized(l10n.language).notSet : nil,
-                                               clearAction: role.startsUnassigned ? clear : nil,
+                                               clearAction: role.isClearable ? clear : nil,
                                                notCapturedAction: { errorText = l10n.s.shortcutNotCaptured },
                                                recordingChanged: { recording in
                                                    isRecording = recording
@@ -340,15 +340,14 @@ struct ShortcutPreferenceRow: View {
                             .frame(width: 108)
                             .disabled(!isEnabled)
                         Button(l10n.s.shortcutReset) {
-                            rawValue = role.startsUnassigned
-                                ? "" : role.defaultShortcut.storageValue
+                            rawValue = role.defaultShortcut.storageValue
                             errorText = nil
                             pendingTakeOver = nil
                             SystemShortcutTakeover.setTakeOver(role.storageKey, false)
                             onChange()
                         }
-                        .disabled(!isEnabled || (role.startsUnassigned
-                            ? configuredShortcut == nil : shortcut == role.defaultShortcut))
+                        .disabled(!isEnabled
+                            || (role.isClearable ? configuredShortcut : shortcut) == role.defaultShortcut)
                     }
                     if let alternative = superKeyAlternative {
                         Text(String(format: FeatureStrings.shortcuts(l10n.language)
@@ -365,7 +364,7 @@ struct ShortcutPreferenceRow: View {
                     .font(SettingsTypography.caption)
                     .foregroundStyle(.orange)
             } else if isRecording {
-                Text(ShortcutRecordingCaption.text(l10n.s, canClear: role.startsUnassigned))
+                Text(ShortcutRecordingCaption.text(l10n.s, canClear: role.isClearable))
                     .font(SettingsTypography.caption)
                     .foregroundStyle(.secondary)
             }
@@ -396,7 +395,7 @@ struct ShortcutPreferenceRow: View {
 
     private var superKeyAlternative: String? {
         guard showsSuperKeyAlternative else { return nil }
-        guard configuredShortcut != nil || !role.startsUnassigned else { return nil }
+        guard configuredShortcut != nil || !role.isClearable else { return nil }
         return shortcut.superKeyAlternative(
             sourceLabel: FeatureStrings.superKey(l10n.language).sourceLabel(superKey.source),
             superKeyModifiers: superKeyModifiers)

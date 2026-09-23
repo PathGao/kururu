@@ -141,6 +141,9 @@ struct MetricsTests {
             ("SystemShortcutTakeoverWiring", { SystemShortcutTakeoverContract.wiring(suite) }),
             ("KeepAwakeClamshellTests", { KeepAwakeClamshellTests.run(expect: { suite.expect($0, $1) }) }),
             ("PortManagerRefreshTests", { PortManagerRefreshTests.run(suite) }),
+            ("CommandBarInputSourceContract", { CommandBarInputSourceContract.run(suite) }),
+            ("CommandBarTerminationContract", { CommandBarTerminationContract.run(suite) }),
+            ("BrightnessShortcutTargetContract", { BrightnessShortcutTargetContract.run(suite) }),
         ]
         let names = groups.map(\.0) + ["MetricsTests"]
         var selected = Set<String>()
@@ -4634,8 +4637,8 @@ struct MetricsTests {
         // and which one loses depends on the order they happen to sync in.
         expect(Set(globalShortcutValues).count == globalShortcutValues.count,
                "no two features ship the same default combination")
-        expect(globalShortcutValues.count == GlobalShortcutRole.allCases.filter { !$0.startsUnassigned }.count,
-               "only roles with intentional defaults ship a registered combination")
+        expect(globalShortcutValues.count == GlobalShortcutRole.allCases.count,
+               "every role ships a registered combination")
         expect(GlobalShortcut(keyCode: Int64(kVK_ISO_Section),
                               modifiers: [.control, .option, .command]).isValid,
                "the extra ISO key (paragraph/caret above Tab) is recordable as a shortcut")
@@ -5610,6 +5613,23 @@ struct MetricsTests {
         expect(Defaults.sanitizedMonitorInterval(7) == 2, "invalid monitor interval falls back to default")
         expect(Defaults.sanitizedKeyboardDebounceWindow(80) == 80,
                "valid debounce window is preserved")
+        expect(Defaults.sanitizedKeyboardDebounceWindow(1) == 1,
+               "sub-5 ms keyboard debounce windows are preserved")
+        expect(Defaults.sanitizedKeyboardDebounceWindow(3) == 3,
+               "magnetic-keyboard debounce windows below 5 ms stay available")
+        // The sanitizer already kept 1 to 4 ms; what made them reachable is
+        // the steppers moving by 1 ms, so pin the step and every stepper on it.
+        expect(Defaults.keyboardDebounceWindowStep == 1, "keyboard debounce steppers move by 1 ms")
+        let debounceSectionsSource = (try? String(
+            contentsOfFile: "Sources/Vorssaint/UI/Settings/KeyboardDebounceSections.swift",
+            encoding: .utf8)) ?? ""
+        let debouncePanelSource = (try? String(
+            contentsOfFile: "Sources/Vorssaint/UI/MenuPanel/MenuPanelView.swift", encoding: .utf8)) ?? ""
+        expect(debounceSectionsSource.components(separatedBy: "step: Defaults.keyboardDebounceWindowStep").count - 1 == 3
+                && debounceSectionsSource.components(separatedBy: "Stepper(").count - 1 == 3
+                && debouncePanelSource.contains(
+                    "in: Defaults.allowedKeyboardDebounceWindowRange,\n                step: Defaults.keyboardDebounceWindowStep)"),
+               "the global, new-key and per-key steppers in Settings and the panel stepper use the shared step")
         expect(Defaults.sanitizedKeyboardDebounceWindow(999) == Defaults.defaultKeyboardDebounceWindowMs,
                "invalid debounce window falls back to default")
         expect(Defaults.sanitizedMenuBarLabelStyle("classic") == "classic", "valid label style is preserved")
@@ -8424,6 +8444,30 @@ struct MetricsTests {
         expect(!GlobalShortcut.matchesLiveSystemShortcut(
                     GlobalShortcut(keyCode: 21, modifiers: [.command, .shift]), entries: []),
                "an empty live table reserves nothing")
+
+        // Exercise the same raw-flag constructor used by the WindowServer reader.
+        for modifiers in [GlobalShortcutModifiers(), [.control, .option]] {
+            let letter = GlobalShortcut(keyCode: Int64(kVK_ANSI_N), modifiers: modifiers)
+            let fnOwner = LiveSystemShortcut(id: 212, keyCode: letter.keyCode,
+                                             flags: modifiers.cgFlags.union(.maskSecondaryFn), enabled: true)
+            expect(fnOwner.requiresFunctionKey && !GlobalShortcut.matchesLiveSystemShortcut(letter, entries: [fnOwner]),
+                   "an Fn-letter system owner does not reserve the same letter without Fn")
+            let plainOwner = LiveSystemShortcut(id: 213, keyCode: letter.keyCode, flags: modifiers.cgFlags, enabled: true)
+            expect(GlobalShortcut.matchesLiveSystemShortcut(letter, entries: [plainOwner]),
+                   "a system owner that really uses the same modifiers remains protected")
+            let plist: [String: Any] = ["212": ["enabled": true,
+                "value": ["type": "standard", "parameters": [0, Int(letter.keyCode),
+                    Int(modifiers.cgFlags.union(.maskSecondaryFn).rawValue)]]]]
+            expect(!GlobalShortcut.matchesSystemShortcut(letter, symbolicHotKeys: plist),
+                   "the preference fallback also retains the Fn requirement")
+        }
+        for code in [kVK_F2, kVK_LeftArrow] {
+            let key = GlobalShortcut(keyCode: Int64(code), modifiers: [])
+            let owner = LiveSystemShortcut(id: 1, keyCode: key.keyCode,
+                                           flags: .maskSecondaryFn, enabled: true)
+            expect(GlobalShortcut.matchesLiveSystemShortcut(key, entries: [owner]),
+                   "function and navigation keys retain their intrinsic Fn system protection")
+        }
 
         // The decision between the two sources: a populated live table is the
         // authority; a missing or empty one hands the question to the plist.
@@ -12975,6 +13019,12 @@ struct MetricsTests {
                    && !strings.smoothScrollStepLabel.contains("—")
                    && !strings.smoothScrollResponseLabel.contains("—"),
                    "\(prefix) smooth scrolling controls are present without em dash")
+            expectFormat(strings.secureInputHeldFormat, ["@"], "\(prefix) secure input holder format")
+            expectFormat(strings.secureInputRevealFormat, ["@"], "\(prefix) secure input reveal format")
+            expect(!strings.secureInputTitle.isEmpty
+                   && !strings.secureInputUnattributed.isEmpty
+                   && !strings.secureInputUnidentified.isEmpty,
+                   "\(prefix) secure input copy is translated")
             expectFormat(strings.cutMovedPluralFormat, ["d"], "\(prefix) cut plural format")
             expectFormat(strings.uninstallerSelectedFormat, ["d", "d"], "\(prefix) uninstaller selected format")
             expectFormat(strings.uninstallerFreedFormat, ["@"], "\(prefix) uninstaller freed format")
@@ -14791,8 +14841,8 @@ struct MetricsTests {
                "an alert with its metric off in the hub stays disarmed")
 
         expect(GlobalShortcutRole.activeRoles(isOn: { _ in true }).count
-                == GlobalShortcutRole.allCases.count - 2,
-               "unassigned display brightness roles remain inactive even when enabled")
+                == GlobalShortcutRole.allCases.count,
+               "the availability-free overload keeps every enabled current role")
         expect(!GlobalShortcutRole.activeRoles(isOn: { _ in true },
                                                isAvailable: { $0 != .shelf }).contains(.shelf),
                "a role leaves the shortcuts page when its feature is off in the hub")
@@ -15957,6 +16007,100 @@ struct MetricsTests {
                "brightness overlay percentage rounds and clamps safely")
 
         // MARK: Text snippets engine (issue #201)
+
+        // Driven by synthetic listings rather than this machine's
+        // /System/Library/Sounds, so the assertions mean the same thing on
+        // every macOS the CI runners use.
+        expect(TextSnippetSupport.alertSoundNames(from: ["Tink.aiff", "Basso.aiff"]) == ["Basso", "Tink"],
+               "directory entries become sorted sound names without their extension")
+        expect(TextSnippetSupport.alertSoundNames(from: ["Glass.AIFF"]) == ["Glass"],
+               "an uppercase extension is still recognized")
+        expect(TextSnippetSupport.alertSoundNames(from: ["Readme.txt", "Sub.caf"]).isEmpty == false,
+               "a listing with no aiff falls back rather than emptying the picker")
+        expect(TextSnippetSupport.alertSoundNames(from: ["Readme.txt"])
+                == TextSnippetSupport.fallbackAlertSoundNames,
+               "an unreadable or foreign sounds directory falls back to the known names")
+        expect(TextSnippetSupport.alertSoundNames(from: []) == TextSnippetSupport.fallbackAlertSoundNames,
+               "an empty directory falls back to the known names")
+
+        expect(TextSnippetSupport.resolvedSoundName(stored: "Tink", available: ["Basso", "Tink"]) == "Tink",
+               "a stored sound the system still offers is kept")
+        expect(TextSnippetSupport.resolvedSoundName(stored: "Gone", available: ["Basso", "Tink"]) == "Tink",
+               "a stored sound this Mac no longer has falls back to the default instead of going silent")
+        expect(TextSnippetSupport.resolvedSoundName(stored: nil, available: ["Basso", "Tink"]) == "Tink",
+               "no stored sound uses the default")
+        expect(TextSnippetSupport.resolvedSoundName(stored: "Gone", available: ["Basso"]) == "Basso",
+               "with neither the stored sound nor the default present, the first offered one is used")
+        expect(TextSnippetSupport.resolvedSoundName(stored: "Gone", available: []) == nil,
+               "nothing to play resolves to nothing rather than a name that cannot load")
+
+
+        expect(Defaults.registeredDefaults[DefaultsKey.snippetSoundEnabled] as? Bool == false,
+               "sound on expansion stays off until asked for")
+        expect(Defaults.registeredDefaults[DefaultsKey.snippetSoundName] as? String
+                == Defaults.defaultSnippetSoundName,
+               "the registered default is the shared constant, not a second copy of the name")
+        expect(TextSnippetSupport.fallbackAlertSoundNames.contains(Defaults.defaultSnippetSoundName),
+               "the default sound is one the fallback list offers")
+        expect(FileManager.default.fileExists(
+                atPath: TextSnippetSupport.soundFileURL(for: Defaults.defaultSnippetSoundName).path),
+               "the default sound is played from the file macOS ships for it")
+        expect(Set(TextSnippetSupport.fallbackAlertSoundNames).count
+                == TextSnippetSupport.fallbackAlertSoundNames.count,
+               "no duplicate names in the fallback list")
+
+        expect(AlertSoundStrings.displayName(for: "Tink", language: .enUS) == "Boop",
+               "macOS has shown Tink as Boop in Sound settings since Big Sur")
+        expect(AlertSoundStrings.displayName(for: "Ping", language: .enUS) == "Sonar",
+               "macOS has shown Ping as Sonar in Sound settings since Big Sur")
+        expect(AlertSoundStrings.displayName(for: "Tink", language: .fr) == "Boop",
+               "a supported language other than English gets its own translated name")
+        expect(AlertSoundStrings.displayName(for: "Ping", language: .ru) == "Сонар",
+               "a supported language other than English gets its own translated name")
+        expect(AlertSoundStrings.displayName(for: "Tink", language: .ja) == "Boop",
+               "Apple's own table keeps the English display name for Japanese, Korean and Chinese")
+        expect(AlertSoundStrings.displayName(for: "Custom", language: .enUS) == "Custom",
+               "a name outside the table is shown unchanged rather than dropped")
+        expect(TextSnippetSupport.fallbackAlertSoundNames.allSatisfy {
+                AlertSoundStrings.displayName(for: $0, language: .enUS) != $0
+            },
+               "every shipped alert sound has a display name distinct from its file name")
+
+        expect(AlertSoundStrings.sortedNames(TextSnippetSupport.fallbackAlertSoundNames, language: .enUS)
+                == ["Tink", "Blow", "Pop", "Glass", "Funk", "Hero", "Frog",
+                    "Basso", "Bottle", "Purr", "Morse", "Ping", "Sosumi", "Submarine"],
+               "the picker orders by what each name shows (Boop, Breeze, Bubble, ...), not by the file name")
+        expect(AlertSoundStrings.sortedNames(["Basso", "Tink"], language: .enUS).first == "Tink",
+               "Boop sorts before Mezzo even though the file name Basso sorts before Tink")
+        expect(Set(AlertSoundStrings.sortedNames(TextSnippetSupport.fallbackAlertSoundNames, language: .enUS))
+                == Set(TextSnippetSupport.fallbackAlertSoundNames),
+               "sorting only reorders the list, it never drops or adds a name")
+        // The service wiring has no seam this harness can drive, so its shape
+        // is pinned instead: armed from the preference sync, fired by the
+        // replacement going out on both the typed and the pasted path, and
+        // never handed to the library's insertion (it calls postExpansion
+        // without a cue).
+        let snippetServiceCode = ((try? String(
+            contentsOfFile: "Sources/Vorssaint/Services/Snippets/TextSnippetService.swift",
+            encoding: .utf8)) ?? "")
+            .split(separator: "\n")
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+            .joined(separator: "\n")
+        expect(snippetServiceCode.contains("syncExpansionSound(featureEnabled: enabled)"),
+               "the expansion sound is armed from the same sync that turns snippets on and off")
+        expect(snippetServiceCode.contains("didPostShortcut: { didExpand?() }"),
+               "a pasted expansion sounds only once its paste shortcut goes out")
+        expect(snippetServiceCode.components(separatedBy: "didExpand?()").count - 1 == 2,
+               "the typed and the pasted path each sound once")
+        expect(snippetServiceCode.components(separatedBy: "didExpand: didExpand").count - 1 == 1,
+               "only a typed trigger hands the cue to postExpansion")
+        let snippetSectionsCode = (try? String(
+            contentsOfFile: "Sources/Vorssaint/UI/Settings/TextSnippetsSections.swift",
+            encoding: .utf8)) ?? ""
+        expect(snippetSectionsCode.contains("TextSnippetService.shared.previewExpansionSound()")
+                && snippetSectionsCode.components(
+                    separatedBy: "TextSnippetService.shared.syncExpansionSound()").count - 1 == 2,
+               "the sound toggle and picker re-arm the sound, and a picked sound previews")
 
         expect(TextSnippetSupport.sanitizedTrigger("  ;e mail\n") == ";email", "triggers lose whitespace")
         expect(TextSnippetSupport.bufferAppending(String(repeating: "a", count: 64), typed: "b").count
@@ -21420,6 +21564,69 @@ struct MetricsTests {
                     > CommandBarPreferences.rankBias(for: .actions),
                "apps lead commands, while a file needs a plainly better match")
 
+        // MARK: Command Bar ASCII layout switch
+
+        let latinSourceID = "com.apple.keylayout.ABC"
+        let russianSourceID = "com.apple.keylayout.RussianWin"
+        let pinyinSourceID = "com.apple.inputmethod.SCIM.Shuangpin"
+        let latinSource = InputSourceSelection.Snapshot(id: latinSourceID, isLayout: true, isASCIICapable: true)
+        let russianSource = InputSourceSelection.Snapshot(id: russianSourceID, isLayout: true, isASCIICapable: false)
+        let pinyinSource = InputSourceSelection.Snapshot(id: pinyinSourceID, isLayout: false, isASCIICapable: false)
+        expect(InputSourceSelection.asciiLayoutID(currentID: russianSourceID, snapshots: [russianSource, latinSource])
+                == latinSourceID,
+               "a non-Latin layout borrows the first enabled ASCII layout")
+        expect(InputSourceSelection.asciiLayoutID(currentID: pinyinSourceID, snapshots: [latinSource, pinyinSource])
+                == latinSourceID,
+               "an input method borrows the enabled ASCII layout")
+        expect(InputSourceSelection.asciiLayoutID(currentID: latinSourceID, snapshots: [latinSource, russianSource]) == nil,
+               "a bar opened on an ASCII layout switches nothing and restores nothing")
+        expect(InputSourceSelection.asciiLayoutID(currentID: russianSourceID, snapshots: [russianSource]) == nil,
+               "with no ASCII layout enabled there is nothing to borrow")
+        expect(InputSourceSelection.asciiLayoutID(currentID: nil, snapshots: [russianSource, latinSource]) == latinSourceID,
+               "an unreadable current source still borrows the ASCII layout")
+        let asciiCapableMethod = InputSourceSelection.Snapshot(
+            id: "com.apple.inputmethod.Kotoeri.RomajiTyping.Roman", isLayout: false, isASCIICapable: true)
+        expect(InputSourceSelection.asciiLayoutID(currentID: asciiCapableMethod.id,
+                                                  snapshots: [asciiCapableMethod, latinSource]) == latinSourceID,
+               "an ASCII-capable input method still moves to a plain layout")
+
+        let commandBarServiceSource = (try? String(
+            contentsOfFile: "Sources/Vorssaint/Services/CommandBar/CommandBarService.swift",
+            encoding: .utf8)) ?? ""
+        expect(commandBarServiceSource.contains("InputSourceSelection.asciiLayoutID"),
+               "the bar borrows the ASCII layout through the shared TIS selection")
+        expect(commandBarServiceSource.contains("restoreSuspendedInputSource"),
+               "closing the bar gives the suspended input source back")
+        let asciiSettingsSource = (try? String(
+            contentsOfFile: "Sources/Vorssaint/UI/Settings/CommandBarSettings.swift",
+            encoding: .utf8)) ?? ""
+        expect(asciiSettingsSource.contains("DefaultsKey.commandBarASCIILayoutEnabled"),
+               "the ASCII layout switch has its own settings row")
+        expect(Defaults.registeredDefaults[DefaultsKey.commandBarASCIILayoutEnabled] as? Bool == false,
+               "the ASCII layout switch ships off: the bar starts on whatever layout is already up")
+        expect(SettingsBackupSupport.exportKeys().contains(DefaultsKey.commandBarASCIILayoutEnabled),
+               "the ASCII layout switch is configuration, so it travels with an exported setup")
+        expect(SettingsBackupSupport.valueLooksRight(DefaultsKey.commandBarASCIILayoutEnabled, true)
+                && !SettingsBackupSupport.valueLooksRight(DefaultsKey.commandBarASCIILayoutEnabled, "yes"),
+               "a restored ASCII layout switch has to be a switch, not text that looks like one")
+        let superKeySource = (try? String(
+            contentsOfFile: "Sources/Vorssaint/Services/SuperKey/SuperKeyService.swift",
+            encoding: .utf8)) ?? ""
+        expect(superKeySource.contains("InputSourceSelection.selectableInputSources()"),
+               "the Super key cycle shares the TIS plumbing instead of its own copy")
+        // The contracts compile the borrow and restore bodies; these pin that
+        // every opening and every close actually reaches them, and that a
+        // quit that skipped applicationShouldTerminate still gives it back.
+        expect(commandBarServiceSource.contains("adoptASCIIInputSource()\n        present(panel)"),
+               "opening the bar borrows the ASCII layout just before the panel orders in")
+        expect(commandBarServiceSource.contains("restoreSuspendedInputSource()\n        removeMonitors()"),
+               "every close path through hide() schedules the layout's return")
+        let asciiAppDelegateSource = (try? String(
+            contentsOfFile: "Sources/Vorssaint/App/AppDelegate.swift", encoding: .utf8)) ?? ""
+        expect(asciiAppDelegateSource.contains(
+                "isTerminating = true\n        CommandBarService.shared.restoreBorrowedInputSource()"),
+               "termination gives a borrowed layout back even without a quit request")
+
         // MARK: The Mac's own Settings panes
         let openablePane: [String: Any] = [
             "EXAppExtensionAttributes": [
@@ -23053,7 +23260,7 @@ struct MetricsTests {
         for language in AppLanguage.allCases {
             let commandBarValues = Mirror(reflecting: FeatureStrings.commandBar(language)).children
                 .compactMap { $0.value as? String }
-            expect(commandBarValues.count == 172 && commandBarValues.allSatisfy { !$0.isEmpty },
+            expect(commandBarValues.count == 174 && commandBarValues.allSatisfy { !$0.isEmpty },
                    "every command bar string is set for \(language.rawValue), found \(commandBarValues.count)")
             expect(commandBarValues.allSatisfy { !$0.contains("—") },
                    "no em-dash in visible command bar strings (\(language.rawValue))")
@@ -24649,6 +24856,128 @@ struct MetricsTests {
             encoding: .utf8)) ?? ""
         expect(quitProtectionSource.contains("func suspend()"),
                "quit protection exposes the teardown the permission reset calls")
+
+        // MARK: Secure input
+        // The Carbon flag is the authority on whether secure input is on; the
+        // registry read only answers who. A holder the session still records
+        // after the flag cleared must never produce a warning.
+        expect(SecureInputSupport.holder(isEnabled: false,
+                                         read: .noHolder,
+                                         runningApp: { _ in nil },
+                                         isProcessAlive: { _ in true }) == .off,
+               "secure input off with no recorded holder is off")
+        var secureInputNameLookups = 0
+        let secureInputOffWithPid = SecureInputSupport.holder(
+            isEnabled: false,
+            read: .holder(4242),
+            runningApp: { pid in
+                secureInputNameLookups += 1
+                return ("SomeBrowser", pid)
+            },
+            isProcessAlive: { _ in true })
+        expect(secureInputOffWithPid == .off,
+               "secure input off stays off even with a pid still recorded")
+        expect(SecureInputSupport.holder(isEnabled: false,
+                                         read: .unavailable,
+                                         runningApp: { _ in nil },
+                                         isProcessAlive: { _ in true }) == .off,
+               "secure input off stays off when the session cannot be read")
+        expect(secureInputNameLookups == 0,
+               "the name lookup is skipped when secure input is off")
+
+        // The row names the holder and the reveal button activates it, so a
+        // helper pid has to resolve to its app for both.
+        expect(SecureInputSupport.holder(isEnabled: true,
+                                         read: .holder(999),
+                                         runningApp: { pid in
+                                             pid == 999 ? ("SomeBrowser", 4242) : nil
+                                         },
+                                         isProcessAlive: { _ in true })
+                   == .app(name: "SomeBrowser", pid: 4242),
+               "a helper pid is attributed to the app responsible for it")
+        // Liveness is what separates the two unnameable holders. Only a holder
+        // that has exited leaves a flag a new login session clears; a live one
+        // is a system prompt the user is looking at, and telling them to end
+        // the session is the worst answer this row could give.
+        expect(SecureInputSupport.holder(isEnabled: true,
+                                         read: .holder(4242),
+                                         runningApp: { _ in nil },
+                                         isProcessAlive: { _ in true }) == .unknown,
+               "a running holder that is no regular app is never sent to log out")
+        expect(SecureInputSupport.holder(isEnabled: true,
+                                         read: .holder(4242),
+                                         runningApp: { _ in nil },
+                                         isProcessAlive: { _ in false }) == .unattributed,
+               "a holder that has exited is what a new login session clears")
+        expect(SecureInputSupport.holder(isEnabled: true,
+                                         read: .noHolder,
+                                         runningApp: { _ in nil },
+                                         isProcessAlive: { _ in true }) == .unattributed,
+               "secure input on with no recorded holder is unattributed")
+        expect(SecureInputSupport.holder(isEnabled: true,
+                                         read: .holder(0),
+                                         runningApp: { pid in ("SomeBrowser", pid) },
+                                         isProcessAlive: { _ in true }) == .unattributed,
+               "a zero pid is not an attribution")
+        expect(SecureInputSupport.holder(isEnabled: true,
+                                         read: .holder(4242),
+                                         runningApp: { pid in ("", pid) },
+                                         isProcessAlive: { _ in false }) == .unattributed,
+               "an empty app name is not an attribution")
+
+        // Only `.unattributed` asks the user to log out, so a read that did
+        // not work must never land there.
+        var secureInputUnavailableLookups = 0
+        var secureInputUnavailableLivenessChecks = 0
+        let secureInputUnavailable = SecureInputSupport.holder(
+            isEnabled: true,
+            read: .unavailable,
+            runningApp: { pid in
+                secureInputUnavailableLookups += 1
+                return ("SomeBrowser", pid)
+            },
+            isProcessAlive: { _ in
+                secureInputUnavailableLivenessChecks += 1
+                return true
+            })
+        expect(secureInputUnavailable == .unknown,
+               "a session that cannot be read reports an unknown holder")
+        expect(secureInputUnavailableLookups == 0 && secureInputUnavailableLivenessChecks == 0,
+               "a session that cannot be read costs no name lookup and no liveness check")
+
+        expect(!SecureInputSupport.shouldPoll(observingSurfaceCount: 0, windowIsOpen: true),
+               "secure input keeps no timer without a visible surface")
+        expect(SecureInputSupport.shouldPoll(observingSurfaceCount: 1, windowIsOpen: true)
+                   && SecureInputSupport.shouldPoll(observingSurfaceCount: 3, windowIsOpen: true),
+               "a visible surface polls secure input while the window is open")
+        expect(SecureInputSupport.shouldPoll(observingSurfaceCount: 1, windowIsOpen: true)
+                   == SecureInputSupport.shouldPoll(observingSurfaceCount: 2, windowIsOpen: true),
+               "repeating a demand does not change whether secure input polls")
+        expect(!SecureInputSupport.shouldPoll(observingSurfaceCount: 1, windowIsOpen: false),
+               "a demand left over from before the window closed does not poll on its own")
+        expect(!SecureInputSupport.shouldPoll(observingSurfaceCount: 0, windowIsOpen: false),
+               "neither gate alone is enough")
+        // The wiring around the monitor has no seam this harness can drive,
+        // so its shape is pinned: the Settings window is the second gate, and
+        // each page that shows the row registers the demand for it.
+        func secureInputSource(_ path: String) -> String {
+            ((try? String(contentsOfFile: path, encoding: .utf8)) ?? "")
+                .split(separator: "\n")
+                .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+                .joined(separator: "\n")
+        }
+        let secureInputAppDelegate = secureInputSource("Sources/Vorssaint/App/AppDelegate.swift")
+        expect(secureInputAppDelegate.contains("SecureInputMonitor.shared.setSettingsWindowOpen(true)")
+                && secureInputAppDelegate.contains("SecureInputMonitor.shared.setSettingsWindowOpen(false)"),
+               "the Settings window opening and closing gates the secure input poll")
+        let secureInputCommandBar = secureInputSource("Sources/Vorssaint/UI/Settings/CommandBarSettings.swift")
+        expect(secureInputCommandBar.contains(".observesSecureInput()")
+                && secureInputCommandBar.contains("if secureInput.holder != .off {\n                    SecureInputRow()"),
+               "the Command Bar page polls secure input and shows the row while it is on")
+        let secureInputSnippets = secureInputSource("Sources/Vorssaint/UI/Settings/TextSnippetsSections.swift")
+        expect(secureInputSnippets.contains(".observesSecureInput(isActive: enabled || libraryEnabled)")
+                && secureInputSnippets.contains("if enabled || libraryEnabled, secureInput.holder != .off {"),
+               "the snippets section polls and shows the row only while expansion or the library is on")
 
         // MARK: Detached command reruns (counted last, so a late rerun still fails)
         // The `||` form reran the whole installer — as root — on every non-zero

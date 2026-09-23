@@ -627,6 +627,13 @@ struct Strings {
     var permissionRequest: String = "Grant access"
     var permissionRestartNote: String = "macOS may ask to reopen the app after granting."
 
+    // MARK: Secure input
+    var secureInputTitle: String = "Secure input is on"
+    var secureInputHeldFormat: String = "%@ is holding it, so \(AppInfo.name) cannot type for you. Dismiss its password field, or quit it, to release it."
+    var secureInputUnattributed: String = "No running app claims it. Log out and back in to clear it."
+    var secureInputUnidentified: String = "The app holding it could not be identified, so \(AppInfo.name) cannot type for you."
+    var secureInputRevealFormat: String = "Show %@"
+
     // MARK: About
     var aboutDescription: String = "A utility hub for your Mac.\nEnergy, system monitor, scrolling and a window switcher, right in the menu bar."
     var versionPrefix: String = "Version"
