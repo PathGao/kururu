@@ -229,6 +229,14 @@ def main():
           + declaration("Sources/Vorssaint/Services/DockPreview/DockPreviewFrameRestoration.swift",
                         "    private static func restore(").replace("private static func", "static func", 1)
           + "}\n")
+    write("DockPreviewScope.swift", "import Foundation\nextension DockPreviewScopeTests.Service {\n"
+          + "".join(declaration(dock, prefix).replace("private func", "func", 1)
+                    for prefix in ["    private func syncSpaceObservation()",
+                                   "    private func stopSpaceObservation()"])
+          + "}\nextension DockPreviewScopeTests.WindowEnumerator {\n"
+          + declaration("Sources/Vorssaint/Services/Switcher/WindowEnumerator.swift",
+                        "    static func dockPreviewMayActivate(")
+          + "}\n")
     write("DockAutohideInput.swift", "import CoreGraphics\nimport Foundation\nextension DockAutohideHoldTests.Service {\n"
           + "".join(declaration(dock, prefix, scope="final class DockPreviewService:")
                     .replace("private func", "func", 1)

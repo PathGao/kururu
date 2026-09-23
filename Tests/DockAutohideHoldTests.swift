@@ -21,6 +21,10 @@ enum DockAutohideHoldTests {
             return { if isCurrent() { activationEvents.append("restore") } }
         }
     }
+    enum WindowEnumerator {
+        static var mayActivate = true
+        static func dockPreviewMayActivate(_ item: Int) -> Bool { mayActivate }
+    }
     enum WindowActivator {
         static func activate(_ item: Int) { activationEvents.append("activate") }
     }
@@ -28,6 +32,7 @@ enum DockAutohideHoldTests {
         typealias SwitcherItem = Int
         typealias NSWorkspace = Workspace
         typealias DockPreviewFrameRestoration = FrameRestoration
+        typealias WindowEnumerator = DockAutohideHoldTests.WindowEnumerator
         typealias WindowActivator = DockAutohideHoldTests.WindowActivator
         let dockAutohideHold: DockAutohideHold
         var dockFrameRestoration: FrameRestoration?
@@ -217,6 +222,13 @@ enum DockAutohideHoldTests {
         service.commit(1)
         suite.expect(activationEvents == ["capture", "end", "activate", "restore"],
                      "selection captures geometry before release and repairs only after activating the window")
+        service.beginDockAutohideHold()
+        activationEvents = []
+        WindowEnumerator.mayActivate = false
+        service.commit(1)
+        suite.expect(activationEvents == ["capture", "end"],
+                     "a selection rejected by the Space policy never restores a window")
+        WindowEnumerator.mayActivate = true
         activationEvents = []
         service.commit(1)
         suite.expect(activationEvents == ["end", "activate"],
