@@ -9,6 +9,7 @@ struct DockSettings: View {
     @ObservedObject private var permissions = Permissions.shared
     @ObservedObject private var dockPreview = DockPreviewService.shared
     @AppStorage(DefaultsKey.dockPreviewEnabled) private var dockPreviewEnabled = false
+    @AppStorage(DefaultsKey.dockPreviewCurrentSpaceOnly) private var dockPreviewCurrentSpaceOnly = false
     @AppStorage(DefaultsKey.dockPreviewBackgroundOpacity) private var dockPreviewBackgroundOpacity = 1.0
     @AppStorage(DefaultsKey.dockPreviewOpenDelay) private var dockPreviewOpenDelay = DockPreviewSupport.defaultOpenDelayMilliseconds
     @AppStorage(DefaultsKey.dockPreviewQuitAppOnClose) private var dockPreviewQuitAppOnClose = false
@@ -39,6 +40,12 @@ struct DockSettings: View {
                              systemImage: dockPreviewWarning ? "exclamationmark.triangle" : "cursorarrow.motionlines",
                              warning: dockPreviewWarning)
                 Group {
+                    SettingsToggleWithCaption(title: l10n.s.switcherCurrentSpaceOnly,
+                                              caption: text.currentSpaceOnlyCaption,
+                                              isOn: $dockPreviewCurrentSpaceOnly)
+                        .onChange(of: dockPreviewCurrentSpaceOnly) { _, _ in
+                            dockPreview.syncWithPreferences()
+                        }
                     SettingsControlRow(title: text.openDelay, systemImage: "timer", help: text.openDelayCaption) {
                         HStack(spacing: 6) {
                             TextField(text.openDelay, value: dockPreviewOpenDelayBinding,

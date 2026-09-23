@@ -8,6 +8,7 @@ struct DockPreviewFeatureStrings {
     var pageTitle: String = "Dock Preview"
     var enable: String = "Preview windows from the Dock"
     var enableCaption: String = "Hover over an open app in the Dock to see its windows, then click the one you want."
+    var currentSpaceOnlyCaption: String = "When off, shows windows from all desktops. Choosing a window on another desktop takes you there."
     var backgroundOpacity: String = "Panel background"
     var backgroundOpacityCaption: String = "Turn it down to see more of what sits behind the panel."
     var openDelay: String = "Open delay"
@@ -283,6 +284,7 @@ extension DockPreviewFeatureStrings {
         pageTitle: "Dock 窗口预览",
         enable: "在 Dock 中预览窗口",
         enableCaption: "将指针悬停在 Dock 中已打开的 App 上查看窗口，然后点按要打开的窗口。",
+        currentSpaceOnlyCaption: "关闭时显示所有桌面的窗口。选择其他桌面上的窗口时，会切换到该桌面。",
         backgroundOpacity: "面板背景",
         backgroundOpacityCaption: "调低后可以看到更多面板后面的内容。",
         openDelay: "打开延迟",

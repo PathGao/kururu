@@ -29,7 +29,7 @@ enum DockAutohideHoldWiringTests {
     }
 
     /// Source without line comments, with all whitespace collapsed to one space.
-    private static func code(_ path: String) -> String {
+    static func code(_ path: String) -> String {
         let text = (try? String(contentsOfFile: path, encoding: .utf8)) ?? ""
         return text.components(separatedBy: "\n")
             .map { line in line.range(of: "//").map { String(line[..<$0.lowerBound]) } ?? line }
@@ -38,7 +38,7 @@ enum DockAutohideHoldWiringTests {
     }
 
     /// The member declared by `signature` inside `owner`, up to its matching brace.
-    private static func body(_ code: String, _ owner: String, _ signature: String) -> String {
+    static func body(_ code: String, _ owner: String, _ signature: String) -> String {
         guard let scope = code.range(of: owner),
               let start = code.range(of: signature, range: scope.upperBound..<code.endIndex)
         else { return "" }
