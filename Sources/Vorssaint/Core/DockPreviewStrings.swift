@@ -14,6 +14,8 @@ struct DockPreviewFeatureStrings {
     var openDelayCaption: String = "How long the pointer has to rest on an icon before its panel opens."
     var quitAppOnClose: String = "Quit the app with the × button"
     var quitAppOnCloseCaption: String = "In Dock Preview, × quits the whole app instead of closing only that window."
+    var keepDockVisible: String = "Keep Dock visible (experimental)"
+    var keepDockVisibleCaption: String = "Pauses auto-hide while the preview is open and restores it when you leave. May resize windows. If the app is interrupted, reopen it to restore the Dock."
     var activeNow: String = "Active in the Dock"
     var dockUnavailable: String = "Could not read Dock items."
     var autohideBeta: String = "Beta. You may run into some bugs."
@@ -287,6 +289,8 @@ extension DockPreviewFeatureStrings {
         openDelayCaption: "指针停在图标上多久之后才打开面板。",
         quitAppOnClose: "使用 × 按钮退出 App",
         quitAppOnCloseCaption: "在 Dock 窗口预览中，× 会退出整个 App，而不只是关闭该窗口。",
+        keepDockVisible: "保持程序坞显示（实验性）",
+        keepDockVisibleCaption: "预览打开时暂停自动隐藏，离开时恢复。可能调整窗口大小。如果 App 意外中断，请重新打开以恢复程序坞设置。",
         activeNow: "已在 Dock 中启用",
         dockUnavailable: "无法读取 Dock 项目。",
         autohideBeta: "测试版。你可能会遇到一些错误。",

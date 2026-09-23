@@ -417,6 +417,7 @@ if (( TEST )); then
         Sources/Vorssaint/Services/Audio/MixerRender.swift \
         Sources/Vorssaint/Services/Audio/PreciseVolumeRollerSupport.swift \
         Sources/Vorssaint/Services/DockPreview/DockPreviewSupport.swift \
+        Sources/Vorssaint/Services/DockPreview/DockAutohideHold.swift \
         Sources/Vorssaint/Services/Homebrew/HomebrewSupport.swift \
         Sources/Vorssaint/Services/Clipboard/ClipboardHistorySupport.swift \
         Sources/Vorssaint/Services/Clipboard/ClipboardImportSupport.swift \
@@ -583,6 +584,9 @@ if (( TEST )); then
         Tests/WindowLayoutFeatureTests.swift \
         Tests/SystemShortcutTakeoverTests.swift \
         Tests/KeepAwakeClamshellTests.swift \
+        Tests/DockAutohideHoldTests.swift \
+        Tests/DockPreviewFrameRestorationTests.swift \
+        Tests/DockAutohideHoldWiringTests.swift \
         build/generated-tests/*.swift \
     )
     TEST_OUTPUT_FILE_MAP="$TEST_OBJECT_DIR/output-file-map.json"

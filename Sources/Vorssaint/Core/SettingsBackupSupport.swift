@@ -72,6 +72,7 @@ enum SettingsBackupSupport {
     /// out by construction (they are not preference keys), listed here only
     /// when they would otherwise slip in through the registered set.
     static let machineStateKeys: Set<String> = [
+        DefaultsKey.dockPreviewRestoreAutohide,
         // A new product identity must obtain its own login-item choice.
         DefaultsKey.launchAtLoginWanted,
         // A Bluetooth restore owed by one sleeping Mac means nothing on another.

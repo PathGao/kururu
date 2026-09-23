@@ -12,6 +12,7 @@ struct DockSettings: View {
     @AppStorage(DefaultsKey.dockPreviewBackgroundOpacity) private var dockPreviewBackgroundOpacity = 1.0
     @AppStorage(DefaultsKey.dockPreviewOpenDelay) private var dockPreviewOpenDelay = DockPreviewSupport.defaultOpenDelayMilliseconds
     @AppStorage(DefaultsKey.dockPreviewQuitAppOnClose) private var dockPreviewQuitAppOnClose = false
+    @AppStorage(DefaultsKey.dockPreviewKeepDockVisible) private var dockPreviewKeepDockVisible = false
     @AppStorage(DefaultsKey.dockClickMinimize) private var dockClickMinimize = false
     @AppStorage(DefaultsKey.dockClickHide) private var dockClickHide = false
     @AppStorage(DefaultsKey.dockClickCycleWindows) private var dockClickCycleWindows = false
@@ -66,6 +67,13 @@ struct DockSettings: View {
                     SettingsToggleWithCaption(title: text.quitAppOnClose,
                                               caption: text.quitAppOnCloseCaption,
                                               isOn: $dockPreviewQuitAppOnClose)
+                    SettingsToggleWithCaption(title: text.keepDockVisible,
+                                              caption: text.keepDockVisibleCaption,
+                                              isOn: $dockPreviewKeepDockVisible)
+                        .disabled(!DockAutohideHold.isSupported && !dockPreviewKeepDockVisible)
+                        .onChange(of: dockPreviewKeepDockVisible) { _, _ in
+                            dockPreview.syncWithPreferences()
+                        }
                 }
                 .disabled(!dockPreviewEnabled)
             }
