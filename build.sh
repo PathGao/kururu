@@ -586,6 +586,7 @@ if (( TEST )); then
         Tests/KeepAwakeClamshellTests.swift \
         Tests/DockAutohideHoldTests.swift \
         Tests/DockPreviewFrameRestorationTests.swift \
+        Tests/DockAutohideHoldWiringTests.swift \
         build/generated-tests/*.swift \
     )
     TEST_OUTPUT_FILE_MAP="$TEST_OBJECT_DIR/output-file-map.json"

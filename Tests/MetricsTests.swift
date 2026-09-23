@@ -127,6 +127,7 @@ struct MetricsTests {
             ("DockAutohideHoldTests", {
                 DockAutohideHoldTests.run(suite)
                 DockPreviewFrameRestorationTests.run(suite)
+                DockAutohideHoldWiringTests.run(suite)
             }),
             ("RecorderSampleTimingTests", { RecorderSampleTimingTests.run(expect: { suite.expect($0, $1) }) }),
             ("RecorderWriterTests", { RecorderWriterTests.run(expect: { suite.expect($0, $1) }) }),
