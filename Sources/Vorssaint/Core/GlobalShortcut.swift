@@ -169,9 +169,9 @@ struct GlobalShortcut: Equatable, Hashable {
     static let keyboardBrightnessIncreaseDefault = GlobalShortcut(
         keyCode: Int64(kVK_ANSI_Equal), modifiers: [.option, .command])
     static let displayBrightnessDecreaseDefault = GlobalShortcut(
-        keyCode: Int64(kVK_ANSI_LeftBracket), modifiers: [.control, .option, .command])
+        keyCode: Int64(kVK_ANSI_Minus), modifiers: [.shift, .command])
     static let displayBrightnessIncreaseDefault = GlobalShortcut(
-        keyCode: Int64(kVK_ANSI_RightBracket), modifiers: [.control, .option, .command])
+        keyCode: Int64(kVK_ANSI_Equal), modifiers: [.shift, .command])
     // Quick tools. Paste plain follows the universal "Paste and Match Style"
     // combination; the others use the free ⌃⌥⌘ letters.
     static let pastePlainDefault = GlobalShortcut(keyCode: Int64(kVK_ANSI_V),
@@ -745,15 +745,17 @@ enum GlobalShortcutRole: CaseIterable, Identifiable {
         GlobalShortcut.saved(for: storageKey, fallback: defaultShortcut)
     }
 
-    var startsUnassigned: Bool {
+    /// Rows that can be left without a combination. Clearing one stores an
+    /// empty value, which stays unassigned; a row never touched has nothing
+    /// stored and reads its default like every other role.
+    var isClearable: Bool {
         self == .displayBrightnessDecrease || self == .displayBrightnessIncrease
     }
 
     func configuredShortcut(
         read: (String) -> String? = { UserDefaults.standard.string(forKey: $0) }
     ) -> GlobalShortcut? {
-        if startsUnassigned {
-            guard let raw = read(storageKey) else { return nil }
+        if isClearable, let raw = read(storageKey) {
             return GlobalShortcut(storageValue: raw)
         }
         return read(storageKey).flatMap(GlobalShortcut.init(storageValue:)) ?? defaultShortcut
@@ -962,7 +964,7 @@ enum GlobalShortcutRole: CaseIterable, Identifiable {
                       UserDefaults.standard.string(forKey: $0)
                   }) -> Bool {
         guard self.isAvailable(using: isAvailable) else { return false }
-        if startsUnassigned, configuredShortcut(read: shortcutValue) == nil { return false }
+        if isClearable, configuredShortcut(read: shortcutValue) == nil { return false }
         if self == .clipboard {
             return isOn(DefaultsKey.clipboardHistoryShortcutEnabled)
                 && (isOn(DefaultsKey.clipboardHistoryEnabled) || hasClipboardHistory())

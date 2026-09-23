@@ -4636,8 +4636,8 @@ struct MetricsTests {
         // and which one loses depends on the order they happen to sync in.
         expect(Set(globalShortcutValues).count == globalShortcutValues.count,
                "no two features ship the same default combination")
-        expect(globalShortcutValues.count == GlobalShortcutRole.allCases.filter { !$0.startsUnassigned }.count,
-               "only roles with intentional defaults ship a registered combination")
+        expect(globalShortcutValues.count == GlobalShortcutRole.allCases.count,
+               "every role ships a registered combination")
         expect(GlobalShortcut(keyCode: Int64(kVK_ISO_Section),
                               modifiers: [.control, .option, .command]).isValid,
                "the extra ISO key (paragraph/caret above Tab) is recordable as a shortcut")
@@ -14840,8 +14840,8 @@ struct MetricsTests {
                "an alert with its metric off in the hub stays disarmed")
 
         expect(GlobalShortcutRole.activeRoles(isOn: { _ in true }).count
-                == GlobalShortcutRole.allCases.count - 2,
-               "unassigned display brightness roles remain inactive even when enabled")
+                == GlobalShortcutRole.allCases.count,
+               "the availability-free overload keeps every enabled current role")
         expect(!GlobalShortcutRole.activeRoles(isOn: { _ in true },
                                                isAvailable: { $0 != .shelf }).contains(.shelf),
                "a role leaves the shortcuts page when its feature is off in the hub")

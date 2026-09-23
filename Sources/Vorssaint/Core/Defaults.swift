@@ -995,6 +995,8 @@ enum Defaults {
         DefaultsKey.brightnessKeysEnabled: false,
         DefaultsKey.brightnessOSDEnabled: false,
         BrightnessShortcutPreferenceKey.enabled: false,
+        BrightnessShortcutPreferenceKey.decrease: "shift+command:27",
+        BrightnessShortcutPreferenceKey.increase: "shift+command:24",
         DefaultsKey.keyboardBrightnessShortcutsEnabled: false,
         DefaultsKey.keyboardBrightnessDecreaseShortcut: "option+command:27",
         DefaultsKey.keyboardBrightnessIncreaseShortcut: "option+command:24",
