@@ -59,7 +59,6 @@ fi
 [[ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Contents/Info.plist")" == "$BUNDLE" ]] || exit 1
 /usr/bin/tccutil reset All "$BUNDLE" >/dev/null 2>&1 || true
 /usr/bin/defaults delete "$BUNDLE" >/dev/null 2>&1 || true
-/usr/bin/security delete-generic-password -s "$BUNDLE.command-bar-query-habits" -a "hmac-key" >/dev/null 2>&1 || true
 /bin/rm -f "$HOME/Library/Preferences/$BUNDLE.plist" "$HOME/Library/Preferences/ByHost/$BUNDLE".*.plist(N)
 /bin/rm -rf "$HOME/Library/Saved Application State/$BUNDLE.savedState" \
     "$HOME/Library/Application Support/$BUNDLE" "$HOME/Library/Caches/$BUNDLE" \
