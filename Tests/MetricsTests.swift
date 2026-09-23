@@ -9534,6 +9534,19 @@ struct MetricsTests {
         expect(switcherCardSource.contains("ScrollingTitle(")
                && dockPreviewCardSource.contains("ScrollingTitle("),
                "the App Switcher and the Dock preview both draw their name through it")
+        // An animated reveal can be dropped: while the viewport resizes, and on
+        // macOS before 26 during rapid navigation. The selection then sits off
+        // screen until the next step (upstream #1772).
+        let switcherResizeReveals = switcherCardSource
+            .components(separatedBy: ".onGeometryChange(for: CGFloat.self) { $0.size.width } action: { _ in")
+            .dropFirst()
+            .map { $0.components(separatedBy: "}").first ?? "" }
+        expect(switcherResizeReveals.count == 2
+               && switcherResizeReveals.allSatisfy { $0.contains("revealSelection(in: proxy, animated: false)") },
+               "App Switcher reveals the selection without animation when a strip resizes")
+        expect(sourceBody(of: switcherCardSource, from: "private func revealSelection(", to: "withAnimation(")
+                .contains("guard animated, #available(macOS 26, *) else {"),
+               "App Switcher scrolls immediately before macOS 26, where animated reveals can be dropped")
         // One view, hung differently by each panel. Pinning it to the leading
         // edge in both left a grid card's name and the app name under it on two
         // different axes, which reads as a broken card rather than a choice.
