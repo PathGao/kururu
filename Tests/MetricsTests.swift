@@ -8444,6 +8444,30 @@ struct MetricsTests {
                     GlobalShortcut(keyCode: 21, modifiers: [.command, .shift]), entries: []),
                "an empty live table reserves nothing")
 
+        // Exercise the same raw-flag constructor used by the WindowServer reader.
+        for modifiers in [GlobalShortcutModifiers(), [.control, .option]] {
+            let letter = GlobalShortcut(keyCode: Int64(kVK_ANSI_N), modifiers: modifiers)
+            let fnOwner = LiveSystemShortcut(id: 212, keyCode: letter.keyCode,
+                                             flags: modifiers.cgFlags.union(.maskSecondaryFn), enabled: true)
+            expect(fnOwner.requiresFunctionKey && !GlobalShortcut.matchesLiveSystemShortcut(letter, entries: [fnOwner]),
+                   "an Fn-letter system owner does not reserve the same letter without Fn")
+            let plainOwner = LiveSystemShortcut(id: 213, keyCode: letter.keyCode, flags: modifiers.cgFlags, enabled: true)
+            expect(GlobalShortcut.matchesLiveSystemShortcut(letter, entries: [plainOwner]),
+                   "a system owner that really uses the same modifiers remains protected")
+            let plist: [String: Any] = ["212": ["enabled": true,
+                "value": ["type": "standard", "parameters": [0, Int(letter.keyCode),
+                    Int(modifiers.cgFlags.union(.maskSecondaryFn).rawValue)]]]]
+            expect(!GlobalShortcut.matchesSystemShortcut(letter, symbolicHotKeys: plist),
+                   "the preference fallback also retains the Fn requirement")
+        }
+        for code in [kVK_F2, kVK_LeftArrow] {
+            let key = GlobalShortcut(keyCode: Int64(code), modifiers: [])
+            let owner = LiveSystemShortcut(id: 1, keyCode: key.keyCode,
+                                           flags: .maskSecondaryFn, enabled: true)
+            expect(GlobalShortcut.matchesLiveSystemShortcut(key, entries: [owner]),
+                   "function and navigation keys retain their intrinsic Fn system protection")
+        }
+
         // The decision between the two sources: a populated live table is the
         // authority; a missing or empty one hands the question to the plist.
         expect(GlobalShortcut.conflictsWithSystemShortcut(optionShiftS,

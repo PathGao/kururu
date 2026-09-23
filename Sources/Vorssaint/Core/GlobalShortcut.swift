@@ -1072,7 +1072,10 @@ extension GlobalShortcut {
     static func matchesLiveSystemShortcut(_ shortcut: GlobalShortcut,
                                           entries: [LiveSystemShortcut]) -> Bool {
         guard shortcut.keyCode != Self.noKeyCode else { return false }
-        return entries.contains { $0.enabled && $0.shortcut == shortcut }
+        return entries.contains {
+            $0.enabled && $0.shortcut == shortcut
+                && (!$0.requiresFunctionKey || shortcut.syntheticEventFlags.contains(.maskSecondaryFn))
+        }
     }
 
     /// Whether an enabled system shortcut uses exactly this combination. Entries
@@ -1095,6 +1098,7 @@ extension GlobalShortcut {
             guard keyCode == shortcut.keyCode, keyCode != Self.noKeyCode else { return false }
             let flags = NSEvent.ModifierFlags(rawValue: UInt(parameters[2].uintValue))
             return GlobalShortcutModifiers(eventFlags: flags) == shortcut.modifiers
+                && (!flags.contains(.function) || shortcut.syntheticEventFlags.contains(.maskSecondaryFn))
         }
     }
 
