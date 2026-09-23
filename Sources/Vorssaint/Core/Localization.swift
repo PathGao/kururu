@@ -173,6 +173,8 @@ struct Strings {
     var keepAwakeEndsIn: String = "Ends in"        // + remaining
     var keepAwakeUntilDisabled: String = "Active until you turn it off"
     var keepAwakeNormalRules: String = "The Mac follows its normal energy rules"
+    var keepAwakeUntilLabel: String = "Until"
+    var keepAwakeUntilStart: String = "Start"
     var keepAwakeOptions: String = "Options"
     var keepAwakeMouseJiggle: String = "Move pointer slightly"
     var keepAwakeMouseJiggleCaption: String = "During a session, moves the pointer a little at the chosen interval."

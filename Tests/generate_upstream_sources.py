@@ -182,7 +182,9 @@ def main():
     keep_awake = "Sources/Vorssaint/Services/KeepAwakeManager.swift"
     keep_awake_methods = [
         "    func refreshPasswordlessStatus(",
-        "    private func activate(minutes:",
+        "    func activate(minutes:",
+        "    func activate(until",
+        "    private func activate(end:",
         "    func deactivate(reason:",
         "    private func applyClamshellPreference(",
         "    private func prepareClamshellPreference(",
@@ -205,7 +207,7 @@ def main():
           + "var recoveryCompleted = false\nvar screenLocked = false\nvar assertionsHeld = false\n"
           + "var endTimer: Timer?\nvar endDate: Date?\nvar sessionTrigger: SessionTrigger?\n"
           + "var activeAutomationConditions = Set<KeepAwakeAutomationCondition>()\n"
-          + "var onSessionEnded: ((EndReason) -> Void)?\n"
+          + "var onSessionEnded: ((EndReason) -> Void)?\nvar automationSuppressedUntilConditionsClear = false\n"
           + declaration(keep_awake, "    @Published var clamshellPreferred:").replace("@Published ", "", 1)
           + "init() { clamshellPreferred = true }\n"
           + "func syncScreenLockMonitoring() {}\nfunc applyAssertions() { assertionsHeld = true }\n"

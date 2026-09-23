@@ -191,7 +191,7 @@ enum KeepAwakeClamshellTests {
         let restoring = active(); C.Sudoers.results = [false, true]
         restoring.deactivate(reason: .manual)
         C.drain()
-        restoring.activate(minutes: 0, trigger: .manual)
+        restoring.activate(end: nil, trigger: .manual)
         C.drain()
         expect(C.Sudoers.calls == [false] && C.AdminShell.prompts == 1,
                "a new session waits while the older restore authorization is pending")
@@ -222,7 +222,7 @@ enum KeepAwakeClamshellTests {
         recovering.recoverIfNeeded()
         C.drain()
         recovering.passwordlessClamshell = false
-        recovering.activate(minutes: 0, trigger: .manual)
+        recovering.activate(end: nil, trigger: .manual)
         C.drain()
         expect(C.Sudoers.calls == [false] && C.Sudoers.installCompletions.isEmpty,
                "launch recovery holds both enable and setup for a new manual session behind its pending off")

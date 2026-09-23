@@ -151,6 +151,7 @@ struct MetricsTests {
             ("RecorderExportRenderingTests", { RecorderExportRenderingTests.run(suite) }),
             ("CapturePortChecks", { CapturePortChecks.run(suite) }),
             ("MediaImageAdvancedOptionsTests", { MediaImageAdvancedOptionsTests.run(suite) }),
+            ("KeepAwakeUntilTests", { KeepAwakeUntilTests.run { suite.expect($0, $1) } }),
         ]
         let names = groups.map(\.0) + ["MetricsTests"]
         var selected = Set<String>()
@@ -2389,6 +2390,22 @@ struct MetricsTests {
         ), "the Keep Awake lock guard accepts the session dictionary's numeric bridge")
         expect(!KeepAwakeAutomationSupport.isScreenLocked(sessionDictionary: nil),
                "an unreadable lock state does not strand Keep Awake in a pause")
+        let cal = Calendar.current
+        let now10 = cal.date(from: DateComponents(year: 2026, month: 1, day: 15, hour: 10, minute: 0))!
+        let pick14 = cal.date(from: DateComponents(year: 2026, month: 1, day: 15, hour: 14, minute: 30))!
+        let resolved1 = KeepAwakeAutomationSupport.resolvedUntilDate(picked: pick14, now: now10)
+        expect(cal.component(.hour, from: resolved1) == 14 && cal.component(.day, from: resolved1) == 15,
+               "resolvedUntilDate keeps a time still ahead today on today")
+        let now22 = cal.date(from: DateComponents(year: 2026, month: 1, day: 15, hour: 22, minute: 0))!
+        let pick7 = cal.date(from: DateComponents(year: 2026, month: 1, day: 15, hour: 7, minute: 0))!
+        let resolved2 = KeepAwakeAutomationSupport.resolvedUntilDate(picked: pick7, now: now22)
+        expect(cal.component(.hour, from: resolved2) == 7 && cal.component(.day, from: resolved2) == 16,
+               "resolvedUntilDate rolls a time already past today to tomorrow")
+        let now1030 = cal.date(from: DateComponents(year: 2026, month: 1, day: 15, hour: 10, minute: 30, second: 20))!
+        let resolved3 = KeepAwakeAutomationSupport.resolvedUntilDate(picked: pick14.addingTimeInterval(-4 * 3600), now: now1030)
+        expect(cal.component(.hour, from: resolved3) == 10 && cal.component(.minute, from: resolved3) == 30
+               && cal.component(.day, from: resolved3) == 16,
+               "resolvedUntilDate rolls the minute already under way to tomorrow instead of ending at once")
         let sleepDisabledReport = """
         System-wide power settings:
          SleepDisabled\t\t1

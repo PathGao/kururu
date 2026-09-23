@@ -607,6 +607,7 @@ if (( TEST )); then
         Tests/RecorderExportRenderingTests.swift \
         Tests/CapturePortChecks.swift \
         Tests/MediaImageAdvancedOptionsTests.swift \
+        Tests/KeepAwakeUntilTests.swift \
         build/generated-tests/*.swift \
     )
     TEST_OUTPUT_FILE_MAP="$TEST_OBJECT_DIR/output-file-map.json"

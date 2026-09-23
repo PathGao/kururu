@@ -2423,6 +2423,8 @@ struct KeepAwakeCard: View {
     @AppStorage(DefaultsKey.keepAwakeMouseJiggleInterval) private var keepAwakeMouseJiggleInterval = 5
     @State private var optionsExpanded = false
     @State private var automationExpanded = false
+    @State private var untilTime = Date().addingTimeInterval(3600)
+    @State private var useEndTime = false
     var collapsible = true
 
     var body: some View {
@@ -2449,13 +2451,30 @@ struct KeepAwakeCard: View {
                 }
 
                 if !awake.isActive {
-                    HStack {
-                        Text(l10n.s.durationLabel)
-                            .font(.system(.subheadline))
-                            .foregroundStyle(.secondary)
-                        Spacer()
-                        DurationPicker(selection: $defaultDuration)
+                    Picker(l10n.s.durationLabel, selection: $useEndTime) {
+                        Text(l10n.s.durationLabel).tag(false)
+                        Text(l10n.s.keepAwakeUntilLabel).tag(true)
                     }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+
+                    if useEndTime {
+                        KeepAwakeEndTimePicker(selection: $untilTime)
+                    } else {
+                        HStack {
+                            Image(systemName: "timer")
+                                .foregroundStyle(.secondary)
+                            DurationPicker(selection: $defaultDuration)
+                            Spacer(minLength: 0)
+                        }
+                    }
+
+                    Button(action: startSession) {
+                        Text(l10n.s.keepAwakeUntilStart)
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
                 }
 
                 optionsDisclosure
@@ -2707,12 +2726,20 @@ struct KeepAwakeCard: View {
             get: { awake.isActive },
             set: { on in
                 if on {
-                    awake.activate(minutes: defaultDuration)
+                    startSession()
                 } else if awake.isActive {
                     awake.toggle()
                 }
             }
         )
+    }
+
+    private func startSession() {
+        if useEndTime {
+            awake.activate(until: KeepAwakeAutomationSupport.resolvedUntilDate(picked: untilTime, now: Date()))
+        } else {
+            awake.activate(minutes: defaultDuration)
+        }
     }
 
     private func grantAccessibility() {

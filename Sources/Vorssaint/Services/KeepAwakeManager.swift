@@ -156,12 +156,19 @@ final class KeepAwakeManager: ObservableObject {
     /// `minutes <= 0` activates indefinitely.
     func activate(minutes: Int) {
         automationSuppressedUntilConditionsClear = false
-        activate(minutes: minutes, trigger: .manual)
+        let minutes = Defaults.sanitizedDefaultDuration(minutes)
+        let end = minutes > 0 ? Date().addingTimeInterval(TimeInterval(minutes) * 60) : nil
+        activate(end: end, trigger: .manual)
     }
 
-    private func activate(minutes: Int, trigger: SessionTrigger) {
+    func activate(until date: Date) {
+        guard date > Date() else { return }
+        automationSuppressedUntilConditionsClear = false
+        activate(end: date, trigger: .manual)
+    }
+
+    private func activate(end: Date?, trigger: SessionTrigger) {
         guard !isTerminating, AppFeature.keepAwake.isAvailable else { return }
-        let minutes = Defaults.sanitizedDefaultDuration(minutes)
         endTimer?.invalidate()
         endTimer = nil
         syncScreenLockMonitoring()
@@ -173,8 +180,7 @@ final class KeepAwakeManager: ObservableObject {
             activeAutomationConditions.removeAll()
         }
         isActive = true
-        if minutes > 0 {
-            let end = Date().addingTimeInterval(TimeInterval(minutes) * 60)
+        if let end {
             endDate = end
             scheduleEnd(at: end)
         } else {
@@ -439,7 +445,7 @@ final class KeepAwakeManager: ObservableObject {
         case .activate:
             guard automaticSessionAllowedByBatteryProtection() else { return }
             activeAutomationConditions = matches
-            activate(minutes: 0, trigger: .automation)
+            activate(end: nil, trigger: .automation)
         case .deactivate:
             deactivate(reason: .manual)
         }
@@ -512,7 +518,7 @@ final class KeepAwakeManager: ObservableObject {
         let matches = currentMatchingAutomationConditions()
         guard !matches.isEmpty else { return false }
         activeAutomationConditions = matches
-        activate(minutes: 0, trigger: .automation)
+        activate(end: nil, trigger: .automation)
         return true
     }
 
