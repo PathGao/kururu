@@ -595,6 +595,7 @@ if (( TEST )); then
         Tests/KeepAwakeCatalogTests.swift \
         Tests/WindowLayoutFeatureTests.swift \
         Tests/SystemShortcutTakeoverTests.swift \
+        Tests/KeepAwakeLidSleepTests.swift \
         Tests/KeepAwakeClamshellTests.swift \
         Tests/DockAutohideHoldTests.swift \
         Tests/DockPreviewFrameRestorationTests.swift \
@@ -608,6 +609,7 @@ if (( TEST )); then
         Tests/CapturePortChecks.swift \
         Tests/MediaImageAdvancedOptionsTests.swift \
         Tests/KeepAwakeUntilTests.swift \
+        Tests/KeepAwakeLidSleepOrderTests.swift \
         build/generated-tests/*.swift \
     )
     TEST_OUTPUT_FILE_MAP="$TEST_OBJECT_DIR/output-file-map.json"

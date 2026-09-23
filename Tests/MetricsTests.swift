@@ -151,7 +151,9 @@ struct MetricsTests {
             ("RecorderExportRenderingTests", { RecorderExportRenderingTests.run(suite) }),
             ("CapturePortChecks", { CapturePortChecks.run(suite) }),
             ("MediaImageAdvancedOptionsTests", { MediaImageAdvancedOptionsTests.run(suite) }),
+            ("KeepAwakeLidSleepTests", { KeepAwakeLidSleepTests.run { suite.expect($0, $1) } }),
             ("KeepAwakeUntilTests", { KeepAwakeUntilTests.run { suite.expect($0, $1) } }),
+            ("KeepAwakeLidSleepOrderTests", { KeepAwakeLidSleepOrderTests.run { suite.expect($0, $1) } }),
         ]
         let names = groups.map(\.0) + ["MetricsTests"]
         var selected = Set<String>()

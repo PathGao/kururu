@@ -6,7 +6,7 @@ import Foundation
 /// Runs the production session entry points on the closed-lid fixture: how a
 /// duration or an end time becomes the session's end date.
 enum KeepAwakeUntilTests {
-    private typealias C = KeepAwakeClamshellContract
+    private typealias C = KeepAwakeLidSleepContract
 
     static func run(expect: (Bool, String) -> Void) {
         func service() -> C.Service {

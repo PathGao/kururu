@@ -192,16 +192,18 @@ def main():
         "    private func markClamshellSetupFailed(",
         "    private func enableClamshell(",
         "    private func disableClamshell(",
+        "    private func sleepIfLidAlreadyClosed(",
         "    func recoverIfNeeded(",
         "    private func finishRecovery(",
         "    private var clamshellNeedsRestore:",
         "    private func finishClamshellRestore(",
     ]
-    write("KeepAwakeClamshell.swift", "import Foundation\n\nextension KeepAwakeClamshellContract {\n"
+    write("KeepAwakeLidSleep.swift", "import Foundation\n\nextension KeepAwakeLidSleepContract {\n"
           + "final class Service {\n"
           + "var isActive = false\nvar sessionPausedForScreenLock = false\nvar clamshellActive = false\n"
           + "var isTerminating = false\nvar clamshellEnablePending = false\nvar clamshellRestorePending = false\n"
           + "var clamshellOperationGeneration = 0\nvar clamshellSetupID: UUID?\n"
+          + "var lidSleepGeneration = 0\nvar lidSleepAttemptsRemaining = 0\n"
           + "var clamshellSetupInProgress = false\nvar clamshellSetupFailed = false\n"
           + "var clamshellSetupRetried = false\nvar passwordlessClamshell = true\n"
           + "var recoveryCompleted = false\nvar screenLocked = false\nvar assertionsHeld = false\n"
@@ -214,9 +216,11 @@ def main():
           + "func releaseAssertions() { assertionsHeld = false }\nfunc scheduleEnd(at date: Date) {}\n"
           + "func startBatteryWatch() {}\nfunc stopBatteryWatch() {}\nfunc syncMouseJiggleTimer() {}\n"
           + "func stopMouseJiggleTimer() {}\nfunc stopAutomationMonitoring() {}\nfunc syncWithPreferences() {}\n"
+          + "static func lidSleepIsAllowed() -> Bool { KeepAwakeAutomationSupport.lidSleepIsAllowed("
+          + "systemAllowsSleep: policy, assertions: assertions) }\n"
           + "".join(declaration(keep_awake, prefix).replace("private ", "", 1) for prefix in keep_awake_methods)
           + "}\n}\n"
-          + "extension KeepAwakeClamshellContract.Sudoers {\n"
+          + "extension KeepAwakeLidSleepContract.Sudoers {\n"
           + declaration("Sources/Vorssaint/Services/ShellSupport.swift", "    static func isConfigured()")
           + declaration("Sources/Vorssaint/Services/ShellSupport.swift", "    static func restoreSleepWithAuthorization(")
           + "}\n")
