@@ -527,10 +527,10 @@ final class ProcessUsageService {
         return totals
             .sorted { $0.value > $1.value }
             .map { owner, value in
-                let startedAt = KillProcessService.currentStartTime(pid: owner)
+                let startedAt = KillProcessService.startTime(for: owner)
                 let name = ResponsibleProcess.displayName(pid: owner,
                                                           fallback: fallbackNames[owner] ?? "pid \(owner)")
-                let identity = KillProcessService.currentStartTime(pid: owner) == startedAt ? startedAt : nil
+                let identity = KillProcessService.startTime(for: owner) == startedAt ? startedAt : nil
                 return ProcessUsage(pid: owner,
                              name: name,
                              value: value,
@@ -568,10 +568,10 @@ final class ProcessUsageService {
 
         return totals
             .map { owner, value in
-                let startedAt = KillProcessService.currentStartTime(pid: owner)
+                let startedAt = KillProcessService.startTime(for: owner)
                 let name = ResponsibleProcess.displayName(pid: owner,
                                                           fallback: fallbackNames[owner] ?? "pid \(owner)")
-                let identity = KillProcessService.currentStartTime(pid: owner) == startedAt ? startedAt : nil
+                let identity = KillProcessService.startTime(for: owner) == startedAt ? startedAt : nil
                 return ProcessUsage(pid: owner,
                              name: name,
                              value: value.down + value.up,

@@ -8,7 +8,7 @@ import Foundation
 /// below and the unit tests can reason about pages without pulling UI in.
 enum SettingsPage: Hashable {
     case features, menuBarIcon, menuBarPanel, monitor
-    case keepAwake, brightness, bluetoothSleep, cleaningMode, mouse, trackpad, switcher, dock, windowLayout, keyboard, cutPaste, windowBehavior, cleaner, uninstaller, homebrew, environment, media, clipboard, urlCleaner, shelf, screenshot, radialMenu, commandBar, mixer, micMute, musicBlock, scratchpad, killProcess, cameraPreview
+    case keepAwake, brightness, bluetoothSleep, cleaningMode, mouse, trackpad, switcher, dock, windowLayout, keyboard, cutPaste, windowBehavior, cleaner, uninstaller, homebrew, environment, media, clipboard, urlCleaner, shelf, screenshot, radialMenu, commandBar, mixer, micMute, musicBlock, scratchpad, killProcess, portManager, cameraPreview
     case shortcuts, advanced, about, releaseNotes
 }
 
@@ -48,6 +48,7 @@ extension SettingsPage: CaseIterable {
         case .environment: return FeatureStrings.environment(language).pageTitle
         case .uninstaller: return s.uninstallerName
         case .killProcess: return FeatureStrings.killProcess(language).pageTitle
+        case .portManager: return FeatureStrings.portManager(language).title
         case .cameraPreview: return FeatureStrings.cameraPreview(language).pageTitle
         case .shortcuts: return s.shortcutsPageTitle
         case .advanced: return SettingsHierarchyStrings(language: language).pageTitle
@@ -278,6 +279,7 @@ extension AppFeature {
         case .homebrew: return FeatureSettingsDestination(.homebrew)
         case .environment: return FeatureSettingsDestination(.environment)
         case .killProcess: return FeatureSettingsDestination(.killProcess)
+        case .portManager: return FeatureSettingsDestination(.portManager)
         case .cameraPreview: return FeatureSettingsDestination(.cameraPreview)
         case .screenshot:
             return FeatureSettingsDestination(.screenshot, sectionAnchor: .screenshot)
@@ -333,6 +335,7 @@ enum FeatureVisibilitySupport {
         case .environment: return [.environment]
         case .uninstaller: return [.uninstaller]
         case .killProcess: return [.killProcess]
+        case .portManager: return [.portManager]
         case .cameraPreview: return [.cameraPreview]
         case .keyboard: return [.keyboardDebounce, .textSnippets, .superKey]
         case .screenshot: return [.screenshot, .screenRecorder, .screenOCR, .colorPicker]

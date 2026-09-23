@@ -617,6 +617,7 @@ enum DefaultsKey {
     static let recorderGIFFrameRate = "recorderGIFFrameRate"
     static let recorderEditorPresets = "recorderEditorPresets"
     static let panelUtilityScreenRecorder = "panelUtilityScreenRecorder"
+    static let panelUtilityPortManager = "panelUtilityPortManager"
 
 
     // Text snippets: type a trigger, get the expansion.
@@ -1321,6 +1322,7 @@ enum Defaults {
         DefaultsKey.recorderGIFFrameRate: 12,
         DefaultsKey.recorderEditorPresets: Data(),
         DefaultsKey.panelUtilityScreenRecorder: true,
+        DefaultsKey.panelUtilityPortManager: true,
         DefaultsKey.screenshotShowCaptureMenuOnShortcut: true,
         DefaultsKey.recorderShowCaptureMenuOnShortcut: true,
         DefaultsKey.screenOCRShowCaptureMenuOnShortcut: true,

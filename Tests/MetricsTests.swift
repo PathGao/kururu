@@ -53,7 +53,6 @@ struct MetricsTests {
             ("EnvironmentConfigurationTests", { EnvironmentConfigurationTests.run { suite.expect($0, $1) } }),
             ("CommandBarActionTests", { CommandBarActionTests.run { suite.expect($0, $1) } }),
             ("CommandBarDestinationTests", { CommandBarDestinationTests.run { suite.expect($0, $1) } }),
-            ("LocalPortTests", { LocalPortTests.run { suite.expect($0, $1) } }),
             ("CleanerPackageCacheTests", { CleanerPackageCacheTests.run { suite.expect($0, $1) } }),
             ("BrightnessNativeBoundaryTests", { BrightnessNativeBoundaryTests.run { suite.expect($0, $1) } }),
             ("BrightnessPipelineTests", { BrightnessPipelineTests.run { suite.expect($0, $1) } }),
@@ -141,6 +140,7 @@ struct MetricsTests {
             ("SystemShortcutTakeoverContract", { SystemShortcutTakeoverContract.run(suite) }),
             ("SystemShortcutTakeoverWiring", { SystemShortcutTakeoverContract.wiring(suite) }),
             ("KeepAwakeClamshellTests", { KeepAwakeClamshellTests.run(expect: { suite.expect($0, $1) }) }),
+            ("PortManagerRefreshTests", { PortManagerRefreshTests.run(suite) }),
         ]
         let names = groups.map(\.0) + ["MetricsTests"]
         var selected = Set<String>()
@@ -13992,7 +13992,7 @@ struct MetricsTests {
 
         // MARK: Features hub catalog
 
-        expect(AppFeature.allCases.count == 54, "feature catalog has 54 features")
+        expect(AppFeature.allCases.count == 55, "feature catalog has 55 features")
         expect(Set(AppFeature.allCases.map(\.rawValue)).count == AppFeature.allCases.count,
                "feature ids are unique")
         expect(AppFeature.allCases.map(\.rawValue) == [
@@ -14005,7 +14005,7 @@ struct MetricsTests {
             "colorPicker", "screenOCR", "cleaningMode", "mediaTools",
             "cleaner", "uninstaller", "homebrew", "screenshot",
             "radialMenu", "scratchpad", "commandBar", "screenRecorder", "environment", "killProcess",
-            "cameraPreview",
+            "cameraPreview", "portManager",
             "monitorCPU", "monitorGPU", "monitorMemory", "monitorNetwork", "monitorDisk", "monitorPower",
             "fanControl",
         ], "feature ids are stable (they persist inside availability keys)")
@@ -14155,9 +14155,9 @@ struct MetricsTests {
         expect(FeatureUnit.availabilityDefaults.count == FeatureUnit.allCases.count
                 && FeatureUnit.allCases.allSatisfy {
                     (FeatureUnit.availabilityDefaults[$0.availabilityKey] as? Bool)
-                        == ($0 != .brightness && $0 != .killProcess)
+                        == ($0 != .brightness && $0 != .killProcess && $0 != .portManager)
                 },
-               "display control and Kill Process are opt-in at module level; other modules preserve existing defaults")
+               "display control, Kill Process and Port Manager are opt-in at module level; other modules preserve existing defaults")
         expect((Defaults.registeredDefaults[DefaultsKey.fanControlEnabled] as? Bool) == false
                 && AppFeature.allCases.filter { $0 != .fanControl && $0.enabledKeys.isEmpty }
                     .compactMap(\.switchKey)
@@ -15084,6 +15084,46 @@ struct MetricsTests {
         expect(cameraQuitCode.contains("CameraPreviewService.shared.suspend()"),
                "quitting releases the camera instead of leaving the session running")
 
+        // MARK: Port manager parser
+
+        let lsofFixture = """
+        p123
+        cExample Server
+        PTCP
+        n127.0.0.1:3000
+        n127.0.0.1:3000
+        n[::1]:3000
+        n*:3001
+        p456
+        cOther Server
+        PTCP
+        n*:3000
+        """
+        let parsedPorts = PortManagerSupport.parseLsof(lsofFixture)
+        expect(parsedPorts.map(\.port) == [3000, 3000, 3000, 3001],
+               "port parser keeps every distinct listening endpoint and removes exact duplicates")
+        expect(parsedPorts.filter { $0.pid == 123 }.count == 3,
+               "port parser keeps multiple ports and address families for one process")
+
+        let invalidEndpointFixture = """
+        p789
+        cNo Port Process
+        PTCP
+        n*:4000
+        n127.0.0.1
+        """
+        let parsedInvalid = PortManagerSupport.parseLsof(invalidEndpointFixture)
+        expect(parsedInvalid.count == 1 && parsedInvalid.first?.port == 4000,
+               "port parser ignores address lines that lack a port instead of pairing with previous port")
+
+        for lang in AppLanguage.allCases {
+            let strings = FeatureStrings.portManager(lang)
+            expect(!strings.hubDescription.isEmpty,
+                   "port manager has a non-empty hub description for \(lang)")
+        }
+        expect(Defaults.registeredDefaults[DefaultsKey.panelUtilityPortManager] as? Bool == true,
+               "the port manager panel row ships visible like its siblings and travels in backups")
+
         // MARK: Kill Process is reachable
         // Every surface a hub feature needs, checked together: switch it off
         // in the hub and the page, its sidebar row and its search keywords all
@@ -15118,12 +15158,15 @@ struct MetricsTests {
             $0.name(L10n.shared.s, language: .enUS)
         }.contains { $0.id == .feature(.killProcess) },
                "searching the feature name finds Kill Process even while it is switched off")
-        // Both surfaces that could already end a process follow the feature,
+        // Every surface that can end a process follows the feature,
         // so switching it off in the hub takes every one of them away.
         for (path, needle) in [
             ("Sources/Vorssaint/UI/MenuPanel/ProcessUsageRow.swift", "AppFeature.killProcess.isAvailable"),
             ("Sources/Vorssaint/Services/CommandBar/CommandBarCatalog.swift", "AppFeature.killProcess.isAvailable"),
             ("Sources/Vorssaint/Services/CommandBar/CommandBarService.swift", "AppFeature.killProcess.isAvailable"),
+            ("Sources/Vorssaint/Services/PortManager/PortManagerService.swift", "AppFeature.killProcess.isAvailable"),
+            ("Sources/Vorssaint/UI/MenuPanel/PanelPortManagerView.swift", "AppFeature.killProcess.isAvailable"),
+            ("Sources/Vorssaint/UI/PortManager/PortManagerView.swift", "AppFeature.killProcess.isAvailable"),
         ] {
             let code = stripCommentLines((try? String(contentsOfFile: path, encoding: .utf8)) ?? "")
             expect(code.contains(needle), "\(path) gates ending a process on the hub feature")
@@ -25001,7 +25044,7 @@ struct MetricsTests {
                         .cameraPreview]),
             (.soundDevices, [.mixer, .soundOutputSwitcher, .micMute, .musicBlock]),
             (.focusEnergy, [.keepAwake, .brightness, .bluetoothSleep, .cleaningMode]),
-            (.appManagement, [.cleaner, .uninstaller, .homebrew, .environment, .killProcess]),
+            (.appManagement, [.cleaner, .uninstaller, .homebrew, .environment, .killProcess, .portManager]),
         ]
         for (group, members) in taxonomy {
             expect(Set(AppFeature.features(in: group)) == members,
@@ -25226,7 +25269,7 @@ struct MetricsTests {
             "Bluetooth on sleep", "Color picker", "Copy text from screen", "Cleaning Mode", "Media", "Cleaner",
             "Uninstaller", "Homebrew", "Screenshot",
             "Radial menu", "Notes", "Command Bar", "Screen recording", "Global environment",
-            "Kill Process", "Camera preview", "CPU",
+            "Kill Process", "Camera preview", "Port Manager", "CPU",
             "GPU", "Memory", "Network", "Disks", "Power", "Fan Control"
         ]
         let featureNamesZhHans = [
@@ -25235,7 +25278,7 @@ struct MetricsTests {
             "粘贴为纯文本", "剪切和粘贴", "重命名快捷键", "暂存架", "清理 URL", "音量混音器", "输出切换器", "静音麦克风",
             "App 启动拦截", "保持唤醒", "显示器", "睡眠时的蓝牙", "颜色吸管", "拷贝屏幕文字", "清洁模式",
             "媒体", "清理", "卸载器", "Homebrew", "截屏", "径向菜单", "便条", "命令栏", "屏幕录制", "全局环境", "结束进程",
-            "相机预览",
+            "相机预览", "端口管理器",
             "CPU", "GPU", "内存", "网络", "磁盘", "电源", "风扇控制"
         ]
         let pageTitlesEnUS = [
@@ -25246,14 +25289,14 @@ struct MetricsTests {
             "Homebrew", "Global environment", "Media", "Clipboard", "Clean URL", "Shelf",
             "Screen capture", "Radial menu", "Command Bar",
             "Volume mixer", "Mute microphone", "App launch blocker", "Notes",
-            "Kill Process", "Camera preview",
+            "Kill Process", "Port Manager", "Camera preview",
             "Keyboard shortcuts", "General & appearance", "About", "What’s New"
         ]
         let pageTitlesZhHans = [
             "功能", "菜单栏图标", "菜单栏面板", "监控", "保持唤醒", "显示器", "睡眠时的蓝牙", "清洁模式", "鼠标", "触控板", "窗口切换器", "Dock", "窗口布局", "键盘", "访达快捷键",
             "窗口行为", "清理", "卸载器", "Homebrew", "全局环境", "媒体", "剪贴板", "清理 URL",
             "暂存架", "屏幕捕捉", "径向菜单", "命令栏", "音量混音器", "静音麦克风", "App 启动拦截",
-            "便条", "结束进程", "相机预览",
+            "便条", "结束进程", "端口管理器", "相机预览",
             "键盘快捷键", "通用与外观", "关于", "新功能"
         ]
         expect(featureNamesEnUS.count == AppFeature.allCases.count
@@ -25637,7 +25680,7 @@ struct MetricsTests {
             (.clipboardFiles, [.clipboard, .cutPaste, .shelf, .scratchpad]),
             (.capture, [.screenshot, .media, .cameraPreview]),
             (.soundDevices, [.mixer, .micMute, .musicBlock]),
-            (.appManagement, [.cleaner, .uninstaller, .homebrew, .environment, .killProcess]),
+            (.appManagement, [.cleaner, .uninstaller, .homebrew, .environment, .killProcess, .portManager]),
         ]
         for (group, units) in unitsByGroup {
             expect(group.units == units,

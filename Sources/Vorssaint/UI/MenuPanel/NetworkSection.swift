@@ -45,10 +45,6 @@ struct NetworkSection: View {
                     }
                     if block != blocks(editing: editing).last { Divider().opacity(0.5) }
                 }
-                if !editing {
-                    Divider().opacity(0.5)
-                    LocalPortSection()
-                }
             }
             .panelCard()
         }

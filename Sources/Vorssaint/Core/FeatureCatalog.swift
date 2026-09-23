@@ -28,7 +28,7 @@ enum AppFeature: String, CaseIterable {
     // new cases append here rather than move.
     case colorPicker, screenOCR, cleaningMode, mediaTools,
          cleaner, uninstaller, homebrew, screenshot, radialMenu, scratchpad,
-         commandBar, screenRecorder, environment, killProcess, cameraPreview
+         commandBar, screenRecorder, environment, killProcess, cameraPreview, portManager
     // System monitor, one entry per metric family (temperatures live with
     // their parent metric: CPU temp with CPU, battery temp with power).
     case monitorCPU, monitorGPU, monitorMemory, monitorNetwork, monitorDisk, monitorPower, fanControl
@@ -46,7 +46,7 @@ enum FeatureUnit: String, CaseIterable {
     case clipboard, cutPaste, shelf
     case mixer, micMute, musicBlock, keepAwake, brightness, bluetoothSleep, cleaningMode
     case screenshot, media, cleaner, uninstaller, homebrew, environment,
-         radialMenu, scratchpad, commandBar, killProcess, cameraPreview
+         radialMenu, scratchpad, commandBar, killProcess, cameraPreview, portManager
     case monitor
 }
 
@@ -112,6 +112,7 @@ extension AppFeature {
         case .uninstaller: return .uninstaller
         case .killProcess: return .killProcess
         case .cameraPreview: return .cameraPreview
+        case .portManager: return .portManager
         case .monitorCPU, .monitorGPU, .monitorMemory, .monitorNetwork, .monitorDisk, .monitorPower,
              .fanControl:
             return .monitor
@@ -176,11 +177,11 @@ extension FeatureUnit {
     /// Registered defaults preserve existing units on update. A unit ships
     /// uninstalled only when every member was an opt-in on its own; an
     /// opt-in member inside a shipped unit keeps its switch off instead.
-    /// Kill Process ships uninstalled, as upstream ships it; a stored choice
-    /// is never rewritten.
+    /// Kill Process and Port Manager ship uninstalled, as upstream ships
+    /// them; a stored choice is never rewritten.
     static var availabilityDefaults: [String: Any] {
         Dictionary(uniqueKeysWithValues: allCases.map {
-            ($0.availabilityKey, $0 != .brightness && $0 != .killProcess)
+            ($0.availabilityKey, $0 != .brightness && $0 != .killProcess && $0 != .portManager)
         })
     }
 
@@ -229,6 +230,7 @@ extension FeatureUnit {
         case .uninstaller: return .uninstaller
         case .killProcess: return .killProcess
         case .cameraPreview: return .cameraPreview
+        case .portManager: return .portManager
         case .monitor: return .monitor
         }
     }
@@ -322,7 +324,7 @@ extension AppFeature {
             return .soundDevices
         case .keepAwake, .brightness, .bluetoothSleep, .cleaningMode:
             return .focusEnergy
-        case .cleaner, .uninstaller, .homebrew, .environment, .killProcess:
+        case .cleaner, .uninstaller, .homebrew, .environment, .killProcess, .portManager:
             return .appManagement
         }
     }
@@ -379,6 +381,7 @@ extension AppFeature {
         case .commandBar: return "command"
         case .killProcess: return "xmark.octagon"
         case .cameraPreview: return "web.camera"
+        case .portManager: return "network"
         case .monitorCPU: return "cpu"
         case .monitorGPU: return "rectangle.connected.to.line.below"
         case .monitorMemory: return "memorychip"
@@ -442,7 +445,7 @@ extension AppFeature {
         case .mixer, .micMute, .keepAwake,
  .colorPicker, .screenOCR, .cleaningMode, .mediaTools,
              .cleaner, .uninstaller, .homebrew, .environment, .screenshot, .scratchpad,
-             .commandBar, .screenRecorder, .killProcess, .cameraPreview,
+             .commandBar, .screenRecorder, .killProcess, .cameraPreview, .portManager,
              .monitorCPU, .monitorGPU, .monitorMemory, .monitorNetwork, .monitorDisk, .monitorPower,
              .fanControl:
             return []
@@ -491,7 +494,7 @@ extension AppFeature {
         case .clipboardHistory, .shelf, .urlCleaner,
              .soundOutputSwitcher, .musicBlock,
              .bluetoothSleep, .colorPicker, .micMute, .mediaTools,
-             .scratchpad, .monitorGPU, .monitorNetwork, .fanControl, .killProcess:
+             .scratchpad, .monitorGPU, .monitorNetwork, .fanControl, .killProcess, .portManager:
             return []
         }
     }
@@ -671,6 +674,7 @@ extension AppFeature {
         case .environment: return FeatureStrings.environment(language).pageTitle
         case .killProcess: return FeatureStrings.killProcess(language).pageTitle
         case .cameraPreview: return FeatureStrings.cameraPreview(language).pageTitle
+        case .portManager: return FeatureStrings.portManager(language).title
         case .monitorCPU: return s.monitorShowCPU
         case .monitorGPU: return s.monitorShowGPU
         case .monitorMemory: return s.monitorShowMemory

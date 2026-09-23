@@ -113,6 +113,9 @@ enum SettingsDirectory {
                                                  FeatureStrings.killProcess(language).killTreeButton,
                                                  FeatureStrings.killProcess(language).restartButton,
                                                  FeatureStrings.killProcess(language).groupToggle]),
+                SettingsDirectoryItem(page: .portManager, s: s, language: language,
+                                      icon: "network",
+                                      keywords: ["port", "ports", "listening", "socket", "PID", "kill port"]),
             ]),
             (hub.groupFocusEnergy, [
                 SettingsDirectoryItem(page: .keepAwake, s: s, language: language, icon: "bolt.fill",

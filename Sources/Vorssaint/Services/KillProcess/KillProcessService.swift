@@ -191,24 +191,21 @@ final class KillProcessService: ObservableObject {
         }
     }
 
-    /// Port inspection never elevates privileges. The identity is captured when
-    /// the row is queried and checked again immediately before the signal.
-    static func terminateWithoutAuthorization(pid: pid_t, name: String, startedAt: UInt64) -> Bool {
-        guard !isProtected(pid: pid, name: name) else { return false }
-        switch attemptDirectKill(target: KillTarget(pid: pid, startedAt: startedAt), force: false) {
-        case .killed, .alreadyGone: return true
-        case .needsAdmin, .failed, .stale: return false
+    /// Kills a process identified by its pid, name, and kernel start time.
+    /// This is the shared safe path for rows supplied by another feature.
+    func kill(pid: pid_t,
+              name: String,
+              startedAt: UInt64,
+              force: Bool,
+              completion: (() -> Void)? = nil) {
+        guard !Self.isProtected(pid: pid, name: name) else {
+            completion?()
+            return
         }
-    }
-
-    /// The monitor passes the identity from its displayed snapshot, before
-    /// confirmation. killBatch rechecks it before any signal or authorization.
-    func kill(pid: pid_t, name: String, startedAt: UInt64, force: Bool) {
-        guard !Self.isProtected(pid: pid, name: name) else { return }
         let target = KillTarget(pid: pid, startedAt: startedAt)
         DispatchQueue.global(qos: .userInitiated).async {
             let removed = self.killBatch([target], force: force, adminPromptProcessName: name)
-            self.finishKill(removed: removed)
+            self.finishKill(removed: removed, completion: completion)
             if !removed.contains(pid) {
                 DispatchQueue.main.async {
                     let text = FeatureStrings.killProcess(L10n.shared.language)
@@ -307,7 +304,7 @@ final class KillProcessService: ObservableObject {
     /// reconciles with a real `ps` snapshot shortly after - long enough for
     /// the kernel to have reaped the process, short enough nobody notices
     /// the wait.
-    private func finishKill(removed: Set<pid_t>) {
+    private func finishKill(removed: Set<pid_t>, completion: (() -> Void)? = nil) {
         DispatchQueue.main.async {
             if !removed.isEmpty {
                 self.entries.removeAll { removed.contains($0.pid) }
@@ -315,6 +312,7 @@ final class KillProcessService: ObservableObject {
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
             self?.refresh(force: true)
+            completion?()
         }
     }
 
@@ -405,6 +403,10 @@ final class KillProcessService: ObservableObject {
         KillProcessSupport.isProtected(pid: pid, name: name, path: path)
     }
 
+    static func startTime(for pid: pid_t) -> UInt64? {
+        currentStartTime(pid: pid)
+    }
+
     private static func target(for entry: KillProcessEntry) -> KillTarget? {
         guard let startedAt = entry.startedAt else { return nil }
         return KillTarget(pid: entry.pid, startedAt: startedAt)
@@ -418,9 +420,9 @@ final class KillProcessService: ObservableObject {
         currentStartTime(pid: target.pid) == target.startedAt
     }
 
-    static func currentStartTime(pid: pid_t,
-                                 expectedParent: pid_t? = nil,
-                                 expectedPath: String? = nil) -> UInt64? {
+    private static func currentStartTime(pid: pid_t,
+                                         expectedParent: pid_t? = nil,
+                                         expectedPath: String? = nil) -> UInt64? {
         var info = proc_bsdinfo()
         let size = Int32(MemoryLayout<proc_bsdinfo>.size)
         guard proc_pidinfo(pid, PROC_PIDTBSDINFO, 0, &info, size) == size else { return nil }

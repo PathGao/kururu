@@ -609,6 +609,7 @@ extension AppFeature {
         case .homebrew: return hub.descHomebrew
         case .environment: return FeatureStrings.environment(L10n.shared.language).hubDescription
         case .killProcess: return FeatureStrings.killProcess(L10n.shared.language).hubDescription
+        case .portManager: return FeatureStrings.portManager(L10n.shared.language).hubDescription
         case .cameraPreview: return FeatureStrings.cameraPreview(L10n.shared.language).hubDescription
         case .monitorCPU: return hub.descMonitorCPU
         case .monitorGPU: return hub.descMonitorGPU
