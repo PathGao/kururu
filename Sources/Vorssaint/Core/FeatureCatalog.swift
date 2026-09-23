@@ -46,8 +46,8 @@ enum FeatureUnit: String, CaseIterable {
     case clipboard, cutPaste, shelf
     case mixer, micMute, musicBlock, keepAwake, brightness, bluetoothSleep, cleaningMode
     case screenshot, media, cleaner, uninstaller, homebrew, environment,
-         radialMenu, scratchpad, commandBar, killProcess, cameraPreview, portManager
-    case monitor
+         radialMenu, scratchpad, commandBar, cameraPreview
+    case monitor, killProcess, portManager
 }
 
 /// Hub sections, in display order. The monitor comes first because it sits
@@ -303,7 +303,7 @@ extension AppFeature {
     var group: FeatureGroup {
         switch self {
         case .monitorCPU, .monitorGPU, .monitorMemory, .monitorNetwork, .monitorDisk, .monitorPower,
-             .fanControl:
+             .fanControl, .killProcess, .portManager:
             return .monitor
         case .switcher, .dockPreview, .dockClick, .windowMaximizer, .windowLayout, .autoQuit,
              .quitWindowProtection:
@@ -324,7 +324,7 @@ extension AppFeature {
             return .soundDevices
         case .keepAwake, .brightness, .bluetoothSleep, .cleaningMode:
             return .focusEnergy
-        case .cleaner, .uninstaller, .homebrew, .environment, .killProcess, .portManager:
+        case .cleaner, .uninstaller, .homebrew, .environment:
             return .appManagement
         }
     }

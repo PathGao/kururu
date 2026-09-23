@@ -15134,12 +15134,12 @@ struct MetricsTests {
                 && AppFeature.killProcess.hasNavigableSettingsDestination
                 && FeatureVisibilitySupport.features(for: .killProcess) == [.killProcess],
                "Kill Process owns one unit, one page and one destination")
-        expect(AppFeature.killProcess.group == .appManagement
+        expect(AppFeature.killProcess.group == .monitor
                 && AppFeature.killProcess.isBeta
                 && AppFeature.killProcess.enabledKeys.isEmpty
                 && AppFeature.killProcess.permissions.isEmpty
                 && AppFeature.killProcess.switchKey == nil,
-               "Kill Process is an on-demand beta tool under app management, asking for no permission")
+               "Kill Process is an on-demand beta tool under monitor, asking for no permission")
         expect(!FeatureVisibilitySupport.isPageVisible(.killProcess, isAvailable: { _ in false })
                 && FeatureVisibilitySupport.isPageVisible(.killProcess, isAvailable: { $0 == .killProcess }),
                "the Kill Process page follows its own feature")
@@ -25030,8 +25030,8 @@ struct MetricsTests {
                "the nine groups render in taxonomy order, the two surfaces that reach every "
                + "feature first, got \(FeatureGroup.allCases)")
         let taxonomy: [(FeatureGroup, Set<AppFeature>)] = [
-            (.monitor, [.monitorCPU, .monitorGPU, .monitorMemory, .monitorNetwork, .monitorDisk,
-                        .monitorPower, .fanControl]),
+            (.monitor, [.killProcess, .portManager, .monitorCPU, .monitorGPU, .monitorMemory,
+                        .monitorNetwork, .monitorDisk, .monitorPower, .fanControl]),
             (.windowsDesktop, [.switcher, .dockPreview, .dockClick, .windowMaximizer, .windowLayout,
                                .autoQuit, .quitWindowProtection]),
             (.inputDevices, [.scrollInverter, .scrollHorizontal, .focusFollowsMouse, .smoothScroll,
@@ -25044,7 +25044,7 @@ struct MetricsTests {
                         .cameraPreview]),
             (.soundDevices, [.mixer, .soundOutputSwitcher, .micMute, .musicBlock]),
             (.focusEnergy, [.keepAwake, .brightness, .bluetoothSleep, .cleaningMode]),
-            (.appManagement, [.cleaner, .uninstaller, .homebrew, .environment, .killProcess, .portManager]),
+            (.appManagement, [.cleaner, .uninstaller, .homebrew, .environment]),
         ]
         for (group, members) in taxonomy {
             expect(Set(AppFeature.features(in: group)) == members,
@@ -25672,7 +25672,7 @@ struct MetricsTests {
         expect(FeatureUnit.allCases.allSatisfy { Set($0.features.map(\.group)).count == 1 },
                "a unit's members share one group")
         let unitsByGroup: [(FeatureGroup, [FeatureUnit])] = [
-            (.monitor, [.monitor]),
+            (.monitor, [.monitor, .killProcess, .portManager]),
             (.focusEnergy, [.keepAwake, .brightness, .bluetoothSleep, .cleaningMode]),
             (.windowsDesktop, [.switcher, .dock, .windowLayout, .windowBehavior]),
             (.inputDevices, [.mouse, .trackpad, .keyboard]),
@@ -25680,7 +25680,7 @@ struct MetricsTests {
             (.clipboardFiles, [.clipboard, .cutPaste, .shelf, .scratchpad]),
             (.capture, [.screenshot, .media, .cameraPreview]),
             (.soundDevices, [.mixer, .micMute, .musicBlock]),
-            (.appManagement, [.cleaner, .uninstaller, .homebrew, .environment, .killProcess, .portManager]),
+            (.appManagement, [.cleaner, .uninstaller, .homebrew, .environment]),
         ]
         for (group, units) in unitsByGroup {
             expect(group.units == units,
