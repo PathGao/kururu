@@ -145,6 +145,8 @@ struct MetricsTests {
             ("CommandBarTerminationContract", { CommandBarTerminationContract.run(suite) }),
             ("BrightnessShortcutTargetContract", { BrightnessShortcutTargetContract.run(suite) }),
             ("ScreenshotWatermarkTests", { ScreenshotWatermarkTests.run(suite) }),
+            ("RecorderExportSpeedTests", { RecorderExportSpeedTests.run(suite) }),
+            ("RecorderExportRenderingTests", { RecorderExportRenderingTests.run(suite) }),
             ("CapturePortChecks", { CapturePortChecks.run(suite) }),
         ]
         let names = groups.map(\.0) + ["MetricsTests"]
@@ -22711,7 +22713,7 @@ struct MetricsTests {
         expect(!recorderComposerSource.isEmpty,
                "the recorder composer source reads back for its shape check")
         expect(recorderComposerSource.contains(
-                    "outputSize: CGSize) async -> AVMutableVideoComposition?"),
+                    ") async -> AVMutableVideoComposition?"),
                "a composition that cannot be built answers with nothing, never with the plain one")
         let recorderExporterSource = (try? String(
             contentsOfFile: "Sources/Vorssaint/Services/Recorder/RecorderExporter.swift",

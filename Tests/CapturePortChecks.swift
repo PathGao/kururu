@@ -10,6 +10,7 @@ import Foundation
 enum CapturePortChecks {
     static func run(_ suite: TestSuite) {
         arrowStyles(suite)
+        exportSpeedBlur(suite)
     }
 
     private static func arrowStyles(_ suite: TestSuite) {
@@ -22,5 +23,17 @@ enum CapturePortChecks {
         }
         suite.expect(path(.doubleEnded) != nil && path(.doubleEnded) != path(.open),
                      "a double-ended arrow draws a second head at its tail")
+    }
+
+    /// A retimed frame can fall between two plan samples. The rendering test
+    /// passes with the floor sample alone, so pin the two-sample coverage.
+    private static func exportSpeedBlur(_ suite: TestSuite) {
+        let composer = (try? String(
+            contentsOfFile: "Sources/Vorssaint/Services/Recorder/RecorderComposer.swift",
+            encoding: .utf8)) ?? ""
+        suite.expect(composer.contains("let lower = min(last, Int(position.rounded(.down)))")
+                        && composer.contains("let upper = min(last, Int(position.rounded(.up)))")
+                        && composer.contains("(lower...upper).contains(where: {"),
+                     "a privacy blur covers both plan samples around a retimed frame")
     }
 }
