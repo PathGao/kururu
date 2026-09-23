@@ -600,6 +600,7 @@ if (( TEST )); then
         Tests/CommandBarInputSourceTests.swift \
         Tests/BrightnessShortcutTargetTests.swift \
         Tests/ScreenshotWatermarkTests.swift \
+        Tests/RecorderZoomAimingTests.swift \
         Tests/RecorderExportSpeedTests.swift \
         Tests/RecorderExportRenderingTests.swift \
         Tests/CapturePortChecks.swift \

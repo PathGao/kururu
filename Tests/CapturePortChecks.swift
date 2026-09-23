@@ -11,6 +11,7 @@ enum CapturePortChecks {
     static func run(_ suite: TestSuite) {
         arrowStyles(suite)
         exportSpeedBlur(suite)
+        wiring(suite)
     }
 
     private static func arrowStyles(_ suite: TestSuite) {
@@ -35,5 +36,20 @@ enum CapturePortChecks {
                         && composer.contains("let upper = min(last, Int(position.rounded(.up)))")
                         && composer.contains("(lower...upper).contains(where: {"),
                      "a privacy blur covers both plan samples around a retimed frame")
+    }
+
+    /// Two call sites the fixtures stub out: the window list must hand the
+    /// owner to the border check, and a preview rebuild must wait while a
+    /// zoom focus is being chosen.
+    private static func wiring(_ suite: TestSuite) {
+        func source(_ path: String) -> String {
+            (try? String(contentsOfFile: path, encoding: .utf8)) ?? ""
+        }
+        suite.expect(source("Sources/Vorssaint/Services/QuickTools/ScreenshotCaptureEngine.swift")
+                        .contains("ownerName: entry[kCGWindowOwnerName as String] as? String)"),
+                     "window picking passes each window's owner to the border overlay check")
+        suite.expect(source("Sources/Vorssaint/Services/Recorder/RecorderEditorController.swift")
+                        .contains("guard duration > 0, sourceSize.width > 0, !isPickingBlurArea, !isAimingZoom else { return }"),
+                     "the edited preview is not rebuilt while a zoom focus is being chosen")
     }
 }

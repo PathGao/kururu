@@ -163,6 +163,14 @@ def main():
                     .replace("private static func", "static func", 1) for prefix in [
                         "    private static func applyBrightness(",
                         "    private static func pointerDisplay("])
+    recorder = "Sources/Vorssaint/Services/Recorder/RecorderEditorController.swift"
+    write("RecorderZoomAiming.swift", "import Foundation\nimport Combine\n"
+          + "extension RecorderZoomAimingTests {\nfinal class Model: State {\n"
+          + declaration(recorder, "    @Published var selectedZoomID:")
+          + "".join(declaration(recorder, prefix) for prefix in [
+              "    func beginAiming(", "    func endAiming(", "    func aim(",
+              "    func setSelectedZoomFocus(",
+              "    func beginPickingBlurArea(", "    func endPickingBlurArea("])
           + "}\n}\n")
     keep_awake = "Sources/Vorssaint/Services/KeepAwakeManager.swift"
     keep_awake_methods = [
