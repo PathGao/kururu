@@ -550,6 +550,7 @@ if (( TEST )); then
         Sources/Vorssaint/Core/UninstallerSelectionSupport.swift \
         Tests/UninstallerSelectionTests.swift \
         Sources/Vorssaint/Services/ManagedDownloads/WhatsAppDownloadSupport.swift \
+        Sources/Vorssaint/Core/SecureInputSupport.swift \
         Sources/Vorssaint/Services/Metrics/CPUCoreUsageSupport.swift \
         Tests/CPUCoreUsageTests.swift \
         Sources/Vorssaint/Services/Metrics/CPUCoreTopologySupport.swift \

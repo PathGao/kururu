@@ -7,6 +7,7 @@ import SwiftUI
 struct CommandBarSettings: View {
     @ObservedObject private var l10n = L10n.shared
     @ObservedObject private var service = CommandBarService.shared
+    @ObservedObject private var secureInput = SecureInputMonitor.shared
     @AppStorage(DefaultsKey.commandBarShortcutEnabled) private var shortcutEnabled = false
     @AppStorage(DefaultsKey.commandBarCompactMode) private var compactMode = false
     @AppStorage(DefaultsKey.commandBarDisabledSources) private var disabledSources = ""
@@ -90,6 +91,9 @@ struct CommandBarSettings: View {
                     Text(l10n.s.shortcutUnavailable)
                         .font(SettingsTypography.caption)
                         .foregroundStyle(.orange)
+                }
+                if secureInput.holder != .off {
+                    SecureInputRow()
                 }
             } header: {
                 SettingsSectionHeading(title: AppFeature.commandBar.name(l10n.s, language: l10n.language), systemImage: "magnifyingglass")
@@ -339,6 +343,7 @@ struct CommandBarSettings: View {
             rankingSection
         }
         .formStyle(.grouped)
+        .observesSecureInput()
         .sheet(isPresented: $showsAppShortcuts) {
             CommandBarAppShortcutsView()
         }

@@ -12,6 +12,7 @@ struct TextSnippetsSections: View {
     @ObservedObject private var l10n = L10n.shared
     @ObservedObject private var permissions = Permissions.shared
     @ObservedObject private var library = SnippetLibraryService.shared
+    @ObservedObject private var secureInput = SecureInputMonitor.shared
     @AppStorage(DefaultsKey.textSnippetsEnabled) private var enabled = false
     @AppStorage(DefaultsKey.snippetLibraryEnabled) private var libraryEnabled = false
     @AppStorage(DefaultsKey.snippetSoundEnabled) private var soundEnabled = false
@@ -85,6 +86,13 @@ struct TextSnippetsSections: View {
                             .foregroundStyle(.orange)
                     }
                 }
+                // The library beeps under secure input whether or not trigger
+                // expansion is on, so either toggle earns the explanation. It
+                // answers to both, so it sits under both rather than among the
+                // options of one of them.
+                if enabled || libraryEnabled, secureInput.holder != .off {
+                    SecureInputRow()
+                }
                 Text(text.manageButton).font(SettingsTypography.sectionTitle)
                     .accessibilityAddTraits(.isHeader)
                 if snippets.isEmpty {
@@ -115,6 +123,7 @@ struct TextSnippetsSections: View {
             }
         }
         .settingsSectionAnchor(.textSnippets)
+        .observesSecureInput(isActive: enabled || libraryEnabled)
         .sheet(isPresented: $creating) {
             SnippetEditor(text: text,
                           snippet: TextSnippet(),
