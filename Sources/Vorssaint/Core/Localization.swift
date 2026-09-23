@@ -687,6 +687,8 @@ struct Strings {
 
     // MARK: Panel — network
     var networkSection: String = "Network"
+    var networkIPAddresses: String = "IP addresses"
+    var networkLocalIP: String = "Local IPv4"
     var networkDownload: String = "Download"
     var networkUpload: String = "Upload"
     var networkThisSession: String = "This session"

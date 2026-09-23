@@ -53,6 +53,7 @@ struct MetricsTests {
             ("EnvironmentConfigurationTests", { EnvironmentConfigurationTests.run { suite.expect($0, $1) } }),
             ("CommandBarActionTests", { CommandBarActionTests.run { suite.expect($0, $1) } }),
             ("CommandBarDestinationTests", { CommandBarDestinationTests.run { suite.expect($0, $1) } }),
+            ("NetworkAddressTests", { NetworkAddressTests.run { suite.expect($0, $1) } }),
             ("CleanerPackageCacheTests", { CleanerPackageCacheTests.run { suite.expect($0, $1) } }),
             ("BrightnessNativeBoundaryTests", { BrightnessNativeBoundaryTests.run { suite.expect($0, $1) } }),
             ("BrightnessPipelineTests", { BrightnessPipelineTests.run { suite.expect($0, $1) } }),
