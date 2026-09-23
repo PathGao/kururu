@@ -16,7 +16,6 @@ struct CommandBarSettings: View {
     @AppStorage(DefaultsKey.commandBarPins) private var pinsRaw = ""
     @AppStorage(DefaultsKey.commandBarHidden) private var hiddenRaw = ""
     @AppStorage(DefaultsKey.commandBarUsage) private var usageRaw = ""
-    @AppStorage(DefaultsKey.commandBarQueryHabits) private var queryHabitsRaw = ""
     @AppStorage(DefaultsKey.commandBarLinks) private var linksData = Data()
     @AppStorage(DefaultsKey.commandBarRowShortcuts) private var rowShortcutsRaw = ""
     @AppStorage(DefaultsKey.commandBarFileScopes) private var fileScopesRaw = ""
@@ -391,9 +390,6 @@ struct CommandBarSettings: View {
         .onChange(of: usageRaw) { _, value in
             if !value.isEmpty { didResetRanking = false }
         }
-        .onChange(of: queryHabitsRaw) { _, value in
-            if !value.isEmpty { didResetRanking = false }
-        }
     }
 
     // MARK: - The places the person saved
@@ -479,6 +475,7 @@ struct CommandBarSettings: View {
         case .menus: return text.sourceMenus
         case .windows: return text.sourceWindows
         case .quitApps: return text.sourceQuitApps
+        case .uninstallApps: return l10n.s.uninstallerName
         case .settingsPages: return text.sourceSettingsPages
         case .macSettings: return text.sourceMacSettings
         case .snippets: return text.sourceSnippets

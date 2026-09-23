@@ -96,7 +96,9 @@ final class AppUninstaller: ObservableObject {
     }
 
     /// Once removal starts, its target and follow-up cleanup remain fixed.
-    var isBusy: Bool { phase == .removing || isRemovingWithHomebrew }
+    var isBusy: Bool {
+        phase == .removing || isRemovingWithHomebrew
+    }
 
     struct HomebrewRemovalConfirmation {
         let package: HomebrewPackage
@@ -114,8 +116,9 @@ final class AppUninstaller: ObservableObject {
     // MARK: - Selection & scan
 
     /// Reads an app bundle and starts scanning for its leftovers.
-    func select(appURL: URL) {
-        guard !isBusy else { return }
+    @discardableResult
+    func select(appURL: URL) -> Bool {
+        guard !isBusy else { return false }
         let bundle = Bundle(url: appURL)
         let selectedURL = appURL.standardizedFileURL
         let bundleID = UninstallerSupport.verifiedBundleID(bundle?.bundleIdentifier)
@@ -132,11 +135,11 @@ final class AppUninstaller: ObservableObject {
             system: InstalledApps.isSystemApplication(at: appURL), protected: protected,
             actualPath: actualPath, valid: valid) {
             rejectSelection(reason)
-            return
+            return false
         }
         guard let bundleID, let selectedIdentity, let selectedInfoIdentity else {
             rejectSelection(.invalidApplication)
-            return
+            return false
         }
         selectionError = nil
         var name = FileManager.default.displayName(atPath: appURL.path)
@@ -204,10 +207,11 @@ final class AppUninstaller: ObservableObject {
                 }
             }
         }
+        return true
     }
 
     func setInclude(_ include: Bool, for id: UUID) {
-        guard !isRemovingWithHomebrew else { return }
+        guard !isBusy else { return }
         guard let index = items.firstIndex(where: { $0.id == id }) else { return }
         items[index].include = include
     }

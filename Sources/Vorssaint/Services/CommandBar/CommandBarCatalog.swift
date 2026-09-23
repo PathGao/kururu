@@ -74,6 +74,8 @@ struct CommandBarEntry: Identifiable {
     /// rows the bar makes up have no such place, and saying so here is what
     /// keeps ⌘Return and the actions list from ever disagreeing about it.
     let revealPath: String?
+    /// Selection must succeed before the bar replaces search with a review.
+    let uninstallAppURL: URL?
     let run: (Int?) -> Void
 
     /// Whether this row can be shown where it lives. One rule, read by the
@@ -87,6 +89,7 @@ struct CommandBarEntry: Identifiable {
         if confirmationPrompt != nil { return true }
         if numericRange != nil, !numericIsOptional { return true }
         if case .needsSetup = trouble { return true }
+        if uninstallAppURL != nil { return true }
         return false
     }
 
@@ -101,7 +104,8 @@ struct CommandBarEntry: Identifiable {
                         isAnswer: isAnswer, countsUsage: countsUsage,
                         matchTitle: matchTitle, keepsBarOpen: keepsBarOpen,
                         waitsForOpenResult: waitsForOpenResult,
-                        takesArgument: takesArgument, revealPath: revealPath, run: run)
+                        takesArgument: takesArgument, revealPath: revealPath,
+                        uninstallAppURL: uninstallAppURL, run: run)
     }
 
     /// Glyph rows get a tinted plate behind the icon; real app, file and
@@ -133,6 +137,7 @@ struct CommandBarEntry: Identifiable {
          waitsForOpenResult: Bool = false,
          takesArgument: Bool = false,
          revealPath: String? = nil,
+         uninstallAppURL: URL? = nil,
          run: @escaping (Int?) -> Void) {
         self.id = id
         self.stableKey = stableKey ?? id
@@ -155,6 +160,7 @@ struct CommandBarEntry: Identifiable {
         self.waitsForOpenResult = waitsForOpenResult
         self.takesArgument = takesArgument
         self.revealPath = revealPath
+        self.uninstallAppURL = uninstallAppURL
         self.run = run
     }
 }
@@ -669,6 +675,32 @@ enum CommandBarCatalog {
                 subtitle: area(.uninstaller, under: AppFeature.uninstaller.name(s, language: language)),
                 icon: .symbol("trash"),
                 run: { _ in openSettings(at: .uninstaller) }))
+            if UserDefaults.standard.bool(forKey: DefaultsKey.uninstallerCommandBarEnabled) {
+                entries.append(CommandBarEntry(
+                    id: "uninstall.browse",
+                    title: s.uninstallerCommandBarBrowseTitle,
+                    subtitle: AppFeature.uninstaller.name(s, language: language),
+                    icon: .symbol("trash"),
+                    // A habit boost on this row could otherwise outweigh the
+                    // Finder selection's fixed rank bias after enough clicks,
+                    // putting the wrong "Uninstall" row first; a plain
+                    // navigation entry has no business competing on habit.
+                    countsUsage: false,
+                    keepsBarOpen: true,
+                    run: { _ in
+                        let service = CommandBarService.shared
+                        service.query = ""
+                        service.setCategory(.uninstallApps)
+                    }))
+                entries.append(CommandBarEntry(
+                    id: "uninstall.finder",
+                    title: s.uninstallerCommandBarFinderTitle,
+                    subtitle: AppFeature.uninstaller.name(s, language: language),
+                    icon: .symbol("app.badge"),
+                    countsUsage: false,
+                    keepsBarOpen: true,
+                    run: { _ in CommandBarService.shared.uninstallFinderSelection() }))
+            }
         }
         entries.append(CommandBarEntry(
             id: CommandBarPreferences.emojiBrowserRowID,
@@ -1007,6 +1039,56 @@ enum CommandBarCatalog {
                     KillProcessService.shared.kill(process, force: false)
                 })
         }
+    }
+
+    /// One row per installed app, offered only inside the "Uninstall
+    /// Application" category browse - never in the flat search pool, since a
+    /// few hundred destructive rows have no business sitting in a list
+    /// someone might arrow through by accident. Selecting one opens the full
+    /// leftover-files review, the same as picking the app straight from
+    /// Finder does.
+    static func uninstallEntries(_ apps: [InstalledApps.InstalledApp],
+                                 bar: CommandBarFeatureStrings) -> [CommandBarEntry] {
+        guard AppFeature.uninstaller.isAvailable,
+              UserDefaults.standard.bool(forKey: DefaultsKey.uninstallerCommandBarEnabled)
+        else { return [] }
+        let ownBundleID = Bundle.main.bundleIdentifier
+        return apps.filter { !$0.isSystem && $0.bundleID != ownBundleID }.map { app in
+            CommandBarEntry(
+                id: "uninstall.\(app.id)",
+                stableKey: app.bundleID.map { "uninstall.bundle.\($0)" } ?? "uninstall.\(app.id)",
+                title: app.name,
+                subtitle: bar.kindApp,
+                keywords: app.alternateNames.joined(separator: " "),
+                icon: .appIcon(path: app.url.path),
+                revealPath: app.url.path,
+                uninstallAppURL: app.url,
+                run: { _ in })
+        }
+    }
+
+    /// One row for whatever single app is selected in Finder's Applications
+    /// folder, so uninstalling it never needs the bar's own picker first.
+    static func uninstallSelectionEntries(urls: [URL], automationDenied: Bool) -> [CommandBarEntry] {
+        guard AppFeature.uninstaller.isAvailable,
+              UserDefaults.standard.bool(forKey: DefaultsKey.uninstallerCommandBarEnabled),
+              urls.count == 1, let url = urls.first,
+              url.pathExtension.lowercased() == "app",
+              InstalledApps.isInApplicationsFolder(url),
+              !InstalledApps.isSystemApplication(at: url)
+        else { return [] }
+        let bar = FeatureStrings.commandBar(L10n.shared.language)
+        var name = FileManager.default.displayName(atPath: url.path)
+        if name.hasSuffix(".app") { name.removeLast(4) }
+        return [CommandBarEntry(
+            id: "selection.uninstall",
+            title: String(format: bar.uninstallAppFormat, name),
+            subtitle: AppFeature.uninstaller.name(L10n.shared.s, language: L10n.shared.language),
+            icon: .appIcon(path: url.path),
+            trouble: automationDenied ? .needsPermission : nil,
+            revealPath: url.path,
+            uninstallAppURL: url,
+            run: { _ in })]
     }
 
     /// One row per open window, so a person with six windows of the same app

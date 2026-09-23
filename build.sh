@@ -614,6 +614,7 @@ if (( TEST )); then
         Tests/KeepAwakeLidSleepOrderTests.swift \
         Tests/DockPreviewScopeTests.swift \
         Tests/DockPreviewScopeWiringTests.swift \
+        Tests/UninstallerFlowTests.swift \
         build/generated-tests/*.swift \
     )
     TEST_OUTPUT_FILE_MAP="$TEST_OBJECT_DIR/output-file-map.json"
