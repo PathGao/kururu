@@ -38,6 +38,12 @@ struct ScreenshotFeatureStrings {
     var toolShortcutsCaption: String = "Use the arrows or choose a number. The first nine tools use 1 to 9. The others have no shortcut."
     var toolSelect: String = "Select"
     var toolArrow: String = "Arrow"
+    var arrowStyleLabel: String = "Arrow style"
+    var arrowStyleFilled: String = "Solid"
+    var arrowStyleOutline: String = "Outline"
+    var arrowStyleOpen: String = "Open"
+    var arrowStyleDoubleEnded: String = "Double-ended"
+    var arrowStyleScribbly: String = "Scribbly"
     var toolLine: String = "Line"
     var toolRect: String = "Rectangle"
     var toolEllipse: String = "Ellipse"
@@ -129,6 +135,58 @@ struct ScreenshotFeatureStrings {
     var loupeZoomFast: String = "Fast"
     var loupeZoomStepped: String = "Step by step"
     var loupeZoomOptionCaption: String = "Hold ⌥ to temporarily use the other mode."
+    var watermarkLabel: String = "Watermark"
+    var watermarkImageLabel: String = "Image"
+    var watermarkTextPlaceholder: String = "Watermark text"
+    var watermarkPositionLabel: String = "Position"
+    var watermarkSizeLabel: String = "Size"
+    var watermarkOpacityLabel: String = "Opacity"
+    var watermarkRotationLabel: String = "Rotation"
+    var watermarkSavePreset: String = "Save watermark"
+    var watermarkColorRed: String = "Red"
+    var watermarkColorOrange: String = "Orange"
+    var watermarkColorYellow: String = "Yellow"
+    var watermarkColorGreen: String = "Green"
+    var watermarkColorBlue: String = "Blue"
+    var watermarkColorPurple: String = "Purple"
+    var watermarkColorBlack: String = "Black"
+    var watermarkColorWhite: String = "White"
+    var watermarkPositionTopLeading: String = "Top left"
+    var watermarkPositionTop: String = "Top center"
+    var watermarkPositionTopTrailing: String = "Top right"
+    var watermarkPositionLeading: String = "Center left"
+    var watermarkPositionCenter: String = "Center"
+    var watermarkPositionTrailing: String = "Center right"
+    var watermarkPositionBottomLeading: String = "Bottom left"
+    var watermarkPositionBottom: String = "Bottom center"
+    var watermarkPositionBottomTrailing: String = "Bottom right"
+
+    func watermarkColorName(_ color: ScreenshotSupport.ColorID) -> String {
+        switch color {
+        case .red: return watermarkColorRed
+        case .orange: return watermarkColorOrange
+        case .yellow: return watermarkColorYellow
+        case .green: return watermarkColorGreen
+        case .blue: return watermarkColorBlue
+        case .purple: return watermarkColorPurple
+        case .black: return watermarkColorBlack
+        case .white: return watermarkColorWhite
+        }
+    }
+
+    func watermarkPositionName(_ anchor: ScreenshotSupport.WatermarkStyle.Anchor) -> String {
+        switch anchor {
+        case .topLeading: return watermarkPositionTopLeading
+        case .top: return watermarkPositionTop
+        case .topTrailing: return watermarkPositionTopTrailing
+        case .leading: return watermarkPositionLeading
+        case .center: return watermarkPositionCenter
+        case .trailing: return watermarkPositionTrailing
+        case .bottomLeading: return watermarkPositionBottomLeading
+        case .bottom: return watermarkPositionBottom
+        case .bottomTrailing: return watermarkPositionBottomTrailing
+        }
+    }
 }
 
 extension FeatureStrings {
@@ -1313,6 +1371,12 @@ extension ScreenshotFeatureStrings {
         toolShortcutsCaption: "使用箭头或选择数字。前九个工具使用 1 到 9，其余工具没有快捷键。",
         toolSelect: "选择",
         toolArrow: "箭头",
+        arrowStyleLabel: "箭头样式",
+        arrowStyleFilled: "实心",
+        arrowStyleOutline: "轮廓",
+        arrowStyleOpen: "开口",
+        arrowStyleDoubleEnded: "双向",
+        arrowStyleScribbly: "涂鸦",
         toolLine: "直线",
         toolRect: "矩形",
         toolEllipse: "椭圆",
@@ -1403,7 +1467,32 @@ extension ScreenshotFeatureStrings {
         loupeWheelZoomLabel: "滚轮缩放",
         loupeZoomFast: "快速",
         loupeZoomStepped: "逐步",
-        loupeZoomOptionCaption: "按住 ⌥ 可暂时使用另一种模式。"
+        loupeZoomOptionCaption: "按住 ⌥ 可暂时使用另一种模式。",
+        watermarkLabel: "水印",
+        watermarkImageLabel: "图片",
+        watermarkTextPlaceholder: "水印文字",
+        watermarkPositionLabel: "位置",
+        watermarkSizeLabel: "大小",
+        watermarkOpacityLabel: "不透明度",
+        watermarkRotationLabel: "旋转",
+        watermarkSavePreset: "保存水印",
+        watermarkColorRed: "红色",
+        watermarkColorOrange: "橙色",
+        watermarkColorYellow: "黄色",
+        watermarkColorGreen: "绿色",
+        watermarkColorBlue: "蓝色",
+        watermarkColorPurple: "紫色",
+        watermarkColorBlack: "黑色",
+        watermarkColorWhite: "白色",
+        watermarkPositionTopLeading: "左上",
+        watermarkPositionTop: "顶部居中",
+        watermarkPositionTopTrailing: "右上",
+        watermarkPositionLeading: "左侧居中",
+        watermarkPositionCenter: "居中",
+        watermarkPositionTrailing: "右侧居中",
+        watermarkPositionBottomLeading: "左下",
+        watermarkPositionBottom: "底部居中",
+        watermarkPositionBottomTrailing: "右下"
     )
 
     static let zhTW = ScreenshotFeatureStrings(
@@ -1655,4 +1744,16 @@ extension ScreenshotFeatureStrings {
         loupeZoomStepped: "逐步",
         loupeZoomOptionCaption: "撳住 ⌥ 可暫時使用另一個模式。"
     )
+}
+
+extension ScreenshotFeatureStrings {
+    func arrowStyleTitle(_ style: ScreenshotSupport.ArrowStyleID) -> String {
+        switch style {
+        case .filled: return arrowStyleFilled
+        case .outline: return arrowStyleOutline
+        case .open: return arrowStyleOpen
+        case .doubleEnded: return arrowStyleDoubleEnded
+        case .scribbly: return arrowStyleScribbly
+        }
+    }
 }

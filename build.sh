@@ -566,6 +566,13 @@ if (( TEST )); then
         Tests/HomebrewEnvironmentCheckSettlementTests.swift \
         Sources/Vorssaint/UI/PlainTextEditor.swift \
         Tests/PlainTextEditorLifecycleTests.swift \
+        Sources/Vorssaint/Core/RecorderExportStrings.swift \
+        Sources/Vorssaint/Services/Recorder/RecorderComposer.swift \
+        Sources/Vorssaint/Services/Recorder/RecorderComposerPlan.swift \
+        Sources/Vorssaint/Services/Recorder/RecorderCursorSprite.swift \
+        Sources/Vorssaint/Services/Recorder/RecorderTextRenderer.swift \
+        Sources/Vorssaint/Services/Recorder/RecorderImageRenderer.swift \
+        Sources/Vorssaint/Services/Recorder/RecorderExporter.swift \
         Sources/Vorssaint/Services/Recorder/RecorderComposition.swift \
         Sources/Vorssaint/Services/Recorder/RecorderCaptureEngine.swift \
         Sources/Vorssaint/Services/Recorder/RecorderWriter.swift \
@@ -592,6 +599,12 @@ if (( TEST )); then
         Tests/DockAutohideHoldWiringTests.swift \
         Tests/CommandBarInputSourceTests.swift \
         Tests/BrightnessShortcutTargetTests.swift \
+        Tests/ScreenshotWatermarkTests.swift \
+        Tests/RecorderZoomAimingTests.swift \
+        Tests/RecorderExportSpeedTests.swift \
+        Tests/RecorderExportRenderingTests.swift \
+        Tests/CapturePortChecks.swift \
+        Tests/MediaImageAdvancedOptionsTests.swift \
         build/generated-tests/*.swift \
     )
     TEST_OUTPUT_FILE_MAP="$TEST_OBJECT_DIR/output-file-map.json"

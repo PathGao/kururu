@@ -164,6 +164,21 @@ def main():
                         "    private static func applyBrightness(",
                         "    private static func pointerDisplay("])
           + "}\n}\n")
+    recorder = "Sources/Vorssaint/Services/Recorder/RecorderEditorController.swift"
+    write("RecorderZoomAiming.swift", "import Foundation\nimport Combine\n"
+          + "extension RecorderZoomAimingTests {\nfinal class Model: State {\n"
+          + declaration(recorder, "    @Published var selectedZoomID:")
+          + "".join(declaration(recorder, prefix) for prefix in [
+              "    func beginAiming(", "    func endAiming(", "    func aim(",
+              "    func setSelectedZoomFocus(",
+              "    func beginPickingBlurArea(", "    func endPickingBlurArea("])
+          + "}\n}\n")
+    media = "Sources/Vorssaint/Services/Media/MediaService.swift"
+    write("MediaWatermarkDrawing.swift", "import AppKit\n"
+          + "extension MediaImageAdvancedOptionsTests {\nfinal class Renderer {\n"
+          + "".join(declaration(media, prefix).replace("private func", "func", 1) for prefix in [
+              "    private func drawWatermark(", "    private func watermarkOrigin("])
+          + "}\n}\n")
     keep_awake = "Sources/Vorssaint/Services/KeepAwakeManager.swift"
     keep_awake_methods = [
         "    func refreshPasswordlessStatus(",
