@@ -14154,9 +14154,10 @@ struct MetricsTests {
                "availability key derives from the unit's raw value")
         expect(FeatureUnit.availabilityDefaults.count == FeatureUnit.allCases.count
                 && FeatureUnit.allCases.allSatisfy {
-                    (FeatureUnit.availabilityDefaults[$0.availabilityKey] as? Bool) == ($0 != .brightness)
+                    (FeatureUnit.availabilityDefaults[$0.availabilityKey] as? Bool)
+                        == ($0 != .brightness && $0 != .killProcess)
                 },
-               "display control remains opt-in at module level; other modules preserve existing defaults")
+               "display control and Kill Process are opt-in at module level; other modules preserve existing defaults")
         expect((Defaults.registeredDefaults[DefaultsKey.fanControlEnabled] as? Bool) == false
                 && AppFeature.allCases.filter { $0 != .fanControl && $0.enabledKeys.isEmpty }
                     .compactMap(\.switchKey)

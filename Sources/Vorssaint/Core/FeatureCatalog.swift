@@ -176,9 +176,11 @@ extension FeatureUnit {
     /// Registered defaults preserve existing units on update. A unit ships
     /// uninstalled only when every member was an opt-in on its own; an
     /// opt-in member inside a shipped unit keeps its switch off instead.
+    /// Kill Process ships uninstalled, as upstream ships it; a stored choice
+    /// is never rewritten.
     static var availabilityDefaults: [String: Any] {
         Dictionary(uniqueKeysWithValues: allCases.map {
-            ($0.availabilityKey, $0 != .brightness)
+            ($0.availabilityKey, $0 != .brightness && $0 != .killProcess)
         })
     }
 
