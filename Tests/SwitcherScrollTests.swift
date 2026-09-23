@@ -36,6 +36,7 @@ enum SwitcherScrollContract {
         func recompute() {
             let count = windows.indices.contains(selectedIndex) ? windows.filter { $0.pid == windows[selectedIndex].pid }.count : 1
             iconRowLayout = .compute(appCount: Set(windows.map(\.pid)).count, selectedWindowCount: count,
+                                    maximumWindowCount: Dictionary(grouping: windows, by: \.pid).values.map(\.count).max() ?? 1,
                                     screenVisibleFrame: CGRect(x: 0, y: 0, width: screenWidth, height: 900))
         }
         func recomputeLayouts(for items: [Item]) { recompute() }
@@ -75,11 +76,11 @@ enum SwitcherScrollContract {
         _ = NSApplication.shared
         let previousPolicy = NSApp.activationPolicy()
         NSApp.setActivationPolicy(.prohibited)
-        let previousSize = UserDefaults.standard.object(forKey: DefaultsKey.previewSize)
-        UserDefaults.standard.set("normal", forKey: DefaultsKey.previewSize)
+        let previousSize = UserDefaults.standard.object(forKey: DefaultsKey.switcherPreviewSize)
+        UserDefaults.standard.set("normal", forKey: DefaultsKey.switcherPreviewSize)
         defer {
-            if let previousSize { UserDefaults.standard.set(previousSize, forKey: DefaultsKey.previewSize) }
-            else { UserDefaults.standard.removeObject(forKey: DefaultsKey.previewSize) }
+            if let previousSize { UserDefaults.standard.set(previousSize, forKey: DefaultsKey.switcherPreviewSize) }
+            else { UserDefaults.standard.removeObject(forKey: DefaultsKey.switcherPreviewSize) }
             NSApp.setActivationPolicy(previousPolicy)
         }
         func run(_ name: String, _ body: (Model, (String) -> Void, () -> Void) -> Void) {
@@ -113,6 +114,11 @@ enum SwitcherScrollContract {
                 let padding = model.simple ? SwitcherIconRowLayout.simpleTitleScrollPadding : 0
                 let start = padding + CGFloat(localIndex) * (width + spacing)
                 let clip = scroll.contentView.bounds
+                if !model.simple && model.windows.filter({ $0.pid == selected.pid }).count == 2
+                    && model.screenWidth >= 800 {
+                    suite.expect(clip.minX <= 0.5 && clip.maxX >= width * 2 + spacing - 0.5,
+                                 "\(name)/\(step): both windows must be visible together")
+                }
                 suite.expect(!window.isVisible, "scroll tests never show a window")
                 suite.expect(start >= clip.minX - 0.5 && start + width <= clip.maxX + 0.5,
                              "\(name)/\(step): selected \(selected.id) at \(start)...\(start + width) must fit \(clip.minX)...\(clip.maxX)")
@@ -158,16 +164,18 @@ enum SwitcherScrollContract {
                 model.seed([8], selected: 7, simple: simple); check("new session wins")
             }
             for size in Defaults.allowedPreviewSizes {
-                UserDefaults.standard.set(size, forKey: DefaultsKey.previewSize)
+                UserDefaults.standard.set(size, forKey: DefaultsKey.switcherPreviewSize)
                 run("\(mode) \(size)") { model, check, _ in
                     model.screenWidth = 800
+                    model.seed([2], selected: 1, simple: simple); check("single app pair")
+                    model.select(index: 0); check("pair first")
                     model.seed([3,1,1,1,1,1,1], selected: 2, simple: simple); check("initial")
                     model.search("a"); check("narrowed")
                     model.screenWidth = 640
                     model.recompute(); check("smaller display")
                 }
             }
-            UserDefaults.standard.set("normal", forKey: DefaultsKey.previewSize)
+            UserDefaults.standard.set("normal", forKey: DefaultsKey.switcherPreviewSize)
         }
     }
 }

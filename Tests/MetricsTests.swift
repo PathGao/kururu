@@ -10975,9 +10975,58 @@ struct MetricsTests {
         expect(groupedIconLayout.appRowContentWidth
                >= CGFloat(appGroups.count) * SwitcherIconRowLayout.appTileWidth,
                "App Switcher icon-row layout uses full app tile width")
-        expect(groupedIconLayout.previewContentWidth <= max(SwitcherIconRowLayout.previewCardWidth,
-               groupedIconLayout.appRowSurfaceWidth - SwitcherIconRowLayout.previewPanelPadding * 2),
-               "App Switcher previews scroll within a stable icon-row width")
+        expect(groupedIconLayout.previewFitsWithoutScrolling(cardCount: 2),
+               "App Switcher shows a pair of windows even with a short icon row")
+        do {
+            let savedPreviewSize = UserDefaults.standard.object(forKey: DefaultsKey.switcherPreviewSize)
+            defer {
+                if let savedPreviewSize {
+                    UserDefaults.standard.set(savedPreviewSize, forKey: DefaultsKey.switcherPreviewSize)
+                } else {
+                    UserDefaults.standard.removeObject(forKey: DefaultsKey.switcherPreviewSize)
+                }
+            }
+            for size in Defaults.allowedPreviewSizes {
+                UserDefaults.standard.set(size, forKey: DefaultsKey.switcherPreviewSize)
+                for width in [640.0, 800.0, 1440.0] {
+                    for hints in [false, true] {
+                        let frame = CGRect(x: 0, y: 0, width: width, height: 900)
+                        let pair = SwitcherIconRowLayout.compute(appCount: 2, selectedWindowCount: 2,
+                            maximumWindowCount: 8, screenVisibleFrame: frame, showsShortcutHints: hints)
+                        let single = SwitcherIconRowLayout.compute(appCount: 2, selectedWindowCount: 1,
+                            maximumWindowCount: 8, screenVisibleFrame: frame, showsShortcutHints: hints)
+                        let many = SwitcherIconRowLayout.compute(appCount: 2, selectedWindowCount: 8,
+                            maximumWindowCount: 8, screenVisibleFrame: frame, showsShortcutHints: hints)
+                        expect(pair.previewFitsWithoutScrolling(cardCount: 2),
+                               "App Switcher keeps two windows visible at every preview size")
+                        expect(pair.panelSize.width == single.panelSize.width
+                               && pair.panelSize.width == many.panelSize.width,
+                               "App Switcher keeps short icon rows stationary when changing apps")
+                        expect(pair.panelSize.width <= width * 0.96
+                               && !many.previewFitsWithoutScrolling(cardCount: 8),
+                               "App Switcher bounds multi-window previews to the display and keeps overflow scrollable")
+                        expect(single.previewContentWidth == SwitcherIconRowLayout.previewCardWidth,
+                               "App Switcher keeps single-window surfaces compact within the stable panel")
+                        // kururu: the reservation stops at a pair, and every row
+                        // measures against the stable panel, not its own surface.
+                        let pairOnly = SwitcherIconRowLayout.compute(appCount: 2, selectedWindowCount: 2,
+                            maximumWindowCount: 2, screenVisibleFrame: frame, showsShortcutHints: hints)
+                        expect(pair.panelSize.width == pairOnly.panelSize.width,
+                               "App Switcher reserves room for a pair, not for every window of the busiest app")
+                        expect(single.contentWidth(simpleMode: false, windowRow: false)
+                               == single.panelSize.width - SwitcherIconRowLayout.padding * 2,
+                               "App Switcher rows span the stable panel even when the selected app has one window")
+                    }
+                }
+            }
+        }
+        let pairedLayoutCallSites = ((try? String(
+            contentsOfFile: "Sources/Vorssaint/Services/Switcher/AppSwitcher.swift",
+            encoding: .utf8)) ?? "")
+            .components(separatedBy: "maximumWindowCount: usesWindowRow ? 1 : appGroups.map(\\.windowCount).max() ?? 1,")
+            .count - 1
+        expect(pairedLayoutCallSites == 2,
+               "App Switcher sizes both icon-row layouts from the busiest app (found \(pairedLayoutCallSites))")
         expectClose(Double(groupedIconLayout.appRowSurfaceWidth),
                     Double(groupedIconLayout.appRowContentWidth + SwitcherIconRowLayout.rowHorizontalPadding * 2),
                     "App Switcher icon-row layout keeps horizontal padding inside the app row surface")
