@@ -946,6 +946,8 @@ struct Strings {
     var switcherScreenPlacementMenuBar: String = "Screen with the menu bar"
     var switcherScreenPlacementActiveWindow: String = "Screen with the active window"
     var switcherScreenPlacementCaption: String = "Which display the switcher opens on when more than one is connected."
+    var switcherCurrentDisplayOnly: String = "Show only the current display"
+    var switcherCurrentDisplayOnlyCaption: String = "Lists only windows on the display under the pointer. If that display has no windows, the switcher does not open."
     var smoothScrollResponseLabel: String = "Response"
     var mouseAccelerationName: String = "Disable mouse acceleration"
     var mouseAccelerationCaption: String = "Removes pointer acceleration for connected mice. Your previous setting returns when this is turned off or \(AppInfo.name) quits."
