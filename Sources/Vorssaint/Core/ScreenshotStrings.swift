@@ -38,6 +38,12 @@ struct ScreenshotFeatureStrings {
     var toolShortcutsCaption: String = "Use the arrows or choose a number. The first nine tools use 1 to 9. The others have no shortcut."
     var toolSelect: String = "Select"
     var toolArrow: String = "Arrow"
+    var arrowStyleLabel: String = "Arrow style"
+    var arrowStyleFilled: String = "Solid"
+    var arrowStyleOutline: String = "Outline"
+    var arrowStyleOpen: String = "Open"
+    var arrowStyleDoubleEnded: String = "Double-ended"
+    var arrowStyleScribbly: String = "Scribbly"
     var toolLine: String = "Line"
     var toolRect: String = "Rectangle"
     var toolEllipse: String = "Ellipse"
@@ -1365,6 +1371,12 @@ extension ScreenshotFeatureStrings {
         toolShortcutsCaption: "使用箭头或选择数字。前九个工具使用 1 到 9，其余工具没有快捷键。",
         toolSelect: "选择",
         toolArrow: "箭头",
+        arrowStyleLabel: "箭头样式",
+        arrowStyleFilled: "实心",
+        arrowStyleOutline: "轮廓",
+        arrowStyleOpen: "开口",
+        arrowStyleDoubleEnded: "双向",
+        arrowStyleScribbly: "涂鸦",
         toolLine: "直线",
         toolRect: "矩形",
         toolEllipse: "椭圆",
@@ -1732,4 +1744,16 @@ extension ScreenshotFeatureStrings {
         loupeZoomStepped: "逐步",
         loupeZoomOptionCaption: "撳住 ⌥ 可暫時使用另一個模式。"
     )
+}
+
+extension ScreenshotFeatureStrings {
+    func arrowStyleTitle(_ style: ScreenshotSupport.ArrowStyleID) -> String {
+        switch style {
+        case .filled: return arrowStyleFilled
+        case .outline: return arrowStyleOutline
+        case .open: return arrowStyleOpen
+        case .doubleEnded: return arrowStyleDoubleEnded
+        case .scribbly: return arrowStyleScribbly
+        }
+    }
 }
