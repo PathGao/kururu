@@ -54,6 +54,10 @@ enum MicMuteBatchTests {
         let reconnected = MicMuteBatchSupport.apply(muted: false, devices: devices, savedVolumes: missing.savedVolumes, mutedDevices: missing.mutedDevices, legacyVolume: 0, access: hardware.access)
         expect(reconnected.result == .unmuted && reconnected.mutedDevices.isEmpty && abs((hardware.volumes["b"] ?? 0) - 0.8) < 0.001,
                "reconnected device restores the original saved value")
+        hardware.volumes = ["a": 0.6]
+        let away = MicMuteBatchSupport.apply(muted: true, devices: [devices[0]], savedVolumes: ["b": 0.8], mutedDevices: ["b"], legacyVolume: 0, access: hardware.access)
+        expect(away.mutedDevices == ["a", "b"] && away.savedVolumes["b"] == 0.8,
+               "a mute sweep while a claimed headset is unplugged keeps its claim, so it is released when it returns")
         hardware.unreadable = ["a"]
         let unreadable = MicMuteBatchSupport.apply(muted: false, devices: [devices[0]], savedVolumes: ["a": 0.6], mutedDevices: ["a"], legacyVolume: 0, access: hardware.access)
         expect(unreadable.result == .failed(muting: false) && unreadable.mutedDevices == ["a"], "unreadable restoration is a failure, not a no-op success")
