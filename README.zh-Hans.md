@@ -33,7 +33,7 @@ kururu 分叉自 [Vorssaint](https://github.com/vorssaint/vorssaint-utils)，目
 
 **[下载适用于 Apple Silicon 的 kururu](https://github.com/PathGao/kururu/releases/latest)**
 
-需要搭载 **Apple Silicon 芯片的 Mac**，运行 **macOS 14 或更新版本**。当前发布版本为 [0.1.4](https://github.com/PathGao/kururu/releases/tag/v0.1.4)。
+需要搭载 **Apple Silicon 芯片的 Mac**，运行 **macOS 14 或更新版本**。当前发布版本为 [0.1.5](https://github.com/PathGao/kururu/releases/tag/v0.1.5)。
 
 1. 从发布页下载 DMG。
 2. 打开 DMG，将 kururu 拖入“应用程序”。
