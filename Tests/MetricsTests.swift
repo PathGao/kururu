@@ -159,6 +159,7 @@ struct MetricsTests {
             ("KeepAwakeUntilTests", { KeepAwakeUntilTests.run { suite.expect($0, $1) } }),
             ("KeepAwakeLidSleepOrderTests", { KeepAwakeLidSleepOrderTests.run { suite.expect($0, $1) } }),
             ("QuitProtectionHUDChecks", { QuitProtectionHUD.progressChecks(suite) }),
+            ("UninstallerFlowTests", { UninstallerFlowTests.run(suite) }),
         ]
         let names = groups.map(\.0) + ["MetricsTests"]
         var selected = Set<String>()
@@ -21965,8 +21966,8 @@ struct MetricsTests {
         // MARK: Command bar, what the person controls
 
         expect(CommandBarSource.allCases.map(\.rawValue) == [
-            "actions", "apps", "menus", "windows", "quitApps", "settingsPages", "macSettings",
-            "snippets", "clipboard", "emoji", "folders", "answers", "calculator",
+            "actions", "apps", "menus", "windows", "quitApps", "uninstallApps", "settingsPages",
+            "macSettings", "snippets", "clipboard", "emoji", "folders", "answers", "calculator",
             "selection", "links", "files", "killProcess",
         ], "source ids are stable (they persist inside the disabled list)")
         expect(CommandBarSource.actions.isAlwaysOn
@@ -22202,6 +22203,8 @@ struct MetricsTests {
                 && CommandBarPreferences.rankBias(for: .apps)
                     > CommandBarPreferences.rankBias(for: .actions),
                "apps lead commands, while a file needs a plainly better match")
+        expect(CommandBarPreferences.rankBias(for: .uninstallApps) == 0,
+               "uninstall browse entries have no source ranking boost")
 
         // MARK: Command Bar ASCII layout switch
 
@@ -22366,8 +22369,13 @@ struct MetricsTests {
         expect(CommandBarPreferences.acceptsAlias(rowID: "app.x")
                 && !CommandBarPreferences.acceptsAlias(rowID: "menu.1.Bold")
                 && !CommandBarPreferences.acceptsAlias(rowID: "window.4")
-                && !CommandBarPreferences.acceptsAlias(rowID: "clipboard.abc"),
+                && !CommandBarPreferences.acceptsAlias(rowID: "clipboard.abc")
+                && !CommandBarPreferences.acceptsAlias(rowID: "uninstall.x"),
                "only rows that are the same thing tomorrow can be named")
+        expect(!CommandBarPreferences.acceptsPin(rowID: "uninstall.x")
+                && !CommandBarPreferences.acceptsPin(rowID: "menu.1.Bold")
+                && CommandBarPreferences.acceptsPin(rowID: "app.x"),
+               "an uninstall row is offered fresh each time, so it cannot be pinned")
 
         var barPins = CommandBarPreferences.togglingPin("action.screenshot", in: [])
         barPins = CommandBarPreferences.togglingPin("app.chat", in: barPins)
@@ -24024,6 +24032,21 @@ struct MetricsTests {
                 && !InstalledApps.isSystemApplication(
                     at: URL(fileURLWithPath: "/Applications/UserUtility.app")),
                "app controls never offer system apps to the uninstaller")
+        expect(InstalledApps.isInApplicationsFolder(
+                    URL(fileURLWithPath: "/Applications/UserUtility.app"))
+                && InstalledApps.isInApplicationsFolder(
+                    URL(fileURLWithPath: "/Applications/Vendor/Nested.app"))
+                && !InstalledApps.isInApplicationsFolder(
+                    URL(fileURLWithPath: "/Users/someone/Downloads/Rogue.app")),
+               "an app nested in an Applications subfolder counts as installed, same as installedApplications' own recursive walk")
+        let uninstallerPageSource = (try? String(
+            contentsOfFile: "Sources/Vorssaint/UI/Uninstall/UninstallerView.swift", encoding: .utf8)) ?? ""
+        expect(uninstallerPageSource.contains(
+                    "@AppStorage(DefaultsKey.uninstallerCommandBarEnabled) private var commandBarEnabled = false")
+                && uninstallerPageSource.contains(
+                    "SettingsToggleWithCaption(title: l10n.s.uninstallerCommandBarToggle,")
+                && uninstallerPageSource.components(separatedBy: "\n            commandBarToggle\n").count == 2,
+               "the Uninstaller page offers the Command Bar switch once, next to choosing an app")
 
         // MARK: Command bar search and ranking
 
@@ -24328,6 +24351,15 @@ struct MetricsTests {
                 && !monitor.contains("case kVK_ANSI_Q")
                 && monitor.contains("digitIndex(for: event.keyCode)"),
                "the Command Bar uses macOS Command letters while Control follows typed letters and digits stay positional")
+        expect(monitor.contains([
+            "            if self.mode.isUninstallFlow {",
+            "                if event.isARepeat,",
+            "                   Int(event.keyCode) == kVK_Return || Int(event.keyCode) == kVK_ANSI_KeypadEnter {",
+            "                    return nil",
+            "                }",
+            "                return self.handleUninstallKey(Int(event.keyCode),",
+        ].joined(separator: "\n")),
+               "a Return still held from the app list cannot confirm an uninstall review")
         expect(monitor.contains("#selector(NSText.selectAll(_:))")
                 && monitor.contains("#selector(NSText.copy(_:))")
                 && monitor.contains("#selector(NSText.cut(_:))")

@@ -277,6 +277,11 @@ extension Strings {
         uninstallerCatLogs: "日志",
         uninstallerCatState: "已存储状态",
         uninstallerCatOther: "其他",
+        uninstallerCommandBarBrowseTitle: "卸载 App",
+        uninstallerCommandBarToggle: "在命令栏中显示",
+        uninstallerCommandBarCaption: "在命令栏中选择并卸载 App。",
+        uninstallerCommandBarFinderTitle: "卸载 Finder 中选中的 App",
+        uninstallerSelectionUnavailable: "请在 Finder 中选择可移除的 App，或从列表中选择其他 App。",
 
         urlCleanerName: "清理 URL",
         urlCleanerEnable: "拷贝时自动清理 URL",

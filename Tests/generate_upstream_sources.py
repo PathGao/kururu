@@ -246,6 +246,28 @@ def main():
                                    "    private func handle(type:",
                                    "    func commit("])
           + "}\n")
+    uninstall = "Sources/Vorssaint/Services/Uninstall/AppUninstaller.swift"
+    bar = "Sources/Vorssaint/Services/CommandBar/CommandBarService.swift"
+    write("UninstallerFlow.swift", "import AppKit\nimport Carbon.HIToolbox\nimport Combine\n"
+          + "extension UninstallerFlowTests {\n"
+          + declaration(uninstall, "    enum Phase:")
+          + declaration(bar, "    enum Mode:")
+          + "final class Uninstaller: UninstallerState {\nstatic let shared = Uninstaller()\n"
+          + "".join(declaration(uninstall, prefix) for prefix in [
+              "    var isBusy: Bool", "    func select(appURL:", "    private func rejectSelection(",
+              "    func reset()", "    func setInclude(", "    struct HomebrewRemovalConfirmation {",
+              "    var homebrewRemovalConfirmation:"])
+          + "var confirmed: [HomebrewRemovalConfirmation] = []\n"
+          + "func removeSelectedWithHomebrew(confirmation: HomebrewRemovalConfirmation) { confirmed.append(confirmation) }\n"
+          + "}\nfinal class Service: ServiceState {\n"
+          + "".join(declaration(bar, prefix).replace("private func", "func", 1) for prefix in [
+              "    @Published var query", "    private func beginUninstallReview(",
+              "    private func handleUninstallKey(", "    func stepBack()",
+              "    private func finishUninstallReview()", "    private func confirmUninstallReview(",
+              "    private func confirmUninstallHomebrewRemoval("])
+          + "}\n}\nextension UninstallerFlowTests.Finder {\n"
+          + declaration("Sources/Vorssaint/Services/Finder/FinderCutPaste.swift", "    static func selectionURLs(")
+          + "}\n")
     ports = "Sources/Vorssaint/Services/PortManager/PortManagerService.swift"
     write("PortManagerRefresh.swift", "import Darwin\nimport Foundation\n"
           + "extension PortManagerRefreshTests {\nfinal class Service: Fixture {\n"

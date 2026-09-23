@@ -411,6 +411,11 @@ struct Strings {
     var uninstallerCatLogs: String = "Logs"
     var uninstallerCatState: String = "Saved state"
     var uninstallerCatOther: String = "Other"
+    var uninstallerCommandBarBrowseTitle: String = "Uninstall Application"
+    var uninstallerCommandBarToggle: String = "Show in Command Bar"
+    var uninstallerCommandBarCaption: String = "Choose and uninstall apps in the Command Bar."
+    var uninstallerCommandBarFinderTitle: String = "Uninstall app selected in Finder"
+    var uninstallerSelectionUnavailable: String = "Select an app that can be removed in Finder, or choose another from the list."
 
     // MARK: Feature — URL cleaner
     var urlCleanerName: String = "Clean URL"
