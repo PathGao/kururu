@@ -143,6 +143,7 @@ struct MetricsTests {
             ("PortManagerRefreshTests", { PortManagerRefreshTests.run(suite) }),
             ("CommandBarInputSourceContract", { CommandBarInputSourceContract.run(suite) }),
             ("CommandBarTerminationContract", { CommandBarTerminationContract.run(suite) }),
+            ("BrightnessShortcutTargetContract", { BrightnessShortcutTargetContract.run(suite) }),
         ]
         let names = groups.map(\.0) + ["MetricsTests"]
         var selected = Set<String>()

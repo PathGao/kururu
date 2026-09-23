@@ -3,48 +3,48 @@
 
 struct BrightnessShortcutStrings {
     var title = "Display brightness shortcuts"
-    var caption = "Decrease or increase the external display under the pointer by one step. A shortcut never falls back to another display, and it does nothing when the target’s current brightness cannot be determined."
+    var caption = "Shortcuts adjust the primary display, or the display under the pointer when pointer following is on."
     var toggle = "Use display brightness shortcuts"
-    var decrease = "Dim display under pointer"
-    var increase = "Brighten display under pointer"
+    var decrease = "Decrease display brightness"
+    var increase = "Increase display brightness"
     var notSet = "Not set"
 
     static func localized(_ language: AppLanguage) -> BrightnessShortcutStrings {
         switch language {
         case .zhHans: return BrightnessShortcutStrings(
             title: "显示器亮度快捷键",
-            caption: "将指针所在的外接显示器调暗或调亮一步。快捷键不会改调其它显示器；无法确定当前亮度时不会执行。",
+            caption: "快捷键调整主显示器；开启跟随指针后，则调整指针所在的显示器。",
             toggle: "使用显示器亮度快捷键",
-            decrease: "调暗指针所在显示器",
-            increase: "调亮指针所在显示器",
+            decrease: "降低显示器亮度",
+            increase: "提高显示器亮度",
             notSet: "未设置")
         case .de: return BrightnessShortcutStrings(
             title: "Kurzbefehle für die Displayhelligkeit",
-            caption: "Verringert oder erhöht die Helligkeit des externen Displays unter dem Zeiger um eine Stufe. Es wird nie auf ein anderes Display ausgewichen; wenn die aktuelle Helligkeit nicht ermittelt werden kann, geschieht nichts.",
+            caption: "Kurzbefehle steuern den Hauptbildschirm oder bei aktivierter Zeigerverfolgung den Bildschirm unter dem Zeiger.",
             toggle: "Kurzbefehle für Displayhelligkeit verwenden",
-            decrease: "Display unter dem Zeiger abdunkeln",
-            increase: "Display unter dem Zeiger aufhellen",
+            decrease: "Bildschirmhelligkeit verringern",
+            increase: "Bildschirmhelligkeit erhöhen",
             notSet: "Nicht festgelegt")
         case .fr: return BrightnessShortcutStrings(
             title: "Raccourcis de luminosité de l’écran",
-            caption: "Diminue ou augmente d’un cran l’écran externe sous le pointeur. Le raccourci ne cible jamais un autre écran et ne fait rien si la luminosité actuelle ne peut pas être déterminée.",
+            caption: "Les raccourcis règlent l’écran principal ou celui sous le pointeur lorsque le suivi du pointeur est activé.",
             toggle: "Utiliser les raccourcis de luminosité",
-            decrease: "Assombrir l’écran sous le pointeur",
-            increase: "Éclaircir l’écran sous le pointeur",
+            decrease: "Réduire la luminosité de l’écran",
+            increase: "Augmenter la luminosité de l’écran",
             notSet: "Non défini")
         case .es: return BrightnessShortcutStrings(
             title: "Atajos de brillo de pantalla",
-            caption: "Reduce o aumenta un paso el brillo de la pantalla externa bajo el puntero. Nunca usa otra pantalla y no actúa si no se puede determinar el brillo actual.",
+            caption: "Los atajos ajustan la pantalla principal o la pantalla bajo el puntero cuando está activado el seguimiento del puntero.",
             toggle: "Usar atajos de brillo de pantalla",
-            decrease: "Oscurecer pantalla bajo el puntero",
-            increase: "Aclarar pantalla bajo el puntero",
+            decrease: "Reducir el brillo de la pantalla",
+            increase: "Aumentar el brillo de la pantalla",
             notSet: "Sin configurar")
         case .ja: return BrightnessShortcutStrings(
             title: "ディスプレイ輝度のショートカット",
-            caption: "ポインタがある外部ディスプレイを1段階暗く、または明るくします。別のディスプレイには切り替えず、現在の明るさを確認できない場合は何もしません。",
+            caption: "ショートカットでメインディスプレイを調整します。ポインタ追従がオンの場合は、ポインタのあるディスプレイを調整します。",
             toggle: "ディスプレイ輝度ショートカットを使用",
-            decrease: "ポインタ位置のディスプレイを暗くする",
-            increase: "ポインタ位置のディスプレイを明るくする",
+            decrease: "ディスプレイの明るさを下げる",
+            increase: "ディスプレイの明るさを上げる",
             notSet: "未設定")
         default: return BrightnessShortcutStrings()
         }
