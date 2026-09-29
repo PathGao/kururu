@@ -1,0 +1,1360 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Vorssaint
+
+import AppKit
+
+/// A live reading the user can pin next to the menu bar icon.
+enum MenuBarMetric: String, CaseIterable, Identifiable {
+    case cpu, gpu, memory, cpuTemperature, gpuTemperature, batteryTemperature, network, diskUsage, diskActivity, battery, batteryTime, peripheralBattery, power, fanSpeed
+
+    var id: String { rawValue }
+
+    var defaultsKey: String {
+        switch self {
+        case .cpu: return DefaultsKey.menuBarCPU
+        case .gpu: return DefaultsKey.menuBarGPU
+        case .memory: return DefaultsKey.menuBarMemory
+        case .cpuTemperature: return DefaultsKey.menuBarCPUTemperature
+        case .gpuTemperature: return DefaultsKey.menuBarGPUTemperature
+        case .batteryTemperature: return DefaultsKey.menuBarBatteryTemperature
+        case .network: return DefaultsKey.menuBarNetwork
+        case .diskUsage: return DefaultsKey.menuBarDiskUsage
+        case .diskActivity: return DefaultsKey.menuBarDiskActivity
+        case .battery: return DefaultsKey.menuBarBattery
+        case .batteryTime: return DefaultsKey.menuBarBatteryTime
+        case .peripheralBattery: return DefaultsKey.menuBarPeripheralBattery
+        case .power: return DefaultsKey.menuBarPower
+        case .fanSpeed: return DefaultsKey.menuBarFanSpeed
+        }
+    }
+
+    var symbolName: String {
+        switch self {
+        case .cpu: return "cpu"
+        case .gpu: return "rectangle.connected.to.line.below"
+        case .memory: return "memorychip"
+        case .cpuTemperature: return "cpu"
+        case .gpuTemperature: return "rectangle.connected.to.line.below"
+        case .batteryTemperature: return "battery.100"
+        case .network: return "network"
+        case .diskUsage: return "internaldrive"
+        case .diskActivity: return "internaldrive.fill"
+        case .battery: return "battery.100"
+        case .batteryTime: return "clock"
+        case .peripheralBattery: return "keyboard"
+        case .power: return "powerplug.fill"
+        case .fanSpeed: return "fanblades"
+        }
+    }
+
+    func title(_ strings: Strings) -> String {
+        switch self {
+        case .cpu: return strings.monitorShowCPU
+        case .gpu: return strings.monitorShowGPU
+        case .memory: return strings.monitorShowMemory
+        case .cpuTemperature: return strings.monitorShowCPUTemperature
+        case .gpuTemperature: return strings.monitorShowGPUTemperature
+        case .batteryTemperature: return strings.monitorShowBatteryTemperature
+        case .network: return strings.monitorShowNetwork
+        case .diskUsage: return strings.monitorItemDiskUsage
+        case .diskActivity: return strings.monitorItemDiskActivity
+        case .battery: return strings.batteryLabel
+        case .batteryTime: return FeatureStrings.batteryTime(L10n.shared.language).title
+        case .peripheralBattery: return strings.monitorShowPeripheralBattery
+        case .power: return strings.monitorShowPowerLabel
+        case .fanSpeed: return FeatureStrings.fanControl(L10n.shared.language).menuBarTitle
+        }
+    }
+
+    static let defaultOrder: [MenuBarMetric] = [
+        .cpu, .cpuTemperature,
+        .gpu, .gpuTemperature,
+        .memory,
+        .battery, .batteryTime, .batteryTemperature, .peripheralBattery,
+        .network, .diskUsage, .diskActivity, .power, .fanSpeed,
+    ]
+
+    static func order(in defaults: UserDefaults) -> [MenuBarMetric] {
+        let raw = defaults.string(forKey: DefaultsKey.menuBarMetricOrder) ?? ""
+        return Defaults.sanitizedMenuBarMetricOrder(raw).compactMap(MenuBarMetric.init(rawValue:))
+    }
+
+    static func setOrder(_ order: [MenuBarMetric], in defaults: UserDefaults = .standard) {
+        let raw = order.map(\.rawValue).joined(separator: ",")
+        defaults.set(raw, forKey: DefaultsKey.menuBarMetricOrder)
+    }
+
+    /// The hub feature this metric belongs to; temperatures ride with their
+    /// parent metric. A pinned metric whose feature is off in the hub stays
+    /// pinned in defaults but stops rendering (and sampling) until it returns.
+    var feature: AppFeature {
+        switch self {
+        case .cpu, .cpuTemperature: return .monitorCPU
+        case .gpu, .gpuTemperature: return .monitorGPU
+        case .memory: return .monitorMemory
+        case .network: return .monitorNetwork
+        case .diskUsage, .diskActivity: return .monitorDisk
+        case .battery, .batteryTime, .batteryTemperature, .peripheralBattery, .power: return .monitorPower
+        case .fanSpeed: return .fanControl
+        }
+    }
+
+    var isAvailableOnCurrentHardware: Bool {
+        switch self {
+        case .battery, .batteryTime, .batteryTemperature:
+            return PowerSampler.hasInternalBattery
+        case .fanSpeed:
+            return SystemMonitor.fanTelemetryAvailable
+        default:
+            return true
+        }
+    }
+
+    static func enabled(in defaults: UserDefaults) -> [MenuBarMetric] {
+        order(in: defaults).filter {
+            defaults.bool(forKey: $0.defaultsKey)
+                && $0.feature.isAvailable(in: defaults)
+                && $0.isAvailableOnCurrentHardware
+        }
+    }
+
+    static func anyEnabled(in defaults: UserDefaults) -> Bool {
+        allCases.contains {
+            defaults.bool(forKey: $0.defaultsKey)
+                && $0.feature.isAvailable(in: defaults)
+                && $0.isAvailableOnCurrentHardware
+        }
+    }
+}
+
+enum MenuBarPreset: String, CaseIterable {
+    case readable, dense
+
+    static var current: MenuBarPreset {
+        let raw = UserDefaults.standard.string(forKey: DefaultsKey.menuBarPreset) ?? ""
+        let preset = Defaults.sanitizedMenuBarPreset(raw)
+        return MenuBarPreset(rawValue: preset) ?? .dense
+    }
+}
+
+/// How the Memory metric appears in the menu bar: a colored pressure dot, the
+/// percentage of RAM in use, or both.
+enum MemoryMenuBarStyle: String, CaseIterable {
+    case dot, percent, both
+
+    static var current: MemoryMenuBarStyle {
+        let raw = UserDefaults.standard.string(forKey: DefaultsKey.menuBarMemoryStyle) ?? ""
+        let style = Defaults.sanitizedMenuBarMemoryStyle(raw)
+        return MemoryMenuBarStyle(rawValue: style) ?? .percent
+    }
+
+    var showsDot: Bool { self == .dot || self == .both }
+    var showsPercent: Bool { self == .percent || self == .both }
+}
+
+/// Which memory figure the monitor displays across the menu bar and panel.
+enum MonitorMemoryMetric: String, CaseIterable {
+    case used, app
+
+    static var current: MonitorMemoryMetric {
+        let raw = UserDefaults.standard.string(forKey: DefaultsKey.monitorMemoryMetric) ?? ""
+        let metric = Defaults.sanitizedMonitorMemoryMetric(raw)
+        return MonitorMemoryMetric(rawValue: metric) ?? .used
+    }
+
+    func value(in snapshot: SystemSnapshot) -> UInt64? {
+        MetricFormat.selectedMemory(used: snapshot.memoryUsed,
+                                    app: snapshot.memoryAppUsed,
+                                    metric: rawValue)
+    }
+
+    func history(in snapshot: SystemSnapshot) -> [Double] {
+        self == .app ? snapshot.memoryAppHistory : snapshot.memoryHistory
+    }
+
+    func title(in strings: Strings) -> String {
+        self == .app ? strings.memoryMetricApp : strings.memoryMetricUsed
+    }
+}
+
+enum MenuBarLabelStyle: String, CaseIterable {
+    case compact, classic
+
+    static var current: MenuBarLabelStyle {
+        let raw = UserDefaults.standard.string(forKey: DefaultsKey.menuBarLabelStyle) ?? ""
+        let style = Defaults.sanitizedMenuBarLabelStyle(raw)
+        return MenuBarLabelStyle(rawValue: style) ?? .compact
+    }
+}
+
+/// One drawable piece of the menu bar text: plain (adaptive) text, or the memory
+/// pressure dot, which carries a green/yellow/red color.
+enum MenuBarSegment {
+    case text(String)
+    case symbol(String)
+    case largeSymbol(String)
+    case metricBlock(label: String, value: String, minimumValue: String, style: MenuBarBlockStyle, pressure: MemoryPressure?)
+    case usageBarBlock(label: String, fraction: Double?, style: MenuBarBlockStyle, pressure: MemoryPressure?)
+    case networkBlock(down: String, up: String, style: MenuBarBlockStyle)
+    case diskActivityBlock(read: String, write: String, style: MenuBarBlockStyle)
+    case batteryBlock(percent: Int, isCharging: Bool, style: MenuBarBlockStyle)
+    case dot(MemoryPressure)
+    case separator
+}
+
+enum MenuBarBlockStyle {
+    case readable, dense
+}
+
+/// Builds the compact content shown next to the icon.
+///
+/// Output is a list of segments so two consumers stay in sync: the status item
+/// turns them into a colored attributed string, and the onboarding preview into
+/// SwiftUI views. Labels are intentionally abbreviated because the menu bar is
+/// a scarce space, especially on notched MacBooks.
+enum MenuBarRenderer {
+    private static let stackedFontSize: CGFloat = 9.4
+    private static let singleLineFontSize: CGFloat = 11.6
+    private static let statusTextGapColumns = 1
+    private static let countdownColumns = 7
+    private static let glyphAndButtonChrome: CGFloat = 26
+    private static let separatorWidth = 3
+    private static let rateBlockReservedLines = [
+        "↓8888B", "↑8888B", "R8888B", "W8888B",
+        "↓8888M", "↑8888M", "R8888M", "W8888M",
+    ]
+    private static let blockImageCache: NSCache<NSString, NSImage> = {
+        let cache = NSCache<NSString, NSImage>()
+        cache.countLimit = 300
+        // The keys embed live metric values, so continuously changing numbers
+        // mint new entries all day; the byte ceiling keeps that harmless.
+        cache.totalCostLimit = 8 * 1024 * 1024
+        return cache
+    }()
+
+    /// Estimated bitmap bytes of a rendered block at 2x backing scale.
+    private static func blockImageCost(_ image: NSImage) -> Int {
+        max(1, Int(image.size.width * image.size.height) * 16)
+    }
+
+    private struct MetricItem {
+        var metric: MenuBarMetric
+        var segments: [MenuBarSegment]
+        var width: Int
+    }
+
+    static func lines(for snapshot: SystemSnapshot,
+                      metrics: [MenuBarMetric],
+                      allowStacked: Bool = true) -> [[MenuBarSegment]] {
+        let denseSegments = blockSegments(for: snapshot, metrics: metrics, style: .dense)
+        return denseSegments.isEmpty ? [] : [denseSegments]
+    }
+
+    static func segments(for snapshot: SystemSnapshot,
+                         metrics: [MenuBarMetric],
+                         allowStacked: Bool = true) -> [MenuBarSegment] {
+        var segments: [MenuBarSegment] = []
+        for (index, line) in lines(for: snapshot, metrics: metrics, allowStacked: allowStacked).enumerated() {
+            if index > 0 { segments.append(.text("\n")) }
+            segments.append(contentsOf: line)
+        }
+        return segments
+    }
+
+    static func usesStackedLayout(for snapshot: SystemSnapshot,
+                                  metrics: [MenuBarMetric],
+                                  allowStacked: Bool = true) -> Bool {
+        lines(for: snapshot, metrics: metrics, allowStacked: allowStacked).count > 1
+    }
+
+    static func statusFont(stacked: Bool) -> NSFont {
+        NSFont.monospacedSystemFont(ofSize: statusFontSize(stacked: stacked),
+                                    weight: stacked ? .semibold : .medium)
+    }
+
+    static func statusFontSize(stacked: Bool) -> CGFloat {
+        stacked ? stackedFontSize : singleLineFontSize
+    }
+
+    static func statusLineHeight(stacked: Bool) -> CGFloat {
+        stacked ? 10.2 : 14
+    }
+
+    static func networkBlockFontSize(style: MenuBarBlockStyle) -> CGFloat {
+        style == .readable ? 9.8 : 9.2
+    }
+
+    static func networkBlockLineHeight(style: MenuBarBlockStyle) -> CGFloat {
+        style == .readable ? 11.0 : 10.0
+    }
+
+    static func rateBlockWidth(style: MenuBarBlockStyle) -> CGFloat {
+        rateBlockWidth(candidates: rateBlockReservedLines, style: style)
+    }
+
+    static func usageBarSize(style: MenuBarBlockStyle, showsPressure: Bool) -> CGSize {
+        let baseWidth: CGFloat = style == .readable ? 21 : 19
+        return CGSize(width: baseWidth + (showsPressure ? 7 : 0),
+                      height: style == .readable ? 22 : 20)
+    }
+
+    static func reservedStatusItemLength(for metrics: [MenuBarMetric],
+                                         includesCountdown: Bool,
+                                         allowStacked: Bool = true) -> CGFloat {
+        let preset = MenuBarPreset.current
+        let stacked = !includesCountdown && estimatedUsesStackedLayout(for: metrics,
+                                                                       preset: preset,
+                                                                       allowStacked: allowStacked)
+        let font = statusFont(stacked: stacked)
+        let estimated = NSMutableAttributedString()
+        if includesCountdown {
+            estimated.append(NSAttributedString(string: "888 min  "))
+        }
+        let fanCount = metrics.contains(.fanSpeed) ? SystemMonitor.fanTelemetryCount : 0
+        estimated.append(attributed(for: estimatedSnapshot(fanCount: fanCount),
+                                    metrics: metrics,
+                                    allowStacked: allowStacked && !includesCountdown,
+                                    linePrefix: includesCountdown ? " " : ""))
+        guard estimated.length > 0 else { return NSStatusItem.variableLength }
+
+        estimated.addAttribute(.font, value: font, range: NSRange(location: 0, length: estimated.length))
+        let rect = estimated.boundingRect(with: NSSize(width: 2000, height: 80),
+                                          options: [.usesLineFragmentOrigin, .usesFontLeading])
+        return ceil(glyphAndButtonChrome + rect.width + 8)
+    }
+
+    static func reservedContentColumns(for metrics: [MenuBarMetric],
+                                       includesCountdown: Bool,
+                                       allowStacked: Bool = true) -> Int {
+        let columns = reservedColumns(for: metrics,
+                                      includesCountdown: includesCountdown,
+                                      allowStacked: allowStacked)
+        return columns > 0 ? columns + statusTextGapColumns : 0
+    }
+
+    private static func metricItems(for snapshot: SystemSnapshot,
+                                    metrics: [MenuBarMetric],
+                                    preset: MenuBarPreset) -> [MetricItem] {
+        var items: [MetricItem] = []
+        for metric in metrics {
+            switch metric {
+            case .cpu:
+                if let usage = snapshot.cpuUsage {
+                    let text = "CPU " + percent(usage)
+                    items.append(MetricItem(metric: metric,
+                                            segments: [.symbol(metric.symbolName), .text(" " + text)],
+                                            width: reservedWidth(for: metric, preset: preset)))
+                }
+            case .gpu:
+                if let usage = snapshot.gpuUsage {
+                    let text = "GPU " + percent(usage)
+                    items.append(MetricItem(metric: metric,
+                                            segments: [.symbol(metric.symbolName), .text(" " + text)],
+                                            width: reservedWidth(for: metric, preset: preset)))
+                }
+            case .memory:
+                let style = MemoryMenuBarStyle.current
+                let memoryValue = MonitorMemoryMetric.current.value(in: snapshot)
+                var segments: [MenuBarSegment] = []
+                segments.append(.symbol(metric.symbolName))
+                if style.showsDot {
+                    segments.append(.text(" "))
+                    segments.append(.dot(snapshot.memoryPressure))
+                }
+                if style.showsPercent {
+                    let text = " RAM " + MetricFormat.menuBarMemoryPercent(used: memoryValue,
+                                                                            total: snapshot.memoryTotal)
+                    segments.append(.text(text))
+                }
+                items.append(MetricItem(metric: metric,
+                                        segments: segments,
+                                        width: reservedWidth(for: metric, preset: preset)))
+            case .cpuTemperature:
+                if let temperature = snapshot.cpuTemperature {
+                    let text = "CPU " + temperatureCompact(temperature)
+                    items.append(MetricItem(metric: metric,
+                                            segments: [.symbol(metric.symbolName), .text(" " + text)],
+                                            width: reservedWidth(for: metric, preset: preset)))
+                }
+            case .gpuTemperature:
+                if let temperature = snapshot.gpuTemperature {
+                    let text = "GPU " + temperatureCompact(temperature)
+                    items.append(MetricItem(metric: metric,
+                                            segments: [.symbol(metric.symbolName), .text(" " + text)],
+                                            width: reservedWidth(for: metric, preset: preset)))
+                }
+            case .batteryTemperature:
+                if let temperature = snapshot.batteryTemperature {
+                    let text = "BAT " + temperatureCompact(temperature)
+                    items.append(MetricItem(metric: metric,
+                                            segments: [.symbol(metric.symbolName), .text(" " + text)],
+                                            width: reservedWidth(for: metric, preset: preset)))
+                }
+            case .network:
+                if let down = snapshot.netDownBytesPerSec, let up = snapshot.netUpBytesPerSec {
+                    let downText = MetricFormat.bytesPerSecCompact(down)
+                    let upText = MetricFormat.bytesPerSecCompact(up)
+                    items.append(MetricItem(metric: metric,
+                                            segments: [.symbol("arrow.down"), .text(" " + downText),
+                                                       .text(" "), .symbol("arrow.up"), .text(" " + upText)],
+                                            width: reservedWidth(for: metric, preset: preset)))
+                }
+            case .diskUsage:
+                if let disk = primaryDisk(from: snapshot.disk) {
+                    let text = "DSK " + percent(disk.usedFraction)
+                    items.append(MetricItem(metric: metric,
+                                            segments: [.symbol(metric.symbolName), .text(" " + text)],
+                                            width: reservedWidth(for: metric, preset: preset)))
+                }
+            case .diskActivity:
+                if let activity = diskActivity(from: snapshot.disk) {
+                    let total = activity.read + activity.write
+                    let text = "IO " + MetricFormat.bytesPerSecCompact(total)
+                    items.append(MetricItem(metric: metric,
+                                            segments: [.symbol(metric.symbolName), .text(" " + text)],
+                                            width: reservedWidth(for: metric, preset: preset)))
+                }
+            case .battery:
+                if let charge = snapshot.power?.chargePercent {
+                    let symbol = (snapshot.power?.isCharging ?? false) ? "battery.100.bolt" : metric.symbolName
+                    let text = "BAT " + percent(Double(charge) / 100.0)
+                    items.append(MetricItem(metric: metric,
+                                            segments: [.symbol(symbol), .text(" " + text)],
+                                            width: reservedWidth(for: metric, preset: preset)))
+                }
+            case .batteryTime:
+                if let power = snapshot.power,
+                   let seconds = power.timeRemainingSeconds,
+                   let value = BatteryTimeSupport.formatted(seconds: seconds) {
+                    items.append(MetricItem(metric: metric,
+                                            segments: [.symbol(metric.symbolName), .text(" " + value)],
+                                            width: reservedWidth(for: metric, preset: preset)))
+                } else if let power = snapshot.power,
+                          power.hasBattery, !power.externalConnected, !power.isCharging {
+                    items.append(MetricItem(metric: metric,
+                                            segments: [.symbol(metric.symbolName), .text(" ...")],
+                                            width: reservedWidth(for: metric, preset: preset)))
+                }
+            case .peripheralBattery:
+                if let metricValue = PeripheralBatterySupport.menuBarMetric(for: snapshot.peripheralBatteries) {
+                    let text = metricValue.label + " " + metricValue.value
+                    items.append(MetricItem(metric: metric,
+                                            segments: [.symbol(metric.symbolName), .text(" " + text)],
+                                            width: reservedWidth(for: metric, preset: preset)))
+                }
+            case .power:
+                if let watts = snapshot.power?.systemWatts {
+                    let text = "PWR " + MetricFormat.wattsCompact(watts)
+                    items.append(MetricItem(metric: metric,
+                                            segments: [.symbol(metric.symbolName), .text(" " + text)],
+                                            width: reservedWidth(for: metric, preset: preset)))
+                }
+            case .fanSpeed:
+                if let value = FanControlPolicy.menuBarValue(for: snapshot.fanSpeeds) {
+                    items.append(MetricItem(metric: metric,
+                                            segments: [.symbol(metric.symbolName), .text(" " + value + " RPM")],
+                                            width: reservedWidth(for: metric, preset: preset)))
+                }
+            }
+        }
+        return items
+    }
+
+    private static func blockSegments(for snapshot: SystemSnapshot,
+                                      metrics: [MenuBarMetric],
+                                      style: MenuBarBlockStyle) -> [MenuBarSegment] {
+        var groups: [[MenuBarSegment]] = []
+        let appearance = MenuBarMetricAppearance.current
+        let usesBars = appearance == .bars
+        let combineTemperatures = appearance.allowsCombinedTemperatures
+            && UserDefaults.standard.bool(forKey: DefaultsKey.menuBarCombineTemperatures)
+        let enabled = Set(metrics)
+        var renderedCPU = false
+        var renderedGPU = false
+        var renderedBattery = false
+
+        for metric in metrics {
+            switch metric {
+            case .cpu, .cpuTemperature:
+                if combineTemperatures {
+                    guard !renderedCPU else { break }
+                    renderedCPU = true
+                    let usageFraction = enabled.contains(.cpu) ? snapshot.cpuUsage : nil
+                    let usage = usageFraction.map(percent)
+                    let temperature = enabled.contains(.cpuTemperature) ? snapshot.cpuTemperature.map(temperatureCompact) : nil
+                    if usesBars {
+                        let group = usageAndTemperatureSegments(label: "CPU",
+                                                                fraction: usageFraction,
+                                                                temperature: temperature,
+                                                                style: style)
+                        if !group.isEmpty { groups.append(group) }
+                    } else if let value = combinedComponentValue(primary: usage, temperature: temperature) {
+                        groups.append([.metricBlock(label: combinedComponentLabel("CPU",
+                                                                                  hasPrimary: usage != nil,
+                                                                                  hasTemperature: temperature != nil),
+                                                    value: value,
+                                                    minimumValue: minimumCombinedValue(primary: usage != nil,
+                                                                                       temperature: temperature != nil),
+                                                    style: style,
+                                                    pressure: nil)])
+                    }
+                    break
+                }
+                guard metric == .cpu else {
+                    if let temperature = snapshot.cpuTemperature {
+                        groups.append([.metricBlock(label: temperatureLabel("CPU"),
+                                                    value: temperatureCompact(temperature),
+                                                    minimumValue: "999°",
+                                                    style: style,
+                                                    pressure: nil)])
+                    }
+                    break
+                }
+                if let usage = snapshot.cpuUsage {
+                    if usesBars {
+                        groups.append([.usageBarBlock(label: "CPU",
+                                                      fraction: usage,
+                                                      style: style,
+                                                      pressure: nil)])
+                    } else {
+                        groups.append([.metricBlock(label: "CPU",
+                                                    value: percent(usage),
+                                                    minimumValue: "100%",
+                                                    style: style,
+                                                    pressure: nil)])
+                    }
+                }
+            case .gpu, .gpuTemperature:
+                if combineTemperatures {
+                    guard !renderedGPU else { break }
+                    renderedGPU = true
+                    let usageFraction = enabled.contains(.gpu) ? snapshot.gpuUsage : nil
+                    let usage = usageFraction.map(percent)
+                    let temperature = enabled.contains(.gpuTemperature) ? snapshot.gpuTemperature.map(temperatureCompact) : nil
+                    if usesBars {
+                        let group = usageAndTemperatureSegments(label: "GPU",
+                                                                fraction: usageFraction,
+                                                                temperature: temperature,
+                                                                style: style)
+                        if !group.isEmpty { groups.append(group) }
+                    } else if let value = combinedComponentValue(primary: usage, temperature: temperature) {
+                        groups.append([.metricBlock(label: combinedComponentLabel("GPU",
+                                                                                  hasPrimary: usage != nil,
+                                                                                  hasTemperature: temperature != nil),
+                                                    value: value,
+                                                    minimumValue: minimumCombinedValue(primary: usage != nil,
+                                                                                       temperature: temperature != nil),
+                                                    style: style,
+                                                    pressure: nil)])
+                    }
+                    break
+                }
+                guard metric == .gpu else {
+                    if let temperature = snapshot.gpuTemperature {
+                        groups.append([.metricBlock(label: temperatureLabel("GPU"),
+                                                    value: temperatureCompact(temperature),
+                                                    minimumValue: "999°",
+                                                    style: style,
+                                                    pressure: nil)])
+                    }
+                    break
+                }
+                if let usage = snapshot.gpuUsage {
+                    if usesBars {
+                        groups.append([.usageBarBlock(label: "GPU",
+                                                      fraction: usage,
+                                                      style: style,
+                                                      pressure: nil)])
+                    } else {
+                        groups.append([.metricBlock(label: "GPU",
+                                                    value: percent(usage),
+                                                    minimumValue: "100%",
+                                                    style: style,
+                                                    pressure: nil)])
+                    }
+                }
+            case .memory:
+                let memoryStyle = MemoryMenuBarStyle.current
+                let memoryValue = MonitorMemoryMetric.current.value(in: snapshot)
+                if usesBars {
+                    groups.append([.usageBarBlock(label: "RAM",
+                                                  fraction: MenuBarUsageBarSupport.memoryFraction(used: memoryValue,
+                                                                                                  total: snapshot.memoryTotal),
+                                                  style: style,
+                                                  pressure: memoryStyle.showsDot ? snapshot.memoryPressure : nil)])
+                } else {
+                    let value = memoryStyle.showsPercent
+                        ? MetricFormat.menuBarMemoryPercent(used: memoryValue, total: snapshot.memoryTotal)
+                        : ""
+                    groups.append([.metricBlock(label: "RAM",
+                                                value: value,
+                                                minimumValue: memoryStyle.showsPercent ? "100%" : "",
+                                                style: style,
+                                                pressure: memoryStyle.showsDot ? snapshot.memoryPressure : nil)])
+                }
+            case .network:
+                if let down = snapshot.netDownBytesPerSec, let up = snapshot.netUpBytesPerSec {
+                    groups.append([.networkBlock(down: MetricFormat.bytesPerSecCompact(down),
+                                                 up: MetricFormat.bytesPerSecCompact(up),
+                                                 style: style)])
+                }
+            case .diskUsage:
+                if let disk = primaryDisk(from: snapshot.disk) {
+                    if usesBars {
+                        groups.append([.usageBarBlock(label: "DSK",
+                                                      fraction: disk.usedFraction,
+                                                      style: style,
+                                                      pressure: nil)])
+                    } else {
+                        groups.append([.metricBlock(label: "DSK",
+                                                    value: percent(disk.usedFraction),
+                                                    minimumValue: "100%",
+                                                    style: style,
+                                                    pressure: nil)])
+                    }
+                }
+            case .diskActivity:
+                if let activity = diskActivity(from: snapshot.disk) {
+                    groups.append([.diskActivityBlock(read: MetricFormat.bytesPerSecCompact(activity.read),
+                                                      write: MetricFormat.bytesPerSecCompact(activity.write),
+                                                      style: style)])
+                }
+            case .battery, .batteryTemperature:
+                if combineTemperatures {
+                    guard !renderedBattery else { break }
+                    renderedBattery = true
+                    let charge = enabled.contains(.battery)
+                        ? snapshot.power?.chargePercent.map { "\(max(0, min(100, $0)))%" }
+                        : nil
+                    let temperature = enabled.contains(.batteryTemperature)
+                        ? snapshot.batteryTemperature.map(temperatureCompact)
+                        : nil
+                    if charge != nil, temperature != nil,
+                       let value = combinedComponentValue(primary: charge, temperature: temperature) {
+                        groups.append([.metricBlock(label: "BAT",
+                                                    value: value,
+                                                    minimumValue: "100% 999°",
+                                                    style: style,
+                                                    pressure: nil)])
+                    } else if let chargePercent = enabled.contains(.battery) ? snapshot.power?.chargePercent : nil {
+                        groups.append([.batteryBlock(percent: chargePercent,
+                                                     isCharging: snapshot.power?.isCharging ?? false,
+                                                     style: style)])
+                    } else if let temperature {
+                        groups.append([.metricBlock(label: temperatureLabel("BAT"),
+                                                    value: temperature,
+                                                    minimumValue: "999°",
+                                                    style: style,
+                                                    pressure: nil)])
+                    }
+                    break
+                }
+                guard metric == .battery else {
+                    if let temperature = snapshot.batteryTemperature {
+                        groups.append([.metricBlock(label: temperatureLabel("BAT"),
+                                                    value: temperatureCompact(temperature),
+                                                    minimumValue: "999°",
+                                                    style: style,
+                                                    pressure: nil)])
+                    }
+                    break
+                }
+                if let charge = snapshot.power?.chargePercent {
+                    groups.append([.batteryBlock(percent: charge,
+                                                 isCharging: snapshot.power?.isCharging ?? false,
+                                                 style: style)])
+                }
+            case .batteryTime:
+                if let power = snapshot.power,
+                   let seconds = power.timeRemainingSeconds,
+                   let value = BatteryTimeSupport.formatted(seconds: seconds) {
+                    groups.append([.metricBlock(label: "BAT",
+                                                value: value,
+                                                minimumValue: "99h 59m",
+                                                style: style,
+                                                pressure: nil)])
+                } else if let power = snapshot.power,
+                          power.hasBattery, !power.externalConnected, !power.isCharging {
+                    groups.append([.metricBlock(label: "BAT",
+                                                value: "...",
+                                                minimumValue: "99h 59m",
+                                                style: style,
+                                                pressure: nil)])
+                }
+            case .peripheralBattery:
+                if let metricValue = PeripheralBatterySupport.menuBarMetric(for: snapshot.peripheralBatteries) {
+                    groups.append([.metricBlock(label: metricValue.label,
+                                                value: metricValue.value,
+                                                minimumValue: "100%+9",
+                                                style: style,
+                                                pressure: nil)])
+                }
+            case .power:
+                if let watts = snapshot.power?.systemWatts {
+                    groups.append([.metricBlock(label: "PWR",
+                                                value: MetricFormat.wattsCompact(watts),
+                                                minimumValue: "99W",
+                                                style: style,
+                                                pressure: nil)])
+                }
+            case .fanSpeed:
+                if let value = FanControlPolicy.menuBarValue(for: snapshot.fanSpeeds) {
+                    let minimumValue = Array(repeating: "20000", count: snapshot.fanSpeeds.count)
+                        .joined(separator: "/")
+                    groups.append([.metricBlock(label: "RPM",
+                                                value: value,
+                                                minimumValue: minimumValue,
+                                                style: style,
+                                                pressure: nil)])
+                }
+            }
+        }
+        return blockJoined(groups, style: style)
+    }
+
+    private static func usageAndTemperatureSegments(label: String,
+                                                    fraction: Double?,
+                                                    temperature: String?,
+                                                    style: MenuBarBlockStyle) -> [MenuBarSegment] {
+        var segments: [MenuBarSegment] = []
+        if let fraction {
+            segments.append(.usageBarBlock(label: label,
+                                           fraction: fraction,
+                                           style: style,
+                                           pressure: nil))
+        }
+        if let temperature {
+            if !segments.isEmpty {
+                segments.append(.text(MenuBarSpacingSupport.blockGlue(readableStyle: style == .readable,
+                                                                      spacing: MenuBarMetricSpacing.current)))
+            }
+            segments.append(.metricBlock(label: temperatureLabel(label),
+                                         value: temperature,
+                                         minimumValue: "999°",
+                                         style: style,
+                                         pressure: nil))
+        }
+        return segments
+    }
+
+    private static func estimatedUsesStackedLayout(for metrics: [MenuBarMetric],
+                                                   preset: MenuBarPreset,
+                                                   allowStacked: Bool) -> Bool {
+        false
+    }
+
+    private static func reservedColumns(for metrics: [MenuBarMetric],
+                                        includesCountdown: Bool,
+                                        allowStacked: Bool) -> Int {
+        let preset = MenuBarPreset.current
+        let items = estimatedMetricItems(for: metrics, preset: preset)
+        guard !items.isEmpty else { return includesCountdown ? countdownColumns : 0 }
+
+        if includesCountdown {
+            return countdownColumns + 2 + joinedWidth(items, usesSeparators: true)
+        }
+
+        return joinedWidth(items, usesSeparators: preset != .dense)
+    }
+
+    private static func estimatedMetricItems(for metrics: [MenuBarMetric],
+                                             preset: MenuBarPreset) -> [MetricItem] {
+        metrics.map {
+            MetricItem(metric: $0, segments: [], width: reservedWidth(for: $0, preset: preset))
+        }
+    }
+
+    private static func reservedWidth(for metric: MenuBarMetric, preset: MenuBarPreset) -> Int {
+        switch (preset, metric) {
+        case (_, .cpu), (_, .gpu):
+            return 11      // symbol + " CPU 100%"
+        case (_, .memory):
+            return MemoryMenuBarStyle.current.showsDot ? 13 : 11
+        case (_, .cpuTemperature), (_, .gpuTemperature), (_, .batteryTemperature):
+            return 11      // symbol + " CPU 999°" / " GPU 999°" / " BAT 999°"
+        case (_, .peripheralBattery):
+            return 12      // symbol + " KBD 100%+9"
+        case (_, .network):
+            return 15      // down symbol + 1.0G + up symbol + 1.0G
+        case (_, .diskUsage):
+            return 11      // symbol + " DSK 100%"
+        case (_, .diskActivity):
+            return 15      // R1.0G + W1.0G
+        case (_, .battery), (_, .power):
+            return 11      // symbol + " BAT 100%" / " PWR 99W"
+        case (_, .batteryTime):
+            return 12      // clock symbol + "99h 59m"
+        case (_, .fanSpeed):
+            let count = max(1, SystemMonitor.fanTelemetryCount)
+            return FanControlPolicy.menuBarWidthUnits(fanCount: count)
+        }
+    }
+
+    private static func joinedWidth(_ items: [MetricItem], usesSeparators: Bool) -> Int {
+        let separatorColumns = usesSeparators ? separatorWidth : 1
+        let separators = max(0, items.count - 1) * separatorColumns
+        return items.reduce(0) { $0 + $1.width } + separators
+    }
+
+    private static func joined(_ items: [MetricItem], usesSeparators: Bool) -> [MenuBarSegment] {
+        var segments: [MenuBarSegment] = []
+        for item in items {
+            if !segments.isEmpty {
+                segments.append(usesSeparators ? .separator : .text(" "))
+            }
+            segments.append(contentsOf: item.segments)
+        }
+        return segments
+    }
+
+    private static func blockJoined(_ groups: [[MenuBarSegment]], style: MenuBarBlockStyle) -> [MenuBarSegment] {
+        let glue = MenuBarSpacingSupport.blockGlue(readableStyle: style == .readable,
+                                                   spacing: MenuBarMetricSpacing.current)
+        var segments: [MenuBarSegment] = []
+        for group in groups {
+            if !segments.isEmpty { segments.append(.text(glue)) }
+            segments.append(contentsOf: group)
+        }
+        return segments
+    }
+
+    /// The colored attributed string for the status item. Only alert/status dots
+    /// get fixed colors; text and image-backed metric blocks use dynamic system
+    /// colors so they follow the menu bar appearance over each wallpaper.
+    static func attributed(for snapshot: SystemSnapshot,
+                           metrics: [MenuBarMetric],
+                           allowStacked: Bool = true,
+                           linePrefix: String = "") -> NSAttributedString {
+        let result = NSMutableAttributedString()
+        let stacked = usesStackedLayout(for: snapshot, metrics: metrics, allowStacked: allowStacked)
+        for segment in segments(for: snapshot, metrics: metrics, allowStacked: allowStacked) {
+            switch segment {
+            case let .text(string):
+                let rendered = string == "\n" && !linePrefix.isEmpty ? "\n" + linePrefix : string
+                result.append(NSAttributedString(string: rendered))
+            case let .symbol(name):
+                result.append(symbolAttachment(named: name, stacked: stacked))
+            case let .largeSymbol(name):
+                result.append(symbolAttachment(named: name, stacked: stacked, enlarged: true))
+            case let .metricBlock(label, value, minimumValue, style, pressure):
+                result.append(metricBlockAttachment(label: label,
+                                                    value: value,
+                                                    minimumValue: minimumValue,
+                                                    style: style,
+                                                    pressure: pressure))
+            case let .usageBarBlock(label, fraction, style, pressure):
+                result.append(usageBarBlockAttachment(label: label,
+                                                      fraction: fraction,
+                                                      style: style,
+                                                      pressure: pressure))
+            case let .networkBlock(down, up, style):
+                result.append(networkBlockAttachment(down: down, up: up, style: style))
+            case let .diskActivityBlock(read, write, style):
+                result.append(diskActivityBlockAttachment(read: read, write: write, style: style))
+            case let .batteryBlock(percent, isCharging, style):
+                result.append(batteryBlockAttachment(percent: percent,
+                                                     isCharging: isCharging,
+                                                     style: style))
+            case let .dot(pressure):
+                result.append(NSAttributedString(string: "●", attributes: [.foregroundColor: nsColor(for: pressure)]))
+            case .separator:
+                result.append(NSAttributedString(string: " │ ",
+                                                 attributes: [.foregroundColor: NSColor.tertiaryLabelColor]))
+            }
+        }
+        return result
+    }
+
+    /// macOS 26 lays out button titles dominated by tall attachments about
+    /// 0.25pt higher than macOS 27, where every block offset below was
+    /// calibrated; older systems get a downward nudge so the blocks center
+    /// on the menu bar like the system's own icons.
+    private static let legacyBlockAttachmentNudge: CGFloat = {
+        if #unavailable(macOS 27) { return -0.25 }
+        return 0
+    }()
+
+    private static func symbolAttachment(named name: String,
+                                         stacked: Bool,
+                                         enlarged: Bool = false) -> NSAttributedString {
+        let configuration = NSImage.SymbolConfiguration(pointSize: enlarged ? 13.6 : (stacked ? 8.8 : 10.8),
+                                                        weight: .semibold)
+            .applying(NSImage.SymbolConfiguration(paletteColors: [.labelColor]))
+        guard let image = NSImage(systemSymbolName: name, accessibilityDescription: nil)?
+            .withSymbolConfiguration(configuration) else {
+            return NSAttributedString(string: "")
+        }
+        image.isTemplate = false
+        let attachment = NSTextAttachment()
+        attachment.image = image
+        let side: CGFloat = enlarged ? 14.2 : (stacked ? 9.2 : 11.4)
+        attachment.bounds = NSRect(x: 0, y: enlarged ? -3.0 : (stacked ? -1.0 : -1.8), width: side, height: side)
+        return NSAttributedString(attachment: attachment)
+    }
+
+    private static func metricBlockAttachment(label: String,
+                                              value: String,
+                                              minimumValue: String,
+                                              style: MenuBarBlockStyle,
+                                              pressure: MemoryPressure?) -> NSAttributedString {
+        let image = metricBlockImage(label: label,
+                                     value: value,
+                                     minimumValue: minimumValue,
+                                     style: style,
+                                     pressure: pressure)
+        let attachment = NSTextAttachment()
+        attachment.image = image
+        attachment.bounds = NSRect(x: 0,
+                                   y: (style == .readable ? -5.9 : -5.7) + legacyBlockAttachmentNudge,
+                                   width: image.size.width,
+                                   height: image.size.height)
+        return NSAttributedString(attachment: attachment)
+    }
+
+    private static func usageBarBlockAttachment(label: String,
+                                                fraction: Double?,
+                                                style: MenuBarBlockStyle,
+                                                pressure: MemoryPressure?) -> NSAttributedString {
+        let image = usageBarBlockImage(label: label,
+                                       fraction: fraction,
+                                       style: style,
+                                       pressure: pressure)
+        let attachment = NSTextAttachment()
+        attachment.image = image
+        // The gauge outline fills the image symmetrically, so the offset
+        // centers the image itself on the status font's box (ascender
+        // 11.21, descender -2.45 at 11.6pt).
+        attachment.bounds = NSRect(x: 0,
+                                   y: (style == .readable ? -6.6 : -5.6) + legacyBlockAttachmentNudge,
+                                   width: image.size.width,
+                                   height: image.size.height)
+        return NSAttributedString(attachment: attachment)
+    }
+
+    private static func networkBlockAttachment(down: String, up: String, style: MenuBarBlockStyle) -> NSAttributedString {
+        let image = networkBlockImage(down: down, up: up, style: style)
+        let attachment = NSTextAttachment()
+        attachment.image = image
+        attachment.bounds = NSRect(x: 0,
+                                   y: (style == .readable ? -6.1 : -5.5) + legacyBlockAttachmentNudge,
+                                   width: image.size.width,
+                                   height: image.size.height)
+        return NSAttributedString(attachment: attachment)
+    }
+
+    private static func diskActivityBlockAttachment(read: String,
+                                                    write: String,
+                                                    style: MenuBarBlockStyle) -> NSAttributedString {
+        let image = diskActivityBlockImage(read: read, write: write, style: style)
+        let attachment = NSTextAttachment()
+        attachment.image = image
+        attachment.bounds = NSRect(x: 0,
+                                   y: (style == .readable ? -6.1 : -5.5) + legacyBlockAttachmentNudge,
+                                   width: image.size.width,
+                                   height: image.size.height)
+        return NSAttributedString(attachment: attachment)
+    }
+
+    private static func batteryBlockAttachment(percent: Int,
+                                               isCharging: Bool,
+                                               style: MenuBarBlockStyle) -> NSAttributedString {
+        let image = batteryBlockImage(percent: percent,
+                                      isCharging: isCharging,
+                                      style: style)
+        let attachment = NSTextAttachment()
+        attachment.image = image
+        attachment.bounds = NSRect(x: 0,
+                                   y: (style == .readable ? -5.7 : -5.5) + legacyBlockAttachmentNudge,
+                                   width: image.size.width,
+                                   height: image.size.height)
+        return NSAttributedString(attachment: attachment)
+    }
+
+    private static func metricBlockImage(label: String,
+                                         value: String,
+                                         minimumValue reservedValue: String,
+                                         style: MenuBarBlockStyle,
+                                         pressure: MemoryPressure?) -> NSImage {
+        // Compact spacing hugs the value's digit count (with a stability
+        // floor, see MenuBarSpacingSupport) instead of the metric's absolute
+        // maximum; the reserve participates in the cache key, so both modes
+        // cache correctly side by side.
+        let minimumValue = MenuBarMetricSpacing.current == .compact
+            ? MenuBarSpacingSupport.compactReserve(label: label, value: value)
+            : reservedValue
+        let pressureKey = pressure.map(String.init(describing:)) ?? "none"
+        let cacheKey = "metric|\(label)|\(value)|\(minimumValue)|\(style)|\(pressureKey)" as NSString
+        if let cached = blockImageCache.object(forKey: cacheKey) { return cached }
+
+        let labelFont = NSFont.systemFont(ofSize: style == .readable ? 7.2 : 6.6, weight: .medium)
+        let valueFont = NSFont.monospacedDigitSystemFont(ofSize: style == .readable ? 13.0 : 12.0,
+                                                         weight: .semibold)
+        let sizingLabelAttrs: [NSAttributedString.Key: Any] = [.font: labelFont]
+        let sizingValueAttrs: [NSAttributedString.Key: Any] = [.font: valueFont]
+        let labelSize = (label as NSString).size(withAttributes: sizingLabelAttrs)
+        let valueSize = (value as NSString).size(withAttributes: sizingValueAttrs)
+        let minimumValueSize = (minimumValue as NSString).size(withAttributes: sizingValueAttrs)
+        let dotDiameter: CGFloat = pressure == nil ? 0 : (style == .readable ? 5.2 : 4.8)
+        let dotGap: CGFloat = pressure == nil || value.isEmpty ? 0 : 4
+        let reservedValueWidth = max(valueSize.width, minimumValueSize.width)
+        let reservedGroupWidth = dotDiameter + dotGap + reservedValueWidth
+        let drawnGroupWidth = dotDiameter + dotGap + valueSize.width
+        let width = ceil(max(labelSize.width, reservedGroupWidth) + (style == .readable ? 2 : 0.5))
+        let height: CGFloat = style == .readable ? 23 : 21
+        let image = NSImage(size: NSSize(width: width, height: height), flipped: false) { rect in
+            NSColor.clear.setFill()
+            rect.fill()
+            let labelAttrs = dynamicTextAttributes(font: labelFont)
+            let valueAttrs = dynamicTextAttributes(font: valueFont)
+            (label as NSString).draw(at: NSPoint(x: (width - labelSize.width) / 2,
+                                     y: style == .readable ? 12.9 : 12.0),
+                                     withAttributes: labelAttrs)
+            var valueX = (width - drawnGroupWidth) / 2
+            if let pressure {
+                let dotRect = NSRect(x: valueX,
+                                     y: style == .readable ? 4.1 : 3.5,
+                                     width: dotDiameter,
+                                     height: dotDiameter)
+                nsColor(for: pressure).setFill()
+                NSBezierPath(ovalIn: dotRect).fill()
+                valueX += dotDiameter + dotGap
+            }
+            (value as NSString).draw(at: NSPoint(x: valueX, y: style == .readable ? -0.4 : -0.8),
+                                     withAttributes: valueAttrs)
+            return true
+        }
+        image.isTemplate = false
+        blockImageCache.setObject(image, forKey: cacheKey, cost: blockImageCost(image))
+        return image
+    }
+
+    private static func usageBarBlockImage(label: String,
+                                           fraction: Double?,
+                                           style: MenuBarBlockStyle,
+                                           pressure: MemoryPressure?) -> NSImage {
+        let innerSteps = style == .readable ? 17 : 15
+        let fillLevel = fraction.map { MenuBarUsageBarSupport.fillLevel(for: $0, steps: innerSteps) }
+        let fillColorHex = fraction.map {
+            MenuBarUsageBarSupport.currentColorHex(for: MenuBarUsageBarSupport.currentLevel(for: $0))
+        } ?? "missing"
+        let pressureKey = pressure.map(String.init(describing:)) ?? "none"
+        let levelKey = fillLevel.map(String.init) ?? "missing"
+        let cacheKey = "usageBar|\(label)|\(levelKey)|\(fillColorHex)|\(style)|\(pressureKey)" as NSString
+        if let cached = blockImageCache.object(forKey: cacheKey) { return cached }
+
+        let size = usageBarSize(style: style, showsPressure: pressure != nil)
+        let labelFont = NSFont.systemFont(ofSize: style == .readable ? 6.5 : 6.1, weight: .semibold)
+        let labelAttributes = dynamicTextAttributes(font: labelFont)
+        let labelWidth: CGFloat = style == .readable ? 6.5 : 6
+        let labelGap: CGFloat = 2
+        let dotDiameter: CGFloat = pressure == nil ? 0 : (style == .readable ? 4.8 : 4.4)
+        let dotGap: CGFloat = pressure == nil ? 0 : 2.2
+        let barWidth: CGFloat = style == .readable ? 10 : 9
+        let barHeight: CGFloat = style == .readable ? 20 : 18
+        let barX = labelWidth + labelGap + dotDiameter + dotGap
+        let barY = (size.height - barHeight) / 2
+
+        let image = NSImage(size: size, flipped: false) { rect in
+            NSColor.clear.setFill()
+            rect.fill()
+
+            let characters = Array(label.prefix(3)).map(String.init)
+            let rowHeight = (size.height - 2) / 3
+            for (index, character) in characters.enumerated() {
+                let characterSize = (character as NSString).size(withAttributes: labelAttributes)
+                let x = (labelWidth - characterSize.width) / 2
+                let y = size.height - 1 - rowHeight * CGFloat(index + 1)
+                    + (rowHeight - characterSize.height) / 2
+                (character as NSString).draw(at: NSPoint(x: x, y: y), withAttributes: labelAttributes)
+            }
+
+            if let pressure {
+                let dotRect = NSRect(x: labelWidth + labelGap,
+                                     y: (size.height - dotDiameter) / 2,
+                                     width: dotDiameter,
+                                     height: dotDiameter)
+                nsColor(for: pressure).setFill()
+                NSBezierPath(ovalIn: dotRect).fill()
+            }
+
+            let outlineRect = NSRect(x: barX + 0.5,
+                                     y: barY + 0.5,
+                                     width: barWidth - 1,
+                                     height: barHeight - 1)
+            let outline = NSBezierPath(roundedRect: outlineRect, xRadius: 2.2, yRadius: 2.2)
+            NSColor.labelColor.setStroke()
+            outline.lineWidth = 1.15
+            outline.stroke()
+
+            let innerRect = outlineRect.insetBy(dx: 1.6, dy: 1.6)
+            if let fillLevel, fillLevel > 0 {
+                let fillHeight = max(1, min(innerRect.height,
+                                            innerRect.height * CGFloat(fillLevel) / CGFloat(innerSteps)))
+                let fillRect = NSRect(x: innerRect.minX,
+                                      y: innerRect.minY,
+                                      width: innerRect.width,
+                                      height: fillHeight)
+                usageBarColor(hex: fillColorHex).setFill()
+                NSBezierPath(roundedRect: fillRect, xRadius: 1.2, yRadius: 1.2).fill()
+            } else if fillLevel == nil {
+                NSColor.secondaryLabelColor.setStroke()
+                let dash = NSBezierPath()
+                dash.move(to: NSPoint(x: innerRect.minX + 0.3, y: innerRect.midY))
+                dash.line(to: NSPoint(x: innerRect.maxX - 0.3, y: innerRect.midY))
+                dash.lineWidth = 1
+                dash.stroke()
+            }
+            return true
+        }
+        image.isTemplate = false
+        blockImageCache.setObject(image, forKey: cacheKey, cost: blockImageCost(image))
+        return image
+    }
+
+    private static func usageBarColor(hex: String) -> NSColor {
+        let rgb = MenuBarUsageBarSupport.rgb(for: hex,
+                                             fallback: MenuBarUsageBarSupport.defaultNormalColor)
+        return NSColor(srgbRed: CGFloat(rgb.red),
+                       green: CGFloat(rgb.green),
+                       blue: CGFloat(rgb.blue),
+                       alpha: 1)
+    }
+
+    private static func networkBlockImage(down: String, up: String, style: MenuBarBlockStyle) -> NSImage {
+        let uploadFirst = UserDefaults.standard.bool(forKey: DefaultsKey.menuBarNetworkUploadFirst)
+        let cacheKey = "network|\(down)|\(up)|\(style)|\(uploadFirst)" as NSString
+        if let cached = blockImageCache.object(forKey: cacheKey) { return cached }
+
+        let lines = uploadFirst ? ["↑\(up)", "↓\(down)"] : ["↓\(down)", "↑\(up)"]
+        return stackedRatesImage(lines: lines,
+                                 reservedLines: ["↓000B", "↑000B"],
+                                 cacheKey: cacheKey,
+                                 style: style)
+    }
+
+    private static func diskActivityBlockImage(read: String,
+                                               write: String,
+                                               style: MenuBarBlockStyle) -> NSImage {
+        let cacheKey = "diskActivity|\(read)|\(write)|\(style)" as NSString
+        if let cached = blockImageCache.object(forKey: cacheKey) { return cached }
+
+        return stackedRatesImage(lines: ["R\(read)", "W\(write)"],
+                                 reservedLines: ["R000B", "W000B"],
+                                 cacheKey: cacheKey,
+                                 style: style)
+    }
+
+    private static func stackedRatesImage(lines: [String],
+                                          reservedLines: [String],
+                                          cacheKey: NSString,
+                                          style: MenuBarBlockStyle) -> NSImage {
+        let font = NSFont.monospacedSystemFont(ofSize: networkBlockFontSize(style: style),
+                                               weight: .semibold)
+        let lineHeight = networkBlockLineHeight(style: style)
+        let height: CGFloat = style == .readable ? 22 : 20
+        let imageSize = NSSize(width: rateBlockWidth(style: style), height: height)
+        let image = NSImage(size: imageSize, flipped: false) { rect in
+            NSColor.clear.setFill()
+            rect.fill()
+            let attrs = dynamicTextAttributes(font: font)
+            let textSize = ((reservedLines.first ?? lines.first ?? "") as NSString).size(withAttributes: attrs)
+            let contentHeight = lineHeight + textSize.height
+            let bottomY = (imageSize.height - contentHeight) / 2
+            for (index, line) in lines.enumerated() {
+                let y = bottomY + lineHeight * CGFloat(1 - index)
+                let lineSize = (line as NSString).size(withAttributes: attrs)
+                let x = max(0.5, imageSize.width - lineSize.width - 0.5)
+                (line as NSString).draw(at: NSPoint(x: x, y: y), withAttributes: attrs)
+            }
+            return true
+        }
+        image.isTemplate = false
+        blockImageCache.setObject(image, forKey: cacheKey, cost: blockImageCost(image))
+        return image
+    }
+
+    private static func rateBlockWidth(candidates: [String], style: MenuBarBlockStyle) -> CGFloat {
+        let font = NSFont.monospacedSystemFont(ofSize: networkBlockFontSize(style: style),
+                                               weight: .semibold)
+        let sizingAttrs: [NSAttributedString.Key: Any] = [.font: font]
+        let contentWidth = candidates.map { ($0 as NSString).size(withAttributes: sizingAttrs).width }.max() ?? 22
+        return ceil(contentWidth + (style == .readable ? 1.5 : 1.0))
+    }
+
+    private static func batteryBlockImage(percent: Int,
+                                          isCharging: Bool,
+                                          style: MenuBarBlockStyle) -> NSImage {
+        let clampedPercent = max(0, min(100, percent))
+        let cacheKey = "battery|\(clampedPercent)|\(isCharging)|\(style)" as NSString
+        if let cached = blockImageCache.object(forKey: cacheKey) { return cached }
+
+        let symbolName = batterySymbol(for: percent, isCharging: isCharging)
+        let symbolPointSize: CGFloat = style == .readable ? 17.0 : 15.5
+        let valueFont = NSFont.monospacedDigitSystemFont(ofSize: style == .readable ? 13.0 : 12.0,
+                                                         weight: .semibold)
+        let value = "\(clampedPercent)%"
+        let sizingValueAttrs: [NSAttributedString.Key: Any] = [.font: valueFont]
+        let valueSize = (value as NSString).size(withAttributes: sizingValueAttrs)
+        let reservedValueSize = max(valueSize.width, ("100%" as NSString).size(withAttributes: sizingValueAttrs).width)
+        let symbolWidth: CGFloat = style == .readable ? 20 : 18
+        let gap: CGFloat = style == .readable ? 5 : 4
+        let height: CGFloat = style == .readable ? 22 : 20
+        let imageSize = NSSize(width: ceil(symbolWidth + gap + reservedValueSize), height: height)
+        let image = NSImage(size: imageSize, flipped: false) { rect in
+            NSColor.clear.setFill()
+            rect.fill()
+            let symbolConfig = NSImage.SymbolConfiguration(pointSize: symbolPointSize, weight: .regular)
+                .applying(NSImage.SymbolConfiguration(paletteColors: [.labelColor]))
+            if let symbol = NSImage(systemSymbolName: symbolName, accessibilityDescription: nil)?
+                .withSymbolConfiguration(symbolConfig) {
+                let symbolSize = symbol.size
+                // draw(in:) stretches the image to exactly fill the rect, so
+                // clamping only the width while leaving height at
+                // the symbol's full natural size squished wide glyphs like
+                // the battery icon. Scale both dimensions together to keep
+                // the glyph's own proportions.
+                let scale = min(symbolWidth / symbolSize.width, 1)
+                let drawSize = NSSize(width: symbolSize.width * scale, height: symbolSize.height * scale)
+                let symbolRect = NSRect(x: 0,
+                                        y: (height - drawSize.height) / 2,
+                                        width: drawSize.width,
+                                        height: drawSize.height)
+                symbol.draw(in: symbolRect)
+            }
+            let valueAttrs = dynamicTextAttributes(font: valueFont)
+            let valueY = (height - valueSize.height) / 2
+            (value as NSString).draw(at: NSPoint(x: symbolWidth + gap, y: valueY),
+                                     withAttributes: valueAttrs)
+            return true
+        }
+        image.isTemplate = false
+        blockImageCache.setObject(image, forKey: cacheKey, cost: blockImageCost(image))
+        return image
+    }
+
+    private static func dynamicTextAttributes(font: NSFont) -> [NSAttributedString.Key: Any] {
+        [.font: font, .foregroundColor: NSColor.labelColor]
+    }
+
+    static func batterySymbol(for percent: Int, isCharging: Bool) -> String {
+        if isCharging { return "battery.100.bolt" }
+        switch percent {
+        case 85...: return "battery.100"
+        case 60..<85: return "battery.75"
+        case 35..<60: return "battery.50"
+        case 10..<35: return "battery.25"
+        default: return "battery.0"
+        }
+    }
+
+    private static func estimatedSnapshot(fanCount: Int) -> SystemSnapshot {
+        var snapshot = SystemSnapshot()
+        snapshot.cpuUsage = 1
+        snapshot.gpuUsage = 1
+        snapshot.memoryUsed = 100
+        snapshot.memoryAppUsed = 100
+        snapshot.memoryTotal = 100
+        snapshot.memoryPressure = .normal
+        snapshot.cpuTemperature = 125
+        snapshot.gpuTemperature = 125
+        snapshot.batteryTemperature = 125
+        snapshot.fanSpeeds = Array(repeating: 20_000, count: fanCount)
+        snapshot.netDownBytesPerSec = 1_000_000_000
+        snapshot.netUpBytesPerSec = 1_000_000_000
+        snapshot.disk = DiskReading(devices: [
+            DiskDeviceReading(id: "main",
+                              name: "Macintosh HD",
+                              mountPath: "/",
+                              bsdName: "disk3s1",
+                              wholeDisk: "disk3",
+                              ioCounterID: "disk3",
+                              fileSystem: "APFS",
+                              totalBytes: 1_000_000_000_000,
+                              freeBytes: 0,
+                              purgeableBytes: nil,
+                              usedBytes: 1_000_000_000_000,
+                              isInternal: true,
+                              isRemovable: false,
+                              isEjectable: false,
+                              smart: nil,
+                              readBytesPerSec: 1_000_000_000,
+                              writeBytesPerSec: 1_000_000_000,
+                              totalReadBytes: nil,
+                              totalWrittenBytes: nil),
+        ])
+        var power = PowerReading()
+        power.systemWatts = 99
+        power.chargePercent = 100
+        power.timeRemainingSeconds = 359_940
+        power.isCharging = true
+        snapshot.power = power
+        snapshot.peripheralBatteries = [
+            PeripheralBatteryDevice(id: "mouse", name: "Magic Mouse", percent: 100, kind: .mouse),
+        ]
+        return snapshot
+    }
+
+    private static func primaryDisk(from reading: DiskReading?) -> DiskDeviceReading? {
+        guard let devices = reading?.devices, !devices.isEmpty else { return nil }
+        return devices.first(where: { $0.isInternal }) ?? devices.first
+    }
+
+    private static func diskActivity(from reading: DiskReading?) -> (read: Double, write: Double)? {
+        let devices = reading?.uniqueIODevices ?? []
+        guard !devices.isEmpty else { return nil }
+        let readValues = devices.compactMap(\.readBytesPerSec)
+        let writeValues = devices.compactMap(\.writeBytesPerSec)
+        guard !readValues.isEmpty || !writeValues.isEmpty else { return nil }
+        return (readValues.reduce(0, +), writeValues.reduce(0, +))
+    }
+
+    static func nsColor(for pressure: MemoryPressure) -> NSColor {
+        switch pressure {
+        case .normal: return .systemGreen
+        case .warning: return .systemYellow
+        case .critical: return .systemRed
+        case .unknown: return .secondaryLabelColor
+        }
+    }
+
+    /// A compact 0...1 fraction: "5%", "47%", "100%".
+    private static func percent(_ fraction: Double) -> String {
+        let value = Int((max(0, min(1, fraction)) * 100).rounded())
+        return "\(value)%"
+    }
+
+    private static func temperatureCompact(_ celsius: Double) -> String {
+        let unit = TemperatureUnit(rawValue: UserDefaults.standard.string(forKey: DefaultsKey.temperatureUnit) ?? "")
+            ?? .celsius
+        return MetricFormat.temperatureCompact(celsius, unit: unit)
+    }
+
+    private static func temperatureLabel(_ component: String) -> String {
+        let unit = TemperatureUnit(rawValue: UserDefaults.standard.string(forKey: DefaultsKey.temperatureUnit) ?? "")
+            ?? .celsius
+        return component + MetricFormat.temperatureUnitSuffix(unit)
+    }
+
+    private static func combinedComponentLabel(_ component: String,
+                                               hasPrimary: Bool,
+                                               hasTemperature: Bool) -> String {
+        if hasPrimary { return component }
+        return hasTemperature ? temperatureLabel(component) : component
+    }
+
+    private static func combinedComponentValue(primary: String?, temperature: String?) -> String? {
+        var values: [String] = []
+        if let primary { values.append(primary) }
+        if let temperature { values.append(temperature) }
+        return values.isEmpty ? nil : values.joined(separator: " ")
+    }
+
+    private static func minimumCombinedValue(primary: Bool, temperature: Bool) -> String {
+        switch (primary, temperature) {
+        case (true, true): return "100% 999°"
+        case (true, false): return "100%"
+        case (false, true): return "999°"
+        case (false, false): return ""
+        }
+    }
+}

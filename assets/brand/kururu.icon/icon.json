@@ -1,0 +1,69 @@
+{
+  "features" : [
+    "refractivity"
+  ],
+  "fill" : {
+    "solid" : "extended-srgb:0.92000,0.92000,0.93000,1.00000"
+  },
+  "groups" : [
+    {
+      "blur-material" : 0.5,
+      "layers" : [
+        {
+          "glass" : false,
+          "image-name" : "eye-1.svg",
+          "name" : "Left eye"
+        },
+        {
+          "glass" : false,
+          "image-name" : "eye-2.svg",
+          "name" : "Right eye"
+        },
+        {
+          "image-name" : "03-角色母版.svg",
+          "name" : "Horn spirit"
+        }
+      ],
+      "name" : "Character",
+      "refractivity" : {
+        "depth" : 0.35,
+        "enabled" : true,
+        "strength" : 0.5
+      },
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.45
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.12
+      }
+    },
+    {
+      "layers" : [
+        {
+          "image-name" : "02-涟漪内环.svg",
+          "name" : "Inner ripple"
+        },
+        {
+          "image-name" : "01-涟漪外环.svg",
+          "name" : "Outer ripple"
+        }
+      ],
+      "name" : "Ripple",
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.45
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.12
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "squares" : [
+      "macOS"
+    ]
+  }
+}
